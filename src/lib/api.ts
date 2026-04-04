@@ -1,5 +1,5 @@
 /**
- * API client for the Aura Finance backend (FastAPI).
+ * API client for the Personal Finance backend (FastAPI).
  * Base URL configured via VITE_API_URL env variable.
  * All amounts are treated as JS numbers (backend returns decimals).
  * All IDs are UUIDs (string).

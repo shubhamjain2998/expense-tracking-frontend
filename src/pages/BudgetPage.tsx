@@ -10,7 +10,7 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { useToastContext } from '../hooks/useToastContext'
 
 function formatCurrency(n: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n)
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(n)
 }
 
 interface InlineEditRowProps {
@@ -44,7 +44,7 @@ function InlineEditRow({ entry, onDelete }: InlineEditRowProps) {
       </td>
       <td className="py-3 pr-4">
         <div className="flex items-center gap-1">
-          <span className="text-sm text-[#70787c]">$</span>
+          <span className="text-sm text-[#70787c]">₹</span>
           <input
             type="number"
             value={amount}
@@ -237,7 +237,7 @@ export function BudgetPage() {
                       Monthly
                     </label>
                     <div className="flex items-center gap-1">
-                      <span className="text-sm text-[#70787c]">$</span>
+                      <span className="text-sm text-[#70787c]">₹</span>
                       <input
                         type="number"
                         value={row.amount}

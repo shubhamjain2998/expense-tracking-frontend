@@ -21,7 +21,7 @@ import { YearMonthSelector } from '../components/ui/YearMonthSelector'
 import { useToastContext } from '../hooks/useToastContext'
 
 function formatCurrency(n: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n)
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(n)
 }
 
 interface CategoriseFormProps {

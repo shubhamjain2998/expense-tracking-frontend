@@ -13,7 +13,7 @@ export function TopNav() {
     <nav className="w-full bg-slate-50">
       <div className="mx-auto flex h-16 w-full max-w-screen-2xl items-center justify-between px-8">
         <div className="flex items-center gap-8">
-          <span className="text-xl font-black tracking-tight text-[#004251]">Aura Finance</span>
+          <span className="text-xl font-black tracking-tight text-[#004251]">Personal Finance</span>
           <div className="hidden items-center gap-6 md:flex">
             {navLinks.map(({ to, label }) => (
               <NavLink

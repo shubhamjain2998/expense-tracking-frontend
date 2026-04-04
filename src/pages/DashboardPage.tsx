@@ -25,7 +25,7 @@ import { YearMonthSelector } from '../components/ui/YearMonthSelector'
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 function formatCurrency(n: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n)
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(n)
 }
 
 function InitialsAvatar({ name, index }: { name: string; index: number }) {
@@ -115,10 +115,10 @@ export function DashboardPage() {
                     <tr key={row.category} className="group transition-colors hover:bg-white">
                       <td className="py-4 text-sm font-medium text-[#181c20]">{row.category}</td>
                       <td className="py-4 text-right text-sm text-[#3f484c]">
-                        <span className="text-[#70787c]">$</span>{row.allocated_monthly.toFixed(2)}
+                        <span className="text-[#70787c]">₹</span>{row.allocated_monthly.toFixed(2)}
                       </td>
                       <td className="py-4 text-right text-sm font-bold text-[#181c20]">
-                        <span className="font-normal text-[#70787c]">$</span>{row.actual.toFixed(2)}
+                        <span className="font-normal text-[#70787c]">₹</span>{row.actual.toFixed(2)}
                       </td>
                       <td className={`py-4 text-right text-sm ${row.variance >= 0 ? 'text-[#005b6f]' : 'text-[#ba1a1a]'}`}>
                         {row.variance >= 0 ? '+' : ''}{formatCurrency(row.variance)}
