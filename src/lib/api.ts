@@ -7,11 +7,7 @@
  */
 import axios from 'axios'
 
-import type {
-  BudgetEntry,
-  CreateBudgetPayload,
-  UpdateBudgetEntryPayload,
-} from '../types/budget'
+import type { BudgetEntry, CreateBudgetPayload, UpdateBudgetEntryPayload } from '../types/budget'
 import type {
   AutoCategoriseResponse,
   EditProcessedPayload,
@@ -19,6 +15,7 @@ import type {
   PendingManualTransaction,
   PreviewResponse,
   ProcessedTransaction,
+  ProcessedTransactionItem,
   ProcessTransactionPayload,
   RawTransaction,
 } from '../types/transaction'
@@ -137,7 +134,19 @@ export const getPendingManual = async (): Promise<PendingManualTransaction[]> =>
 export const processTransaction = async (
   payload: ProcessTransactionPayload
 ): Promise<ProcessedTransaction> => {
+  console.log(payload)
   const { data } = await client.post<ProcessedTransaction>('/transactions/process', payload)
+  return data
+}
+
+export const getProcessedTransactions = async (
+  year: number,
+  month: number,
+  category: string
+): Promise<ProcessedTransactionItem[]> => {
+  const { data } = await client.get<ProcessedTransactionItem[]>('/transactions/processed', {
+    params: { year, month, category },
+  })
   return data
 }
 

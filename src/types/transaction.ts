@@ -1,6 +1,6 @@
 export interface RawTransaction {
   id: string
-  date: string
+  txn_date: string
   description: string
   amount: number
   deleted: boolean
@@ -23,18 +23,26 @@ export interface ProcessedTransaction {
   person_ids: string[]
 }
 
-export interface PreviewTransaction {
-  date: string
+export interface ProcessedTransactionItem {
+  id: string
+  txn_date: string
   description: string
-  amount: number
-  category?: string
-  status: 'ready' | 'warning'
+  amount: string
+  effective_amount: string
+  split_count: number
+  category: string
+}
+
+export interface PreviewRow {
+  txn_date: string
+  description: string
+  amount: string
 }
 
 export interface PreviewResponse {
-  transactions: PreviewTransaction[]
+  rows: PreviewRow[]
   would_insert: number
-  warnings: string[]
+  skipped: number
 }
 
 export interface ImportResponse {
@@ -43,8 +51,8 @@ export interface ImportResponse {
 }
 
 export interface AutoCategoriseResponse {
-  categorised: number
-  pending: number
+  auto_categorised: number
+  pending_manual: number
 }
 
 export interface ProcessTransactionPayload {

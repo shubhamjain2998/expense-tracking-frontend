@@ -12,9 +12,8 @@ export interface TrendDataPoint {
 }
 
 export interface SplitLedgerRow {
-  person_id: string
   person_name: string
-  total_amount: number
+  total_split_amount: string
 }
 
 export interface YTDRow {
