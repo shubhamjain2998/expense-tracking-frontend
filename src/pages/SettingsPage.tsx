@@ -39,23 +39,23 @@ function PersonCard({
     : null
 
   return (
-    <div className="bg-surface-container-low relative rounded-xl p-4">
-      <button
-        onClick={() => onDelete(person.id)}
-        className="text-outline hover:bg-error-container hover:text-on-error-container absolute top-3 right-3 rounded-lg p-1"
-        aria-label={`Delete ${person.name}`}
-      >
-        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-          delete
-        </span>
-      </button>
+    <div className="bg-surface-container-low group flex items-center gap-3 rounded-xl px-4 py-3">
       <div
-        className={`mb-3 flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${avatarColors[index % avatarColors.length]}`}
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${avatarColors[index % avatarColors.length]}`}
       >
         {getInitials(person.name)}
       </div>
-      <p className="text-on-surface text-sm font-bold">{person.name}</p>
-      {joined && <p className="text-on-surface-variant text-[11px]">Joined {joined}</p>}
+      <div className="min-w-0 flex-1">
+        <p className="text-on-surface text-sm font-bold">{person.name}</p>
+        {joined && <p className="text-on-surface-variant text-[11px]">Joined {joined}</p>}
+      </div>
+      <button
+        onClick={() => onDelete(person.id)}
+        className="text-outline hover:bg-error-container hover:text-on-error-container shrink-0 rounded-lg p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
+        aria-label={`Delete ${person.name}`}
+      >
+        <span className="material-symbols-outlined text-[16px]">delete</span>
+      </button>
     </div>
   )
 }

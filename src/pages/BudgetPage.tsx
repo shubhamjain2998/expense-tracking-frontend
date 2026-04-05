@@ -26,7 +26,7 @@ function InlineEditRow({ entry, onDelete }: InlineEditRowProps) {
   const qc = useQueryClient()
   const toast = useToastContext()
   const [category, setCategory] = useState(entry.category)
-  const [amount, setAmount] = useState(entry.allocated_amount)
+  const [amount, setAmount] = useState(Number(entry.allocated_amount) / 12)
 
   const updateMutation = useMutation({
     mutationFn: ({ field, value }: { field: string; value: string | number }) =>
@@ -59,8 +59,8 @@ function InlineEditRow({ entry, onDelete }: InlineEditRowProps) {
             value={amount}
             onChange={(e) => setAmount(Number(e.target.value))}
             onBlur={() =>
-              amount !== entry.allocated_amount &&
-              updateMutation.mutate({ field: 'allocated_amount', value: amount })
+              amount !== Number(entry.allocated_amount) / 12 &&
+              updateMutation.mutate({ field: 'allocated_amount', value: amount * 12 })
             }
             className="input-field w-28"
             min={0}
@@ -130,7 +130,7 @@ export function BudgetPage() {
   })
 
   const entries = budgetQuery.data ?? []
-  const totalAnnual = entries.reduce((s, e) => s + e.allocated_amount * 12, 0)
+  const totalAnnual = entries.reduce((s, e) => s + Number(e.allocated_amount), 0)
 
   function handleAddRow() {
     setNewRows((r) => [...r, { id: Date.now(), category: '', amount: '' }])
@@ -146,7 +146,7 @@ export function BudgetPage() {
       year,
       entries: valid.map((r) => ({
         category: r.category.trim(),
-        allocated_amount: Number(r.amount),
+        allocated_amount: Number(r.amount) * 12,
       })),
     })
   }
