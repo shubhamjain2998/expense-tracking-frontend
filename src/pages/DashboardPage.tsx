@@ -4,31 +4,16 @@ import { BarChart, Bar, LineChart, Line, XAxis, Tooltip, ResponsiveContainer } f
 
 import {
   getDashboardSummary,
-  getMonthlyTrend,
+  getProcessedTransactions,
+  getCategoryList,
   getSplitLedger,
   getYTD,
-  getCategoryList,
 } from '../lib/api'
 import { Chip, pctToChipVariant } from '../components/ui/Chip'
 import { SkeletonTable, Skeleton } from '../components/ui/Skeleton'
 import { EmptyState } from '../components/ui/EmptyState'
 import { YearMonthSelector } from '../components/ui/YearMonthSelector'
 import { useThemeContext } from '../hooks/useThemeContext'
-
-const MONTH_NAMES = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-]
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat('en-IN', {
@@ -68,17 +53,13 @@ export function DashboardPage() {
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
   const [chartType, setChartType] = useState<'bar' | 'line'>('bar')
+  const [trendChartType, setTrendChartType] = useState<'bar' | 'line'>('line')
   const [selectedCategory, setSelectedCategory] = useState('')
   const [ytdOpen, setYtdOpen] = useState(false)
 
   const summaryQuery = useQuery({
     queryKey: ['dashboardSummary', year, month],
     queryFn: () => getDashboardSummary(year, month),
-  })
-
-  const trendQuery = useQuery({
-    queryKey: ['monthlyTrend', year, selectedCategory],
-    queryFn: () => getMonthlyTrend(year, selectedCategory || undefined),
   })
 
   const ledgerQuery = useQuery({
@@ -92,14 +73,24 @@ export function DashboardPage() {
     enabled: ytdOpen,
   })
 
-  const categoryListQuery = useQuery({
-    queryKey: ['categoryList'],
-    queryFn: getCategoryList,
+  const categoryListQuery = useQuery({ queryKey: ['categoryList'], queryFn: getCategoryList })
+
+  const categoryTxnQuery = useQuery({
+    queryKey: ['processedTransactions', year, month, selectedCategory],
+    queryFn: () => getProcessedTransactions(year, month, selectedCategory),
+    enabled: selectedCategory !== '',
   })
 
-  const trendData = (trendQuery.data ?? []).map((d) => ({
-    ...d,
-    name: MONTH_NAMES[(d.month - 1) % 12],
+  const categoryChartData = (summaryQuery.data ?? []).map((row) => ({
+    name: row.category,
+    amount: Number(row.actual),
+  }))
+
+  const trendData = (categoryTxnQuery.data ?? []).map((d) => ({
+    desc: d.description.slice(0, 14),
+    date: d.txn_date,
+    amount: Number(d.effective_amount),
+    fullName: d.description,
   }))
 
   return (
@@ -162,11 +153,11 @@ export function DashboardPage() {
                       <td className="text-on-surface py-4 text-sm font-medium">{row.category}</td>
                       <td className="text-on-surface-variant py-4 text-right text-sm">
                         <span className="text-outline">₹</span>
-                        {row.allocated_monthly.toFixed(2)}
+                        {Number(row.allocated_monthly).toFixed(2)}
                       </td>
                       <td className="text-on-surface py-4 text-right text-sm font-bold">
                         <span className="text-outline font-normal">₹</span>
-                        {row.actual.toFixed(2)}
+                        {Number(row.actual).toFixed(2)}
                       </td>
                       <td
                         className={`py-4 text-right text-sm ${row.variance >= 0 ? 'text-primary' : 'text-error'}`}
@@ -201,7 +192,7 @@ export function DashboardPage() {
             <div className="flex-1 space-y-3">
               {ledgerQuery.data.map((row, i) => (
                 <div
-                  key={row.person_id}
+                  key={row.person_name}
                   className="bg-surface-container-lowest flex items-center justify-between rounded-xl p-4"
                 >
                   <div className="flex items-center gap-3">
@@ -212,7 +203,7 @@ export function DashboardPage() {
                     </div>
                   </div>
                   <p className="text-on-surface text-sm font-black">
-                    {formatCurrency(row.total_amount)}
+                    {formatCurrency(Number(row.total_split_amount))}
                   </p>
                 </div>
               ))}
@@ -224,44 +215,29 @@ export function DashboardPage() {
         <section className="bg-surface-container-low rounded-xl p-6 lg:col-span-12">
           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 className="text-on-surface text-lg font-bold">Spending Trend</h2>
+              <h2 className="text-on-surface text-lg font-bold">Category Spending</h2>
               <p className="text-on-surface-variant text-sm">
-                Annual variance over the last 12 months.
+                Expenditure by category for the selected month.
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="bg-surface-container-high text-on-surface rounded-lg border-none p-2 text-xs font-bold tracking-widest uppercase focus:ring-0"
-                aria-label="Filter by category"
-              >
-                <option value="">All Categories</option>
-                {(categoryListQuery.data ?? []).map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-              <div className="bg-surface-container-high flex items-center rounded-lg p-1">
-                {(['bar', 'line'] as const).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setChartType(t)}
-                    className={`rounded-md px-3 py-1 text-xs font-bold transition-colors ${chartType === t ? 'bg-surface-container-lowest text-on-surface shadow-sm' : 'text-on-surface-variant'}`}
-                  >
-                    {t.charAt(0).toUpperCase() + t.slice(1)}
-                  </button>
-                ))}
-              </div>
+            <div className="bg-surface-container-high flex items-center rounded-lg p-1">
+              {(['bar', 'line'] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setChartType(t)}
+                  className={`rounded-md px-3 py-1 text-xs font-bold transition-colors ${chartType === t ? 'bg-surface-container-lowest text-on-surface shadow-sm' : 'text-on-surface-variant'}`}
+                >
+                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                </button>
+              ))}
             </div>
           </div>
-          {trendQuery.isLoading ? (
+          {summaryQuery.isLoading ? (
             <Skeleton className="h-64 w-full" />
           ) : (
             <ResponsiveContainer width="100%" height={256}>
               {chartType === 'bar' ? (
-                <BarChart data={trendData} barSize={28}>
+                <BarChart data={categoryChartData} barSize={28}>
                   <XAxis
                     dataKey="name"
                     axisLine={false}
@@ -289,7 +265,7 @@ export function DashboardPage() {
                   />
                 </BarChart>
               ) : (
-                <LineChart data={trendData}>
+                <LineChart data={categoryChartData}>
                   <XAxis
                     dataKey="name"
                     axisLine={false}
@@ -308,6 +284,157 @@ export function DashboardPage() {
                       color: 'var(--app-on-surface)',
                     }}
                     formatter={(v) => [formatCurrency(Number(v)), 'Spend']}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="amount"
+                    stroke="#8dd0e7"
+                    strokeWidth={2.5}
+                    dot={{ fill: '#8dd0e7', r: 4 }}
+                    activeDot={{ r: 6, fill: isDark ? '#b4ebff' : '#004251' }}
+                  />
+                </LineChart>
+              )}
+            </ResponsiveContainer>
+          )}
+        </section>
+
+        {/* Monthly Trend by Category */}
+        <section className="bg-surface-container-low rounded-xl p-6 lg:col-span-12">
+          <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-on-surface text-lg font-bold">Transactions by Category</h2>
+              <p className="text-on-surface-variant text-sm">
+                Individual transactions for the selected category and month.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="bg-surface-container-high text-on-surface rounded-lg border-none p-2 text-xs font-bold tracking-widest uppercase focus:ring-0"
+                aria-label="Select category"
+              >
+                <option value="">— Pick a category —</option>
+                {(categoryListQuery.data ?? []).map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+              <div className="bg-surface-container-high flex items-center rounded-lg p-1">
+                {(['bar', 'line'] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setTrendChartType(t)}
+                    className={`rounded-md px-3 py-1 text-xs font-bold transition-colors ${trendChartType === t ? 'bg-surface-container-lowest text-on-surface shadow-sm' : 'text-on-surface-variant'}`}
+                  >
+                    {t.charAt(0).toUpperCase() + t.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          {!selectedCategory ? (
+            <EmptyState
+              icon="stacked_line_chart"
+              title="Select a category"
+              description="Choose a category above to see its monthly spending trend."
+            />
+          ) : categoryTxnQuery.isLoading ? (
+            <Skeleton className="h-64 w-full" />
+          ) : !trendData.length ? (
+            <EmptyState
+              icon="stacked_line_chart"
+              title="No data"
+              description="No transactions found for this category."
+            />
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              {trendChartType === 'bar' ? (
+                <BarChart data={trendData} barSize={28} margin={{ bottom: 60 }}>
+                  <XAxis
+                    dataKey="date"
+                    axisLine={false}
+                    tickLine={false}
+                    interval={0}
+                    tick={({ x, y, payload }) => {
+                      const fill = isDark ? '#8a9499' : '#70787c'
+                      return (
+                        <g transform={`translate(${x},${y})`}>
+                          <text
+                            x={0}
+                            y={0}
+                            dy={8}
+                            textAnchor="end"
+                            fill={fill}
+                            fontSize={10}
+                            transform="rotate(-40)"
+                          >
+                            {payload.value}
+                          </text>
+                        </g>
+                      )
+                    }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'var(--color-surface-container-lowest)',
+                      border: 'none',
+                      borderRadius: 12,
+                      boxShadow: isDark
+                        ? '0 8px 40px rgba(0,0,0,0.4)'
+                        : '0 8px 40px rgba(24,28,32,0.08)',
+                      fontSize: 12,
+                      color: 'var(--app-on-surface)',
+                    }}
+                    formatter={(v, _, props) => [formatCurrency(Number(v)), props.payload.fullName]}
+                  />
+                  <Bar
+                    dataKey="amount"
+                    fill="#8dd0e7"
+                    radius={[4, 4, 0, 0]}
+                    activeBar={{ fill: isDark ? '#b4ebff' : '#004251' }}
+                  />
+                </BarChart>
+              ) : (
+                <LineChart data={trendData} margin={{ bottom: 60 }}>
+                  <XAxis
+                    dataKey="date"
+                    axisLine={false}
+                    tickLine={false}
+                    interval={0}
+                    tick={({ x, y, payload }) => {
+                      const fill = isDark ? '#8a9499' : '#70787c'
+                      return (
+                        <g transform={`translate(${x},${y})`}>
+                          <text
+                            x={0}
+                            y={0}
+                            dy={8}
+                            textAnchor="end"
+                            fill={fill}
+                            fontSize={10}
+                            transform="rotate(-40)"
+                          >
+                            {payload.value}
+                          </text>
+                        </g>
+                      )
+                    }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'var(--color-surface-container-lowest)',
+                      border: 'none',
+                      borderRadius: 12,
+                      boxShadow: isDark
+                        ? '0 8px 40px rgba(0,0,0,0.4)'
+                        : '0 8px 40px rgba(24,28,32,0.08)',
+                      fontSize: 12,
+                      color: 'var(--app-on-surface)',
+                    }}
+                    formatter={(v, _, props) => [formatCurrency(Number(v)), props.payload.fullName]}
                   />
                   <Line
                     type="monotone"
@@ -372,16 +499,16 @@ export function DashboardPage() {
                       >
                         <td className="text-on-surface py-4 text-sm font-medium">{row.category}</td>
                         <td className="text-on-surface-variant py-4 text-right text-sm">
-                          {formatCurrency(row.allocated_ytd)}
+                          {formatCurrency(Number(row.allocated_ytd))}
                         </td>
                         <td className="text-on-surface py-4 text-right text-sm font-bold">
-                          {formatCurrency(row.actual_ytd)}
+                          {formatCurrency(Number(row.actual_ytd))}
                         </td>
                         <td
-                          className={`py-4 text-right text-sm ${row.variance >= 0 ? 'text-primary' : 'text-error'}`}
+                          className={`py-4 text-right text-sm ${Number(row.variance) >= 0 ? 'text-primary' : 'text-error'}`}
                         >
-                          {row.variance >= 0 ? '+' : ''}
-                          {formatCurrency(row.variance)}
+                          {Number(row.variance) >= 0 ? '+' : ''}
+                          {formatCurrency(Number(row.variance))}
                         </td>
                         <td className="py-4 text-right">
                           <Chip variant={pctToChipVariant(row.pct_used)}>
