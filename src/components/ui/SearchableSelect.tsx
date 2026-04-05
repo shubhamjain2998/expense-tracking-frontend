@@ -63,12 +63,15 @@ export function SearchableSelect({
   return (
     <div ref={containerRef} className="relative">
       {label && (
-        <label htmlFor={id} className="mb-1 block text-xs font-semibold uppercase tracking-wider text-[#3f484c]">
+        <label
+          htmlFor={id}
+          className="text-on-surface-variant mb-1 block text-xs font-semibold tracking-wider uppercase"
+        >
           {label}
         </label>
       )}
       <div className="relative">
-        <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#70787c]">
+        <span className="material-symbols-outlined text-outline pointer-events-none absolute top-1/2 left-3 -translate-y-1/2">
           search
         </span>
         <input
@@ -89,11 +92,11 @@ export function SearchableSelect({
           aria-autocomplete="list"
         />
       </div>
-      {error && <p className="mt-1 text-xs text-[#ba1a1a]">{error}</p>}
+      {error && <p className="text-error mt-1 text-xs">{error}</p>}
       {open && filtered.length > 0 && (
         <ul
           role="listbox"
-          className="absolute z-30 mt-1 max-h-52 w-full overflow-y-auto rounded-xl bg-white shadow-[0_8px_40px_rgba(24,28,32,0.08)]"
+          className="bg-surface-container-lowest absolute z-30 mt-1 max-h-52 w-full overflow-y-auto rounded-xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.4)]"
         >
           {filtered.map((opt, i) => (
             <li
@@ -102,7 +105,9 @@ export function SearchableSelect({
               aria-selected={opt === value}
               onMouseDown={() => select(opt)}
               className={`cursor-pointer px-4 py-2.5 text-sm transition-colors ${
-                i === highlightIndex ? 'bg-[#f1f4fa] font-medium text-[#004251]' : 'text-[#181c20] hover:bg-[#f1f4fa]'
+                i === highlightIndex
+                  ? 'bg-surface-container-low text-primary font-medium'
+                  : 'text-on-surface hover:bg-surface-container-low'
               }`}
             >
               {opt}

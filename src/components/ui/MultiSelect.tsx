@@ -19,11 +19,11 @@ function getInitials(name: string) {
 }
 
 const avatarColors = [
-  'bg-[#004251] text-white',
-  'bg-[#005b6f] text-white',
-  'bg-[#536167] text-white',
-  'bg-[#5b3200] text-white',
-  'bg-[#774815] text-white',
+  'bg-primary text-on-primary',
+  'bg-primary-container text-on-primary-container',
+  'bg-secondary text-on-secondary',
+  'bg-tertiary text-on-tertiary',
+  'bg-tertiary-container text-on-tertiary-container',
 ]
 
 export function MultiSelect({ persons, selectedIds, onChange, label }: MultiSelectProps) {
@@ -55,7 +55,7 @@ export function MultiSelect({ persons, selectedIds, onChange, label }: MultiSele
   return (
     <div ref={containerRef} className="relative">
       {label && (
-        <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-[#3f484c]">
+        <p className="text-on-surface-variant mb-1.5 text-xs font-semibold tracking-wider uppercase">
           {label}
         </p>
       )}
@@ -63,7 +63,7 @@ export function MultiSelect({ persons, selectedIds, onChange, label }: MultiSele
         {selected.map((p, i) => (
           <div
             key={p.id}
-            className="flex items-center gap-1.5 rounded-full bg-[#f1f4fa] px-3 py-1 text-xs font-medium text-[#181c20]"
+            className="bg-surface-container-high text-on-surface flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium"
           >
             <span
               className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${avatarColors[i % avatarColors.length]}`}
@@ -74,7 +74,7 @@ export function MultiSelect({ persons, selectedIds, onChange, label }: MultiSele
             <button
               type="button"
               onClick={() => remove(p.id)}
-              className="ml-0.5 text-[#70787c] hover:text-[#181c20]"
+              className="text-outline hover:text-on-surface ml-0.5"
               aria-label={`Remove ${p.name}`}
             >
               <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
@@ -87,7 +87,7 @@ export function MultiSelect({ persons, selectedIds, onChange, label }: MultiSele
           <button
             type="button"
             onClick={() => setOpen((o) => !o)}
-            className="flex items-center gap-1 rounded-full border border-dashed border-[#bfc8cc] px-3 py-1 text-xs text-[#3f484c] hover:border-[#004251] hover:text-[#004251]"
+            className="border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary flex items-center gap-1 rounded-full border border-dashed px-3 py-1 text-xs"
           >
             <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
               add
@@ -97,12 +97,12 @@ export function MultiSelect({ persons, selectedIds, onChange, label }: MultiSele
         )}
       </div>
       {open && unselected.length > 0 && (
-        <ul className="absolute z-30 mt-1 w-full rounded-xl bg-white shadow-[0_8px_40px_rgba(24,28,32,0.08)]">
+        <ul className="bg-surface-container-lowest absolute z-30 mt-1 w-full rounded-xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.4)]">
           {unselected.map((p) => (
             <li
               key={p.id}
               onMouseDown={() => add(p.id)}
-              className="cursor-pointer px-4 py-2.5 text-sm text-[#181c20] hover:bg-[#f1f4fa]"
+              className="text-on-surface hover:bg-surface-container-low cursor-pointer px-4 py-2.5 text-sm"
             >
               {p.name}
             </li>

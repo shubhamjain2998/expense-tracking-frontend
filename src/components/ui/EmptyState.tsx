@@ -13,9 +13,9 @@ interface EmptyStateProps {
 export function EmptyState({ icon = 'inbox', title, description, action }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <span className="material-symbols-outlined mb-4 text-5xl text-[#bfc8cc]">{icon}</span>
-      <h3 className="mb-1 text-base font-semibold text-[#181c20]">{title}</h3>
-      {description && <p className="mb-4 text-sm text-[#3f484c]">{description}</p>}
+      <span className="material-symbols-outlined text-outline-variant mb-4 text-5xl">{icon}</span>
+      <h3 className="text-on-surface mb-1 text-base font-semibold">{title}</h3>
+      {description && <p className="text-on-surface-variant mb-4 text-sm">{description}</p>}
       {action && (
         <Button variant="primary" size="sm" onClick={action.onClick}>
           {action.label}

@@ -2,8 +2,163 @@
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
 @import 'tailwindcss';
 
+/* ─── Light mode tokens ───────────────────────────────────────────── */
+:root {
+  --app-background: #f7f9ff;
+  --app-on-background: #181c20;
+  --app-surface: #f7f9ff;
+  --app-surface-dim: #d7dae0;
+  --app-surface-bright: #f7f9ff;
+  --app-surface-container-lowest: #ffffff;
+  --app-surface-container-low: #f1f4fa;
+  --app-surface-container: #ebeef4;
+  --app-surface-container-high: #e5e8ee;
+  --app-surface-container-highest: #dfe3e8;
+  --app-on-surface: #181c20;
+  --app-on-surface-variant: #3f484c;
+  --app-outline: #70787c;
+  --app-outline-variant: #bfc8cc;
+  --app-primary: #004251;
+  --app-on-primary: #ffffff;
+  --app-primary-container: #005b6f;
+  --app-on-primary-container: #8ed1e8;
+  --app-primary-fixed: #b4ebff;
+  --app-primary-fixed-dim: #8dd0e7;
+  --app-on-primary-fixed: #001f27;
+  --app-on-primary-fixed-variant: #004e5f;
+  --app-secondary: #536167;
+  --app-secondary-container: #d6e5ec;
+  --app-secondary-fixed: #d6e5ec;
+  --app-secondary-fixed-dim: #bac9d0;
+  --app-on-secondary: #ffffff;
+  --app-on-secondary-container: #58676d;
+  --app-on-secondary-fixed: #101d23;
+  --app-on-secondary-fixed-variant: #3b494f;
+  --app-tertiary: #5b3200;
+  --app-tertiary-container: #774815;
+  --app-tertiary-fixed: #ffdcc0;
+  --app-tertiary-fixed-dim: #fbb97c;
+  --app-on-tertiary: #ffffff;
+  --app-on-tertiary-container: #fbba7c;
+  --app-on-tertiary-fixed: #2d1600;
+  --app-on-tertiary-fixed-variant: #683c09;
+  --app-error: #ba1a1a;
+  --app-on-error: #ffffff;
+  --app-error-container: #ffdad6;
+  --app-on-error-container: #93000a;
+  --app-inverse-surface: #2d3135;
+  --app-inverse-on-surface: #eef1f7;
+  --app-inverse-primary: #8dd0e7;
+  --app-surface-tint: #19677b;
+}
+
+/* ─── Dark mode tokens ────────────────────────────────────────────── */
+html.dark {
+  --app-background: #0f1416;
+  --app-on-background: #dde3e8;
+  --app-surface: #0f1416;
+  --app-surface-dim: #080c0f;
+  --app-surface-bright: #1b2226;
+  --app-surface-container-lowest: #090d10;
+  --app-surface-container-low: #171d21;
+  --app-surface-container: #1b2226;
+  --app-surface-container-high: #252d31;
+  --app-surface-container-highest: #303940;
+  --app-on-surface: #dde3e8;
+  --app-on-surface-variant: #9eaaaf;
+  --app-outline: #8a9499;
+  --app-outline-variant: #3b4548;
+  --app-primary: #8dd0e7;
+  --app-on-primary: #003546;
+  --app-primary-container: #004e5f;
+  --app-on-primary-container: #b4ebff;
+  --app-primary-fixed: #b4ebff;
+  --app-primary-fixed-dim: #8dd0e7;
+  --app-on-primary-fixed: #001f27;
+  --app-on-primary-fixed-variant: #004e5f;
+  --app-secondary: #b5c9d0;
+  --app-secondary-container: #2a3f46;
+  --app-secondary-fixed: #d6e5ec;
+  --app-secondary-fixed-dim: #bac9d0;
+  --app-on-secondary: #1f3338;
+  --app-on-secondary-container: #d0e6ed;
+  --app-on-secondary-fixed: #101d23;
+  --app-on-secondary-fixed-variant: #3b494f;
+  --app-tertiary: #e9bb91;
+  --app-tertiary-container: #4a2800;
+  --app-tertiary-fixed: #ffdcc0;
+  --app-tertiary-fixed-dim: #fbb97c;
+  --app-on-tertiary: #3c2000;
+  --app-on-tertiary-container: #ffdcc0;
+  --app-on-tertiary-fixed: #2d1600;
+  --app-on-tertiary-fixed-variant: #e9bb91;
+  --app-error: #ffb4ab;
+  --app-on-error: #690005;
+  --app-error-container: #93000a;
+  --app-on-error-container: #ffdad6;
+  --app-inverse-surface: #dde3e8;
+  --app-inverse-on-surface: #2d3135;
+  --app-inverse-primary: #004251;
+  --app-surface-tint: #8dd0e7;
+}
+
+/* ─── Tailwind v4: map utilities to CSS vars ──────────────────────── */
+@theme inline {
+  --color-background: var(--app-background);
+  --color-on-background: var(--app-on-background);
+  --color-surface: var(--app-surface);
+  --color-surface-dim: var(--app-surface-dim);
+  --color-surface-bright: var(--app-surface-bright);
+  --color-surface-container-lowest: var(--app-surface-container-lowest);
+  --color-surface-container-low: var(--app-surface-container-low);
+  --color-surface-container: var(--app-surface-container);
+  --color-surface-container-high: var(--app-surface-container-high);
+  --color-surface-container-highest: var(--app-surface-container-highest);
+  --color-on-surface: var(--app-on-surface);
+  --color-on-surface-variant: var(--app-on-surface-variant);
+  --color-outline: var(--app-outline);
+  --color-outline-variant: var(--app-outline-variant);
+  --color-primary: var(--app-primary);
+  --color-on-primary: var(--app-on-primary);
+  --color-primary-container: var(--app-primary-container);
+  --color-on-primary-container: var(--app-on-primary-container);
+  --color-primary-fixed: var(--app-primary-fixed);
+  --color-primary-fixed-dim: var(--app-primary-fixed-dim);
+  --color-on-primary-fixed: var(--app-on-primary-fixed);
+  --color-on-primary-fixed-variant: var(--app-on-primary-fixed-variant);
+  --color-secondary: var(--app-secondary);
+  --color-secondary-container: var(--app-secondary-container);
+  --color-secondary-fixed: var(--app-secondary-fixed);
+  --color-secondary-fixed-dim: var(--app-secondary-fixed-dim);
+  --color-on-secondary: var(--app-on-secondary);
+  --color-on-secondary-container: var(--app-on-secondary-container);
+  --color-on-secondary-fixed: var(--app-on-secondary-fixed);
+  --color-on-secondary-fixed-variant: var(--app-on-secondary-fixed-variant);
+  --color-tertiary: var(--app-tertiary);
+  --color-tertiary-container: var(--app-tertiary-container);
+  --color-tertiary-fixed: var(--app-tertiary-fixed);
+  --color-tertiary-fixed-dim: var(--app-tertiary-fixed-dim);
+  --color-on-tertiary: var(--app-on-tertiary);
+  --color-on-tertiary-container: var(--app-on-tertiary-container);
+  --color-on-tertiary-fixed: var(--app-on-tertiary-fixed);
+  --color-on-tertiary-fixed-variant: var(--app-on-tertiary-fixed-variant);
+  --color-error: var(--app-error);
+  --color-on-error: var(--app-on-error);
+  --color-error-container: var(--app-error-container);
+  --color-on-error-container: var(--app-on-error-container);
+  --color-inverse-surface: var(--app-inverse-surface);
+  --color-inverse-on-surface: var(--app-inverse-on-surface);
+  --color-inverse-primary: var(--app-inverse-primary);
+  --color-surface-tint: var(--app-surface-tint);
+}
+
+/* ─── Base styles ─────────────────────────────────────────────────── */
 .material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
   font-size: 20px;
   line-height: 1;
   display: inline-block;
@@ -20,26 +175,29 @@
 body {
   margin: 0;
   font-family: 'Inter', sans-serif;
-  background-color: #f7f9ff;
-  color: #181c20;
+  background-color: var(--app-background);
+  color: var(--app-on-surface);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 #root {
   min-height: 100vh;
 }
 
-/* Input bottom-bar focus style */
+/* ─── Input field (bottom-bar focus style) ────────────────────────── */
 .input-field {
-  background-color: #e5e8ee;
+  background-color: var(--app-surface-container-high);
   border: none;
-  border-bottom: 1.5px solid rgba(191, 200, 204, 0.3);
+  border-bottom: 1.5px solid color-mix(in srgb, var(--app-outline-variant) 40%, transparent);
   border-radius: 0.25rem 0.25rem 0 0;
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
   font-family: 'Inter', sans-serif;
-  color: #181c20;
+  color: var(--app-on-surface);
   transition:
     background-color 0.15s,
     border-color 0.15s;
@@ -48,15 +206,15 @@ body {
 }
 
 .input-field:focus {
-  background-color: #ffffff;
-  border-bottom: 2px solid #004251;
+  background-color: var(--app-surface-container-lowest);
+  border-bottom: 2px solid var(--app-primary);
 }
 
 .input-field::placeholder {
-  color: #70787c;
+  color: var(--app-outline);
 }
 
-/* Scrollbar */
+/* ─── Scrollbar ───────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -65,6 +223,6 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(191, 200, 204, 0.5);
+  background: color-mix(in srgb, var(--app-outline-variant) 50%, transparent);
   border-radius: 9999px;
 }

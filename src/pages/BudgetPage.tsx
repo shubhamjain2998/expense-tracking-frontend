@@ -10,7 +10,11 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { useToastContext } from '../hooks/useToastContext'
 
 function formatCurrency(n: number) {
-  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(n)
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 2,
+  }).format(n)
 }
 
 interface InlineEditRowProps {
@@ -27,42 +31,50 @@ function InlineEditRow({ entry, onDelete }: InlineEditRowProps) {
   const updateMutation = useMutation({
     mutationFn: ({ field, value }: { field: string; value: string | number }) =>
       updateBudgetEntry(entry.id, { [field]: value }),
-    onSuccess: () => { void qc.invalidateQueries({ queryKey: ['budget'] }) },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['budget'] })
+    },
     onError: (err: { detail: string }) => toast.error(err.detail),
   })
 
   return (
-    <tr className="group transition-colors hover:bg-[#f1f4fa]">
+    <tr className="group hover:bg-surface-container-low transition-colors">
       <td className="py-3 pr-4">
         <input
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          onBlur={() => category !== entry.category && updateMutation.mutate({ field: 'category', value: category })}
+          onBlur={() =>
+            category !== entry.category &&
+            updateMutation.mutate({ field: 'category', value: category })
+          }
           className="input-field w-full max-w-[200px]"
           aria-label="Category name"
         />
       </td>
       <td className="py-3 pr-4">
         <div className="flex items-center gap-1">
-          <span className="text-sm text-[#70787c]">₹</span>
+          <span className="text-outline text-sm">₹</span>
           <input
             type="number"
             value={amount}
             onChange={(e) => setAmount(Number(e.target.value))}
-            onBlur={() => amount !== entry.allocated_amount && updateMutation.mutate({ field: 'allocated_amount', value: amount })}
+            onBlur={() =>
+              amount !== entry.allocated_amount &&
+              updateMutation.mutate({ field: 'allocated_amount', value: amount })
+            }
             className="input-field w-28"
             min={0}
             aria-label="Monthly budget amount"
           />
         </div>
       </td>
-      <td className="py-3 pr-4 text-right text-sm font-medium text-[#181c20]">
+      <td className="text-on-surface py-3 pr-4 text-right text-sm font-medium">
         {formatCurrency(amount * 12)}
       </td>
       <td className="py-3 text-right">
         <button
           onClick={() => onDelete(entry.id)}
-          className="rounded-lg p-1.5 text-[#70787c] opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[#ffdad6] hover:text-[#93000a]"
+          className="text-outline hover:bg-error-container hover:text-on-error-container rounded-lg p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
           aria-label={`Delete ${entry.category}`}
         >
           <span className="material-symbols-outlined">delete</span>
@@ -98,7 +110,10 @@ export function BudgetPage() {
       toast.success('Entry deleted')
       setDeleteId(null)
     },
-    onError: (err: { detail: string }) => { toast.error(err.detail); setDeleteId(null) },
+    onError: (err: { detail: string }) => {
+      toast.error(err.detail)
+      setDeleteId(null)
+    },
   })
 
   const createMutation = useMutation({
@@ -123,36 +138,44 @@ export function BudgetPage() {
 
   function handleSaveNew() {
     const valid = newRows.filter((r) => r.category.trim() && Number(r.amount) > 0)
-    if (!valid.length) { toast.warning('Fill in at least one category and amount'); return }
+    if (!valid.length) {
+      toast.warning('Fill in at least one category and amount')
+      return
+    }
     createMutation.mutate({
       year,
-      entries: valid.map((r) => ({ category: r.category.trim(), allocated_amount: Number(r.amount) })),
+      entries: valid.map((r) => ({
+        category: r.category.trim(),
+        allocated_amount: Number(r.amount),
+      })),
     })
   }
 
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-3xl font-black tracking-tight text-[#181c20]">Budget Setup</h1>
-        <p className="mt-1 text-sm text-[#3f484c]">Define your financial boundaries for the editorial year ahead.</p>
+        <h1 className="text-on-surface text-3xl font-black tracking-tight">Budget Setup</h1>
+        <p className="text-on-surface-variant mt-1 text-sm">
+          Define your financial boundaries for the editorial year ahead.
+        </p>
       </header>
 
       {/* Year nav */}
       <div className="flex items-center gap-3">
         <button
           onClick={() => setYear((y) => y - 1)}
-          className="rounded-xl bg-[#f1f4fa] p-2 text-[#3f484c] hover:bg-[#e5e8ee]"
+          className="bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high rounded-xl p-2"
           aria-label="Previous year"
         >
           <span className="material-symbols-outlined">chevron_left</span>
         </button>
-        <div className="flex items-center gap-2 rounded-xl bg-[#f1f4fa] px-4 py-2">
-          <span className="material-symbols-outlined text-sm text-[#004251]">calendar_month</span>
-          <span className="text-sm font-bold text-[#181c20]">{year}</span>
+        <div className="bg-surface-container-low flex items-center gap-2 rounded-xl px-4 py-2">
+          <span className="material-symbols-outlined text-primary text-sm">calendar_month</span>
+          <span className="text-on-surface text-sm font-bold">{year}</span>
         </div>
         <button
           onClick={() => setYear((y) => y + 1)}
-          className="rounded-xl bg-[#f1f4fa] p-2 text-[#3f484c] hover:bg-[#e5e8ee]"
+          className="bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high rounded-xl p-2"
           aria-label="Next year"
         >
           <span className="material-symbols-outlined">chevron_right</span>
@@ -162,7 +185,7 @@ export function BudgetPage() {
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
         {/* Budget table */}
         <div className="space-y-6 lg:col-span-7">
-          <div className="rounded-xl bg-[#f1f4fa] p-6">
+          <div className="bg-surface-container-low rounded-xl p-6">
             {budgetQuery.isLoading ? (
               <SkeletonTable />
             ) : entries.length === 0 ? (
@@ -175,9 +198,12 @@ export function BudgetPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="border-b border-[#bfc8cc]/15">
+                    <tr className="border-outline-variant/15 border-b">
                       {['Category', 'Monthly Budget', 'Annual Allocation', 'Action'].map((h, i) => (
-                        <th key={h} className={`pb-4 text-[11px] font-bold uppercase tracking-widest text-[#3f484c] ${i === 2 ? 'text-right' : ''}`}>
+                        <th
+                          key={h}
+                          className={`text-on-surface-variant pb-4 text-[11px] font-bold tracking-widest uppercase ${i === 2 ? 'text-right' : ''}`}
+                        >
                           {h}
                         </th>
                       ))}
@@ -195,13 +221,15 @@ export function BudgetPage() {
 
           {/* Total hero */}
           {entries.length > 0 && (
-            <div className="rounded-xl bg-[#f1f4fa] px-6 py-5">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-[#3f484c]">Total Annual Budget</p>
-              <p className="mt-1 text-4xl font-black tracking-tight text-[#004251]">
+            <div className="bg-surface-container-low rounded-xl px-6 py-5">
+              <p className="text-on-surface-variant text-[11px] font-bold tracking-widest uppercase">
+                Total Annual Budget
+              </p>
+              <p className="text-primary mt-1 text-4xl font-black tracking-tight">
                 {formatCurrency(totalAnnual)}
               </p>
               <div className="mt-3 flex gap-2">
-                <span className="rounded-full bg-[#8dd0e7] px-3 py-1 text-xs font-bold text-[#001f27]">
+                <span className="bg-primary-fixed-dim text-on-primary-fixed rounded-full px-3 py-1 text-xs font-bold">
                   {entries.length} CATEGORIES
                 </span>
               </div>
@@ -211,13 +239,13 @@ export function BudgetPage() {
 
         {/* Batch add */}
         <div className="space-y-4 lg:col-span-5">
-          <div className="rounded-xl bg-[#f1f4fa] p-6">
-            <h2 className="mb-5 text-base font-bold text-[#181c20]">Batch Add Entries</h2>
+          <div className="bg-surface-container-low rounded-xl p-6">
+            <h2 className="text-on-surface mb-5 text-base font-bold">Batch Add Entries</h2>
             <div className="space-y-4">
               {newRows.map((row, i) => (
-                <div key={row.id} className="space-y-3 rounded-xl bg-white p-4">
+                <div key={row.id} className="bg-surface-container-lowest space-y-3 rounded-xl p-4">
                   <div>
-                    <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-[#3f484c]">
+                    <label className="text-on-surface-variant mb-1 block text-[11px] font-bold tracking-wider uppercase">
                       Category Name
                     </label>
                     <input
@@ -225,7 +253,7 @@ export function BudgetPage() {
                       placeholder="e.g. Entertainment"
                       onChange={(e) =>
                         setNewRows((rows) =>
-                          rows.map((r, ri) => ri === i ? { ...r, category: e.target.value } : r)
+                          rows.map((r, ri) => (ri === i ? { ...r, category: e.target.value } : r))
                         )
                       }
                       className="input-field"
@@ -233,11 +261,11 @@ export function BudgetPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-[#3f484c]">
+                    <label className="text-on-surface-variant mb-1 block text-[11px] font-bold tracking-wider uppercase">
                       Monthly
                     </label>
                     <div className="flex items-center gap-1">
-                      <span className="text-sm text-[#70787c]">₹</span>
+                      <span className="text-outline text-sm">₹</span>
                       <input
                         type="number"
                         value={row.amount}
@@ -245,7 +273,7 @@ export function BudgetPage() {
                         min={0}
                         onChange={(e) =>
                           setNewRows((rows) =>
-                            rows.map((r, ri) => ri === i ? { ...r, amount: e.target.value } : r)
+                            rows.map((r, ri) => (ri === i ? { ...r, amount: e.target.value } : r))
                           )
                         }
                         className="input-field flex-1"
@@ -258,7 +286,7 @@ export function BudgetPage() {
             </div>
             <button
               onClick={handleAddRow}
-              className="mt-4 flex items-center gap-1 text-sm font-medium text-[#004251] hover:underline"
+              className="text-primary mt-4 flex items-center gap-1 text-sm font-medium hover:underline"
             >
               <span className="material-symbols-outlined text-base">add</span>
               Add Another Row
@@ -274,13 +302,16 @@ export function BudgetPage() {
           </div>
 
           {/* Insight card */}
-          <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-[#004251] to-[#005b6f] p-6">
-            <span className="material-symbols-outlined absolute right-4 top-4 text-4xl text-white/10">
+          <div className="bg-primary-container relative overflow-hidden rounded-xl p-6">
+            <span className="material-symbols-outlined text-on-primary-container/10 absolute top-4 right-4 text-4xl">
               lightbulb
             </span>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[#8dd0e7]">Wealth Insight</p>
-            <p className="mt-3 text-sm italic leading-relaxed text-white/90">
-              &ldquo;A budget is telling your money where to go instead of wondering where it went.&rdquo;
+            <p className="text-on-primary-container text-[11px] font-bold tracking-widest uppercase">
+              Wealth Insight
+            </p>
+            <p className="text-on-primary-container/80 mt-3 text-sm leading-relaxed italic">
+              &ldquo;A budget is telling your money where to go instead of wondering where it
+              went.&rdquo;
             </p>
           </div>
         </div>

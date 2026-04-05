@@ -9,7 +9,11 @@ import { Chip } from '../components/ui/Chip'
 import { useToastContext } from '../hooks/useToastContext'
 
 function formatCurrency(n: number) {
-  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(n)
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 2,
+  }).format(n)
 }
 
 export function UploadPage() {
@@ -72,8 +76,8 @@ export function UploadPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-3xl font-black tracking-tight text-[#181c20]">Import Statement</h1>
-        <p className="mt-1 text-sm text-[#3f484c]">
+        <h1 className="text-on-surface text-3xl font-black tracking-tight">Import Statement</h1>
+        <p className="text-on-surface-variant mt-1 text-sm">
           Upload your monthly bank statement in PDF format. Our Quiet Architect engine will
           automatically categorise and verify each entry for your budget.
         </p>
@@ -81,31 +85,40 @@ export function UploadPage() {
 
       {/* Drop zone */}
       {!preview && (
-        <div className="rounded-xl bg-[#f1f4fa] p-8">
+        <div className="bg-surface-container-low rounded-xl p-8">
           <div
-            onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+            onDragOver={(e) => {
+              e.preventDefault()
+              setDragOver(true)
+            }}
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
             className={`flex min-h-[220px] flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 text-center transition-colors ${
-              dragOver ? 'border-[#004251] bg-[#b4ebff]/20' : 'border-[#bfc8cc]/50 bg-white'
+              dragOver
+                ? 'border-primary bg-primary/5'
+                : 'border-outline-variant/50 bg-surface-container-lowest'
             }`}
           >
             {previewMutation.isPending ? (
               <>
-                <span className="material-symbols-outlined mb-4 animate-spin text-5xl text-[#004251]">
+                <span className="material-symbols-outlined text-primary mb-4 animate-spin text-5xl">
                   progress_activity
                 </span>
-                <p className="text-sm font-medium text-[#3f484c]">Parsing your statement…</p>
+                <p className="text-on-surface-variant text-sm font-medium">
+                  Parsing your statement…
+                </p>
               </>
             ) : (
               <>
-                <span className="material-symbols-outlined mb-4 text-5xl text-[#004251]">
+                <span className="material-symbols-outlined text-primary mb-4 text-5xl">
                   picture_as_pdf
                 </span>
-                <p className="mb-1 text-base font-semibold text-[#181c20]">
+                <p className="text-on-surface mb-1 text-base font-semibold">
                   Drag and drop your statement
                 </p>
-                <p className="mb-5 text-sm text-[#3f484c]">Supports .pdf files up to 10MB</p>
+                <p className="text-on-surface-variant mb-5 text-sm">
+                  Supports .pdf files up to 10MB
+                </p>
                 <Button variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()}>
                   Select File
                 </Button>
@@ -120,7 +133,7 @@ export function UploadPage() {
               </>
             )}
           </div>
-          {fileError && <p className="mt-2 text-sm text-[#ba1a1a]">{fileError}</p>}
+          {fileError && <p className="text-error mt-2 text-sm">{fileError}</p>}
         </div>
       )}
 
@@ -129,14 +142,16 @@ export function UploadPage() {
         <div className="space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <h2 className="text-base font-bold text-[#181c20]">Preview Transactions</h2>
+              <h2 className="text-on-surface text-base font-bold">Preview Transactions</h2>
               <Chip variant="success">{preview.would_insert} READY</Chip>
               {preview.warnings.length > 0 && (
                 <Chip variant="warning">{preview.warnings.length} WARNINGS</Chip>
               )}
             </div>
             <div className="flex gap-3">
-              <Button variant="tertiary" onClick={handleCancel}>Cancel</Button>
+              <Button variant="tertiary" onClick={handleCancel}>
+                Cancel
+              </Button>
               <Button
                 variant="primary"
                 onClick={() => file && importMutation.mutate(file)}
@@ -148,20 +163,25 @@ export function UploadPage() {
           </div>
 
           {preview.warnings.length > 0 && (
-            <div className="rounded-xl bg-[#ffdcc0] px-4 py-3">
-              <p className="text-sm font-semibold text-[#5b3200]">Warnings</p>
-              <ul className="mt-1 list-inside list-disc text-sm text-[#683c09]">
-                {preview.warnings.map((w, i) => <li key={i}>{w}</li>)}
+            <div className="bg-tertiary-container rounded-xl px-4 py-3">
+              <p className="text-on-tertiary-container text-sm font-semibold">Warnings</p>
+              <ul className="text-on-tertiary-container/80 mt-1 list-inside list-disc text-sm">
+                {preview.warnings.map((w, i) => (
+                  <li key={i}>{w}</li>
+                ))}
               </ul>
             </div>
           )}
 
-          <div className="overflow-x-auto rounded-xl bg-[#f1f4fa]">
+          <div className="bg-surface-container-low overflow-x-auto rounded-xl">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-[#bfc8cc]/15">
+                <tr className="border-outline-variant/15 border-b">
                   {['Date', 'Description', 'Category', 'Amount', 'Status'].map((h, i) => (
-                    <th key={h} className={`px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-[#3f484c] ${i >= 3 ? 'text-right' : ''}`}>
+                    <th
+                      key={h}
+                      className={`text-on-surface-variant px-6 py-4 text-[11px] font-bold tracking-widest uppercase ${i >= 3 ? 'text-right' : ''}`}
+                    >
                       {h}
                     </th>
                   ))}
@@ -169,28 +189,33 @@ export function UploadPage() {
               </thead>
               <tbody>
                 {preview.transactions.map((txn, i) => (
-                  <tr key={i} className={`text-sm ${i % 2 === 0 ? 'bg-white' : 'bg-[#f1f4fa]'}`}>
-                    <td className="px-6 py-3 text-[#3f484c]">{txn.date}</td>
-                    <td className="px-6 py-3 font-medium text-[#181c20]">{txn.description}</td>
+                  <tr
+                    key={i}
+                    className={`text-sm ${i % 2 === 0 ? 'bg-surface-container-lowest' : 'bg-surface-container-low'}`}
+                  >
+                    <td className="text-on-surface-variant px-6 py-3">{txn.date}</td>
+                    <td className="text-on-surface px-6 py-3 font-medium">{txn.description}</td>
                     <td className="px-6 py-3">
                       {txn.category ? (
-                        <span className="rounded-full bg-[#d6e5ec] px-2.5 py-0.5 text-xs font-semibold text-[#58676d]">
+                        <span className="bg-secondary-container text-on-secondary-container rounded-full px-2.5 py-0.5 text-xs font-semibold">
                           {txn.category}
                         </span>
                       ) : (
-                        <span className="rounded-full bg-[#e5e8ee] px-2.5 py-0.5 text-xs font-semibold text-[#70787c]">
+                        <span className="bg-surface-container-high text-outline rounded-full px-2.5 py-0.5 text-xs font-semibold">
                           Uncategorized
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-3 text-right font-semibold text-[#181c20]">
+                    <td className="text-on-surface px-6 py-3 text-right font-semibold">
                       {formatCurrency(txn.amount)}
                     </td>
                     <td className="px-6 py-3 text-right">
                       {txn.status === 'warning' ? (
-                        <span className="material-symbols-outlined text-[#683c09]">warning</span>
+                        <span className="material-symbols-outlined text-on-tertiary-container">
+                          warning
+                        </span>
                       ) : (
-                        <span className="material-symbols-outlined text-[#004251]">check_circle</span>
+                        <span className="material-symbols-outlined text-primary">check_circle</span>
                       )}
                     </td>
                   </tr>

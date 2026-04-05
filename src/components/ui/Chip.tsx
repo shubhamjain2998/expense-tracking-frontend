@@ -7,11 +7,11 @@ interface ChipProps {
 }
 
 const variantClasses: Record<ChipVariant, string> = {
-  success: 'bg-[#8dd0e7] text-[#001f27]',
-  warning: 'bg-[#fbb97c] text-[#683c09]',
-  danger: 'bg-[#ffdad6] text-[#93000a]',
-  neutral: 'bg-[#d6e5ec] text-[#58676d]',
-  info: 'bg-[#d6e5ec] text-[#101d23]',
+  success: 'bg-primary-fixed-dim text-on-primary-fixed',
+  warning: 'bg-tertiary-fixed-dim text-on-tertiary-fixed',
+  danger: 'bg-error-container text-on-error-container',
+  neutral: 'bg-secondary-container text-on-secondary-container',
+  info: 'bg-secondary-container text-on-secondary-container',
 }
 
 export function Chip({ variant = 'neutral', children, className = '' }: ChipProps) {
@@ -25,6 +25,7 @@ export function Chip({ variant = 'neutral', children, className = '' }: ChipProp
 }
 
 /** Derive chip variant from pct_used value */
+// eslint-disable-next-line react-refresh/only-export-components
 export function pctToChipVariant(pct: number | null): ChipVariant {
   if (pct === null) return 'neutral'
   if (pct >= 100) return 'danger'

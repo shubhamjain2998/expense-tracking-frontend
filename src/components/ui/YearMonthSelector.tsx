@@ -28,12 +28,12 @@ export function YearMonthSelector({
 }: YearMonthSelectorProps) {
   return (
     <div className="flex items-center gap-3">
-      <div className="flex items-center gap-1 rounded-xl bg-[#e5e8ee] px-3 py-2">
-        <span className="material-symbols-outlined text-sm text-[#004251]">event</span>
+      <div className="bg-surface-container-high flex items-center gap-1 rounded-xl px-3 py-2">
+        <span className="material-symbols-outlined text-primary text-sm">event</span>
         <select
           value={year}
           onChange={(e) => onYearChange(Number(e.target.value))}
-          className="border-none bg-transparent p-0 text-sm font-medium text-[#181c20] focus:ring-0"
+          className="text-on-surface border-none bg-transparent p-0 text-sm font-medium focus:ring-0"
           aria-label="Select year"
         >
           {[year - 1, year, year + 1].map((y) => (
@@ -43,11 +43,11 @@ export function YearMonthSelector({
           ))}
         </select>
       </div>
-      <div className="flex items-center rounded-xl bg-[#e5e8ee] px-3 py-2">
+      <div className="bg-surface-container-high flex items-center rounded-xl px-3 py-2">
         <select
           value={month}
           onChange={(e) => onMonthChange(Number(e.target.value))}
-          className="border-none bg-transparent p-0 text-sm font-medium text-[#181c20] focus:ring-0"
+          className="text-on-surface border-none bg-transparent p-0 text-sm font-medium focus:ring-0"
           aria-label="Select month"
         >
           {MONTHS.map((name, i) => (

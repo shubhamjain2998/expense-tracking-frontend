@@ -12,13 +12,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses: Record<Variant, string> = {
   primary:
-    'bg-gradient-to-br from-[#004251] to-[#005b6f] text-white hover:opacity-90 disabled:opacity-50',
+    'bg-gradient-to-br from-primary to-primary-container text-on-primary hover:opacity-90 disabled:opacity-50',
   secondary:
-    'bg-[#d6e5ec] text-[#58676d] hover:bg-[#bac9d0] disabled:opacity-50',
-  tertiary:
-    'bg-transparent text-[#004251] hover:underline underline-offset-2 disabled:opacity-50',
-  danger:
-    'bg-[#ffdad6] text-[#93000a] hover:bg-red-200 disabled:opacity-50',
+    'bg-secondary-container text-on-secondary-container hover:opacity-80 disabled:opacity-50',
+  tertiary: 'bg-transparent text-primary hover:underline underline-offset-2 disabled:opacity-50',
+  danger: 'bg-error-container text-on-error-container hover:opacity-80 disabled:opacity-50',
 }
 
 const sizeClasses: Record<Size, string> = {
@@ -40,7 +38,7 @@ export function Button({
     <button
       {...props}
       disabled={disabled || loading}
-      className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#004251]/50 ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      className={`focus-visible:ring-primary/50 inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl font-semibold transition-all focus-visible:ring-2 focus-visible:outline-none ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
     >
       {loading && (
         <span className="material-symbols-outlined animate-spin text-base">progress_activity</span>

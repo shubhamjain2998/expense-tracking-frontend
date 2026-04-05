@@ -9,36 +9,53 @@ import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { useToastContext } from '../hooks/useToastContext'
 
 const avatarColors = [
-  'bg-[#004251]',
-  'bg-[#005b6f]',
-  'bg-[#536167]',
-  'bg-[#5b3200]',
-  'bg-[#774815]',
+  'bg-primary text-on-primary',
+  'bg-primary-container text-on-primary-container',
+  'bg-secondary text-on-secondary',
+  'bg-tertiary text-on-tertiary',
+  'bg-tertiary-container text-on-tertiary-container',
 ]
 
 function getInitials(name: string) {
-  return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
 }
 
-function PersonCard({ person, index, onDelete }: { person: Person; index: number; onDelete: (id: string) => void }) {
+function PersonCard({
+  person,
+  index,
+  onDelete,
+}: {
+  person: Person
+  index: number
+  onDelete: (id: string) => void
+}) {
   const joined = person.created_at
     ? new Date(person.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
     : null
 
   return (
-    <div className="relative rounded-xl bg-[#f1f4fa] p-4">
+    <div className="bg-surface-container-low relative rounded-xl p-4">
       <button
         onClick={() => onDelete(person.id)}
-        className="absolute right-3 top-3 rounded-lg p-1 text-[#70787c] hover:bg-[#ffdad6] hover:text-[#93000a]"
+        className="text-outline hover:bg-error-container hover:text-on-error-container absolute top-3 right-3 rounded-lg p-1"
         aria-label={`Delete ${person.name}`}
       >
-        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
+        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+          delete
+        </span>
       </button>
-      <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white ${avatarColors[index % avatarColors.length]}`}>
+      <div
+        className={`mb-3 flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${avatarColors[index % avatarColors.length]}`}
+      >
         {getInitials(person.name)}
       </div>
-      <p className="text-sm font-bold text-[#181c20]">{person.name}</p>
-      {joined && <p className="text-[11px] text-[#3f484c]">Joined {joined}</p>}
+      <p className="text-on-surface text-sm font-bold">{person.name}</p>
+      {joined && <p className="text-on-surface-variant text-[11px]">Joined {joined}</p>}
     </div>
   )
 }
@@ -77,7 +94,8 @@ export function SettingsPage() {
       setDeletePersonId(null)
     },
     onError: (err: { detail: string; status?: number }) => {
-      if (err.status === 409) toast.warning('This person is linked to transactions and cannot be deleted')
+      if (err.status === 409)
+        toast.warning('This person is linked to transactions and cannot be deleted')
       else toast.error(err.detail)
       setDeletePersonId(null)
     },
@@ -97,7 +115,10 @@ export function SettingsPage() {
   })
 
   function handleAddPerson() {
-    if (!newPersonName.trim()) { setPersonNameError('Name is required'); return }
+    if (!newPersonName.trim()) {
+      setPersonNameError('Name is required')
+      return
+    }
     createPersonMutation.mutate(newPersonName.trim())
   }
 
@@ -109,18 +130,18 @@ export function SettingsPage() {
   ]
 
   const categoryColors: Record<string, string> = {
-    Groceries: 'bg-green-100 text-green-800',
-    Dining: 'bg-orange-100 text-orange-800',
-    Transport: 'bg-blue-100 text-blue-800',
-    Shopping: 'bg-purple-100 text-purple-800',
-    Subscriptions: 'bg-indigo-100 text-indigo-800',
+    Groceries: 'bg-primary-fixed text-on-primary-fixed',
+    Dining: 'bg-tertiary-fixed text-on-tertiary-fixed',
+    Transport: 'bg-secondary-fixed text-on-secondary-fixed',
+    Shopping: 'bg-primary-fixed-dim text-on-primary-fixed',
+    Subscriptions: 'bg-tertiary-fixed-dim text-on-tertiary-fixed',
   }
 
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-3xl font-black tracking-tight text-[#181c20]">Settings</h1>
-        <p className="mt-1 text-sm text-[#3f484c]">
+        <h1 className="text-on-surface text-3xl font-black tracking-tight">Settings</h1>
+        <p className="text-on-surface-variant mt-1 text-sm">
           Configure your financial workspace, manage household members, and define automation rules.
         </p>
       </header>
@@ -128,7 +149,9 @@ export function SettingsPage() {
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
         {/* Sidebar */}
         <nav className="lg:col-span-3" aria-label="Settings navigation">
-          <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-[#3f484c]">Preferences</p>
+          <p className="text-on-surface-variant mb-3 text-[11px] font-bold tracking-widest uppercase">
+            Preferences
+          </p>
           <ul className="space-y-1">
             {navItems.map((item) => (
               <li key={item.id}>
@@ -136,8 +159,8 @@ export function SettingsPage() {
                   onClick={() => setActiveNav(item.id)}
                   className={`flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors ${
                     activeNav === item.id
-                      ? 'bg-[#f1f4fa] text-[#004251]'
-                      : 'text-[#3f484c] hover:bg-[#f1f4fa]'
+                      ? 'bg-surface-container-low text-primary'
+                      : 'text-on-surface-variant hover:bg-surface-container-low'
                   }`}
                 >
                   <span className="material-symbols-outlined text-base">{item.icon}</span>
@@ -152,12 +175,19 @@ export function SettingsPage() {
         <div className="space-y-8 lg:col-span-9">
           {/* Persons Management */}
           <section>
-            <h2 className="mb-1 text-base font-bold text-[#181c20]">Persons Management</h2>
-            <p className="mb-5 text-sm text-[#3f484c]">Track expenses across different members of your household.</p>
+            <h2 className="text-on-surface mb-1 text-base font-bold">Persons Management</h2>
+            <p className="text-on-surface-variant mb-5 text-sm">
+              Track expenses across different members of your household.
+            </p>
 
             {personsQuery.isLoading ? (
               <div className="flex gap-4">
-                {[1, 2, 3].map((i) => <div key={i} className="h-24 w-32 animate-pulse rounded-xl bg-[#f1f4fa]" />)}
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="bg-surface-container-low h-24 w-32 animate-pulse rounded-xl"
+                  />
+                ))}
               </div>
             ) : (
               <div className="flex flex-wrap gap-4">
@@ -172,19 +202,24 @@ export function SettingsPage() {
               </div>
             )}
 
-            <div className="mt-6 rounded-xl bg-[#f1f4fa] p-5">
-              <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-[#3f484c]">Add New Member</p>
+            <div className="bg-surface-container-low mt-6 rounded-xl p-5">
+              <p className="text-on-surface-variant mb-3 text-[11px] font-bold tracking-wider uppercase">
+                Add New Member
+              </p>
               <div className="flex gap-3">
                 <div className="flex-1">
                   <input
                     value={newPersonName}
-                    onChange={(e) => { setNewPersonName(e.target.value); setPersonNameError('') }}
+                    onChange={(e) => {
+                      setNewPersonName(e.target.value)
+                      setPersonNameError('')
+                    }}
                     onKeyDown={(e) => e.key === 'Enter' && handleAddPerson()}
                     placeholder="Full name"
                     className="input-field"
                     aria-label="New person name"
                   />
-                  {personNameError && <p className="mt-1 text-xs text-[#ba1a1a]">{personNameError}</p>}
+                  {personNameError && <p className="text-error mt-1 text-xs">{personNameError}</p>}
                 </div>
                 <Button
                   variant="primary"
@@ -201,56 +236,86 @@ export function SettingsPage() {
           {/* Category Mappings */}
           <section>
             <div className="mb-1 flex items-center justify-between">
-              <h2 className="text-base font-bold text-[#181c20]">Category Mappings</h2>
-              <button className="text-sm font-medium text-[#004251] hover:underline">
+              <h2 className="text-on-surface text-base font-bold">Category Mappings</h2>
+              <button className="text-primary text-sm font-medium hover:underline">
                 Re-sync Rules
               </button>
             </div>
-            <p className="mb-5 text-sm text-[#3f484c]">
+            <p className="text-on-surface-variant mb-5 text-sm">
               Configure how incoming bank statements are automatically categorised.
             </p>
 
             {categoriesQuery.isLoading ? (
               <SkeletonTable />
             ) : !categoriesQuery.data?.length ? (
-              <div className="rounded-xl bg-[#f1f4fa] px-6 py-8 text-center">
-                <p className="text-sm text-[#3f484c]">No mappings yet.</p>
-                <p className="mt-1 text-xs text-[#70787c]">Mappings are created in the Review page when you check &quot;Save Rule&quot;.</p>
+              <div className="bg-surface-container-low rounded-xl px-6 py-8 text-center">
+                <p className="text-on-surface-variant text-sm">No mappings yet.</p>
+                <p className="text-outline mt-1 text-xs">
+                  Mappings are created in the Review page when you check &quot;Save Rule&quot;.
+                </p>
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-xl bg-[#f1f4fa]">
+              <div className="bg-surface-container-low overflow-x-auto rounded-xl">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="border-b border-[#bfc8cc]/15">
-                      {['Description Pattern', 'Assigned Category', 'Match Count', 'Last Used', 'Actions'].map((h) => (
-                        <th key={h} className="px-5 py-4 text-[11px] font-bold uppercase tracking-widest text-[#3f484c]">{h}</th>
+                    <tr className="border-outline-variant/15 border-b">
+                      {[
+                        'Description Pattern',
+                        'Assigned Category',
+                        'Match Count',
+                        'Last Used',
+                        'Actions',
+                      ].map((h) => (
+                        <th
+                          key={h}
+                          className="text-on-surface-variant px-5 py-4 text-[11px] font-bold tracking-widest uppercase"
+                        >
+                          {h}
+                        </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#bfc8cc]/5">
+                  <tbody className="divide-outline-variant/5 divide-y">
                     {categoriesQuery.data.map((mapping) => {
-                      const colorClass = categoryColors[mapping.category] ?? 'bg-[#d6e5ec] text-[#58676d]'
+                      const colorClass =
+                        categoryColors[mapping.category] ??
+                        'bg-secondary-container text-on-secondary-container'
                       return (
-                        <tr key={mapping.id} className="group transition-colors hover:bg-white">
-                          <td className="px-5 py-3 font-mono text-sm text-[#181c20]">{mapping.description_pattern}</td>
+                        <tr
+                          key={mapping.id}
+                          className="group hover:bg-surface-container-lowest transition-colors"
+                        >
+                          <td className="text-on-surface px-5 py-3 font-mono text-sm">
+                            {mapping.description_pattern}
+                          </td>
                           <td className="px-5 py-3">
-                            <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${colorClass}`}>
+                            <span
+                              className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${colorClass}`}
+                            >
                               {mapping.category}
                             </span>
                           </td>
-                          <td className="px-5 py-3 text-sm text-[#3f484c]">{mapping.match_count}</td>
-                          <td className="px-5 py-3 text-sm text-[#3f484c]">
+                          <td className="text-on-surface-variant px-5 py-3 text-sm">
+                            {mapping.match_count}
+                          </td>
+                          <td className="text-on-surface-variant px-5 py-3 text-sm">
                             {mapping.last_used
-                              ? new Date(mapping.last_used).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                              ? new Date(mapping.last_used).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                })
                               : '—'}
                           </td>
                           <td className="px-5 py-3">
                             <button
                               onClick={() => setDeleteCategoryId(mapping.id)}
-                              className="rounded-lg p-1.5 text-[#70787c] opacity-0 transition-opacity group-hover:opacity-100 hover:bg-[#ffdad6] hover:text-[#93000a]"
+                              className="text-outline hover:bg-error-container hover:text-on-error-container rounded-lg p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
                               aria-label={`Delete mapping for ${mapping.description_pattern}`}
                             >
-                              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
+                              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                                delete
+                              </span>
                             </button>
                           </td>
                         </tr>
@@ -258,7 +323,7 @@ export function SettingsPage() {
                     })}
                   </tbody>
                 </table>
-                <p className="px-5 py-3 text-xs text-[#70787c]">
+                <p className="text-outline px-5 py-3 text-xs">
                   Mappings are created in the Review page when you check &quot;Save Rule&quot;.
                 </p>
               </div>
@@ -266,24 +331,16 @@ export function SettingsPage() {
           </section>
 
           {/* Danger Zone */}
-          <section className="rounded-xl bg-[#ffdad6]/30 p-6">
-            <p className="mb-1 text-sm font-bold text-[#93000a]">Danger Zone</p>
-            <p className="mb-4 text-sm text-[#3f484c]">
+          <section className="bg-error-container/30 rounded-xl p-6">
+            <p className="text-on-error-container mb-1 text-sm font-bold">Danger Zone</p>
+            <p className="text-on-surface-variant mb-4 text-sm">
               Irreversible actions that affect your entire workspace and historical data.
             </p>
             <div className="flex flex-wrap gap-3">
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={() => toast.info('Coming soon')}
-              >
+              <Button variant="danger" size="sm" onClick={() => toast.info('Coming soon')}>
                 Clear Mapping History
               </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={() => toast.info('Coming soon')}
-              >
+              <Button variant="danger" size="sm" onClick={() => toast.info('Coming soon')}>
                 Delete All Data
               </Button>
             </div>
