@@ -214,6 +214,34 @@ body {
   color: var(--app-outline);
 }
 
+/* ─── Interactive element cursors ────────────────────────────────── */
+button,
+a,
+select,
+label,
+[role='button'],
+[role='tab'],
+[role='menuitem'],
+[role='option'],
+[role='checkbox'],
+[role='radio'],
+[role='switch'],
+input[type='checkbox'],
+input[type='radio'],
+input[type='submit'],
+input[type='reset'],
+input[type='button'],
+input[type='file'] {
+  cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
 /* ─── Scrollbar ───────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
