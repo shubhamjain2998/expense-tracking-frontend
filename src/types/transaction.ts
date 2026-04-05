@@ -45,9 +45,19 @@ export interface PreviewResponse {
   skipped: number
 }
 
+export interface ImportedRow {
+  id: string
+  txn_date: string
+  description: string
+  amount: string
+  status: string
+}
+
 export interface ImportResponse {
-  imported: number
+  inserted: number
   skipped: number
+  rows: ImportedRow[]
+  warnings: string[]
 }
 
 export interface AutoCategoriseResponse {

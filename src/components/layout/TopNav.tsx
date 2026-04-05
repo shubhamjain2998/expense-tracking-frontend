@@ -1,20 +1,22 @@
 import { NavLink } from 'react-router-dom'
 
 import { useThemeContext } from '../../hooks/useThemeContext'
+import { useToastContext } from '../../hooks/useToastContext'
 
 const navLinks = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/upload', label: 'Upload' },
-  { to: '/review', label: 'Review' },
+  { to: '/transactions', label: 'Transactions' },
   { to: '/budget', label: 'Budget' },
   { to: '/settings', label: 'Settings' },
 ]
 
 export function TopNav() {
   const { isDark, toggleTheme } = useThemeContext()
+  const toast = useToastContext()
 
   return (
-    <nav className="bg-surface-container-low w-full">
+    <nav className="bg-surface-container-low animate-fade-down w-full">
       <div className="mx-auto flex h-16 w-full max-w-screen-2xl items-center justify-between px-8">
         <div className="flex items-center gap-8">
           <span className="text-primary text-xl font-black tracking-tight">Personal Finance</span>
@@ -46,15 +48,20 @@ export function TopNav() {
           </button>
 
           <button
+            onClick={() => toast.info('Notifications coming soon')}
             className="text-on-surface-variant hover:bg-surface-container rounded-full p-2 transition-colors"
             aria-label="Notifications"
           >
             <span className="material-symbols-outlined">notifications</span>
           </button>
 
-          <div className="bg-primary text-on-primary flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold">
+          <button
+            onClick={() => toast.info('User profile coming soon')}
+            className="bg-primary text-on-primary flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-opacity hover:opacity-80"
+            aria-label="User profile"
+          >
             U
-          </div>
+          </button>
         </div>
       </div>
     </nav>

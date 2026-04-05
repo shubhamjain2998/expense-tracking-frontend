@@ -13,6 +13,7 @@ import { UploadPage } from './pages/UploadPage'
 import { ReviewPage } from './pages/ReviewPage'
 import { BudgetPage } from './pages/BudgetPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { TransactionsPage } from './pages/TransactionsPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 
 const queryClient = new QueryClient({
@@ -38,6 +39,7 @@ function AppWithProviders() {
                 <Route path="/review" element={<ReviewPage />} />
                 <Route path="/budget" element={<BudgetPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/transactions" element={<TransactionsPage />} />
               </Route>
               <Route path="*" element={<NotFoundPage />} />
             </Routes>

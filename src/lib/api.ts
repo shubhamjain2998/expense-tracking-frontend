@@ -142,18 +142,23 @@ export const processTransaction = async (
 export const getProcessedTransactions = async (
   year: number,
   month: number,
-  category: string
+  category?: string
 ): Promise<ProcessedTransactionItem[]> => {
   const { data } = await client.get<ProcessedTransactionItem[]>('/transactions/processed', {
-    params: { year, month, category },
+    params: { year, month, ...(category ? { category } : {}) },
   })
   return data
+}
+
+export const deleteProcessedTransaction = async (id: string): Promise<void> => {
+  await client.delete(`/transactions/processed/${id}`)
 }
 
 export const editProcessedTransaction = async (
   id: string,
   payload: EditProcessedPayload
 ): Promise<ProcessedTransaction> => {
+  console.log(payload)
   const { data } = await client.patch<ProcessedTransaction>(
     `/transactions/processed/${id}`,
     payload
@@ -190,6 +195,32 @@ export const createPerson = async (name: string): Promise<Person> => {
 
 export const deletePerson = async (id: string): Promise<void> => {
   await client.delete(`/persons/${id}`)
+}
+
+// ─── Admin ───────────────────────────────────────────────────────────
+
+export const deleteAllRawTransactions = async (): Promise<void> => {
+  await client.delete('/admin/transactions/raw')
+}
+
+export const deleteAllProcessedTransactions = async (): Promise<void> => {
+  await client.delete('/admin/transactions/processed')
+}
+
+export const clearAllMappings = async (): Promise<void> => {
+  await client.delete('/admin/categories')
+}
+
+export const deleteAllBudget = async (): Promise<void> => {
+  await client.delete('/admin/budget')
+}
+
+export const deleteAllPersons = async (): Promise<void> => {
+  await client.delete('/admin/persons')
+}
+
+export const deleteAllData = async (): Promise<void> => {
+  await client.delete('/admin/all')
 }
 
 // ─── Dashboard ───────────────────────────────────────────────────────
