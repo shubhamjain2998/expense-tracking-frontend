@@ -3,7 +3,7 @@ interface SkeletonProps {
 }
 
 export function Skeleton({ className = '' }: SkeletonProps) {
-  return <div className={`bg-surface-container-high animate-pulse rounded-lg ${className}`} />
+  return <div className={`animate-shimmer rounded-lg ${className}`} />
 }
 
 export function SkeletonRow() {

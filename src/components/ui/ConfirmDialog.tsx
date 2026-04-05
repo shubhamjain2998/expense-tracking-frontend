@@ -28,7 +28,7 @@ export function ConfirmDialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
-      <div className="bg-surface-container-lowest/95 relative z-10 w-full max-w-md rounded-2xl p-6 shadow-2xl backdrop-blur-[20px]">
+      <div className="animate-dialog-in bg-surface-container-lowest/95 relative z-10 w-full max-w-md rounded-2xl p-6 shadow-2xl backdrop-blur-[20px]">
         <h2 className="text-on-surface mb-2 text-lg font-bold">{title}</h2>
         <p className="text-on-surface-variant mb-6 text-sm">{message}</p>
         <div className="flex justify-end gap-3">

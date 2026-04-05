@@ -22,7 +22,7 @@ interface ToastItemProps {
 function ToastItem({ toast, onDismiss }: ToastItemProps) {
   return (
     <div
-      className={`flex items-start gap-3 rounded-xl px-4 py-3 shadow-lg ${variantStyles[toast.variant]} max-w-sm min-w-[280px]`}
+      className={`animate-toast-in flex items-start gap-3 rounded-xl px-4 py-3 shadow-lg ${variantStyles[toast.variant]} max-w-sm min-w-[280px]`}
     >
       <span className="material-symbols-outlined mt-0.5 shrink-0">
         {variantIcons[toast.variant]}

@@ -1,105 +1,105 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
 @import 'tailwindcss';
 
 /* ─── Light mode tokens ───────────────────────────────────────────── */
 :root {
-  --app-background: #f7f9ff;
-  --app-on-background: #181c20;
-  --app-surface: #f7f9ff;
-  --app-surface-dim: #d7dae0;
-  --app-surface-bright: #f7f9ff;
+  --app-background: #fff8f0;
+  --app-on-background: #2c1a17;
+  --app-surface: #fff8f0;
+  --app-surface-dim: #d9c4a8;
+  --app-surface-bright: #fff8f0;
   --app-surface-container-lowest: #ffffff;
-  --app-surface-container-low: #f1f4fa;
-  --app-surface-container: #ebeef4;
-  --app-surface-container-high: #e5e8ee;
-  --app-surface-container-highest: #dfe3e8;
-  --app-on-surface: #181c20;
-  --app-on-surface-variant: #3f484c;
-  --app-outline: #70787c;
-  --app-outline-variant: #bfc8cc;
-  --app-primary: #004251;
+  --app-surface-container-low: #faf1e6;
+  --app-surface-container: #f4e8d8;
+  --app-surface-container-high: #ede0cc;
+  --app-surface-container-highest: #e5d5be;
+  --app-on-surface: #2c1a17;
+  --app-on-surface-variant: #6b4a3a;
+  --app-outline: #9c7060;
+  --app-outline-variant: #d4b99a;
+  --app-primary: #c08552;
   --app-on-primary: #ffffff;
-  --app-primary-container: #005b6f;
-  --app-on-primary-container: #8ed1e8;
-  --app-primary-fixed: #b4ebff;
-  --app-primary-fixed-dim: #8dd0e7;
-  --app-on-primary-fixed: #001f27;
-  --app-on-primary-fixed-variant: #004e5f;
-  --app-secondary: #536167;
-  --app-secondary-container: #d6e5ec;
-  --app-secondary-fixed: #d6e5ec;
-  --app-secondary-fixed-dim: #bac9d0;
+  --app-primary-container: #8c5a3c;
+  --app-on-primary-container: #ffe8d0;
+  --app-primary-fixed: #ffe0c2;
+  --app-primary-fixed-dim: #d4a07a;
+  --app-on-primary-fixed: #2c1a17;
+  --app-on-primary-fixed-variant: #7a4530;
+  --app-secondary: #8c5a3c;
+  --app-secondary-container: #f0d8c0;
+  --app-secondary-fixed: #f0d8c0;
+  --app-secondary-fixed-dim: #d4b090;
   --app-on-secondary: #ffffff;
-  --app-on-secondary-container: #58676d;
-  --app-on-secondary-fixed: #101d23;
-  --app-on-secondary-fixed-variant: #3b494f;
-  --app-tertiary: #5b3200;
-  --app-tertiary-container: #774815;
-  --app-tertiary-fixed: #ffdcc0;
-  --app-tertiary-fixed-dim: #fbb97c;
+  --app-on-secondary-container: #5a3020;
+  --app-on-secondary-fixed: #2c1a17;
+  --app-on-secondary-fixed-variant: #6b4030;
+  --app-tertiary: #4b2e2b;
+  --app-tertiary-container: #7a4535;
+  --app-tertiary-fixed: #ffd8c0;
+  --app-tertiary-fixed-dim: #e8b090;
   --app-on-tertiary: #ffffff;
-  --app-on-tertiary-container: #fbba7c;
-  --app-on-tertiary-fixed: #2d1600;
-  --app-on-tertiary-fixed-variant: #683c09;
+  --app-on-tertiary-container: #ffd0b0;
+  --app-on-tertiary-fixed: #2c1a17;
+  --app-on-tertiary-fixed-variant: #7a4535;
   --app-error: #ba1a1a;
   --app-on-error: #ffffff;
   --app-error-container: #ffdad6;
   --app-on-error-container: #93000a;
-  --app-inverse-surface: #2d3135;
-  --app-inverse-on-surface: #eef1f7;
-  --app-inverse-primary: #8dd0e7;
-  --app-surface-tint: #19677b;
+  --app-inverse-surface: #3a2220;
+  --app-inverse-on-surface: #faf1e6;
+  --app-inverse-primary: #d4a07a;
+  --app-surface-tint: #c08552;
 }
 
 /* ─── Dark mode tokens ────────────────────────────────────────────── */
 html.dark {
-  --app-background: #0f1416;
-  --app-on-background: #dde3e8;
-  --app-surface: #0f1416;
-  --app-surface-dim: #080c0f;
-  --app-surface-bright: #1b2226;
-  --app-surface-container-lowest: #090d10;
-  --app-surface-container-low: #171d21;
-  --app-surface-container: #1b2226;
-  --app-surface-container-high: #252d31;
-  --app-surface-container-highest: #303940;
-  --app-on-surface: #dde3e8;
-  --app-on-surface-variant: #9eaaaf;
-  --app-outline: #8a9499;
-  --app-outline-variant: #3b4548;
-  --app-primary: #8dd0e7;
-  --app-on-primary: #003546;
-  --app-primary-container: #004e5f;
-  --app-on-primary-container: #b4ebff;
-  --app-primary-fixed: #b4ebff;
-  --app-primary-fixed-dim: #8dd0e7;
-  --app-on-primary-fixed: #001f27;
-  --app-on-primary-fixed-variant: #004e5f;
-  --app-secondary: #b5c9d0;
-  --app-secondary-container: #2a3f46;
-  --app-secondary-fixed: #d6e5ec;
-  --app-secondary-fixed-dim: #bac9d0;
-  --app-on-secondary: #1f3338;
-  --app-on-secondary-container: #d0e6ed;
-  --app-on-secondary-fixed: #101d23;
-  --app-on-secondary-fixed-variant: #3b494f;
-  --app-tertiary: #e9bb91;
-  --app-tertiary-container: #4a2800;
-  --app-tertiary-fixed: #ffdcc0;
-  --app-tertiary-fixed-dim: #fbb97c;
-  --app-on-tertiary: #3c2000;
-  --app-on-tertiary-container: #ffdcc0;
-  --app-on-tertiary-fixed: #2d1600;
-  --app-on-tertiary-fixed-variant: #e9bb91;
+  --app-background: #1e1210;
+  --app-on-background: #f2e4d4;
+  --app-surface: #1e1210;
+  --app-surface-dim: #120b09;
+  --app-surface-bright: #2e1e1c;
+  --app-surface-container-lowest: #170e0c;
+  --app-surface-container-low: #261a18;
+  --app-surface-container: #2e1e1c;
+  --app-surface-container-high: #3a2624;
+  --app-surface-container-highest: #4a3230;
+  --app-on-surface: #f2e4d4;
+  --app-on-surface-variant: #c4a080;
+  --app-outline: #8c6a54;
+  --app-outline-variant: #4a3028;
+  --app-primary: #d4a07a;
+  --app-on-primary: #2c1a17;
+  --app-primary-container: #7a4530;
+  --app-on-primary-container: #ffe0c2;
+  --app-primary-fixed: #ffe0c2;
+  --app-primary-fixed-dim: #d4a07a;
+  --app-on-primary-fixed: #2c1a17;
+  --app-on-primary-fixed-variant: #7a4530;
+  --app-secondary: #c09070;
+  --app-secondary-container: #3a2418;
+  --app-secondary-fixed: #f0d8c0;
+  --app-secondary-fixed-dim: #d4b090;
+  --app-on-secondary: #2c1a17;
+  --app-on-secondary-container: #e8c8a8;
+  --app-on-secondary-fixed: #2c1a17;
+  --app-on-secondary-fixed-variant: #6b4030;
+  --app-tertiary: #e8b890;
+  --app-tertiary-container: #4a2820;
+  --app-tertiary-fixed: #ffd8c0;
+  --app-tertiary-fixed-dim: #e8b090;
+  --app-on-tertiary: #2c1a17;
+  --app-on-tertiary-container: #ffd8c0;
+  --app-on-tertiary-fixed: #2c1a17;
+  --app-on-tertiary-fixed-variant: #e8b890;
   --app-error: #ffb4ab;
   --app-on-error: #690005;
   --app-error-container: #93000a;
   --app-on-error-container: #ffdad6;
-  --app-inverse-surface: #dde3e8;
-  --app-inverse-on-surface: #2d3135;
-  --app-inverse-primary: #004251;
-  --app-surface-tint: #8dd0e7;
+  --app-inverse-surface: #f2e4d4;
+  --app-inverse-on-surface: #2e1e1c;
+  --app-inverse-primary: #c08552;
+  --app-surface-tint: #d4a07a;
 }
 
 /* ─── Tailwind v4: map utilities to CSS vars ──────────────────────── */
@@ -150,6 +150,13 @@ html.dark {
   --color-inverse-on-surface: var(--app-inverse-on-surface);
   --color-inverse-primary: var(--app-inverse-primary);
   --color-surface-tint: var(--app-surface-tint);
+
+  /* ─── Animation utilities ─────────────────────────────────────────── */
+  --animate-fade-up: fade-up 0.3s ease both;
+  --animate-fade-down: fade-down 0.25s ease both;
+  --animate-scale-in: scale-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  --animate-toast-in: toast-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  --animate-dialog-in: dialog-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 /* ─── Base styles ─────────────────────────────────────────────────── */
@@ -174,7 +181,7 @@ html.dark {
 
 body {
   margin: 0;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
   background-color: var(--app-background);
   color: var(--app-on-surface);
   -webkit-font-smoothing: antialiased;
@@ -196,11 +203,13 @@ body {
   border-radius: 0.25rem 0.25rem 0 0;
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
   color: var(--app-on-surface);
   transition:
     background-color 0.15s,
-    border-color 0.15s;
+    border-color 0.15s,
+    box-shadow 0.2s ease;
+  box-shadow: 0 0 0 transparent;
   outline: none;
   width: 100%;
 }
@@ -208,6 +217,7 @@ body {
 .input-field:focus {
   background-color: var(--app-surface-container-lowest);
   border-bottom: 2px solid var(--app-primary);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--app-primary) 20%, transparent);
 }
 
 .input-field::placeholder {
@@ -242,6 +252,12 @@ select:disabled,
   cursor: not-allowed;
 }
 
+/* ─── Button press micro-interaction ─────────────────────────────── */
+button:not(:disabled):active {
+  transform: scale(0.97);
+  transition: transform 0.08s ease;
+}
+
 /* ─── Scrollbar ───────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
@@ -253,4 +269,92 @@ select:disabled,
 ::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--app-outline-variant) 50%, transparent);
   border-radius: 9999px;
+}
+
+/* ─── Shimmer skeleton ────────────────────────────────────────────── */
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--app-surface-container-high) 25%,
+    var(--app-surface-container-highest) 50%,
+    var(--app-surface-container-high) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* ─── Keyframes ───────────────────────────────────────────────────── */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-down {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+/* ─── Respect reduced motion ──────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
