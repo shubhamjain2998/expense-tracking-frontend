@@ -1,6 +1,21 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { BarChart, Bar, LineChart, Line, XAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  LabelList,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts'
 
 import {
   getDashboardSummary,
@@ -22,6 +37,27 @@ function formatCurrency(n: number) {
     maximumFractionDigits: 2,
   }).format(n)
 }
+
+function formatCompact(n: number) {
+  if (Math.abs(n) >= 100000) return `₹${(n / 100000).toFixed(1)}L`
+  if (Math.abs(n) >= 1000) return `₹${(n / 1000).toFixed(1)}k`
+  return `₹${n}`
+}
+
+const PIE_COLORS = [
+  '#D4A07A',
+  '#C08552',
+  '#E8C4A0',
+  '#A06840',
+  '#4DB896',
+  '#3DA882',
+  '#80D4B4',
+  '#2A7A5E',
+  '#C4806A',
+  '#7AB4D4',
+  '#D4B47A',
+  '#8A7AC4',
+]
 
 const avatarColorClasses = [
   'bg-primary text-on-primary',
@@ -52,8 +88,8 @@ export function DashboardPage() {
   const { isDark } = useThemeContext()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
-  const [chartType, setChartType] = useState<'bar' | 'line'>('bar')
-  const [trendChartType, setTrendChartType] = useState<'bar' | 'line'>('line')
+  const [chartType, setChartType] = useState<'bar' | 'line' | 'pie'>('bar')
+  const [trendChartType, setTrendChartType] = useState<'bar' | 'line' | 'pie'>('bar')
   const [selectedCategory, setSelectedCategory] = useState('')
   const [ytdOpen, setYtdOpen] = useState(false)
 
@@ -79,19 +115,34 @@ export function DashboardPage() {
     queryKey: ['processedTransactions', year, month, selectedCategory],
     queryFn: () => getProcessedTransactions(year, month, selectedCategory),
     enabled: selectedCategory !== '',
+    placeholderData: keepPreviousData,
   })
 
-  const categoryChartData = (summaryQuery.data ?? []).map((row) => ({
+  const summaryRows = summaryQuery.data ?? []
+  const totalDebit = summaryRows
+    .filter((r) => Number(r.actual) > 0)
+    .reduce((s, r) => s + Number(r.actual), 0)
+  const totalCredit = summaryRows
+    .filter((r) => Number(r.actual) < 0)
+    .reduce((s, r) => s + Math.abs(Number(r.actual)), 0)
+  const netSavings = totalCredit - totalDebit
+
+  const categoryChartData = summaryRows.map((row) => ({
     name: row.category,
-    amount: Number(row.actual),
+    debit: Number(row.actual) > 0 ? Number(row.actual) : 0,
+    credit: Number(row.actual) < 0 ? Math.abs(Number(row.actual)) : 0,
   }))
 
-  const trendData = (categoryTxnQuery.data ?? []).map((d) => ({
-    desc: d.description.slice(0, 14),
-    date: d.txn_date,
-    amount: Number(d.effective_amount),
-    fullName: d.description,
-  }))
+  const trendData = (categoryTxnQuery.data ?? []).map((d) => {
+    const amt = Number(d.effective_amount)
+    return {
+      desc: d.description.slice(0, 14),
+      date: d.txn_date,
+      debit: amt > 0 ? amt : 0,
+      credit: amt < 0 ? Math.abs(amt) : 0,
+      fullName: d.description,
+    }
+  })
 
   return (
     <div className="space-y-8">
@@ -121,6 +172,43 @@ export function DashboardPage() {
               Active Budget
             </span>
           </div>
+
+          {/* Stats bar */}
+          {!summaryQuery.isLoading && summaryRows.length > 0 && (
+            <div className="mb-6 grid grid-cols-3 gap-3">
+              <div className="bg-surface-container rounded-xl px-4 py-3">
+                <p className="text-on-surface-variant mb-1 text-[10px] font-bold tracking-widest uppercase">
+                  Total Debit
+                </p>
+                <p className="text-error text-lg font-black tracking-tight">
+                  {formatCurrency(totalDebit)}
+                </p>
+              </div>
+              <div className="bg-surface-container rounded-xl px-4 py-3">
+                <p className="text-on-surface-variant mb-1 text-[10px] font-bold tracking-widest uppercase">
+                  Total Credit
+                </p>
+                <p
+                  className="text-lg font-black tracking-tight"
+                  style={{ color: isDark ? '#6BCFAA' : '#2E8B6A' }}
+                >
+                  {formatCurrency(totalCredit)}
+                </p>
+              </div>
+              <div className="bg-surface-container rounded-xl px-4 py-3">
+                <p className="text-on-surface-variant mb-1 text-[10px] font-bold tracking-widest uppercase">
+                  Net Savings
+                </p>
+                <p
+                  className={`text-lg font-black tracking-tight ${netSavings >= 0 ? '' : 'text-error'}`}
+                  style={netSavings >= 0 ? { color: isDark ? '#6BCFAA' : '#2E8B6A' } : undefined}
+                >
+                  {netSavings >= 0 ? '+' : ''}
+                  {formatCurrency(netSavings)}
+                </p>
+              </div>
+            </div>
+          )}
           {summaryQuery.isLoading ? (
             <SkeletonTable />
           ) : summaryQuery.data?.length === 0 ? (
@@ -221,7 +309,7 @@ export function DashboardPage() {
               </p>
             </div>
             <div className="bg-surface-container-high flex items-center rounded-lg p-1">
-              {(['bar', 'line'] as const).map((t) => (
+              {(['bar', 'line', 'pie'] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setChartType(t)}
@@ -232,66 +320,266 @@ export function DashboardPage() {
               ))}
             </div>
           </div>
+          {/* Legend — hidden for pie since it has its own */}
+          {!summaryQuery.isLoading && categoryChartData.length > 0 && chartType !== 'pie' && (
+            <div className="mb-4 flex items-center gap-4">
+              <span
+                className="flex items-center gap-1.5 text-xs font-medium"
+                style={{ color: isDark ? '#C4A080' : '#9C7060' }}
+              >
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-sm"
+                  style={{ background: isDark ? '#D4A07A' : '#C08552' }}
+                />
+                Debit
+              </span>
+              <span
+                className="flex items-center gap-1.5 text-xs font-medium"
+                style={{ color: isDark ? '#6BCFAA' : '#2E8B6A' }}
+              >
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-sm"
+                  style={{ background: isDark ? '#4DB896' : '#3DA882' }}
+                />
+                Credit
+              </span>
+            </div>
+          )}
           {summaryQuery.isLoading ? (
             <Skeleton className="h-64 w-full" />
+          ) : chartType === 'pie' ? (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              {/* Debit pie */}
+              <div>
+                <p className="text-on-surface-variant mb-2 text-center text-xs font-bold tracking-widest uppercase">
+                  Debit by Category
+                </p>
+                <ResponsiveContainer width="100%" height={260}>
+                  <PieChart>
+                    <Pie
+                      data={categoryChartData.filter((d) => d.debit > 0)}
+                      dataKey="debit"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={90}
+                      paddingAngle={3}
+                      label={({ name, percent }) =>
+                        percent > 0.04 ? `${name} ${(percent * 100).toFixed(0)}%` : ''
+                      }
+                      labelLine={false}
+                    >
+                      {categoryChartData
+                        .filter((d) => d.debit > 0)
+                        .map((_, i) => (
+                          <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                        ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        background: 'var(--color-surface-container-lowest)',
+                        border: 'none',
+                        borderRadius: 12,
+                        boxShadow: isDark
+                          ? '0 8px 40px rgba(0,0,0,0.4)'
+                          : '0 8px 40px rgba(44,26,23,0.08)',
+                        fontSize: 12,
+                        color: 'var(--app-on-surface)',
+                      }}
+                      formatter={(v) => [formatCurrency(Number(v)), 'Debit']}
+                    />
+                    <Legend
+                      iconType="circle"
+                      iconSize={8}
+                      formatter={(v) => (
+                        <span style={{ fontSize: 11, color: isDark ? '#C4A080' : '#9C7060' }}>
+                          {v}
+                        </span>
+                      )}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              {/* Credit pie */}
+              <div>
+                <p className="text-on-surface-variant mb-2 text-center text-xs font-bold tracking-widest uppercase">
+                  Credit by Category
+                </p>
+                <ResponsiveContainer width="100%" height={260}>
+                  <PieChart>
+                    <Pie
+                      data={categoryChartData.filter((d) => d.credit > 0)}
+                      dataKey="credit"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={90}
+                      paddingAngle={3}
+                      label={({ name, percent }) =>
+                        percent > 0.04 ? `${name} ${(percent * 100).toFixed(0)}%` : ''
+                      }
+                      labelLine={false}
+                    >
+                      {categoryChartData
+                        .filter((d) => d.credit > 0)
+                        .map((_, i) => (
+                          <Cell key={i} fill={PIE_COLORS[(i + 4) % PIE_COLORS.length]} />
+                        ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        background: 'var(--color-surface-container-lowest)',
+                        border: 'none',
+                        borderRadius: 12,
+                        boxShadow: isDark
+                          ? '0 8px 40px rgba(0,0,0,0.4)'
+                          : '0 8px 40px rgba(44,26,23,0.08)',
+                        fontSize: 12,
+                        color: 'var(--app-on-surface)',
+                      }}
+                      formatter={(v) => [formatCurrency(Number(v)), 'Credit']}
+                    />
+                    <Legend
+                      iconType="circle"
+                      iconSize={8}
+                      formatter={(v) => (
+                        <span style={{ fontSize: 11, color: isDark ? '#C4A080' : '#9C7060' }}>
+                          {v}
+                        </span>
+                      )}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           ) : (
-            <ResponsiveContainer width="100%" height={256}>
+            <ResponsiveContainer width="100%" height={280}>
               {chartType === 'bar' ? (
-                <BarChart data={categoryChartData} barSize={28}>
+                <BarChart
+                  data={categoryChartData}
+                  barSize={20}
+                  barGap={4}
+                  margin={{ top: 20, right: 8, left: 8, bottom: 0 }}
+                >
+                  <CartesianGrid
+                    vertical={false}
+                    stroke={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}
+                    strokeDasharray="4 4"
+                  />
                   <XAxis
                     dataKey="name"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 11, fill: isDark ? '#8a9499' : '#70787c', fontWeight: 600 }}
+                    tick={{ fontSize: 11, fill: isDark ? '#C4A080' : '#9C7060', fontWeight: 600 }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 10, fill: isDark ? '#C4A080' : '#9C7060' }}
+                    tickFormatter={formatCompact}
+                    width={52}
                   />
                   <Tooltip
+                    cursor={{ fill: 'rgba(192,133,82,0.08)' }}
                     contentStyle={{
                       background: 'var(--color-surface-container-lowest)',
                       border: 'none',
                       borderRadius: 12,
                       boxShadow: isDark
                         ? '0 8px 40px rgba(0,0,0,0.4)'
-                        : '0 8px 40px rgba(24,28,32,0.08)',
+                        : '0 8px 40px rgba(44,26,23,0.08)',
                       fontSize: 12,
                       color: 'var(--app-on-surface)',
                     }}
-                    formatter={(v) => [formatCurrency(Number(v)), 'Spend']}
+                    formatter={(v, name) => [
+                      formatCurrency(Number(v)),
+                      name === 'debit' ? 'Debit' : 'Credit',
+                    ]}
                   />
                   <Bar
-                    dataKey="amount"
-                    fill="#8dd0e7"
+                    dataKey="debit"
+                    fill={isDark ? '#D4A07A' : '#C08552'}
                     radius={[4, 4, 0, 0]}
-                    activeBar={{ fill: isDark ? '#b4ebff' : '#004251' }}
-                  />
+                    activeBar={{ fill: isDark ? '#FFE0C2' : '#8C5A3C' }}
+                  >
+                    <LabelList
+                      dataKey="debit"
+                      position="top"
+                      formatter={(v: number) => (v > 0 ? formatCompact(v) : '')}
+                      style={{ fontSize: 9, fill: isDark ? '#C4A080' : '#9C7060', fontWeight: 600 }}
+                    />
+                  </Bar>
+                  <Bar
+                    dataKey="credit"
+                    fill={isDark ? '#4DB896' : '#3DA882'}
+                    radius={[4, 4, 0, 0]}
+                    activeBar={{ fill: isDark ? '#A0EDD4' : '#2A7A5E' }}
+                  >
+                    <LabelList
+                      dataKey="credit"
+                      position="top"
+                      formatter={(v: number) => (v > 0 ? formatCompact(v) : '')}
+                      style={{ fontSize: 9, fill: isDark ? '#6BCFAA' : '#2E8B6A', fontWeight: 600 }}
+                    />
+                  </Bar>
                 </BarChart>
               ) : (
-                <LineChart data={categoryChartData}>
+                <LineChart
+                  data={categoryChartData}
+                  margin={{ top: 20, right: 8, left: 8, bottom: 0 }}
+                >
+                  <CartesianGrid
+                    vertical={false}
+                    stroke={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}
+                    strokeDasharray="4 4"
+                  />
                   <XAxis
                     dataKey="name"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 11, fill: isDark ? '#8a9499' : '#70787c', fontWeight: 600 }}
+                    tick={{ fontSize: 11, fill: isDark ? '#C4A080' : '#9C7060', fontWeight: 600 }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 10, fill: isDark ? '#C4A080' : '#9C7060' }}
+                    tickFormatter={formatCompact}
+                    width={52}
                   />
                   <Tooltip
+                    cursor={{ stroke: 'rgba(192,133,82,0.2)', strokeWidth: 1 }}
                     contentStyle={{
                       background: 'var(--color-surface-container-lowest)',
                       border: 'none',
                       borderRadius: 12,
                       boxShadow: isDark
                         ? '0 8px 40px rgba(0,0,0,0.4)'
-                        : '0 8px 40px rgba(24,28,32,0.08)',
+                        : '0 8px 40px rgba(44,26,23,0.08)',
                       fontSize: 12,
                       color: 'var(--app-on-surface)',
                     }}
-                    formatter={(v) => [formatCurrency(Number(v)), 'Spend']}
+                    formatter={(v, name) => [
+                      formatCurrency(Number(v)),
+                      name === 'debit' ? 'Debit' : 'Credit',
+                    ]}
                   />
                   <Line
                     type="monotone"
-                    dataKey="amount"
-                    stroke="#8dd0e7"
+                    dataKey="debit"
+                    stroke={isDark ? '#D4A07A' : '#C08552'}
                     strokeWidth={2.5}
-                    dot={{ fill: '#8dd0e7', r: 4 }}
-                    activeDot={{ r: 6, fill: isDark ? '#b4ebff' : '#004251' }}
+                    dot={{ fill: isDark ? '#D4A07A' : '#C08552', r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="credit"
+                    stroke={isDark ? '#4DB896' : '#3DA882'}
+                    strokeWidth={2.5}
+                    dot={{ fill: isDark ? '#4DB896' : '#3DA882', r: 4 }}
+                    activeDot={{ r: 6 }}
                   />
                 </LineChart>
               )}
@@ -323,7 +611,7 @@ export function DashboardPage() {
                 ))}
               </select>
               <div className="bg-surface-container-high flex items-center rounded-lg p-1">
-                {(['bar', 'line'] as const).map((t) => (
+                {(['bar', 'line', 'pie'] as const).map((t) => (
                   <button
                     key={t}
                     onClick={() => setTrendChartType(t)}
@@ -341,7 +629,7 @@ export function DashboardPage() {
               title="Select a category"
               description="Choose a category above to see its monthly spending trend."
             />
-          ) : categoryTxnQuery.isLoading ? (
+          ) : categoryTxnQuery.isLoading && !trendData.length ? (
             <Skeleton className="h-64 w-full" />
           ) : !trendData.length ? (
             <EmptyState
@@ -350,103 +638,340 @@ export function DashboardPage() {
               description="No transactions found for this category."
             />
           ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              {trendChartType === 'bar' ? (
-                <BarChart data={trendData} barSize={28} margin={{ bottom: 60 }}>
-                  <XAxis
-                    dataKey="date"
-                    axisLine={false}
-                    tickLine={false}
-                    interval={0}
-                    tick={({ x, y, payload }) => {
-                      const fill = isDark ? '#8a9499' : '#70787c'
-                      return (
-                        <g transform={`translate(${x},${y})`}>
-                          <text
-                            x={0}
-                            y={0}
-                            dy={8}
-                            textAnchor="end"
-                            fill={fill}
-                            fontSize={10}
-                            transform="rotate(-40)"
-                          >
-                            {payload.value}
-                          </text>
-                        </g>
-                      )
-                    }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      background: 'var(--color-surface-container-lowest)',
-                      border: 'none',
-                      borderRadius: 12,
-                      boxShadow: isDark
-                        ? '0 8px 40px rgba(0,0,0,0.4)'
-                        : '0 8px 40px rgba(24,28,32,0.08)',
-                      fontSize: 12,
-                      color: 'var(--app-on-surface)',
-                    }}
-                    formatter={(v, _, props) => [formatCurrency(Number(v)), props.payload.fullName]}
-                  />
-                  <Bar
-                    dataKey="amount"
-                    fill="#8dd0e7"
-                    radius={[4, 4, 0, 0]}
-                    activeBar={{ fill: isDark ? '#b4ebff' : '#004251' }}
-                  />
-                </BarChart>
-              ) : (
-                <LineChart data={trendData} margin={{ bottom: 60 }}>
-                  <XAxis
-                    dataKey="date"
-                    axisLine={false}
-                    tickLine={false}
-                    interval={0}
-                    tick={({ x, y, payload }) => {
-                      const fill = isDark ? '#8a9499' : '#70787c'
-                      return (
-                        <g transform={`translate(${x},${y})`}>
-                          <text
-                            x={0}
-                            y={0}
-                            dy={8}
-                            textAnchor="end"
-                            fill={fill}
-                            fontSize={10}
-                            transform="rotate(-40)"
-                          >
-                            {payload.value}
-                          </text>
-                        </g>
-                      )
-                    }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      background: 'var(--color-surface-container-lowest)',
-                      border: 'none',
-                      borderRadius: 12,
-                      boxShadow: isDark
-                        ? '0 8px 40px rgba(0,0,0,0.4)'
-                        : '0 8px 40px rgba(24,28,32,0.08)',
-                      fontSize: 12,
-                      color: 'var(--app-on-surface)',
-                    }}
-                    formatter={(v, _, props) => [formatCurrency(Number(v)), props.payload.fullName]}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="amount"
-                    stroke="#8dd0e7"
-                    strokeWidth={2.5}
-                    dot={{ fill: '#8dd0e7', r: 4 }}
-                    activeDot={{ r: 6, fill: isDark ? '#b4ebff' : '#004251' }}
-                  />
-                </LineChart>
+            <>
+              {/* Legend — hidden for pie */}
+              {trendChartType !== 'pie' && (
+                <div className="mb-4 flex items-center gap-4">
+                  <span
+                    className="flex items-center gap-1.5 text-xs font-medium"
+                    style={{ color: isDark ? '#C4A080' : '#9C7060' }}
+                  >
+                    <span
+                      className="inline-block h-2.5 w-2.5 rounded-sm"
+                      style={{ background: isDark ? '#D4A07A' : '#C08552' }}
+                    />
+                    Debit
+                  </span>
+                  <span
+                    className="flex items-center gap-1.5 text-xs font-medium"
+                    style={{ color: isDark ? '#6BCFAA' : '#2E8B6A' }}
+                  >
+                    <span
+                      className="inline-block h-2.5 w-2.5 rounded-sm"
+                      style={{ background: isDark ? '#4DB896' : '#3DA882' }}
+                    />
+                    Credit
+                  </span>
+                </div>
               )}
-            </ResponsiveContainer>
+              {trendChartType === 'pie' ? (
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  {/* Debit pie */}
+                  <div>
+                    <p className="text-on-surface-variant mb-2 text-center text-xs font-bold tracking-widest uppercase">
+                      Debit Transactions
+                    </p>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <PieChart>
+                        <Pie
+                          data={trendData.filter((d) => d.debit > 0)}
+                          dataKey="debit"
+                          nameKey="desc"
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={55}
+                          outerRadius={90}
+                          paddingAngle={3}
+                          label={({ percent }) =>
+                            percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : ''
+                          }
+                          labelLine={false}
+                        >
+                          {trendData
+                            .filter((d) => d.debit > 0)
+                            .map((_, i) => (
+                              <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                            ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            background: 'var(--color-surface-container-lowest)',
+                            border: 'none',
+                            borderRadius: 12,
+                            boxShadow: isDark
+                              ? '0 8px 40px rgba(0,0,0,0.4)'
+                              : '0 8px 40px rgba(44,26,23,0.08)',
+                            fontSize: 12,
+                            color: 'var(--app-on-surface)',
+                          }}
+                          formatter={(v, _, props) => [
+                            formatCurrency(Number(v)),
+                            props.payload.fullName,
+                          ]}
+                        />
+                        <Legend
+                          iconType="circle"
+                          iconSize={8}
+                          formatter={(v) => (
+                            <span style={{ fontSize: 11, color: isDark ? '#C4A080' : '#9C7060' }}>
+                              {v}
+                            </span>
+                          )}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  {/* Credit pie */}
+                  <div>
+                    <p className="text-on-surface-variant mb-2 text-center text-xs font-bold tracking-widest uppercase">
+                      Credit Transactions
+                    </p>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <PieChart>
+                        <Pie
+                          data={trendData.filter((d) => d.credit > 0)}
+                          dataKey="credit"
+                          nameKey="desc"
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={55}
+                          outerRadius={90}
+                          paddingAngle={3}
+                          label={({ percent }) =>
+                            percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : ''
+                          }
+                          labelLine={false}
+                        >
+                          {trendData
+                            .filter((d) => d.credit > 0)
+                            .map((_, i) => (
+                              <Cell key={i} fill={PIE_COLORS[(i + 4) % PIE_COLORS.length]} />
+                            ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            background: 'var(--color-surface-container-lowest)',
+                            border: 'none',
+                            borderRadius: 12,
+                            boxShadow: isDark
+                              ? '0 8px 40px rgba(0,0,0,0.4)'
+                              : '0 8px 40px rgba(44,26,23,0.08)',
+                            fontSize: 12,
+                            color: 'var(--app-on-surface)',
+                          }}
+                          formatter={(v, _, props) => [
+                            formatCurrency(Number(v)),
+                            props.payload.fullName,
+                          ]}
+                        />
+                        <Legend
+                          iconType="circle"
+                          iconSize={8}
+                          formatter={(v) => (
+                            <span style={{ fontSize: 11, color: isDark ? '#C4A080' : '#9C7060' }}>
+                              {v}
+                            </span>
+                          )}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={340}>
+                  {trendChartType === 'bar' ? (
+                    <BarChart
+                      data={trendData}
+                      barSize={20}
+                      barGap={4}
+                      margin={{ top: 20, right: 8, left: 8, bottom: 60 }}
+                    >
+                      <CartesianGrid
+                        vertical={false}
+                        stroke={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}
+                        strokeDasharray="4 4"
+                      />
+                      <XAxis
+                        dataKey="date"
+                        axisLine={false}
+                        tickLine={false}
+                        interval={0}
+                        tick={({ x, y, payload }) => {
+                          const fill = isDark ? '#C4A080' : '#9C7060'
+                          return (
+                            <g transform={`translate(${x},${y})`}>
+                              <text
+                                x={0}
+                                y={0}
+                                dy={8}
+                                textAnchor="end"
+                                fill={fill}
+                                fontSize={10}
+                                transform="rotate(-40)"
+                              >
+                                {payload.value}
+                              </text>
+                            </g>
+                          )
+                        }}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 10, fill: isDark ? '#C4A080' : '#9C7060' }}
+                        tickFormatter={formatCompact}
+                        width={52}
+                      />
+                      <Tooltip
+                        cursor={{ fill: 'rgba(192,133,82,0.08)' }}
+                        contentStyle={{
+                          background: 'var(--color-surface-container-lowest)',
+                          border: 'none',
+                          borderRadius: 12,
+                          boxShadow: isDark
+                            ? '0 8px 40px rgba(0,0,0,0.4)'
+                            : '0 8px 40px rgba(44,26,23,0.08)',
+                          fontSize: 12,
+                          color: 'var(--app-on-surface)',
+                        }}
+                        formatter={(v, name, props) => [
+                          formatCurrency(Number(v)),
+                          `${props.payload.fullName} (${name === 'debit' ? 'Debit' : 'Credit'})`,
+                        ]}
+                      />
+                      <Bar
+                        dataKey="debit"
+                        fill={isDark ? '#D4A07A' : '#C08552'}
+                        radius={[4, 4, 0, 0]}
+                        activeBar={{ fill: isDark ? '#FFE0C2' : '#8C5A3C' }}
+                      >
+                        <LabelList
+                          dataKey="debit"
+                          position="top"
+                          formatter={(v: number) => (v > 0 ? formatCompact(v) : '')}
+                          style={{
+                            fontSize: 9,
+                            fill: isDark ? '#C4A080' : '#9C7060',
+                            fontWeight: 600,
+                          }}
+                        />
+                      </Bar>
+                      <Bar
+                        dataKey="credit"
+                        fill={isDark ? '#4DB896' : '#3DA882'}
+                        radius={[4, 4, 0, 0]}
+                        activeBar={{ fill: isDark ? '#A0EDD4' : '#2A7A5E' }}
+                      >
+                        <LabelList
+                          dataKey="credit"
+                          position="top"
+                          formatter={(v: number) => (v > 0 ? formatCompact(v) : '')}
+                          style={{
+                            fontSize: 9,
+                            fill: isDark ? '#6BCFAA' : '#2E8B6A',
+                            fontWeight: 600,
+                          }}
+                        />
+                      </Bar>
+                    </BarChart>
+                  ) : (
+                    <LineChart data={trendData} margin={{ top: 20, right: 8, left: 8, bottom: 60 }}>
+                      <CartesianGrid
+                        vertical={false}
+                        stroke={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}
+                        strokeDasharray="4 4"
+                      />
+                      <XAxis
+                        dataKey="date"
+                        axisLine={false}
+                        tickLine={false}
+                        interval={0}
+                        tick={({ x, y, payload }) => {
+                          const fill = isDark ? '#C4A080' : '#9C7060'
+                          return (
+                            <g transform={`translate(${x},${y})`}>
+                              <text
+                                x={0}
+                                y={0}
+                                dy={8}
+                                textAnchor="end"
+                                fill={fill}
+                                fontSize={10}
+                                transform="rotate(-40)"
+                              >
+                                {payload.value}
+                              </text>
+                            </g>
+                          )
+                        }}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 10, fill: isDark ? '#C4A080' : '#9C7060' }}
+                        tickFormatter={formatCompact}
+                        width={52}
+                      />
+                      <Tooltip
+                        cursor={{ stroke: 'rgba(192,133,82,0.2)', strokeWidth: 1 }}
+                        contentStyle={{
+                          background: 'var(--color-surface-container-lowest)',
+                          border: 'none',
+                          borderRadius: 12,
+                          boxShadow: isDark
+                            ? '0 8px 40px rgba(0,0,0,0.4)'
+                            : '0 8px 40px rgba(44,26,23,0.08)',
+                          fontSize: 12,
+                          color: 'var(--app-on-surface)',
+                        }}
+                        formatter={(v, name, props) => [
+                          formatCurrency(Number(v)),
+                          `${props.payload.fullName} (${name === 'debit' ? 'Debit' : 'Credit'})`,
+                        ]}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="debit"
+                        stroke={isDark ? '#D4A07A' : '#C08552'}
+                        strokeWidth={2.5}
+                        dot={{ fill: isDark ? '#D4A07A' : '#C08552', r: 4 }}
+                        activeDot={{ r: 6, fill: isDark ? '#FFE0C2' : '#8C5A3C' }}
+                      >
+                        <LabelList
+                          dataKey="debit"
+                          position="top"
+                          formatter={(v: number) => (v > 0 ? formatCompact(v) : '')}
+                          style={{
+                            fontSize: 9,
+                            fill: isDark ? '#C4A080' : '#9C7060',
+                            fontWeight: 600,
+                          }}
+                        />
+                      </Line>
+                      <Line
+                        type="monotone"
+                        dataKey="credit"
+                        stroke={isDark ? '#4DB896' : '#3DA882'}
+                        strokeWidth={2.5}
+                        dot={{ fill: isDark ? '#4DB896' : '#3DA882', r: 4 }}
+                        activeDot={{ r: 6, fill: isDark ? '#A0EDD4' : '#2A7A5E' }}
+                      >
+                        <LabelList
+                          dataKey="credit"
+                          position="top"
+                          formatter={(v: number) => (v > 0 ? formatCompact(v) : '')}
+                          style={{
+                            fontSize: 9,
+                            fill: isDark ? '#6BCFAA' : '#2E8B6A',
+                            fontWeight: 600,
+                          }}
+                        />
+                      </Line>
+                    </LineChart>
+                  )}
+                </ResponsiveContainer>
+              )}
+            </>
           )}
         </section>
       </div>
