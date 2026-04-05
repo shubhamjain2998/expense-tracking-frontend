@@ -10,6 +10,7 @@ import {
   processTransaction,
   getCategoryList,
   getPersons,
+  createPerson,
 } from '../lib/api'
 import type { RawTransaction, PendingManualTransaction } from '../types/transaction'
 import { Button } from '../components/ui/Button'
@@ -31,10 +32,22 @@ function formatCurrency(n: number) {
 interface CategoriseFormProps {
   txn: PendingManualTransaction
   categories: string[]
+  totalPending: number
+  currentIndex: number
   onDone: () => void
+  onPrev: () => void
+  onNext: () => void
 }
 
-function CategoriseForm({ txn, categories, onDone }: CategoriseFormProps) {
+function CategoriseForm({
+  txn,
+  categories,
+  totalPending,
+  currentIndex,
+  onDone,
+  onPrev,
+  onNext,
+}: CategoriseFormProps) {
   const toast = useToastContext()
   const qc = useQueryClient()
   const [category, setCategory] = useState('')
@@ -45,11 +58,18 @@ function CategoriseForm({ txn, categories, onDone }: CategoriseFormProps) {
 
   const personsQuery = useQuery({ queryKey: ['persons'], queryFn: getPersons })
 
+  async function handleCreatePerson(name: string) {
+    const newPerson = await createPerson(name)
+    void qc.invalidateQueries({ queryKey: ['persons'] })
+    return newPerson
+  }
+
   const processMutation = useMutation({
     mutationFn: processTransaction,
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['pendingManual'] })
       void qc.invalidateQueries({ queryKey: ['rawTransactions'] })
+      void qc.invalidateQueries({ queryKey: ['categoryList'] })
       onDone()
     },
     onError: (err: { detail: string }) => toast.error(err.detail),
@@ -73,38 +93,84 @@ function CategoriseForm({ txn, categories, onDone }: CategoriseFormProps) {
   const effectiveAmount = txn.amount / Math.max(splitCount, 1)
 
   return (
-    <div className="bg-surface-container-lowest space-y-4 rounded-xl p-5 shadow-[0_4px_24px_rgba(24,28,32,0.06)]">
-      <div>
-        <p className="text-on-surface-variant text-[11px] font-bold tracking-wider uppercase">
-          {txn.description}
-        </p>
-        <p className="text-on-surface text-3xl font-black tracking-tight">
-          {formatCurrency(txn.amount)}
-        </p>
-        <p className="text-outline mt-0.5 text-xs">{txn.date}</p>
+    <div className="flex flex-col gap-5">
+      {/* Progress + Navigation */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="text-on-surface-variant text-sm font-medium">Reviewing</span>
+          <span className="bg-primary/10 text-primary rounded-full px-3 py-0.5 text-sm font-bold">
+            {currentIndex + 1} / {totalPending}
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onPrev}
+            disabled={currentIndex === 0}
+            className="text-on-surface-variant hover:bg-surface-container-high disabled:text-outline/40 rounded-lg p-1.5 transition-colors disabled:cursor-not-allowed"
+            aria-label="Previous transaction"
+          >
+            <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+          </button>
+          <button
+            onClick={onNext}
+            disabled={currentIndex >= totalPending - 1}
+            className="text-on-surface-variant hover:bg-surface-container-high disabled:text-outline/40 rounded-lg p-1.5 transition-colors disabled:cursor-not-allowed"
+            aria-label="Next transaction"
+          >
+            <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+          </button>
+        </div>
       </div>
 
+      {/* Transaction card */}
+      <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-[0_4px_24px_rgba(24,28,32,0.08)]">
+        <p className="text-on-surface-variant mb-3 text-[11px] leading-relaxed font-bold tracking-widest uppercase">
+          {txn.description}
+        </p>
+        <p className="text-on-surface text-5xl font-black tracking-tight">
+          {formatCurrency(txn.amount)}
+        </p>
+        <p className="text-outline mt-2 text-xs">{txn.date}</p>
+      </div>
+
+      {/* Category */}
       <SearchableSelect
         label="Category"
         options={categories}
         value={category}
-        onChange={setCategory}
+        onChange={(val) => {
+          setCategory(val)
+          if (val && !categories.includes(val)) setSaveMapping(true)
+        }}
         error={categoryError}
+        allowCreate
       />
 
-      <div className="flex items-center gap-3">
-        <label className="text-on-surface-variant flex cursor-pointer items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={saveMapping}
-            onChange={(e) => setSaveMapping(e.target.checked)}
-            className="border-outline-variant text-primary focus:ring-primary rounded"
-          />
-          <span className="font-medium">Save Rule</span>
-          <span className="text-outline">— Always map</span>
-        </label>
-      </div>
+      {/* Save as Rule */}
+      <button
+        type="button"
+        onClick={() => setSaveMapping((v) => !v)}
+        className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm transition-colors ${
+          saveMapping
+            ? 'bg-primary/10 text-primary'
+            : 'bg-surface-container text-on-surface-variant'
+        }`}
+      >
+        <div className="flex items-center gap-2.5">
+          <span className="material-symbols-outlined text-[18px]">rule</span>
+          <span className="font-medium">Save as Rule</span>
+          <span className={`text-xs ${saveMapping ? 'text-primary/70' : 'text-outline'}`}>
+            — auto-map next time
+          </span>
+        </div>
+        <span
+          className={`material-symbols-outlined text-[20px] ${saveMapping ? 'text-primary' : 'text-outline'}`}
+        >
+          {saveMapping ? 'toggle_on' : 'toggle_off'}
+        </span>
+      </button>
 
+      {/* Split */}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-on-surface-variant mb-1 block text-[11px] font-bold tracking-wider uppercase">
@@ -121,7 +187,7 @@ function CategoriseForm({ txn, categories, onDone }: CategoriseFormProps) {
         </div>
         <div className="flex flex-col justify-end">
           <p className="text-on-surface-variant text-xs">Your Share</p>
-          <p className="text-on-surface text-base font-bold">
+          <p className="text-on-surface text-lg font-bold">
             {formatCurrency(effectiveAmount)}
             <span className="text-outline ml-1 text-xs font-normal">(1/{splitCount})</span>
           </p>
@@ -134,6 +200,7 @@ function CategoriseForm({ txn, categories, onDone }: CategoriseFormProps) {
           persons={personsQuery.data}
           selectedIds={personIds}
           onChange={setPersonIds}
+          onCreatePerson={handleCreatePerson}
         />
       )}
 
@@ -157,38 +224,38 @@ interface RawTxnRowProps {
 
 function RawTxnRow({ txn, onDelete, onRestore }: RawTxnRowProps) {
   return (
-    <tr
-      className={`group transition-colors ${txn.deleted ? 'opacity-50' : 'hover:bg-surface-container-low'}`}
+    <div
+      className={`border-outline-variant/10 flex items-center gap-3 border-b px-4 py-3 transition-colors ${
+        txn.deleted ? 'opacity-40' : 'hover:bg-surface-container-low'
+      }`}
     >
-      <td className="text-on-surface-variant py-3 pl-4 text-sm">{txn.date}</td>
-      <td
-        className={`text-on-surface py-3 text-sm font-medium ${txn.deleted ? 'line-through' : ''}`}
-      >
-        {txn.description}
-      </td>
-      <td className="text-on-surface py-3 text-right text-sm font-semibold">
-        {formatCurrency(txn.amount)}
-      </td>
-      <td className="py-3 pr-4 text-right">
-        {txn.deleted ? (
-          <button
-            onClick={() => onRestore(txn.id)}
-            className="text-primary hover:bg-secondary-container rounded-lg px-2 py-1 text-xs font-medium"
-            aria-label="Restore transaction"
-          >
-            Restore
-          </button>
-        ) : (
-          <button
-            onClick={() => onDelete(txn.id)}
-            className="text-outline hover:bg-error-container hover:text-on-error-container rounded-lg p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
-            aria-label="Delete transaction"
-          >
-            <span className="material-symbols-outlined">delete</span>
-          </button>
-        )}
-      </td>
-    </tr>
+      <div className="min-w-0 flex-1">
+        <p
+          className={`text-on-surface truncate text-sm font-medium ${txn.deleted ? 'line-through' : ''}`}
+        >
+          {txn.description}
+        </p>
+        <p className="text-on-surface-variant mt-0.5 text-xs">{txn.txn_date?.slice(0, 10)}</p>
+      </div>
+      <p className="text-on-surface shrink-0 text-sm font-semibold">{formatCurrency(txn.amount)}</p>
+      {txn.deleted ? (
+        <button
+          onClick={() => onRestore(txn.id)}
+          className="text-primary hover:bg-secondary-container shrink-0 rounded-lg px-2 py-1 text-xs font-medium"
+          aria-label="Restore transaction"
+        >
+          Restore
+        </button>
+      ) : (
+        <button
+          onClick={() => onDelete(txn.id)}
+          className="text-outline hover:bg-error-container hover:text-on-error-container shrink-0 rounded-lg p-1.5 transition-colors"
+          aria-label="Delete transaction"
+        >
+          <span className="material-symbols-outlined text-[16px]">delete</span>
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -196,7 +263,7 @@ export function ReviewPage() {
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
-  const [activePendingId, setActivePendingId] = useState<string | null>(null)
+  const [activeIndex, setActiveIndex] = useState(0)
   const toast = useToastContext()
   const qc = useQueryClient()
 
@@ -249,7 +316,9 @@ export function ReviewPage() {
   const autoMutation = useMutation({
     mutationFn: autoCategorise,
     onSuccess: (data) => {
-      toast.success(`${data.categorised} auto-categorised, ${data.pending} need manual review`)
+      toast.success(
+        `${data.auto_categorised} auto-categorised, ${data.pending_manual} need manual review`
+      )
       void qc.invalidateQueries({ queryKey: ['rawTransactions', year, month] })
       void qc.invalidateQueries({ queryKey: ['pendingManual'] })
     },
@@ -257,9 +326,8 @@ export function ReviewPage() {
   })
 
   const pendingTxns = pendingQuery.data ?? []
-  const activePending = activePendingId
-    ? pendingTxns.find((t) => t.id === activePendingId)
-    : pendingTxns[0]
+  const clampedIndex = Math.min(activeIndex, Math.max(0, pendingTxns.length - 1))
+  const activePending = pendingTxns[clampedIndex]
 
   return (
     <div className="space-y-6">
@@ -269,128 +337,112 @@ export function ReviewPage() {
             Review Transactions
           </h1>
           <p className="text-on-surface-variant mt-1 text-sm">
-            Manage and audit your raw financial data.
+            Categorise pending transactions and audit your raw data.
           </p>
         </div>
-        <YearMonthSelector
-          year={year}
-          month={month}
-          onYearChange={setYear}
-          onMonthChange={setMonth}
-        />
       </header>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-        {/* Raw transactions */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        {/* PRIMARY: Pending categorisation */}
         <section className="lg:col-span-7">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-on-surface text-base font-bold">Raw Transactions</h2>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => autoMutation.mutate()}
-              loading={autoMutation.isPending}
-            >
-              <span className="material-symbols-outlined text-sm">auto_awesome</span>
-              Auto-Categorise
-            </Button>
-          </div>
-          <div className="bg-surface-container-low rounded-xl">
-            {rawQuery.isLoading ? (
-              <div className="p-6">
-                <SkeletonTable />
-              </div>
-            ) : !rawQuery.data?.length ? (
-              <div className="p-6">
-                <p className="text-on-surface-variant text-center text-sm">
-                  No transactions for this period.
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-outline-variant/15 border-b">
-                      {['Date', 'Description', 'Amount', 'Actions'].map((h, i) => (
-                        <th
-                          key={h}
-                          className={`text-on-surface-variant px-4 py-4 text-[11px] font-bold tracking-widest uppercase ${i >= 2 ? 'text-right' : ''}`}
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-outline-variant/5 divide-y">
-                    {rawQuery.data.map((txn) => (
-                      <RawTxnRow
-                        key={txn.id}
-                        txn={txn}
-                        onDelete={(id) => deleteMutation.mutate(id)}
-                        onRestore={(id) => restoreMutation.mutate(id)}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Pending categorisation */}
-        <section className="lg:col-span-5">
-          <div className="mb-4 flex items-center gap-3">
-            <h2 className="text-on-surface text-base font-bold">Pending Categorization</h2>
-            {pendingTxns.length > 0 && <Chip variant="warning">{pendingTxns.length} ITEMS</Chip>}
-          </div>
-
           {pendingQuery.isLoading ? (
-            <div className="space-y-3">
-              {[1, 2].map((i) => (
-                <div key={i} className="bg-surface-container-low h-48 animate-pulse rounded-xl" />
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-surface-container-low h-16 animate-pulse rounded-xl" />
               ))}
             </div>
           ) : pendingTxns.length === 0 ? (
-            <div className="bg-primary/5 rounded-xl p-6 text-center">
-              <span className="material-symbols-outlined text-primary mb-2 text-3xl">bolt</span>
-              <p className="text-on-surface font-semibold">That&apos;s all for now</p>
-              <p className="text-on-surface-variant mt-1 text-sm">
-                All transactions have been categorised.
+            <div className="bg-surface-container-lowest flex h-72 flex-col items-center justify-center rounded-2xl p-8 text-center shadow-[0_4px_24px_rgba(24,28,32,0.06)]">
+              <span className="material-symbols-outlined text-primary mb-3 text-5xl">task_alt</span>
+              <p className="text-on-surface text-xl font-bold">All caught up!</p>
+              <p className="text-on-surface-variant mt-2 max-w-xs text-sm">
+                All transactions have been categorised. Use Auto-Categorise to process new uploads.
               </p>
+              <Button
+                variant="primary"
+                size="sm"
+                className="mt-5"
+                onClick={() => autoMutation.mutate()}
+                loading={autoMutation.isPending}
+              >
+                <span className="material-symbols-outlined text-sm">auto_awesome</span>
+                Auto-Categorise
+              </Button>
             </div>
           ) : (
-            <div className="space-y-4">
-              {/* Queue navigator */}
-              {pendingTxns.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {pendingTxns.map((t, i) => (
-                    <button
-                      key={t.id}
-                      onClick={() => setActivePendingId(t.id)}
-                      className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                        (activePending?.id ?? pendingTxns[0]?.id) === t.id
-                          ? 'bg-primary text-on-primary'
-                          : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'
-                      }`}
-                    >
-                      #{i + 1}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {activePending && (
-                <CategoriseForm
-                  key={activePending.id}
-                  txn={activePending}
-                  categories={categoryListQuery.data ?? []}
-                  onDone={() => {
-                    const remaining = pendingTxns.filter((t) => t.id !== activePending.id)
-                    setActivePendingId(remaining[0]?.id ?? null)
-                  }}
+            activePending && (
+              <CategoriseForm
+                key={activePending.id}
+                txn={activePending}
+                categories={categoryListQuery.data ?? []}
+                totalPending={pendingTxns.length}
+                currentIndex={clampedIndex}
+                onDone={() => {
+                  const nextIndex = Math.min(clampedIndex, pendingTxns.length - 2)
+                  setActiveIndex(Math.max(0, nextIndex))
+                }}
+                onPrev={() => setActiveIndex((i) => Math.max(0, i - 1))}
+                onNext={() => setActiveIndex((i) => Math.min(pendingTxns.length - 1, i + 1))}
+              />
+            )
+          )}
+        </section>
+
+        {/* SECONDARY: Raw transactions sidebar */}
+        <section className="lg:col-span-5">
+          <div className="bg-surface-container-lowest overflow-hidden rounded-2xl shadow-[0_4px_24px_rgba(24,28,32,0.06)]">
+            {/* Sidebar header */}
+            <div className="border-outline-variant/10 flex items-center justify-between border-b px-4 py-3">
+              <div className="flex items-center gap-2">
+                <h2 className="text-on-surface text-sm font-bold">Raw Transactions</h2>
+                {rawQuery.data?.length ? (
+                  <Chip variant="neutral">{rawQuery.data.length}</Chip>
+                ) : null}
+              </div>
+              <div className="flex items-center gap-2">
+                <YearMonthSelector
+                  year={year}
+                  month={month}
+                  onYearChange={setYear}
+                  onMonthChange={setMonth}
                 />
+                <button
+                  onClick={() => autoMutation.mutate()}
+                  disabled={autoMutation.isPending}
+                  title="Auto-Categorise"
+                  className="text-on-surface-variant hover:bg-surface-container-high rounded-lg p-1.5 transition-colors disabled:opacity-50"
+                >
+                  <span className="material-symbols-outlined text-[18px]">
+                    {autoMutation.isPending ? 'progress_activity' : 'auto_awesome'}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Transaction list */}
+            <div className="max-h-[calc(100vh-16rem)] overflow-y-auto">
+              {rawQuery.isLoading ? (
+                <div className="p-4">
+                  <SkeletonTable />
+                </div>
+              ) : !rawQuery.data?.length ? (
+                <div className="px-4 py-8 text-center">
+                  <p className="text-on-surface-variant text-sm">
+                    No transactions for this period.
+                  </p>
+                </div>
+              ) : (
+                rawQuery.data.map((txn) => (
+                  <RawTxnRow
+                    key={txn.id}
+                    txn={txn}
+                    onDelete={(id) => deleteMutation.mutate(id)}
+                    onRestore={(id) => restoreMutation.mutate(id)}
+                  />
+                ))
               )}
             </div>
-          )}
+          </div>
         </section>
       </div>
     </div>
