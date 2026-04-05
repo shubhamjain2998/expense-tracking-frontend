@@ -24,6 +24,8 @@ export function UploadPage() {
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<PreviewResponse | null>(null)
   const [fileError, setFileError] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [dateFilter, setDateFilter] = useState('')
 
   const previewMutation = useMutation({
     mutationFn: previewStatement,
@@ -70,8 +72,19 @@ export function UploadPage() {
     setFile(null)
     setPreview(null)
     setFileError('')
+    setSearchQuery('')
+    setDateFilter('')
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
+
+  const allRows = preview?.rows ?? []
+  const uniqueDates = [...new Set(allRows.map((r) => r.txn_date.slice(0, 10)))].sort()
+  const filteredRows = allRows.filter((r) => {
+    const matchesDate = !dateFilter || r.txn_date.slice(0, 10) === dateFilter
+    const matchesSearch =
+      !searchQuery || r.description.toLowerCase().includes(searchQuery.toLowerCase())
+    return matchesDate && matchesSearch
+  })
 
   return (
     <div className="space-y-8">
@@ -144,9 +157,7 @@ export function UploadPage() {
             <div className="flex items-center gap-3">
               <h2 className="text-on-surface text-base font-bold">Preview Transactions</h2>
               <Chip variant="success">{preview.would_insert} READY</Chip>
-              {preview.warnings.length > 0 && (
-                <Chip variant="warning">{preview.warnings.length} WARNINGS</Chip>
-              )}
+              {preview.skipped > 0 && <Chip variant="warning">{preview.skipped} SKIPPED</Chip>}
             </div>
             <div className="flex gap-3">
               <Button variant="tertiary" onClick={handleCancel}>
@@ -162,25 +173,62 @@ export function UploadPage() {
             </div>
           </div>
 
-          {preview.warnings.length > 0 && (
-            <div className="bg-tertiary-container rounded-xl px-4 py-3">
-              <p className="text-on-tertiary-container text-sm font-semibold">Warnings</p>
-              <ul className="text-on-tertiary-container/80 mt-1 list-inside list-disc text-sm">
-                {preview.warnings.map((w, i) => (
-                  <li key={i}>{w}</li>
-                ))}
-              </ul>
+          {/* Filters */}
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="relative flex-1">
+              <span className="material-symbols-outlined text-outline pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[18px]">
+                search
+              </span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search description…"
+                className="input-field w-full"
+                style={{ paddingLeft: '2.25rem' }}
+                aria-label="Search descriptions"
+              />
             </div>
-          )}
+            <div className="relative">
+              <span className="material-symbols-outlined text-outline pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[18px]">
+                calendar_today
+              </span>
+              <select
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="input-field pr-8"
+                style={{ paddingLeft: '2.25rem' }}
+                aria-label="Filter by date"
+              >
+                <option value="">All dates</option>
+                {uniqueDates.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {(searchQuery || dateFilter) && (
+              <button
+                onClick={() => {
+                  setSearchQuery('')
+                  setDateFilter('')
+                }}
+                className="text-primary self-center text-sm font-medium hover:underline"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
 
           <div className="bg-surface-container-low overflow-x-auto rounded-xl">
             <table className="w-full text-left">
               <thead>
                 <tr className="border-outline-variant/15 border-b">
-                  {['Date', 'Description', 'Category', 'Amount', 'Status'].map((h, i) => (
+                  {['Date', 'Description', 'Amount'].map((h, i) => (
                     <th
                       key={h}
-                      className={`text-on-surface-variant px-6 py-4 text-[11px] font-bold tracking-widest uppercase ${i >= 3 ? 'text-right' : ''}`}
+                      className={`text-on-surface-variant px-6 py-4 text-[11px] font-bold tracking-widest uppercase ${i === 2 ? 'text-right' : ''}`}
                     >
                       {h}
                     </th>
@@ -188,40 +236,36 @@ export function UploadPage() {
                 </tr>
               </thead>
               <tbody>
-                {preview.transactions.map((txn, i) => (
-                  <tr
-                    key={i}
-                    className={`text-sm ${i % 2 === 0 ? 'bg-surface-container-lowest' : 'bg-surface-container-low'}`}
-                  >
-                    <td className="text-on-surface-variant px-6 py-3">{txn.date}</td>
-                    <td className="text-on-surface px-6 py-3 font-medium">{txn.description}</td>
-                    <td className="px-6 py-3">
-                      {txn.category ? (
-                        <span className="bg-secondary-container text-on-secondary-container rounded-full px-2.5 py-0.5 text-xs font-semibold">
-                          {txn.category}
-                        </span>
-                      ) : (
-                        <span className="bg-surface-container-high text-outline rounded-full px-2.5 py-0.5 text-xs font-semibold">
-                          Uncategorized
-                        </span>
-                      )}
-                    </td>
-                    <td className="text-on-surface px-6 py-3 text-right font-semibold">
-                      {formatCurrency(txn.amount)}
-                    </td>
-                    <td className="px-6 py-3 text-right">
-                      {txn.status === 'warning' ? (
-                        <span className="material-symbols-outlined text-on-tertiary-container">
-                          warning
-                        </span>
-                      ) : (
-                        <span className="material-symbols-outlined text-primary">check_circle</span>
-                      )}
+                {filteredRows.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={3}
+                      className="text-on-surface-variant px-6 py-8 text-center text-sm"
+                    >
+                      No transactions match your filters.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredRows.map((txn, i) => (
+                    <tr
+                      key={i}
+                      className={`text-sm ${i % 2 === 0 ? 'bg-surface-container-lowest' : 'bg-surface-container-low'}`}
+                    >
+                      <td className="text-on-surface-variant px-6 py-3 whitespace-nowrap">
+                        {txn.txn_date.slice(0, 10)}
+                      </td>
+                      <td className="text-on-surface px-6 py-3 font-medium">{txn.description}</td>
+                      <td className="text-on-surface px-6 py-3 text-right font-semibold">
+                        {formatCurrency(Number(txn.amount))}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
+            <div className="text-on-surface-variant border-outline-variant/15 border-t px-6 py-3 text-xs">
+              Showing {filteredRows.length} of {allRows.length} transactions
+            </div>
           </div>
         </div>
       )}
