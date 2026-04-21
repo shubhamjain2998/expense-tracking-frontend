@@ -79,3 +79,9 @@ export interface EditProcessedPayload {
   split_count: number
   person_ids: string[]
 }
+
+export interface CreateRawTransactionPayload {
+  txn_date: string
+  description: string
+  amount: number
+}

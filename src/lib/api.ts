@@ -10,6 +10,7 @@ import axios from 'axios'
 import type { BudgetEntry, CreateBudgetPayload, UpdateBudgetEntryPayload } from '../types/budget'
 import type {
   AutoCategoriseResponse,
+  CreateRawTransactionPayload,
   EditProcessedPayload,
   ImportResponse,
   PendingManualTransaction,
@@ -98,6 +99,16 @@ export const importStatement = async (file: File): Promise<ImportResponse> => {
   return data
 }
 
+export const previewStatementText = async (text: string): Promise<PreviewResponse> => {
+  const { data } = await client.post<PreviewResponse>('/uploads/preview-text', { text })
+  return data
+}
+
+export const importStatementText = async (text: string): Promise<ImportResponse> => {
+  const { data } = await client.post<ImportResponse>('/uploads/text-import', { text })
+  return data
+}
+
 // ─── Transactions ────────────────────────────────────────────────────
 
 /**
@@ -115,6 +126,13 @@ export const getRawTransactions = async (
 
 export const deleteRawTransaction = async (id: string): Promise<void> => {
   await client.delete(`/transactions/raw/${id}`)
+}
+
+export const createRawTransaction = async (
+  payload: CreateRawTransactionPayload
+): Promise<RawTransaction> => {
+  const { data } = await client.post<RawTransaction>('/transactions/raw', payload)
+  return data
 }
 
 export const restoreRawTransaction = async (id: string): Promise<void> => {
