@@ -1,7 +1,13 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
-import { getBudget, createBudget, updateBudgetEntry, deleteBudgetEntry } from '../lib/api'
+import {
+  getBudget,
+  createBudget,
+  updateBudgetEntry,
+  deleteBudgetEntry,
+  getCategoryList,
+} from '../lib/api'
 import type { BudgetEntry } from '../types/budget'
 import { Button } from '../components/ui/Button'
 import { SkeletonTable } from '../components/ui/Skeleton'
@@ -103,6 +109,11 @@ export function BudgetPage() {
     queryFn: () => getBudget(year),
   })
 
+  const categoryListQuery = useQuery({
+    queryKey: ['categoryList'],
+    queryFn: getCategoryList,
+  })
+
   const deleteMutation = useMutation({
     mutationFn: deleteBudgetEntry,
     onSuccess: () => {
@@ -131,6 +142,30 @@ export function BudgetPage() {
 
   const entries = budgetQuery.data ?? []
   const totalAnnual = entries.reduce((s, e) => s + Number(e.allocated_amount), 0)
+
+  const allCategories = categoryListQuery.data ?? []
+  const budgetedSet = new Set(entries.map((e) => e.category.toLowerCase()))
+  const unbudgetedCategories = allCategories.filter((c) => !budgetedSet.has(c.toLowerCase()))
+
+  const [unbudgetedAmounts, setUnbudgetedAmounts] = useState<Record<string, string>>({})
+
+  function handleSaveUnbudgeted() {
+    const valid = unbudgetedCategories.filter(
+      (c) => unbudgetedAmounts[c] && Number(unbudgetedAmounts[c]) > 0
+    )
+    if (!valid.length) {
+      toast.warning('Enter an amount for at least one category')
+      return
+    }
+    createMutation.mutate({
+      year,
+      entries: valid.map((c) => ({
+        category: c,
+        allocated_amount: Number(unbudgetedAmounts[c]) * 12,
+      })),
+    })
+    setUnbudgetedAmounts({})
+  }
 
   function handleAddRow() {
     setNewRows((r) => [...r, { id: Date.now(), category: '', amount: '' }])
@@ -183,45 +218,11 @@ export function BudgetPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-        {/* Budget table */}
-        <div className="space-y-6 lg:col-span-7">
-          <div className="bg-surface-container-low rounded-xl p-6">
-            {budgetQuery.isLoading ? (
-              <SkeletonTable />
-            ) : entries.length === 0 ? (
-              <EmptyState
-                icon="account_balance_wallet"
-                title={`No budget entries for ${year}`}
-                description="Use the panel on the right to add your first entries."
-              />
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-outline-variant/15 border-b">
-                      {['Category', 'Monthly Budget', 'Annual Allocation', 'Action'].map((h, i) => (
-                        <th
-                          key={h}
-                          className={`text-on-surface-variant pb-4 text-[11px] font-bold tracking-widest uppercase ${i === 2 ? 'text-right' : ''}`}
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {entries.map((entry) => (
-                      <InlineEditRow key={entry.id} entry={entry} onDelete={setDeleteId} />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
+        {/* Left column: budget table + unbudgeted categories */}
+        <div className="lg:col-span-7">
           {/* Total hero */}
           {entries.length > 0 && (
-            <div className="bg-surface-container-low rounded-xl px-6 py-5">
+            <div className="bg-surface-container-low mb-6 rounded-xl px-6 py-5">
               <p className="text-on-surface-variant text-[11px] font-bold tracking-widest uppercase">
                 Total Annual Budget
               </p>
@@ -235,9 +236,127 @@ export function BudgetPage() {
               </div>
             </div>
           )}
+
+          <div className="bg-surface-container-low rounded-xl p-6">
+            {budgetQuery.isLoading ? (
+              <SkeletonTable />
+            ) : entries.length === 0 && unbudgetedCategories.length === 0 ? (
+              <EmptyState
+                icon="account_balance_wallet"
+                title={`No budget entries for ${year}`}
+                description="Use the panel on the right to add your first entries."
+              />
+            ) : (
+              <>
+                {/* Budgeted entries table */}
+                {entries.length > 0 && (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="border-outline-variant/15 border-b">
+                          {['Category', 'Monthly Budget', 'Annual Allocation', 'Action'].map(
+                            (h, i) => (
+                              <th
+                                key={h}
+                                className={`text-on-surface-variant pb-4 text-[11px] font-bold tracking-widest uppercase ${i === 2 ? 'text-right' : ''}`}
+                              >
+                                {h}
+                              </th>
+                            )
+                          )}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {entries.map((entry) => (
+                          <InlineEditRow key={entry.id} entry={entry} onDelete={setDeleteId} />
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Unbudgeted categories */}
+                {unbudgetedCategories.length > 0 && (
+                  <>
+                    {entries.length > 0 && <hr className="border-outline-variant/15 my-6" />}
+                    <div className="mb-3 flex items-center gap-2">
+                      <p className="text-on-surface-variant text-[11px] font-bold tracking-widest uppercase">
+                        No Budget Set
+                      </p>
+                      <span className="bg-error-container text-on-error-container rounded-full px-2 py-0.5 text-[11px] font-bold">
+                        {unbudgetedCategories.length}
+                      </span>
+                    </div>
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="border-outline-variant/15 border-b">
+                          {['Category', 'Monthly Budget', 'Annual', ''].map((h, i) => (
+                            <th
+                              key={i}
+                              className={`text-on-surface-variant pb-3 text-[11px] font-bold tracking-widest uppercase ${i === 2 ? 'text-right' : ''}`}
+                            >
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {unbudgetedCategories.map((cat) => (
+                          <tr
+                            key={cat}
+                            className="border-outline-variant/10 border-b last:border-0"
+                          >
+                            <td className="py-3 pr-4">
+                              <span className="text-on-surface-variant text-sm capitalize">
+                                {cat}
+                              </span>
+                            </td>
+                            <td className="py-3 pr-4">
+                              <div className="flex items-center gap-1">
+                                <span className="text-outline text-sm">₹</span>
+                                <input
+                                  type="number"
+                                  value={unbudgetedAmounts[cat] ?? ''}
+                                  placeholder="0"
+                                  min={0}
+                                  onChange={(e) =>
+                                    setUnbudgetedAmounts((prev) => ({
+                                      ...prev,
+                                      [cat]: e.target.value,
+                                    }))
+                                  }
+                                  className="input-field w-28"
+                                  aria-label={`Monthly budget for ${cat}`}
+                                />
+                              </div>
+                            </td>
+                            <td className="text-on-surface-variant py-3 pr-4 text-right text-sm">
+                              {unbudgetedAmounts[cat] && Number(unbudgetedAmounts[cat]) > 0
+                                ? formatCurrency(Number(unbudgetedAmounts[cat]) * 12)
+                                : '—'}
+                            </td>
+                            <td className="w-8 py-3" />
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <div className="mt-4">
+                      <Button
+                        variant="primary"
+                        onClick={handleSaveUnbudgeted}
+                        loading={createMutation.isPending}
+                      >
+                        Save Budget for Selected
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Batch add */}
+        {/* Right column: batch add */}
         <div className="space-y-4 lg:col-span-5">
           <div className="bg-surface-container-low rounded-xl p-6">
             <h2 className="text-on-surface mb-5 text-base font-bold">Batch Add Entries</h2>
