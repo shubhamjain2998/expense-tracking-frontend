@@ -5,13 +5,18 @@ import { useMutation } from '@tanstack/react-query'
 import {
   previewStatement,
   importStatement,
+  previewStatementText,
+  importStatementText,
+  createRawTransaction,
   getRawTransactions,
   deleteRawTransaction,
 } from '../lib/api'
-import type { PreviewResponse } from '../types/transaction'
+import type { ImportResponse, PreviewResponse } from '../types/transaction'
 import { Button } from '../components/ui/Button'
 import { Chip } from '../components/ui/Chip'
 import { useToastContext } from '../hooks/useToastContext'
+
+type UploadMode = 'pdf' | 'paste' | 'manual'
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat('en-IN', {
@@ -25,10 +30,18 @@ function rowSig(date: string, description: string, amount: string | number) {
   return `${date.slice(0, 10)}||${description}||${parseFloat(String(amount)).toFixed(2)}`
 }
 
+const TABS: { id: UploadMode; label: string; icon: string }[] = [
+  { id: 'pdf', label: 'PDF Upload', icon: 'picture_as_pdf' },
+  { id: 'paste', label: 'Paste Text', icon: 'content_paste' },
+  { id: 'manual', label: 'Add Manually', icon: 'edit_note' },
+]
+
 export function UploadPage() {
   const navigate = useNavigate()
   const toast = useToastContext()
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const [mode, setMode] = useState<UploadMode>('pdf')
   const [dragOver, setDragOver] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<PreviewResponse | null>(null)
@@ -38,83 +51,128 @@ export function UploadPage() {
   const [excludedIndices, setExcludedIndices] = useState<Set<number>>(new Set())
   const [dupeIndices, setDupeIndices] = useState<Set<number>>(new Set())
 
+  // Paste mode state
+  const [pasteText, setPasteText] = useState('')
+
+  // Manual entry state
+  const [manualDate, setManualDate] = useState('')
+  const [manualDesc, setManualDesc] = useState('')
+  const [manualAmount, setManualAmount] = useState('')
+  const [manualErrors, setManualErrors] = useState<Record<string, string>>({})
+
+  // ── Shared helpers ────────────────────────────────────────────────────────
+
+  async function handlePreviewSuccess(data: PreviewResponse) {
+    setPreview(data)
+    setExcludedIndices(new Set())
+
+    const rows = data.rows
+
+    // Intra-batch duplicate detection
+    const sigCount = new Map<string, number[]>()
+    rows.forEach((r, i) => {
+      const sig = rowSig(r.txn_date, r.description, r.amount)
+      const existing = sigCount.get(sig) ?? []
+      sigCount.set(sig, [...existing, i])
+    })
+    const intraDupes = new Set<number>()
+    sigCount.forEach((indices) => {
+      if (indices.length > 1) indices.forEach((i) => intraDupes.add(i))
+    })
+
+    // Cross-import duplicate detection (compare against DB)
+    const monthPairs = [
+      ...new Map(
+        rows.map((r) => {
+          const d = new Date(r.txn_date)
+          return [
+            `${d.getFullYear()}-${d.getMonth() + 1}`,
+            { year: d.getFullYear(), month: d.getMonth() + 1 },
+          ]
+        })
+      ).values(),
+    ]
+
+    const existingSigs = new Set<string>()
+    try {
+      const results = await Promise.all(
+        monthPairs.map(({ year, month }) => getRawTransactions(year, month))
+      )
+      results.flat().forEach((t) => {
+        existingSigs.add(rowSig(t.txn_date, t.description, t.amount))
+      })
+    } catch {
+      // Silently ignore — duplicate detection is best-effort
+    }
+
+    const dbDupes = new Set<number>()
+    rows.forEach((r, i) => {
+      if (existingSigs.has(rowSig(r.txn_date, r.description, r.amount))) dbDupes.add(i)
+    })
+
+    const allDupes = new Set([...intraDupes, ...dbDupes])
+    setDupeIndices(allDupes)
+  }
+
+  function handleImportSuccess(data: ImportResponse) {
+    // Auto-delete any rows the user excluded from the preview
+    if (excludedIndices.size > 0 && allRows.length > 0) {
+      const excludedRows = allRows.filter((_, i) => excludedIndices.has(i))
+      data.rows.forEach((imported) => {
+        const match = excludedRows.find(
+          (ex) =>
+            ex.txn_date.slice(0, 10) === imported.txn_date.slice(0, 10) &&
+            ex.description === imported.description &&
+            ex.amount === imported.amount
+        )
+        if (match) void deleteRawTransaction(imported.id)
+      })
+    }
+    toast.success(`${data.inserted} transactions imported, ${data.skipped} skipped`)
+    navigate('/review')
+  }
+
+  // ── Mutations ─────────────────────────────────────────────────────────────
+
   const previewMutation = useMutation({
     mutationFn: previewStatement,
-    onSuccess: async (data) => {
-      setPreview(data)
-      setExcludedIndices(new Set())
-
-      const rows = data.rows
-
-      // Intra-batch duplicate detection
-      const sigCount = new Map<string, number[]>()
-      rows.forEach((r, i) => {
-        const sig = rowSig(r.txn_date, r.description, r.amount)
-        const existing = sigCount.get(sig) ?? []
-        sigCount.set(sig, [...existing, i])
-      })
-      const intraDupes = new Set<number>()
-      sigCount.forEach((indices) => {
-        if (indices.length > 1) indices.forEach((i) => intraDupes.add(i))
-      })
-
-      // Cross-import duplicate detection (compare against DB)
-      const monthPairs = [
-        ...new Map(
-          rows.map((r) => {
-            const d = new Date(r.txn_date)
-            return [
-              `${d.getFullYear()}-${d.getMonth() + 1}`,
-              { year: d.getFullYear(), month: d.getMonth() + 1 },
-            ]
-          })
-        ).values(),
-      ]
-
-      const existingSigs = new Set<string>()
-      try {
-        const results = await Promise.all(
-          monthPairs.map(({ year, month }) => getRawTransactions(year, month))
-        )
-        results.flat().forEach((t) => {
-          existingSigs.add(rowSig(t.txn_date, t.description, t.amount))
-        })
-      } catch {
-        // Silently ignore — duplicate detection is best-effort
-      }
-
-      const dbDupes = new Set<number>()
-      rows.forEach((r, i) => {
-        if (existingSigs.has(rowSig(r.txn_date, r.description, r.amount))) dbDupes.add(i)
-      })
-
-      const allDupes = new Set([...intraDupes, ...dbDupes])
-      setDupeIndices(allDupes)
-    },
+    onSuccess: handlePreviewSuccess,
     onError: (err: { detail: string }) => toast.error(err.detail),
   })
 
   const importMutation = useMutation({
     mutationFn: importStatement,
-    onSuccess: (data) => {
-      // Auto-delete any rows the user excluded from the preview
-      if (excludedIndices.size > 0 && allRows.length > 0) {
-        const excludedRows = allRows.filter((_, i) => excludedIndices.has(i))
-        data.rows.forEach((imported) => {
-          const match = excludedRows.find(
-            (ex) =>
-              ex.txn_date.slice(0, 10) === imported.txn_date.slice(0, 10) &&
-              ex.description === imported.description &&
-              ex.amount === imported.amount
-          )
-          if (match) void deleteRawTransaction(imported.id)
-        })
-      }
-      toast.success(`${data.inserted} transactions imported, ${data.skipped} skipped`)
+    onSuccess: handleImportSuccess,
+    onError: (err: { detail: string }) => toast.error(err.detail),
+  })
+
+  const pastePreviewMutation = useMutation({
+    mutationFn: () => previewStatementText(pasteText),
+    onSuccess: handlePreviewSuccess,
+    onError: (err: { detail: string }) => toast.error(err.detail),
+  })
+
+  const pasteImportMutation = useMutation({
+    mutationFn: () => importStatementText(pasteText),
+    onSuccess: handleImportSuccess,
+    onError: (err: { detail: string }) => toast.error(err.detail),
+  })
+
+  const manualMutation = useMutation({
+    mutationFn: () =>
+      createRawTransaction({
+        txn_date: `${manualDate}T00:00:00`,
+        description: manualDesc.trim(),
+        amount: parseFloat(manualAmount),
+      }),
+    onSuccess: () => {
+      toast.success('Transaction added')
       navigate('/review')
     },
     onError: (err: { detail: string }) => toast.error(err.detail),
   })
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
 
   function validateAndPreview(f: File) {
     if (f.type !== 'application/pdf') {
@@ -150,7 +208,18 @@ export function UploadPage() {
     setDateFilter('')
     setExcludedIndices(new Set())
     setDupeIndices(new Set())
+    setPasteText('')
+    setManualDate('')
+    setManualDesc('')
+    setManualAmount('')
+    setManualErrors({})
     if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  function handleTabSwitch(newMode: UploadMode) {
+    if (newMode === mode) return
+    handleCancel()
+    setMode(newMode)
   }
 
   function toggleExclude(globalIndex: number) {
@@ -162,10 +231,22 @@ export function UploadPage() {
     })
   }
 
+  function handleManualSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const errors: Record<string, string> = {}
+    if (!manualDate) errors.date = 'Date is required'
+    if (!manualDesc.trim()) errors.desc = 'Description is required'
+    const amt = parseFloat(manualAmount)
+    if (!manualAmount || isNaN(amt) || amt <= 0) errors.amount = 'Enter a valid positive amount'
+    setManualErrors(errors)
+    if (Object.keys(errors).length === 0) manualMutation.mutate()
+  }
+
+  // ── Derived values ────────────────────────────────────────────────────────
+
   const allRows = preview?.rows ?? []
   const uniqueDates = [...new Set(allRows.map((r) => r.txn_date.slice(0, 10)))].sort()
 
-  // filteredRows carries the original index into allRows so exclusion/dupe state is accurate
   const filteredRows = allRows
     .map((r, i) => ({ row: r, globalIndex: i }))
     .filter(({ row }) => {
@@ -176,19 +257,44 @@ export function UploadPage() {
     })
 
   const readyCount = (preview?.would_insert ?? 0) - excludedIndices.size
+  const isImporting = importMutation.isPending || pasteImportMutation.isPending
+
+  function handleConfirmImport() {
+    if (mode === 'pdf' && file) importMutation.mutate(file)
+    else if (mode === 'paste') pasteImportMutation.mutate()
+  }
 
   return (
     <div className="space-y-8">
       <header>
         <h1 className="text-on-surface text-3xl font-black tracking-tight">Import Statement</h1>
         <p className="text-on-surface-variant mt-1 text-sm">
-          Upload your monthly bank statement in PDF format. Our Quiet Architect engine will
-          automatically categorise and verify each entry for your budget.
+          Upload a PDF, paste copied bank text, or add a transaction manually.
         </p>
       </header>
 
-      {/* Drop zone */}
+      {/* Tab selector */}
       {!preview && (
+        <div className="bg-surface-container-low inline-flex gap-1 rounded-xl p-1">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => handleTabSwitch(tab.id)}
+              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                mode === tab.id
+                  ? 'bg-secondary-container text-on-secondary-container'
+                  : 'text-on-surface-variant hover:bg-surface-container'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">{tab.icon}</span>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ── PDF mode ────────────────────────────────────────────────────────── */}
+      {mode === 'pdf' && !preview && (
         <div className="bg-surface-container-low rounded-xl p-8">
           <div
             onDragOver={(e) => {
@@ -241,7 +347,99 @@ export function UploadPage() {
         </div>
       )}
 
-      {/* Preview table */}
+      {/* ── Paste mode ──────────────────────────────────────────────────────── */}
+      {mode === 'paste' && !preview && (
+        <div className="bg-surface-container-low space-y-4 rounded-xl p-8">
+          <div>
+            <p className="text-on-surface mb-1 text-sm font-semibold">
+              Paste your bank statement text
+            </p>
+            <p className="text-on-surface-variant mb-3 text-xs">
+              Copy transactions from your bank's website and paste them below. Supports HDFC credit
+              card format.
+            </p>
+            <textarea
+              value={pasteText}
+              onChange={(e) => setPasteText(e.target.value)}
+              rows={10}
+              className="input-field w-full resize-y font-mono text-xs"
+              placeholder={`04 Apr 2026\t\nBlinkit Gurgaon I\n₹449.00\tdebit icon\n04 Apr 2026\t\nPyu*swiggy Food Bangalore I\n₹185.00\tdebit icon`}
+              aria-label="Paste bank statement text"
+            />
+          </div>
+          <div className="flex justify-end">
+            <Button
+              variant="primary"
+              onClick={() => pastePreviewMutation.mutate()}
+              loading={pastePreviewMutation.isPending}
+              disabled={!pasteText.trim()}
+            >
+              Parse &amp; Preview
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Manual mode ─────────────────────────────────────────────────────── */}
+      {mode === 'manual' && !preview && (
+        <div className="bg-surface-container-low rounded-xl p-8">
+          <p className="text-on-surface mb-4 text-sm font-semibold">Enter transaction details</p>
+          <form onSubmit={handleManualSubmit} className="max-w-md space-y-4">
+            <div>
+              <label className="text-on-surface-variant mb-1 block text-xs font-medium tracking-wide uppercase">
+                Date
+              </label>
+              <input
+                type="date"
+                value={manualDate}
+                onChange={(e) => setManualDate(e.target.value)}
+                className="input-field w-full"
+                aria-label="Transaction date"
+              />
+              {manualErrors.date && <p className="text-error mt-1 text-xs">{manualErrors.date}</p>}
+            </div>
+            <div>
+              <label className="text-on-surface-variant mb-1 block text-xs font-medium tracking-wide uppercase">
+                Description
+              </label>
+              <input
+                type="text"
+                value={manualDesc}
+                onChange={(e) => setManualDesc(e.target.value)}
+                placeholder="e.g. Blinkit Gurgaon"
+                className="input-field w-full"
+                aria-label="Transaction description"
+              />
+              {manualErrors.desc && <p className="text-error mt-1 text-xs">{manualErrors.desc}</p>}
+            </div>
+            <div>
+              <label className="text-on-surface-variant mb-1 block text-xs font-medium tracking-wide uppercase">
+                Amount (₹)
+              </label>
+              <input
+                type="number"
+                value={manualAmount}
+                onChange={(e) => setManualAmount(e.target.value)}
+                placeholder="0.00"
+                min="0.01"
+                step="0.01"
+                className="input-field w-full"
+                aria-label="Transaction amount"
+              />
+              {manualErrors.amount && (
+                <p className="text-error mt-1 text-xs">{manualErrors.amount}</p>
+              )}
+            </div>
+            <div className="pt-2">
+              <Button variant="primary" type="submit" loading={manualMutation.isPending}>
+                Add Transaction
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* ── Preview table (shared across pdf + paste modes) ─────────────────── */}
       {preview && (
         <div className="space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -262,11 +460,7 @@ export function UploadPage() {
               <Button variant="tertiary" onClick={handleCancel}>
                 Cancel
               </Button>
-              <Button
-                variant="primary"
-                onClick={() => file && importMutation.mutate(file)}
-                loading={importMutation.isPending}
-              >
+              <Button variant="primary" onClick={handleConfirmImport} loading={isImporting}>
                 Confirm Import
               </Button>
             </div>
