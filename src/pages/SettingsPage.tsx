@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { getIgnoreRules, addIgnoreRule, removeIgnoreRule } from '../lib/ignoreRules'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 import {
@@ -6,7 +7,14 @@ import {
   createPerson,
   deletePerson,
   getCategories,
+  createCategory,
+  renameCategory,
   deleteCategory,
+  getCategoryMappings,
+  deleteCategoryMapping,
+  getTags,
+  createTag,
+  deleteTag,
   clearAllMappings,
   deleteAllData,
   deleteAllRawTransactions,
@@ -14,7 +22,7 @@ import {
   deleteAllBudget,
   deleteAllPersons,
 } from '../lib/api'
-import type { Person } from '../types/settings'
+import type { Person, Category, Tag } from '../types/settings'
 import { Button } from '../components/ui/Button'
 import { SkeletonTable } from '../components/ui/Skeleton'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
@@ -78,12 +86,50 @@ export function SettingsPage() {
   const [newPersonName, setNewPersonName] = useState('')
   const [personNameError, setPersonNameError] = useState('')
   const [deletePersonId, setDeletePersonId] = useState<string | null>(null)
+  const [deleteMappingId, setDeleteMappingId] = useState<string | null>(null)
   const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null)
+  const [deleteTagId, setDeleteTagId] = useState<string | null>(null)
   const [pendingDangerKey, setPendingDangerKey] = useState<string | null>(null)
   const [activeNav, setActiveNav] = useState('persons')
 
+  // Category rename state
+  const [renamingCategoryId, setRenamingCategoryId] = useState<string | null>(null)
+  const [renamingCategoryName, setRenamingCategoryName] = useState('')
+
+  // New category / tag inputs
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [newTagName, setNewTagName] = useState('')
+
+  // Ignore rules (localStorage)
+  const [ignoreRules, setIgnoreRules] = useState<string[]>(() => getIgnoreRules())
+  const [newIgnoreKeyword, setNewIgnoreKeyword] = useState('')
+  const [ignoreKeywordError, setIgnoreKeywordError] = useState('')
+
+  function handleAddIgnoreRule() {
+    const trimmed = newIgnoreKeyword.trim().toLowerCase()
+    if (!trimmed) {
+      setIgnoreKeywordError('Keyword is required')
+      return
+    }
+    if (ignoreRules.includes(trimmed)) {
+      setIgnoreKeywordError('Already exists')
+      return
+    }
+    setIgnoreRules(addIgnoreRule(trimmed))
+    setNewIgnoreKeyword('')
+    setIgnoreKeywordError('')
+  }
+
+  function handleRemoveIgnoreRule(keyword: string) {
+    setIgnoreRules(removeIgnoreRule(keyword))
+  }
+
   const personsQuery = useQuery({ queryKey: ['persons'], queryFn: getPersons })
   const categoriesQuery = useQuery({ queryKey: ['categories'], queryFn: getCategories })
+  const mappingsQuery = useQuery({ queryKey: ['categoryMappings'], queryFn: getCategoryMappings })
+  const tagsQuery = useQuery({ queryKey: ['tags'], queryFn: getTags })
+
+  // ─── Persons ─────────────────────────────────────────────────────────
 
   const createPersonMutation = useMutation({
     mutationFn: createPerson,
@@ -114,11 +160,46 @@ export function SettingsPage() {
     },
   })
 
+  function handleAddPerson() {
+    if (!newPersonName.trim()) {
+      setPersonNameError('Name is required')
+      return
+    }
+    createPersonMutation.mutate(newPersonName.trim())
+  }
+
+  // ─── Categories ──────────────────────────────────────────────────────
+
+  const createCategoryMutation = useMutation({
+    mutationFn: createCategory,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['categories'] })
+      setNewCategoryName('')
+      toast.success('Category created')
+    },
+    onError: (err: { detail: string; status?: number }) => {
+      if (err.status === 409) toast.error('Category already exists')
+      else toast.error(err.detail)
+    },
+  })
+
+  const renameCategoryMutation = useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) => renameCategory(id, name),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['categories'] })
+      void qc.invalidateQueries({ queryKey: ['budget'] })
+      toast.success('Category renamed')
+      setRenamingCategoryId(null)
+    },
+    onError: (err: { detail: string }) => toast.error(err.detail),
+  })
+
   const deleteCategoryMutation = useMutation({
     mutationFn: deleteCategory,
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['categories'] })
-      toast.success('Mapping deleted')
+      void qc.invalidateQueries({ queryKey: ['budget'] })
+      toast.success('Category deleted')
       setDeleteCategoryId(null)
     },
     onError: (err: { detail: string }) => {
@@ -126,6 +207,51 @@ export function SettingsPage() {
       setDeleteCategoryId(null)
     },
   })
+
+  // ─── Mappings ─────────────────────────────────────────────────────────
+
+  const deleteMappingMutation = useMutation({
+    mutationFn: deleteCategoryMapping,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['categoryMappings'] })
+      toast.success('Mapping deleted')
+      setDeleteMappingId(null)
+    },
+    onError: (err: { detail: string }) => {
+      toast.error(err.detail)
+      setDeleteMappingId(null)
+    },
+  })
+
+  // ─── Tags ─────────────────────────────────────────────────────────────
+
+  const createTagMutation = useMutation({
+    mutationFn: createTag,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['tags'] })
+      setNewTagName('')
+      toast.success('Tag created')
+    },
+    onError: (err: { detail: string; status?: number }) => {
+      if (err.status === 409) toast.error('Tag already exists')
+      else toast.error(err.detail)
+    },
+  })
+
+  const deleteTagMutation = useMutation({
+    mutationFn: deleteTag,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['tags'] })
+      toast.success('Tag deleted')
+      setDeleteTagId(null)
+    },
+    onError: (err: { detail: string }) => {
+      toast.error(err.detail)
+      setDeleteTagId(null)
+    },
+  })
+
+  // ─── Danger zone ─────────────────────────────────────────────────────
 
   const dangerActions: Record<
     string,
@@ -167,7 +293,7 @@ export function SettingsPage() {
         'This will permanently delete all category mapping rules. Auto-categorisation will stop working until new rules are created.',
       confirmLabel: 'Delete All Mappings',
       mutationFn: clearAllMappings,
-      invalidateKeys: ['categories'],
+      invalidateKeys: ['categoryMappings'],
     },
     budget: {
       icon: 'savings',
@@ -222,19 +348,12 @@ export function SettingsPage() {
     },
   })
 
-  function handleAddPerson() {
-    if (!newPersonName.trim()) {
-      setPersonNameError('Name is required')
-      return
-    }
-    createPersonMutation.mutate(newPersonName.trim())
-  }
-
   const navItems = [
     { id: 'persons', label: 'Account Settings', icon: 'manage_accounts' },
+    { id: 'categories', label: 'Categories', icon: 'category' },
+    { id: 'tags', label: 'Tags', icon: 'label' },
+    { id: 'ignore-rules', label: 'Ignore Rules', icon: 'block' },
     { id: 'mappings', label: 'Rules & Mapping', icon: 'rule' },
-    { id: 'privacy', label: 'Privacy', icon: 'lock' },
-    { id: 'alerts', label: 'Alerts', icon: 'notifications' },
     { id: 'danger', label: 'Danger Zone', icon: 'warning' },
   ]
 
@@ -286,7 +405,7 @@ export function SettingsPage() {
 
         {/* Main content */}
         <div className="space-y-8 lg:col-span-9">
-          {/* Account Settings */}
+          {/* Account Settings — Persons */}
           {activeNav === 'persons' && (
             <section>
               <h2 className="text-on-surface mb-1 text-base font-bold">Persons Management</h2>
@@ -350,22 +469,276 @@ export function SettingsPage() {
             </section>
           )}
 
-          {/* Rules & Mapping */}
-          {activeNav === 'mappings' && (
+          {/* Categories */}
+          {activeNav === 'categories' && (
             <section>
-              <div className="mb-1 flex items-center justify-between">
-                <h2 className="text-on-surface text-base font-bold">Category Mappings</h2>
-                <button className="text-primary text-sm font-medium hover:underline">
-                  Re-sync Rules
-                </button>
-              </div>
+              <h2 className="text-on-surface mb-1 text-base font-bold">Categories</h2>
               <p className="text-on-surface-variant mb-5 text-sm">
-                Configure how incoming bank statements are automatically categorised.
+                Manage the categories used to classify your transactions and budgets.
               </p>
 
               {categoriesQuery.isLoading ? (
                 <SkeletonTable />
               ) : !categoriesQuery.data?.length ? (
+                <div className="bg-surface-container-low rounded-xl px-6 py-8 text-center">
+                  <p className="text-on-surface-variant text-sm">No categories yet.</p>
+                </div>
+              ) : (
+                <div className="bg-surface-container-low mb-6 overflow-hidden rounded-xl">
+                  {categoriesQuery.data.map((cat: Category) => (
+                    <div
+                      key={cat.id}
+                      className="border-outline-variant/10 group flex items-center gap-3 border-b px-4 py-3 last:border-0"
+                    >
+                      {renamingCategoryId === cat.id ? (
+                        <div className="flex flex-1 items-center gap-2">
+                          <input
+                            value={renamingCategoryName}
+                            onChange={(e) => setRenamingCategoryName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter')
+                                renameCategoryMutation.mutate({
+                                  id: cat.id,
+                                  name: renamingCategoryName,
+                                })
+                              if (e.key === 'Escape') setRenamingCategoryId(null)
+                            }}
+                            className="input-field flex-1"
+                            autoFocus
+                            aria-label="Rename category"
+                          />
+                          <button
+                            onClick={() =>
+                              renameCategoryMutation.mutate({
+                                id: cat.id,
+                                name: renamingCategoryName,
+                              })
+                            }
+                            disabled={renameCategoryMutation.isPending}
+                            className="text-primary hover:bg-primary/10 rounded-lg p-1.5 transition-colors disabled:opacity-50"
+                            aria-label="Confirm rename"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">check</span>
+                          </button>
+                          <button
+                            onClick={() => setRenamingCategoryId(null)}
+                            className="text-outline hover:bg-surface-container rounded-lg p-1.5 transition-colors"
+                            aria-label="Cancel rename"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">close</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <span className="text-on-surface flex-1 text-sm font-medium">
+                            {cat.name}
+                          </span>
+                          <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            <button
+                              onClick={() => {
+                                setRenamingCategoryId(cat.id)
+                                setRenamingCategoryName(cat.name)
+                              }}
+                              className="text-on-surface-variant hover:bg-surface-container-high rounded-lg p-1.5 transition-colors"
+                              aria-label={`Rename ${cat.name}`}
+                            >
+                              <span className="material-symbols-outlined text-[16px]">edit</span>
+                            </button>
+                            <button
+                              onClick={() => setDeleteCategoryId(cat.id)}
+                              className="text-outline hover:bg-error-container hover:text-on-error-container rounded-lg p-1.5 transition-colors"
+                              aria-label={`Delete ${cat.name}`}
+                            >
+                              <span className="material-symbols-outlined text-[16px]">delete</span>
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="bg-surface-container-low rounded-xl p-5">
+                <p className="text-on-surface-variant mb-3 text-[11px] font-bold tracking-wider uppercase">
+                  Create New Category
+                </p>
+                <div className="flex gap-3">
+                  <input
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newCategoryName.trim())
+                        createCategoryMutation.mutate(newCategoryName.trim())
+                    }}
+                    placeholder="Category name"
+                    className="input-field flex-1"
+                    aria-label="New category name"
+                  />
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() =>
+                      newCategoryName.trim() &&
+                      createCategoryMutation.mutate(newCategoryName.trim())
+                    }
+                    loading={createCategoryMutation.isPending}
+                  >
+                    + Create
+                  </Button>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Tags */}
+          {activeNav === 'tags' && (
+            <section>
+              <h2 className="text-on-surface mb-1 text-base font-bold">Tags</h2>
+              <p className="text-on-surface-variant mb-5 text-sm">
+                Create tags to label and filter transactions across categories.
+              </p>
+
+              {tagsQuery.isLoading ? (
+                <SkeletonTable rows={3} />
+              ) : !tagsQuery.data?.length ? (
+                <div className="bg-surface-container-low mb-6 rounded-xl px-6 py-8 text-center">
+                  <p className="text-on-surface-variant text-sm">No tags yet.</p>
+                </div>
+              ) : (
+                <div className="mb-6 flex flex-wrap gap-2">
+                  {(tagsQuery.data ?? []).map((tag: Tag) => (
+                    <div
+                      key={tag.id}
+                      className="bg-surface-container-low group flex items-center gap-1.5 rounded-full px-3 py-1.5"
+                    >
+                      <span className="text-on-surface text-sm font-medium">{tag.name}</span>
+                      <button
+                        onClick={() => setDeleteTagId(tag.id)}
+                        className="text-outline hover:text-error ml-0.5 transition-colors"
+                        aria-label={`Delete ${tag.name}`}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                          close
+                        </span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="bg-surface-container-low rounded-xl p-5">
+                <p className="text-on-surface-variant mb-3 text-[11px] font-bold tracking-wider uppercase">
+                  Create New Tag
+                </p>
+                <div className="flex gap-3">
+                  <input
+                    value={newTagName}
+                    onChange={(e) => setNewTagName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newTagName.trim())
+                        createTagMutation.mutate(newTagName.trim())
+                    }}
+                    placeholder="Tag name"
+                    className="input-field flex-1"
+                    aria-label="New tag name"
+                  />
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => newTagName.trim() && createTagMutation.mutate(newTagName.trim())}
+                    loading={createTagMutation.isPending}
+                  >
+                    + Create
+                  </Button>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Ignore Rules */}
+          {activeNav === 'ignore-rules' && (
+            <section>
+              <h2 className="text-on-surface mb-1 text-base font-bold">Ignore Rules</h2>
+              <p className="text-on-surface-variant mb-5 text-sm">
+                Transactions whose description contains any of these keywords will be automatically
+                excluded when you preview a new import.
+              </p>
+
+              {ignoreRules.length === 0 ? (
+                <div className="bg-surface-container-low mb-6 rounded-xl px-6 py-8 text-center">
+                  <p className="text-on-surface-variant text-sm">No ignore rules yet.</p>
+                  <p className="text-outline mt-1 text-xs">
+                    Add keywords like &ldquo;salary&rdquo; or &ldquo;refund&rdquo; to skip matching
+                    rows automatically.
+                  </p>
+                </div>
+              ) : (
+                <div className="mb-6 flex flex-wrap gap-2">
+                  {ignoreRules.map((keyword) => (
+                    <div
+                      key={keyword}
+                      className="bg-surface-container-low group flex items-center gap-1.5 rounded-full px-3 py-1.5"
+                    >
+                      <span className="material-symbols-outlined text-outline text-[14px]">
+                        block
+                      </span>
+                      <span className="text-on-surface font-mono text-sm">{keyword}</span>
+                      <button
+                        onClick={() => handleRemoveIgnoreRule(keyword)}
+                        className="text-outline hover:text-error ml-0.5 transition-colors"
+                        aria-label={`Remove rule ${keyword}`}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                          close
+                        </span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="bg-surface-container-low rounded-xl p-5">
+                <p className="text-on-surface-variant mb-3 text-[11px] font-bold tracking-wider uppercase">
+                  Add Keyword
+                </p>
+                <div className="flex gap-3">
+                  <div className="flex-1">
+                    <input
+                      value={newIgnoreKeyword}
+                      onChange={(e) => {
+                        setNewIgnoreKeyword(e.target.value)
+                        setIgnoreKeywordError('')
+                      }}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddIgnoreRule()}
+                      placeholder="e.g. salary, refund, transfer"
+                      className="input-field w-full font-mono"
+                      aria-label="New ignore keyword"
+                    />
+                    {ignoreKeywordError && (
+                      <p className="text-error mt-1 text-xs">{ignoreKeywordError}</p>
+                    )}
+                  </div>
+                  <Button variant="primary" size="sm" onClick={handleAddIgnoreRule}>
+                    + Add
+                  </Button>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Rules & Mapping */}
+          {activeNav === 'mappings' && (
+            <section>
+              <h2 className="text-on-surface mb-1 text-base font-bold">Category Mappings</h2>
+              <p className="text-on-surface-variant mb-5 text-sm">
+                Auto-categorisation rules created when you check &quot;Save as Rule&quot; during
+                review.
+              </p>
+
+              {mappingsQuery.isLoading ? (
+                <SkeletonTable />
+              ) : !mappingsQuery.data?.length ? (
                 <div className="bg-surface-container-low rounded-xl px-6 py-8 text-center">
                   <p className="text-on-surface-variant text-sm">No mappings yet.</p>
                   <p className="text-outline mt-1 text-xs">
@@ -394,7 +767,7 @@ export function SettingsPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-outline-variant/5 divide-y">
-                      {categoriesQuery.data.map((mapping) => {
+                      {mappingsQuery.data.map((mapping) => {
                         const colorClass =
                           categoryColors[mapping.category] ??
                           'bg-secondary-container text-on-secondary-container'
@@ -427,7 +800,7 @@ export function SettingsPage() {
                             </td>
                             <td className="px-5 py-3">
                               <button
-                                onClick={() => setDeleteCategoryId(mapping.id)}
+                                onClick={() => setDeleteMappingId(mapping.id)}
                                 className="text-outline hover:bg-error-container hover:text-on-error-container rounded-lg p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
                                 aria-label={`Delete mapping for ${mapping.description_pattern}`}
                               >
@@ -444,35 +817,8 @@ export function SettingsPage() {
                       })}
                     </tbody>
                   </table>
-                  <p className="text-outline px-5 py-3 text-xs">
-                    Mappings are created in the Review page when you check &quot;Save Rule&quot;.
-                  </p>
                 </div>
               )}
-            </section>
-          )}
-
-          {/* Privacy — coming soon */}
-          {activeNav === 'privacy' && (
-            <section className="bg-surface-container-low rounded-xl px-6 py-12 text-center">
-              <span className="material-symbols-outlined text-outline mb-3 text-4xl">lock</span>
-              <h2 className="text-on-surface mb-1 text-base font-bold">Privacy Controls</h2>
-              <p className="text-on-surface-variant text-sm">
-                Data export, anonymisation, and retention settings are coming soon.
-              </p>
-            </section>
-          )}
-
-          {/* Alerts — coming soon */}
-          {activeNav === 'alerts' && (
-            <section className="bg-surface-container-low rounded-xl px-6 py-12 text-center">
-              <span className="material-symbols-outlined text-outline mb-3 text-4xl">
-                notifications
-              </span>
-              <h2 className="text-on-surface mb-1 text-base font-bold">Alerts & Notifications</h2>
-              <p className="text-on-surface-variant text-sm">
-                Budget threshold alerts and spending notifications are coming soon.
-              </p>
             </section>
           )}
 
@@ -534,14 +880,36 @@ export function SettingsPage() {
       />
 
       <ConfirmDialog
-        isOpen={deleteCategoryId !== null}
+        isOpen={deleteMappingId !== null}
         title="Delete Mapping"
         message="Are you sure you want to delete this category mapping? Future statements won't auto-match this pattern."
+        confirmLabel="Delete"
+        danger
+        loading={deleteMappingMutation.isPending}
+        onConfirm={() => deleteMappingId && deleteMappingMutation.mutate(deleteMappingId)}
+        onCancel={() => setDeleteMappingId(null)}
+      />
+
+      <ConfirmDialog
+        isOpen={deleteCategoryId !== null}
+        title="Delete Category"
+        message="Deleting this category will also remove it from any budget entries and transactions. Continue?"
         confirmLabel="Delete"
         danger
         loading={deleteCategoryMutation.isPending}
         onConfirm={() => deleteCategoryId && deleteCategoryMutation.mutate(deleteCategoryId)}
         onCancel={() => setDeleteCategoryId(null)}
+      />
+
+      <ConfirmDialog
+        isOpen={deleteTagId !== null}
+        title="Delete Tag"
+        message="Are you sure you want to delete this tag?"
+        confirmLabel="Delete"
+        danger
+        loading={deleteTagMutation.isPending}
+        onConfirm={() => deleteTagId && deleteTagMutation.mutate(deleteTagId)}
+        onCancel={() => setDeleteTagId(null)}
       />
 
       {pendingDangerKey && (
