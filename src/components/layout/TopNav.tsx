@@ -1,7 +1,7 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 
 import { useThemeContext } from '../../hooks/useThemeContext'
-import { useToastContext } from '../../hooks/useToastContext'
+import { useAuth } from '../../contexts/AuthContext'
 
 const navLinks = [
   { to: '/dashboard', label: 'Dashboard' },
@@ -13,7 +13,13 @@ const navLinks = [
 
 export function TopNav() {
   const { isDark, toggleTheme } = useThemeContext()
-  const toast = useToastContext()
+  const { logout } = useAuth()
+  const navigate = useNavigate()
+
+  function handleLogout() {
+    logout()
+    navigate('/login', { replace: true })
+  }
 
   return (
     <nav className="bg-surface-container-low animate-fade-down w-full">
@@ -38,7 +44,6 @@ export function TopNav() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Theme toggle */}
           <button
             onClick={toggleTheme}
             className="text-on-surface-variant hover:bg-surface-container rounded-full p-2 transition-colors"
@@ -48,19 +53,12 @@ export function TopNav() {
           </button>
 
           <button
-            onClick={() => toast.info('Notifications coming soon')}
+            onClick={handleLogout}
             className="text-on-surface-variant hover:bg-surface-container rounded-full p-2 transition-colors"
-            aria-label="Notifications"
+            aria-label="Sign out"
+            title="Sign out"
           >
-            <span className="material-symbols-outlined">notifications</span>
-          </button>
-
-          <button
-            onClick={() => toast.info('User profile coming soon')}
-            className="bg-primary text-on-primary flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-opacity hover:opacity-80"
-            aria-label="User profile"
-          >
-            U
+            <span className="material-symbols-outlined">logout</span>
           </button>
         </div>
       </div>
