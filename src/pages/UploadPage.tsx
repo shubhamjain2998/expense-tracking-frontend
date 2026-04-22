@@ -11,6 +11,7 @@ import {
   getRawTransactions,
   deleteRawTransaction,
 } from '../lib/api'
+import { getIgnoreRules, matchesAnyRule } from '../lib/ignoreRules'
 import type { ImportResponse, PreviewResponse } from '../types/transaction'
 import { Button } from '../components/ui/Button'
 import { Chip } from '../components/ui/Chip'
@@ -50,6 +51,7 @@ export function UploadPage() {
   const [dateFilter, setDateFilter] = useState('')
   const [excludedIndices, setExcludedIndices] = useState<Set<number>>(new Set())
   const [dupeIndices, setDupeIndices] = useState<Set<number>>(new Set())
+  const [skippedExpanded, setSkippedExpanded] = useState(false)
 
   // Paste mode state
   const [pasteText, setPasteText] = useState('')
@@ -64,9 +66,16 @@ export function UploadPage() {
 
   async function handlePreviewSuccess(data: PreviewResponse) {
     setPreview(data)
-    setExcludedIndices(new Set())
 
     const rows = data.rows
+    const ignoreRules = getIgnoreRules()
+    const autoExcluded = new Set(
+      rows.reduce<number[]>((acc, r, i) => {
+        if (matchesAnyRule(r.description, ignoreRules)) acc.push(i)
+        return acc
+      }, [])
+    )
+    setExcludedIndices(autoExcluded)
 
     // Intra-batch duplicate detection
     const sigCount = new Map<string, number[]>()
@@ -140,10 +149,18 @@ export function UploadPage() {
     onError: (err: { detail: string }) => toast.error(err.detail),
   })
 
+  function handleImportError(err: { detail: string; status?: number }) {
+    if (err.status === 409)
+      toast.error(
+        'This statement has already been imported. Delete the existing raw transactions if you want to re-import.'
+      )
+    else toast.error(err.detail)
+  }
+
   const importMutation = useMutation({
     mutationFn: importStatement,
     onSuccess: handleImportSuccess,
-    onError: (err: { detail: string }) => toast.error(err.detail),
+    onError: handleImportError,
   })
 
   const pastePreviewMutation = useMutation({
@@ -155,7 +172,7 @@ export function UploadPage() {
   const pasteImportMutation = useMutation({
     mutationFn: () => importStatementText(pasteText),
     onSuccess: handleImportSuccess,
-    onError: (err: { detail: string }) => toast.error(err.detail),
+    onError: handleImportError,
   })
 
   const manualMutation = useMutation({
@@ -607,6 +624,38 @@ export function UploadPage() {
               Showing {filteredRows.length} of {allRows.length} transactions
             </div>
           </div>
+
+          {/* Skipped rows */}
+          {(preview.skipped_rows?.length ?? 0) > 0 && (
+            <div className="bg-surface-container-low overflow-hidden rounded-xl">
+              <button
+                onClick={() => setSkippedExpanded((v) => !v)}
+                className="flex w-full items-center justify-between px-5 py-3 text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-outline text-[18px]">
+                    warning
+                  </span>
+                  <span className="text-on-surface-variant text-sm font-semibold">
+                    {preview.skipped_rows.length} row{preview.skipped_rows.length > 1 ? 's' : ''}{' '}
+                    skipped during parsing
+                  </span>
+                </div>
+                <span className="material-symbols-outlined text-outline text-[18px]">
+                  {skippedExpanded ? 'expand_less' : 'expand_more'}
+                </span>
+              </button>
+              {skippedExpanded && (
+                <ul className="border-outline-variant/15 space-y-1 border-t px-5 pt-3 pb-4">
+                  {preview.skipped_rows.map((row, i) => (
+                    <li key={i} className="text-on-surface-variant truncate font-mono text-xs">
+                      {row}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
