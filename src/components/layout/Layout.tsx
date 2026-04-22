@@ -2,6 +2,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 
 import { TopNav } from './TopNav'
 import { Footer } from './Footer'
+import { QuickAddFAB } from '../ui/QuickAddFAB'
 
 export function Layout() {
   const location = useLocation()
@@ -14,6 +15,7 @@ export function Layout() {
         </div>
       </main>
       <Footer />
+      <QuickAddFAB />
     </div>
   )
 }
