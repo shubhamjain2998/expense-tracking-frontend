@@ -1,10 +1,3 @@
-/**
- * API client for the Personal Finance backend (FastAPI).
- * Base URL configured via VITE_API_URL env variable.
- * All amounts are treated as JS numbers (backend returns decimals).
- * All IDs are UUIDs (string).
- * Errors are thrown as ApiError after interceptor processing.
- */
 import axios from 'axios'
 
 import type { BudgetEntry, CreateBudgetPayload, UpdateBudgetEntryPayload } from '../types/budget'
@@ -14,6 +7,7 @@ import type {
   EditProcessedPayload,
   ImportResponse,
   PendingManualTransaction,
+  PersonShareOut,
   PreviewResponse,
   ProcessedTransaction,
   ProcessedTransactionItem,
@@ -21,7 +15,7 @@ import type {
   RawTransaction,
 } from '../types/transaction'
 import type { SplitLedgerRow, SummaryRow, TrendDataPoint, YTDRow } from '../types/dashboard'
-import type { CategoryMapping, Person } from '../types/settings'
+import type { Category, CategoryMapping, Person, Tag } from '../types/settings'
 
 export interface ApiError {
   message: string
@@ -34,9 +28,22 @@ const client = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
+// ─── Auth interceptors ────────────────────────────────────────────────
+
+client.interceptors.request.use((config) => {
+  const token = localStorage.getItem('access_token')
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  return config
+})
+
 client.interceptors.response.use(
   (res) => res,
   (err) => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem('access_token')
+      window.location.href = '/login'
+      return Promise.reject(err)
+    }
     const detail =
       err.response?.data?.detail ??
       (typeof err.response?.data === 'string' ? err.response.data : null) ??
@@ -51,12 +58,25 @@ client.interceptors.response.use(
   }
 )
 
+// ─── Auth ─────────────────────────────────────────────────────────────
+
+export interface TokenResponse {
+  access_token: string
+  token_type: string
+}
+
+export const register = async (email: string, password: string): Promise<TokenResponse> => {
+  const { data } = await client.post<TokenResponse>('/auth/register', { email, password })
+  return data
+}
+
+export const login = async (email: string, password: string): Promise<TokenResponse> => {
+  const { data } = await client.post<TokenResponse>('/auth/login', { email, password })
+  return data
+}
+
 // ─── Budget ──────────────────────────────────────────────────────────
 
-/**
- * Fetch all budget entries for a given year.
- * @param year - Full 4-digit year, e.g. 2025
- */
 export const getBudget = async (year: number): Promise<BudgetEntry[]> => {
   const { data } = await client.get<BudgetEntry[]>(`/budget/${year}`)
   return data
@@ -111,9 +131,6 @@ export const importStatementText = async (text: string): Promise<ImportResponse>
 
 // ─── Transactions ────────────────────────────────────────────────────
 
-/**
- * List pending raw transactions for a given month/year.
- */
 export const getRawTransactions = async (
   year: number,
   month: number
@@ -152,7 +169,6 @@ export const getPendingManual = async (): Promise<PendingManualTransaction[]> =>
 export const processTransaction = async (
   payload: ProcessTransactionPayload
 ): Promise<ProcessedTransaction> => {
-  console.log(payload)
   const { data } = await client.post<ProcessedTransaction>('/transactions/process', payload)
   return data
 }
@@ -160,12 +176,25 @@ export const processTransaction = async (
 export const getProcessedTransactions = async (
   year: number,
   month: number,
-  category?: string
+  categoryId?: string,
+  tagId?: string
 ): Promise<ProcessedTransactionItem[]> => {
   const { data } = await client.get<ProcessedTransactionItem[]>('/transactions/processed', {
-    params: { year, month, ...(category ? { category } : {}) },
+    params: {
+      year,
+      month,
+      ...(categoryId ? { category_id: categoryId } : {}),
+      ...(tagId ? { tag_id: tagId } : {}),
+    },
   })
   return data
+}
+
+export const bulkTagTransactions = async (
+  transaction_ids: string[],
+  tag_ids: string[]
+): Promise<void> => {
+  await client.post('/transactions/processed/bulk-tag', { transaction_ids, tag_ids })
 }
 
 export const deleteProcessedTransaction = async (id: string): Promise<void> => {
@@ -176,7 +205,6 @@ export const editProcessedTransaction = async (
   id: string,
   payload: EditProcessedPayload
 ): Promise<ProcessedTransaction> => {
-  console.log(payload)
   const { data } = await client.patch<ProcessedTransaction>(
     `/transactions/processed/${id}`,
     payload
@@ -184,22 +212,67 @@ export const editProcessedTransaction = async (
   return data
 }
 
-// ─── Categories & Persons ────────────────────────────────────────────
-
-/** Returns a sorted list of valid category names for dropdowns. */
-export const getCategoryList = async (): Promise<string[]> => {
-  const { data } = await client.get<string[]>('/categories/list')
+export const patchShareSettled = async (
+  txnId: string,
+  personId: string,
+  settled: boolean
+): Promise<ProcessedTransaction> => {
+  const { data } = await client.patch<ProcessedTransaction>(
+    `/transactions/processed/${txnId}/shares/${personId}`,
+    { settled }
+  )
   return data
 }
 
-export const getCategories = async (): Promise<CategoryMapping[]> => {
-  const { data } = await client.get<CategoryMapping[]>('/categories')
+// ─── Categories ───────────────────────────────────────────────────────
+
+export const getCategories = async (): Promise<Category[]> => {
+  const { data } = await client.get<Category[]>('/categories')
+  return data
+}
+
+export const createCategory = async (name: string): Promise<Category> => {
+  const { data } = await client.post<Category>('/categories', { name })
+  return data
+}
+
+export const renameCategory = async (id: string, name: string): Promise<Category> => {
+  const { data } = await client.patch<Category>(`/categories/${id}`, { name })
   return data
 }
 
 export const deleteCategory = async (id: string): Promise<void> => {
   await client.delete(`/categories/${id}`)
 }
+
+// ─── Category Mappings ────────────────────────────────────────────────
+
+export const getCategoryMappings = async (): Promise<CategoryMapping[]> => {
+  const { data } = await client.get<CategoryMapping[]>('/category-mappings')
+  return data
+}
+
+export const deleteCategoryMapping = async (id: string): Promise<void> => {
+  await client.delete(`/category-mappings/${id}`)
+}
+
+// ─── Tags ─────────────────────────────────────────────────────────────
+
+export const getTags = async (): Promise<Tag[]> => {
+  const { data } = await client.get<Tag[]>('/tags')
+  return data
+}
+
+export const createTag = async (name: string): Promise<Tag> => {
+  const { data } = await client.post<Tag>('/tags', { name })
+  return data
+}
+
+export const deleteTag = async (id: string): Promise<void> => {
+  await client.delete(`/tags/${id}`)
+}
+
+// ─── Persons ──────────────────────────────────────────────────────────
 
 export const getPersons = async (): Promise<Person[]> => {
   const { data } = await client.get<Person[]>('/persons')
@@ -243,26 +316,39 @@ export const deleteAllData = async (): Promise<void> => {
 
 // ─── Dashboard ───────────────────────────────────────────────────────
 
-export const getDashboardSummary = async (year: number, month: number): Promise<SummaryRow[]> => {
+export const getDashboardSummary = async (
+  year: number,
+  month: number,
+  tagId?: string
+): Promise<SummaryRow[]> => {
   const { data } = await client.get<SummaryRow[]>('/dashboard/summary', {
-    params: { year, month },
+    params: { year, month, ...(tagId ? { tag_id: tagId } : {}) },
   })
   return data
 }
 
 export const getMonthlyTrend = async (
   year: number,
-  category?: string
+  categoryId?: string,
+  tagId?: string
 ): Promise<TrendDataPoint[]> => {
   const { data } = await client.get<TrendDataPoint[]>('/dashboard/monthly-trend', {
-    params: { year, ...(category ? { category } : {}) },
+    params: {
+      year,
+      ...(categoryId ? { category_id: categoryId } : {}),
+      ...(tagId ? { tag_id: tagId } : {}),
+    },
   })
   return data
 }
 
-export const getSplitLedger = async (year: number, month: number): Promise<SplitLedgerRow[]> => {
+export const getSplitLedger = async (
+  year: number,
+  month: number,
+  includeSettled = false
+): Promise<SplitLedgerRow[]> => {
   const { data } = await client.get<SplitLedgerRow[]>('/dashboard/split-ledger', {
-    params: { year, month },
+    params: { year, month, include_settled: includeSettled },
   })
   return data
 }
@@ -271,3 +357,6 @@ export const getYTD = async (year: number): Promise<YTDRow[]> => {
   const { data } = await client.get<YTDRow[]>('/dashboard/ytd', { params: { year } })
   return data
 }
+
+// Re-export PersonShareOut so pages can import it from api if needed
+export type { PersonShareOut }
