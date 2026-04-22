@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import {
   BarChart,
@@ -20,7 +20,8 @@ import {
 import {
   getDashboardSummary,
   getProcessedTransactions,
-  getCategoryList,
+  getCategories,
+  getTags,
   getSplitLedger,
   getYTD,
 } from '../lib/api'
@@ -90,17 +91,19 @@ export function DashboardPage() {
   const [month, setMonth] = useState(now.getMonth() + 1)
   const [chartType, setChartType] = useState<'bar' | 'line' | 'pie'>('bar')
   const [trendChartType, setTrendChartType] = useState<'bar' | 'line' | 'pie'>('bar')
-  const [selectedCategory, setSelectedCategory] = useState('')
+  const [selectedCategoryId, setSelectedCategoryId] = useState('')
+  const [selectedTagId, setSelectedTagId] = useState('')
   const [ytdOpen, setYtdOpen] = useState(false)
+  const [includeSettled, setIncludeSettled] = useState(false)
 
   const summaryQuery = useQuery({
-    queryKey: ['dashboardSummary', year, month],
-    queryFn: () => getDashboardSummary(year, month),
+    queryKey: ['dashboardSummary', year, month, selectedTagId],
+    queryFn: () => getDashboardSummary(year, month, selectedTagId || undefined),
   })
 
   const ledgerQuery = useQuery({
-    queryKey: ['splitLedger', year, month],
-    queryFn: () => getSplitLedger(year, month),
+    queryKey: ['splitLedger', year, month, includeSettled],
+    queryFn: () => getSplitLedger(year, month, includeSettled),
   })
 
   const ytdQuery = useQuery({
@@ -109,14 +112,73 @@ export function DashboardPage() {
     enabled: ytdOpen,
   })
 
-  const categoryListQuery = useQuery({ queryKey: ['categoryList'], queryFn: getCategoryList })
+  const categoriesQuery = useQuery({ queryKey: ['categories'], queryFn: getCategories })
+  const tagsQuery = useQuery({ queryKey: ['tags'], queryFn: getTags })
 
   const categoryTxnQuery = useQuery({
-    queryKey: ['processedTransactions', year, month, selectedCategory],
-    queryFn: () => getProcessedTransactions(year, month, selectedCategory),
-    enabled: selectedCategory !== '',
+    queryKey: ['processedTransactions', year, month, selectedCategoryId, selectedTagId],
+    queryFn: () =>
+      getProcessedTransactions(
+        year,
+        month,
+        selectedCategoryId || undefined,
+        selectedTagId || undefined
+      ),
+    enabled: selectedCategoryId !== '',
     placeholderData: keepPreviousData,
   })
+
+  const hasTags = (tagsQuery.data ?? []).length > 0
+  const allTxnQuery = useQuery({
+    queryKey: ['allTransactionsForTags', year, month],
+    queryFn: () => getProcessedTransactions(year, month),
+    enabled: hasTags,
+  })
+
+  const tagSpendData = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; debit: number; credit: number }>()
+    for (const txn of allTxnQuery.data ?? []) {
+      for (const tag of txn.tags) {
+        const amt = Number(txn.effective_amount)
+        const entry = map.get(tag.id) ?? { id: tag.id, name: tag.name, debit: 0, credit: 0 }
+        if (amt > 0) entry.debit += amt
+        else entry.credit += Math.abs(amt)
+        map.set(tag.id, entry)
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => b.debit - a.debit)
+  }, [allTxnQuery.data])
+
+  const categoryTagMatrix = useMemo(() => {
+    const tags = tagsQuery.data ?? []
+    if (!tags.length || !allTxnQuery.data?.length) return { rows: [], tags: [] }
+
+    const usedTagIds = new Set<string>()
+    const catMap = new Map<string, Map<string, number>>()
+
+    for (const txn of allTxnQuery.data) {
+      if (!txn.tags.length) continue
+      const amt = Number(txn.effective_amount)
+      if (amt <= 0) continue
+      if (!catMap.has(txn.category)) catMap.set(txn.category, new Map())
+      const tagTotals = catMap.get(txn.category)!
+      for (const tag of txn.tags) {
+        tagTotals.set(tag.id, (tagTotals.get(tag.id) ?? 0) + amt)
+        usedTagIds.add(tag.id)
+      }
+    }
+
+    const usedTags = tags.filter((t) => usedTagIds.has(t.id))
+    const rows = Array.from(catMap.entries())
+      .map(([category, tagTotals]) => ({
+        category,
+        totals: usedTags.map((t) => tagTotals.get(t.id) ?? 0),
+        rowTotal: usedTags.reduce((s, t) => s + (tagTotals.get(t.id) ?? 0), 0),
+      }))
+      .sort((a, b) => b.rowTotal - a.rowTotal)
+
+    return { rows, tags: usedTags }
+  }, [allTxnQuery.data, tagsQuery.data])
 
   const summaryRows = summaryQuery.data ?? []
   const totalDebit = summaryRows
@@ -154,12 +216,29 @@ export function DashboardPage() {
             Real-time expense tracking and budget variance analysis.
           </p>
         </div>
-        <YearMonthSelector
-          year={year}
-          month={month}
-          onYearChange={setYear}
-          onMonthChange={setMonth}
-        />
+        <div className="flex items-center gap-3">
+          {(tagsQuery.data ?? []).length > 0 && (
+            <select
+              value={selectedTagId}
+              onChange={(e) => setSelectedTagId(e.target.value)}
+              className="bg-surface-container-high text-on-surface rounded-lg border-none p-2 text-xs font-bold tracking-widest uppercase focus:ring-0"
+              aria-label="Filter by tag"
+            >
+              <option value="">All tags</option>
+              {(tagsQuery.data ?? []).map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          )}
+          <YearMonthSelector
+            year={year}
+            month={month}
+            onYearChange={setYear}
+            onMonthChange={setMonth}
+          />
+        </div>
       </header>
 
       {/* Bento grid */}
@@ -270,7 +349,20 @@ export function DashboardPage() {
         <section className="bg-surface-container-low flex flex-col rounded-xl p-6 lg:col-span-4">
           <div className="mb-6 flex items-center justify-between">
             <h2 className="text-on-surface text-lg font-bold">Split Ledger</h2>
-            <span className="material-symbols-outlined text-on-surface-variant">group</span>
+            <button
+              onClick={() => setIncludeSettled((v) => !v)}
+              className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold transition-colors ${
+                includeSettled
+                  ? 'bg-primary/10 text-primary'
+                  : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+              }`}
+              title={includeSettled ? 'Hiding settled' : 'Showing unsettled only'}
+            >
+              <span className="material-symbols-outlined text-[14px]">
+                {includeSettled ? 'toggle_on' : 'toggle_off'}
+              </span>
+              Settled
+            </button>
           </div>
           {ledgerQuery.isLoading ? (
             <SkeletonTable rows={3} />
@@ -587,6 +679,154 @@ export function DashboardPage() {
           )}
         </section>
 
+        {/* Tag Analytics */}
+        {hasTags && (
+          <section className="bg-surface-container-low rounded-xl p-6 lg:col-span-12">
+            <div className="mb-6">
+              <h2 className="text-on-surface text-lg font-bold">Tag Analytics</h2>
+              <p className="text-on-surface-variant text-sm">
+                Debit spend broken down by tag and category combination.
+              </p>
+            </div>
+            {allTxnQuery.isLoading ? (
+              <Skeleton className="h-48 w-full" />
+            ) : tagSpendData.length === 0 ? (
+              <EmptyState
+                icon="label"
+                title="No tagged transactions"
+                description="Assign tags to transactions in the Review or Transactions page."
+              />
+            ) : (
+              <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+                {/* Spend by tag chart */}
+                <div>
+                  <p className="text-on-surface-variant mb-4 text-[11px] font-bold tracking-widest uppercase">
+                    Debit by Tag
+                  </p>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart
+                      data={tagSpendData}
+                      barSize={24}
+                      margin={{ top: 16, right: 8, left: 8, bottom: 0 }}
+                    >
+                      <CartesianGrid
+                        vertical={false}
+                        stroke={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}
+                        strokeDasharray="4 4"
+                      />
+                      <XAxis
+                        dataKey="name"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{
+                          fontSize: 11,
+                          fill: isDark ? '#C4A080' : '#9C7060',
+                          fontWeight: 600,
+                        }}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 10, fill: isDark ? '#C4A080' : '#9C7060' }}
+                        tickFormatter={formatCompact}
+                        width={52}
+                      />
+                      <Tooltip
+                        cursor={{ fill: 'rgba(192,133,82,0.08)' }}
+                        contentStyle={{
+                          background: 'var(--color-surface-container-lowest)',
+                          border: 'none',
+                          borderRadius: 12,
+                          boxShadow: isDark
+                            ? '0 8px 40px rgba(0,0,0,0.4)'
+                            : '0 8px 40px rgba(44,26,23,0.08)',
+                          fontSize: 12,
+                          color: 'var(--app-on-surface)',
+                        }}
+                        formatter={(v, name) => [
+                          formatCurrency(Number(v)),
+                          name === 'debit' ? 'Debit' : 'Credit',
+                        ]}
+                      />
+                      <Bar
+                        dataKey="debit"
+                        fill={isDark ? '#D4A07A' : '#C08552'}
+                        radius={[4, 4, 0, 0]}
+                        activeBar={{ fill: isDark ? '#FFE0C2' : '#8C5A3C' }}
+                      >
+                        <LabelList
+                          dataKey="debit"
+                          position="top"
+                          formatter={(v: number) => (v > 0 ? formatCompact(v) : '')}
+                          style={{
+                            fontSize: 9,
+                            fill: isDark ? '#C4A080' : '#9C7060',
+                            fontWeight: 600,
+                          }}
+                        />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Category × Tag matrix */}
+                {categoryTagMatrix.rows.length > 0 && (
+                  <div>
+                    <p className="text-on-surface-variant mb-4 text-[11px] font-bold tracking-widest uppercase">
+                      Category × Tag (Debit)
+                    </p>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr className="border-outline-variant/15 text-on-surface-variant border-b">
+                            <th className="pb-3 text-[11px] font-bold tracking-widest uppercase">
+                              Category
+                            </th>
+                            {categoryTagMatrix.tags.map((t) => (
+                              <th
+                                key={t.id}
+                                className="pb-3 text-right text-[11px] font-bold tracking-widest uppercase"
+                              >
+                                {t.name}
+                              </th>
+                            ))}
+                            <th className="pb-3 text-right text-[11px] font-bold tracking-widest uppercase">
+                              Total
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-outline-variant/5 divide-y">
+                          {categoryTagMatrix.rows.map((row) => (
+                            <tr
+                              key={row.category}
+                              className="hover:bg-surface-container-lowest transition-colors"
+                            >
+                              <td className="text-on-surface py-3 text-sm font-medium">
+                                {row.category}
+                              </td>
+                              {row.totals.map((amt, i) => (
+                                <td
+                                  key={i}
+                                  className="text-on-surface-variant py-3 text-right text-sm"
+                                >
+                                  {amt > 0 ? formatCompact(amt) : '—'}
+                                </td>
+                              ))}
+                              <td className="text-on-surface py-3 text-right text-sm font-bold">
+                                {formatCompact(row.rowTotal)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        )}
+
         {/* Monthly Trend by Category */}
         <section className="bg-surface-container-low rounded-xl p-6 lg:col-span-12">
           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -598,18 +838,33 @@ export function DashboardPage() {
             </div>
             <div className="flex items-center gap-3">
               <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+                value={selectedCategoryId}
+                onChange={(e) => setSelectedCategoryId(e.target.value)}
                 className="bg-surface-container-high text-on-surface rounded-lg border-none p-2 text-xs font-bold tracking-widest uppercase focus:ring-0"
                 aria-label="Select category"
               >
                 <option value="">— Pick a category —</option>
-                {(categoryListQuery.data ?? []).map((c) => (
-                  <option key={c} value={c}>
-                    {c}
+                {(categoriesQuery.data ?? []).map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
                   </option>
                 ))}
               </select>
+              {(tagsQuery.data ?? []).length > 0 && (
+                <select
+                  value={selectedTagId}
+                  onChange={(e) => setSelectedTagId(e.target.value)}
+                  className="bg-surface-container-high text-on-surface rounded-lg border-none p-2 text-xs font-bold tracking-widest uppercase focus:ring-0"
+                  aria-label="Filter by tag"
+                >
+                  <option value="">All tags</option>
+                  {(tagsQuery.data ?? []).map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              )}
               <div className="bg-surface-container-high flex items-center rounded-lg p-1">
                 {(['bar', 'line', 'pie'] as const).map((t) => (
                   <button
@@ -623,7 +878,7 @@ export function DashboardPage() {
               </div>
             </div>
           </div>
-          {!selectedCategory ? (
+          {!selectedCategoryId ? (
             <EmptyState
               icon="stacked_line_chart"
               title="Select a category"
