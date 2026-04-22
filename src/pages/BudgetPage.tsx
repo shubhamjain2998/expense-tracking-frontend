@@ -6,13 +6,16 @@ import {
   createBudget,
   updateBudgetEntry,
   deleteBudgetEntry,
-  getCategoryList,
+  getCategories,
+  createCategory,
 } from '../lib/api'
 import type { BudgetEntry } from '../types/budget'
+import type { Category } from '../types/settings'
 import { Button } from '../components/ui/Button'
 import { SkeletonTable } from '../components/ui/Skeleton'
 import { EmptyState } from '../components/ui/EmptyState'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
+import { SearchableSelect } from '../components/ui/SearchableSelect'
 import { useToastContext } from '../hooks/useToastContext'
 
 function formatCurrency(n: number) {
@@ -25,18 +28,20 @@ function formatCurrency(n: number) {
 
 interface InlineEditRowProps {
   entry: BudgetEntry
+  categories: Category[]
   onDelete: (id: string) => void
 }
 
-function InlineEditRow({ entry, onDelete }: InlineEditRowProps) {
+function InlineEditRow({ entry, categories, onDelete }: InlineEditRowProps) {
   const qc = useQueryClient()
   const toast = useToastContext()
-  const [category, setCategory] = useState(entry.category)
   const [amount, setAmount] = useState(Number(entry.allocated_amount) / 12)
 
+  const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }))
+
   const updateMutation = useMutation({
-    mutationFn: ({ field, value }: { field: string; value: string | number }) =>
-      updateBudgetEntry(entry.id, { [field]: value }),
+    mutationFn: (payload: { category_id?: string; allocated_amount?: number }) =>
+      updateBudgetEntry(entry.id, payload),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['budget'] })
     },
@@ -46,16 +51,18 @@ function InlineEditRow({ entry, onDelete }: InlineEditRowProps) {
   return (
     <tr className="group hover:bg-surface-container-low transition-colors">
       <td className="py-3 pr-4">
-        <input
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          onBlur={() =>
-            category !== entry.category &&
-            updateMutation.mutate({ field: 'category', value: category })
-          }
-          className="input-field w-full max-w-[200px]"
-          aria-label="Category name"
-        />
+        <div className="w-[200px]">
+          <SearchableSelect
+            label=""
+            options={categoryOptions}
+            value={entry.category_id}
+            onChange={(newId) => {
+              if (newId !== entry.category_id) {
+                updateMutation.mutate({ category_id: newId })
+              }
+            }}
+          />
+        </div>
       </td>
       <td className="py-3 pr-4">
         <div className="flex items-center gap-1">
@@ -66,7 +73,7 @@ function InlineEditRow({ entry, onDelete }: InlineEditRowProps) {
             onChange={(e) => setAmount(Number(e.target.value))}
             onBlur={() =>
               amount !== Number(entry.allocated_amount) / 12 &&
-              updateMutation.mutate({ field: 'allocated_amount', value: amount * 12 })
+              updateMutation.mutate({ allocated_amount: amount * 12 })
             }
             className="input-field w-28"
             min={0}
@@ -92,7 +99,7 @@ function InlineEditRow({ entry, onDelete }: InlineEditRowProps) {
 
 interface NewEntryRow {
   id: number
-  category: string
+  category_id: string
   amount: string
 }
 
@@ -100,7 +107,7 @@ export function BudgetPage() {
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [deleteId, setDeleteId] = useState<string | null>(null)
-  const [newRows, setNewRows] = useState<NewEntryRow[]>([{ id: 0, category: '', amount: '' }])
+  const [newRows, setNewRows] = useState<NewEntryRow[]>([{ id: 0, category_id: '', amount: '' }])
   const toast = useToastContext()
   const qc = useQueryClient()
 
@@ -109,9 +116,9 @@ export function BudgetPage() {
     queryFn: () => getBudget(year),
   })
 
-  const categoryListQuery = useQuery({
-    queryKey: ['categoryList'],
-    queryFn: getCategoryList,
+  const categoriesQuery = useQuery({
+    queryKey: ['categories'],
+    queryFn: getCategories,
   })
 
   const deleteMutation = useMutation({
@@ -132,26 +139,27 @@ export function BudgetPage() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['budget'] })
       toast.success('Budget entries saved')
-      setNewRows([{ id: 0, category: '', amount: '' }])
+      setNewRows([{ id: 0, category_id: '', amount: '' }])
     },
     onError: (err: { detail: string; status?: number }) => {
-      if (err.status === 409) toast.error('One or more categories already exist for this year')
+      if (err.status === 409)
+        toast.error('One or more categories already have a budget for this year')
       else toast.error(err.detail)
     },
   })
 
   const entries = budgetQuery.data ?? []
+  const allCategories = categoriesQuery.data ?? []
   const totalAnnual = entries.reduce((s, e) => s + Number(e.allocated_amount), 0)
 
-  const allCategories = categoryListQuery.data ?? []
-  const budgetedSet = new Set(entries.map((e) => e.category.toLowerCase()))
-  const unbudgetedCategories = allCategories.filter((c) => !budgetedSet.has(c.toLowerCase()))
+  const budgetedIds = new Set(entries.map((e) => e.category_id))
+  const unbudgetedCategories = allCategories.filter((c) => !budgetedIds.has(c.id))
 
   const [unbudgetedAmounts, setUnbudgetedAmounts] = useState<Record<string, string>>({})
 
   function handleSaveUnbudgeted() {
     const valid = unbudgetedCategories.filter(
-      (c) => unbudgetedAmounts[c] && Number(unbudgetedAmounts[c]) > 0
+      (c) => unbudgetedAmounts[c.id] && Number(unbudgetedAmounts[c.id]) > 0
     )
     if (!valid.length) {
       toast.warning('Enter an amount for at least one category')
@@ -160,19 +168,25 @@ export function BudgetPage() {
     createMutation.mutate({
       year,
       entries: valid.map((c) => ({
-        category: c,
-        allocated_amount: Number(unbudgetedAmounts[c]) * 12,
+        category_id: c.id,
+        allocated_amount: Number(unbudgetedAmounts[c.id]) * 12,
       })),
     })
     setUnbudgetedAmounts({})
   }
 
+  async function handleCreateCategory(label: string): Promise<string> {
+    const newCat = await createCategory(label)
+    void qc.invalidateQueries({ queryKey: ['categories'] })
+    return newCat.id
+  }
+
   function handleAddRow() {
-    setNewRows((r) => [...r, { id: Date.now(), category: '', amount: '' }])
+    setNewRows((r) => [...r, { id: Date.now(), category_id: '', amount: '' }])
   }
 
   function handleSaveNew() {
-    const valid = newRows.filter((r) => r.category.trim() && Number(r.amount) > 0)
+    const valid = newRows.filter((r) => r.category_id && Number(r.amount) > 0)
     if (!valid.length) {
       toast.warning('Fill in at least one category and amount')
       return
@@ -180,11 +194,13 @@ export function BudgetPage() {
     createMutation.mutate({
       year,
       entries: valid.map((r) => ({
-        category: r.category.trim(),
+        category_id: r.category_id,
         allocated_amount: Number(r.amount) * 12,
       })),
     })
   }
+
+  const categoryOptions = allCategories.map((c) => ({ value: c.id, label: c.name }))
 
   return (
     <div className="space-y-8">
@@ -248,7 +264,6 @@ export function BudgetPage() {
               />
             ) : (
               <>
-                {/* Budgeted entries table */}
                 {entries.length > 0 && (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left">
@@ -268,7 +283,12 @@ export function BudgetPage() {
                       </thead>
                       <tbody>
                         {entries.map((entry) => (
-                          <InlineEditRow key={entry.id} entry={entry} onDelete={setDeleteId} />
+                          <InlineEditRow
+                            key={entry.id}
+                            entry={entry}
+                            categories={allCategories}
+                            onDelete={setDeleteId}
+                          />
                         ))}
                       </tbody>
                     </table>
@@ -303,36 +323,34 @@ export function BudgetPage() {
                       <tbody>
                         {unbudgetedCategories.map((cat) => (
                           <tr
-                            key={cat}
+                            key={cat.id}
                             className="border-outline-variant/10 border-b last:border-0"
                           >
                             <td className="py-3 pr-4">
-                              <span className="text-on-surface-variant text-sm capitalize">
-                                {cat}
-                              </span>
+                              <span className="text-on-surface-variant text-sm">{cat.name}</span>
                             </td>
                             <td className="py-3 pr-4">
                               <div className="flex items-center gap-1">
                                 <span className="text-outline text-sm">₹</span>
                                 <input
                                   type="number"
-                                  value={unbudgetedAmounts[cat] ?? ''}
+                                  value={unbudgetedAmounts[cat.id] ?? ''}
                                   placeholder="0"
                                   min={0}
                                   onChange={(e) =>
                                     setUnbudgetedAmounts((prev) => ({
                                       ...prev,
-                                      [cat]: e.target.value,
+                                      [cat.id]: e.target.value,
                                     }))
                                   }
                                   className="input-field w-28"
-                                  aria-label={`Monthly budget for ${cat}`}
+                                  aria-label={`Monthly budget for ${cat.name}`}
                                 />
                               </div>
                             </td>
                             <td className="text-on-surface-variant py-3 pr-4 text-right text-sm">
-                              {unbudgetedAmounts[cat] && Number(unbudgetedAmounts[cat]) > 0
-                                ? formatCurrency(Number(unbudgetedAmounts[cat]) * 12)
+                              {unbudgetedAmounts[cat.id] && Number(unbudgetedAmounts[cat.id]) > 0
+                                ? formatCurrency(Number(unbudgetedAmounts[cat.id]) * 12)
                                 : '—'}
                             </td>
                             <td className="w-8 py-3" />
@@ -363,75 +381,64 @@ export function BudgetPage() {
             <div className="space-y-4">
               {newRows.map((row, i) => (
                 <div key={row.id} className="bg-surface-container-lowest space-y-3 rounded-xl p-4">
+                  <SearchableSelect
+                    label="Category"
+                    options={categoryOptions}
+                    value={row.category_id}
+                    onChange={(val) =>
+                      setNewRows((rows) =>
+                        rows.map((r, ri) => (ri === i ? { ...r, category_id: val } : r))
+                      )
+                    }
+                    placeholder="Search or create category…"
+                    allowCreate
+                    onCreateOption={handleCreateCategory}
+                  />
                   <div>
                     <label className="text-on-surface-variant mb-1 block text-[11px] font-bold tracking-wider uppercase">
-                      Category Name
+                      Monthly Amount (₹)
                     </label>
                     <input
-                      value={row.category}
-                      placeholder="e.g. Entertainment"
+                      type="number"
+                      value={row.amount}
+                      placeholder="e.g. 5000"
                       onChange={(e) =>
                         setNewRows((rows) =>
-                          rows.map((r, ri) => (ri === i ? { ...r, category: e.target.value } : r))
+                          rows.map((r, ri) => (ri === i ? { ...r, amount: e.target.value } : r))
                         )
                       }
                       className="input-field"
-                      aria-label={`New category name ${i + 1}`}
+                      min={0}
+                      aria-label={`Monthly amount for entry ${i + 1}`}
                     />
                   </div>
-                  <div>
-                    <label className="text-on-surface-variant mb-1 block text-[11px] font-bold tracking-wider uppercase">
-                      Monthly
-                    </label>
-                    <div className="flex items-center gap-1">
-                      <span className="text-outline text-sm">₹</span>
-                      <input
-                        type="number"
-                        value={row.amount}
-                        placeholder="0.00"
-                        min={0}
-                        onChange={(e) =>
-                          setNewRows((rows) =>
-                            rows.map((r, ri) => (ri === i ? { ...r, amount: e.target.value } : r))
-                          )
-                        }
-                        className="input-field flex-1"
-                        aria-label={`Monthly amount ${i + 1}`}
-                      />
-                    </div>
-                  </div>
+                  {newRows.length > 1 && (
+                    <button
+                      onClick={() => setNewRows((rows) => rows.filter((_, ri) => ri !== i))}
+                      className="text-error hover:bg-error-container/30 rounded-lg px-2 py-1 text-xs font-medium"
+                    >
+                      Remove
+                    </button>
+                  )}
                 </div>
               ))}
-            </div>
-            <button
-              onClick={handleAddRow}
-              className="text-primary mt-4 flex items-center gap-1 text-sm font-medium hover:underline"
-            >
-              <span className="material-symbols-outlined text-base">add</span>
-              Add Another Row
-            </button>
-            <Button
-              variant="primary"
-              className="mt-4 w-full"
-              onClick={handleSaveNew}
-              loading={createMutation.isPending}
-            >
-              Save All New Entries
-            </Button>
-          </div>
 
-          {/* Insight card */}
-          <div className="bg-primary-container relative overflow-hidden rounded-xl p-6">
-            <span className="material-symbols-outlined text-on-primary-container/10 absolute top-4 right-4 text-4xl">
-              lightbulb
-            </span>
-            <p className="text-on-primary-container text-[11px] font-bold tracking-widest uppercase">
-              Wealth Insight
-            </p>
-            <p className="text-on-primary-container/80 mt-3 text-sm leading-relaxed italic">
-              &ldquo;A budget is telling your money where to go instead of wondering where it
-              went.&rdquo;
-            </p>
+              <button
+                onClick={handleAddRow}
+                className="text-primary border-outline-variant/40 hover:border-primary/40 w-full rounded-xl border border-dashed py-3 text-sm font-medium transition-colors"
+              >
+                + Add Another
+              </button>
+
+              <Button
+                variant="primary"
+                className="w-full"
+                onClick={handleSaveNew}
+                loading={createMutation.isPending}
+              >
+                Save Entries
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -439,7 +446,7 @@ export function BudgetPage() {
       <ConfirmDialog
         isOpen={deleteId !== null}
         title="Delete Budget Entry"
-        message="This will permanently remove this category from your budget. This action cannot be undone."
+        message="Are you sure you want to delete this budget entry?"
         confirmLabel="Delete"
         danger
         loading={deleteMutation.isPending}
