@@ -1,17 +1,17 @@
 import type { Toast as ToastType, ToastVariant } from '../../hooks/useToast'
 
-const variantStyles: Record<ToastVariant, string> = {
-  success: 'bg-primary-fixed-dim text-on-primary-fixed',
-  error: 'bg-error-container text-on-error-container',
-  warning: 'bg-tertiary-fixed-dim text-on-tertiary-fixed',
-  info: 'bg-secondary-container text-on-secondary-container',
-}
-
 const variantIcons: Record<ToastVariant, string> = {
   success: 'check_circle',
   error: 'error',
   warning: 'warning',
   info: 'info',
+}
+
+const variantAccent: Record<ToastVariant, string> = {
+  success: 'var(--pos)',
+  error: 'var(--neg)',
+  warning: 'var(--warn)',
+  info: 'var(--accent)',
 }
 
 interface ToastItemProps {
@@ -22,18 +22,33 @@ interface ToastItemProps {
 function ToastItem({ toast, onDismiss }: ToastItemProps) {
   return (
     <div
-      className={`animate-toast-in flex items-start gap-3 rounded-xl px-4 py-3 shadow-lg ${variantStyles[toast.variant]} max-w-sm min-w-[280px]`}
+      className="animate-toast-in flex items-start gap-2.5"
+      style={{
+        background: 'var(--ink)',
+        color: 'var(--bg)',
+        borderRadius: 8,
+        padding: '10px 12px',
+        boxShadow: 'var(--shadow-pop)',
+        minWidth: 280,
+        maxWidth: 380,
+      }}
     >
-      <span className="material-symbols-outlined mt-0.5 shrink-0">
+      <span
+        className="material-symbols-outlined mt-0.5 shrink-0"
+        style={{ fontSize: 16, color: variantAccent[toast.variant] }}
+      >
         {variantIcons[toast.variant]}
       </span>
-      <p className="flex-1 text-sm font-medium">{toast.message}</p>
+      <p className="flex-1 text-[12.5px] leading-snug font-medium">{toast.message}</p>
       <button
         onClick={() => onDismiss(toast.id)}
-        className="ml-2 shrink-0 opacity-60 hover:opacity-100"
+        className="ml-1 shrink-0"
         aria-label="Dismiss"
+        style={{ color: 'var(--ink-4)', opacity: 0.7 }}
       >
-        <span className="material-symbols-outlined text-base">close</span>
+        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+          close
+        </span>
       </button>
     </div>
   )
@@ -47,7 +62,7 @@ interface ToastContainerProps {
 export function ToastContainer({ toasts, onDismiss }: ToastContainerProps) {
   if (toasts.length === 0) return null
   return (
-    <div className="fixed right-6 bottom-6 z-50 flex flex-col gap-2">
+    <div className="fixed bottom-5 left-1/2 z-50 flex -translate-x-1/2 flex-col gap-2">
       {toasts.map((t) => (
         <ToastItem key={t.id} toast={t} onDismiss={onDismiss} />
       ))}

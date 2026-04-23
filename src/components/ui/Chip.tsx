@@ -6,22 +6,16 @@ interface ChipProps {
   className?: string
 }
 
-const variantClasses: Record<ChipVariant, string> = {
-  success: 'bg-primary-fixed-dim text-on-primary-fixed',
-  warning: 'bg-tertiary-fixed-dim text-on-tertiary-fixed',
-  danger: 'bg-error-container text-on-error-container',
-  neutral: 'bg-secondary-container text-on-secondary-container',
-  info: 'bg-secondary-container text-on-secondary-container',
+const variantClass: Record<ChipVariant, string> = {
+  success: 'chip pos',
+  warning: 'chip warn',
+  danger: 'chip neg',
+  neutral: 'chip',
+  info: 'chip accent',
 }
 
 export function Chip({ variant = 'neutral', children, className = '' }: ChipProps) {
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${variantClasses[variant]} ${className}`}
-    >
-      {children}
-    </span>
-  )
+  return <span className={`${variantClass[variant]} ${className}`.trim()}>{children}</span>
 }
 
 /** Derive chip variant from pct_used value */

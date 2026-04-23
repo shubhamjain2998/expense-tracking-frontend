@@ -10,16 +10,37 @@ interface EmptyStateProps {
   }
 }
 
-export function EmptyState({ icon = 'inbox', title, description, action }: EmptyStateProps) {
+export function EmptyState({ icon, title, description, action }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <span className="material-symbols-outlined text-outline-variant mb-4 text-5xl">{icon}</span>
-      <h3 className="text-on-surface mb-1 text-base font-semibold">{title}</h3>
-      {description && <p className="text-on-surface-variant mb-4 text-sm">{description}</p>}
+    <div
+      className="flex flex-col items-center justify-center py-12 text-center"
+      style={{ color: 'var(--ink-3)' }}
+    >
+      {icon && (
+        <span
+          className="material-symbols-outlined mb-3"
+          style={{ fontSize: 22, color: 'var(--ink-4)' }}
+        >
+          {icon}
+        </span>
+      )}
+      <h3
+        className="text-[13px] font-semibold"
+        style={{ color: 'var(--ink-2)', letterSpacing: '-0.005em' }}
+      >
+        {title}
+      </h3>
+      {description && (
+        <p className="mt-1 text-[12px]" style={{ color: 'var(--ink-3)' }}>
+          {description}
+        </p>
+      )}
       {action && (
-        <Button variant="primary" size="sm" onClick={action.onClick}>
-          {action.label}
-        </Button>
+        <div className="mt-4">
+          <Button variant="secondary" size="sm" onClick={action.onClick}>
+            {action.label}
+          </Button>
+        </div>
       )}
     </div>
   )
