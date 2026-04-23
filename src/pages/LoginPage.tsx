@@ -34,55 +34,103 @@ export function LoginPage() {
   }
 
   return (
-    <div className="bg-background flex min-h-screen items-center justify-center px-4">
-      <div className="bg-surface-container-low w-full max-w-sm rounded-2xl p-8 shadow-[0_8px_40px_rgba(0,0,0,0.1)]">
-        <h1 className="text-on-surface mb-1 text-2xl font-black tracking-tight">Welcome back</h1>
-        <p className="text-on-surface-variant mb-6 text-sm">
-          Sign in to your Personal Finance account.
-        </p>
+    <div
+      className="flex min-h-screen items-center justify-center px-4"
+      style={{ background: 'var(--bg)' }}
+    >
+      <div className="w-full max-w-sm">
+        <div className="mb-6 flex items-center gap-2.5">
+          <span
+            aria-hidden
+            style={{
+              width: 22,
+              height: 22,
+              background: 'var(--ink)',
+              color: 'var(--bg)',
+              borderRadius: 4,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 700,
+              fontSize: 12,
+            }}
+          >
+            ₹
+          </span>
+          <span
+            className="text-[14px] font-semibold"
+            style={{ color: 'var(--ink)', letterSpacing: '-0.01em' }}
+          >
+            Personal Finance
+          </span>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="text-on-surface-variant mb-1 block text-xs font-semibold tracking-wider uppercase">
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="input-field w-full"
-              autoComplete="email"
-              autoFocus
-            />
-          </div>
-          <div>
-            <label className="text-on-surface-variant mb-1 block text-xs font-semibold tracking-wider uppercase">
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="input-field w-full"
-              autoComplete="current-password"
-            />
-          </div>
+        <div className="card">
+          <p className="card-eyebrow">Sign in</p>
+          <h1
+            className="text-[22px] font-semibold"
+            style={{ color: 'var(--ink)', letterSpacing: '-0.02em' }}
+          >
+            Welcome back
+          </h1>
+          <p className="mt-1 text-[13px]" style={{ color: 'var(--ink-3)' }}>
+            Sign in to your account.
+          </p>
 
-          {error && <p className="text-error bg-error/8 rounded-lg px-3 py-2 text-sm">{error}</p>}
+          <form onSubmit={handleSubmit} className="mt-5 space-y-3.5">
+            <div>
+              <label className="eyebrow mb-1 block">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="input"
+                autoComplete="email"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="eyebrow mb-1 block">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="input"
+                autoComplete="current-password"
+              />
+            </div>
 
-          <Button variant="primary" className="w-full" loading={loading}>
-            Sign In
-          </Button>
-        </form>
+            {error && (
+              <p
+                className="text-[12px]"
+                style={{
+                  background: 'var(--neg-soft)',
+                  color: 'var(--neg)',
+                  borderRadius: 'var(--radius)',
+                  padding: '6px 10px',
+                }}
+              >
+                {error}
+              </p>
+            )}
 
-        <p className="text-on-surface-variant mt-6 text-center text-sm">
-          Don&apos;t have an account?{' '}
-          <Link to="/register" className="text-primary font-medium hover:underline">
-            Register
-          </Link>
-        </p>
+            <Button variant="primary" className="w-full" loading={loading}>
+              Sign in
+            </Button>
+          </form>
+
+          <p className="mt-5 text-center text-[12.5px]" style={{ color: 'var(--ink-3)' }}>
+            Don&apos;t have an account?{' '}
+            <Link
+              to="/register"
+              style={{ color: 'var(--ink)', fontWeight: 500, textDecoration: 'none' }}
+            >
+              Register
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   )

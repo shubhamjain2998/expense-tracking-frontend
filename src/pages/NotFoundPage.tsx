@@ -2,19 +2,22 @@ import { Link } from 'react-router-dom'
 
 export function NotFoundPage() {
   return (
-    <div className="flex flex-col items-center justify-center py-32 text-center">
-      <span className="material-symbols-outlined text-outline-variant mb-4 text-6xl">
-        search_off
-      </span>
-      <h1 className="text-on-surface mb-2 text-2xl font-black">Page Not Found</h1>
-      <p className="text-on-surface-variant mb-6 text-sm">
+    <div
+      className="flex min-h-screen flex-col items-center justify-center text-center"
+      style={{ background: 'var(--bg)', padding: 32 }}
+    >
+      <p className="card-eyebrow mb-2">404 · Not found</p>
+      <h1
+        className="text-[28px] font-semibold"
+        style={{ color: 'var(--ink)', letterSpacing: '-0.02em' }}
+      >
+        Page not found
+      </h1>
+      <p className="mt-1 text-[13px]" style={{ color: 'var(--ink-3)' }}>
         The page you&apos;re looking for doesn&apos;t exist.
       </p>
-      <Link
-        to="/dashboard"
-        className="from-primary to-primary-container text-on-primary rounded-xl bg-gradient-to-br px-6 py-2.5 text-sm font-semibold hover:opacity-90"
-      >
-        Back to Dashboard
+      <Link to="/dashboard" className="btn primary mt-5" style={{ textDecoration: 'none' }}>
+        Back to dashboard
       </Link>
     </div>
   )
