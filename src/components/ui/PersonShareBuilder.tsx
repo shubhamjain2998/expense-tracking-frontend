@@ -69,7 +69,7 @@ export function PersonShareBuilder({
   return (
     <div className="space-y-3">
       <MultiSelect
-        label="Split With Persons"
+        label="Split with persons"
         persons={persons}
         selectedIds={selectedIds}
         onChange={handlePersonChange}
@@ -77,40 +77,42 @@ export function PersonShareBuilder({
       />
 
       {shares.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {shares.map((share) => {
-            const person = persons.find(
-              (p) => p.person_id === share.person_id || p.id === share.person_id
-            )
+            const person = persons.find((p) => p.id === share.person_id)
             const name = person?.name ?? share.person_id
             return (
               <div
                 key={share.person_id}
-                className="bg-surface-container-lowest flex items-center gap-2 rounded-xl px-3 py-2"
+                className="flex items-center gap-2"
+                style={{
+                  background: 'var(--surface-2)',
+                  border: '1px solid var(--line)',
+                  borderRadius: 'var(--radius)',
+                  padding: '6px 8px',
+                }}
               >
-                <span className="text-on-surface min-w-[100px] truncate text-sm font-medium">
+                <span
+                  className="min-w-[110px] truncate text-[12.5px] font-medium"
+                  style={{ color: 'var(--ink)' }}
+                >
                   {name}
                 </span>
 
-                {/* Type toggle */}
-                <div className="bg-surface-container flex rounded-lg p-0.5">
+                <div className="seg" style={{ height: 22, padding: 1 }}>
                   {(['percentage', 'amount'] as const).map((t) => (
                     <button
                       key={t}
                       type="button"
                       onClick={() => updateShare(share.person_id, 'share_type', t)}
-                      className={`rounded-md px-2.5 py-1 text-xs font-bold transition-colors ${
-                        share.share_type === t
-                          ? 'bg-primary text-on-primary'
-                          : 'text-on-surface-variant hover:text-on-surface'
-                      }`}
+                      className={share.share_type === t ? 'on' : ''}
+                      style={{ height: 18, padding: '0 8px', fontSize: 11 }}
                     >
                       {t === 'percentage' ? '%' : '₹'}
                     </button>
                   ))}
                 </div>
 
-                {/* Value input */}
                 <input
                   type="number"
                   value={share.share_value || ''}
@@ -118,12 +120,15 @@ export function PersonShareBuilder({
                   max={share.share_type === 'percentage' ? 100 : undefined}
                   placeholder="0"
                   onChange={(e) => updateShare(share.person_id, 'share_value', e.target.value)}
-                  className="input-field w-24 text-right"
+                  className="input num w-20 text-right"
+                  style={{ height: 24, padding: '0 8px', fontSize: 12 }}
                   aria-label={`${name} share value`}
                 />
 
-                {/* Calculated amount preview */}
-                <span className="text-on-surface-variant ml-auto shrink-0 text-xs">
+                <span
+                  className="num ml-auto shrink-0 text-[11.5px]"
+                  style={{ color: 'var(--ink-3)' }}
+                >
                   {share.share_type === 'percentage'
                     ? formatCurrency(totalAmount * (share.share_value / 100))
                     : formatCurrency(share.share_value)}
@@ -135,15 +140,29 @@ export function PersonShareBuilder({
       )}
 
       {pctWarning && (
-        <p className="text-error text-xs font-medium">
+        <p className="text-[11.5px] font-medium" style={{ color: 'var(--neg)' }}>
           Percentage shares sum to {pctSum}% — must be ≤ 100%.
         </p>
       )}
 
       {shares.length > 0 && (
-        <div className="bg-primary/8 flex items-center justify-between rounded-xl px-3 py-2">
-          <span className="text-primary text-sm font-medium">Your share</span>
-          <span className="text-primary text-sm font-black">{formatCurrency(yourShare)}</span>
+        <div
+          className="flex items-center justify-between"
+          style={{
+            background: 'var(--accent-soft)',
+            borderRadius: 'var(--radius)',
+            padding: '8px 12px',
+          }}
+        >
+          <span className="text-[12px] font-medium" style={{ color: 'var(--accent)' }}>
+            Your share
+          </span>
+          <span
+            className="num text-[13px] font-semibold"
+            style={{ color: 'var(--accent)', letterSpacing: '-0.005em' }}
+          >
+            {formatCurrency(yourShare)}
+          </span>
         </div>
       )}
     </div>

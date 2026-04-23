@@ -140,15 +140,15 @@ export function SearchableSelect({
   return (
     <div ref={containerRef} className="relative">
       {label && (
-        <label
-          htmlFor={id}
-          className="text-on-surface-variant mb-1 block text-xs font-semibold tracking-wider uppercase"
-        >
+        <label htmlFor={id} className="eyebrow mb-1.5 block">
           {label}
         </label>
       )}
       <div className="relative">
-        <span className="material-symbols-outlined text-outline pointer-events-none absolute top-1/2 left-3 -translate-y-1/2">
+        <span
+          className="material-symbols-outlined pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2"
+          style={{ fontSize: 14, color: 'var(--ink-4)' }}
+        >
           search
         </span>
         <input
@@ -163,19 +163,30 @@ export function SearchableSelect({
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
-          className="input-field w-full"
-          style={{ paddingLeft: '2.25rem' }}
+          className="input"
+          style={{ paddingLeft: 28 }}
           autoComplete="off"
           aria-expanded={open}
           aria-autocomplete="list"
         />
       </div>
-      {error && <p className="text-error mt-1 text-xs">{error}</p>}
+      {error && (
+        <p className="mt-1 text-[11px]" style={{ color: 'var(--neg)' }}>
+          {error}
+        </p>
+      )}
 
       {open && filtered.length > 0 && (
         <ul
           role="listbox"
-          className="bg-surface-container-lowest absolute z-30 mt-1 max-h-52 w-full overflow-y-auto rounded-xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.4)]"
+          className="absolute z-30 mt-1 max-h-52 w-full overflow-y-auto"
+          style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--line)',
+            borderRadius: 'var(--radius-lg)',
+            boxShadow: 'var(--shadow-pop)',
+            padding: 4,
+          }}
         >
           {filtered.map((opt, i) => (
             <li
@@ -183,11 +194,15 @@ export function SearchableSelect({
               role="option"
               aria-selected={opt.value === value}
               onMouseDown={() => select(opt)}
-              className={`cursor-pointer px-4 py-2.5 text-sm transition-colors ${
-                i === highlightIndex
-                  ? 'bg-surface-container-low text-primary font-medium'
-                  : 'text-on-surface hover:bg-surface-container-low'
-              }`}
+              className="cursor-pointer"
+              style={{
+                padding: '7px 10px',
+                fontSize: 12.5,
+                borderRadius: 'var(--radius-sm)',
+                background: i === highlightIndex ? 'var(--surface-2)' : 'transparent',
+                color: i === highlightIndex ? 'var(--ink)' : 'var(--ink-2)',
+                fontWeight: opt.value === value ? 500 : 400,
+              }}
             >
               {opt.label}
             </li>
@@ -198,18 +213,23 @@ export function SearchableSelect({
       {isNewValue && (
         <div
           onMouseDown={handleCreateToggle}
-          className={`mt-2 flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors select-none ${
-            creating
-              ? 'border-primary/40 bg-primary/8 opacity-60'
-              : createChecked
-                ? 'border-primary/40 bg-primary/8 text-primary'
-                : 'border-outline-variant/40 bg-surface-container text-on-surface-variant hover:border-primary/30'
-          }`}
+          className="mt-2 flex cursor-pointer items-center gap-2.5 select-none"
+          style={{
+            padding: '8px 10px',
+            border: `1px solid ${createChecked ? 'var(--accent)' : 'var(--line-strong)'}`,
+            borderRadius: 'var(--radius)',
+            background: createChecked ? 'var(--accent-soft)' : 'var(--surface)',
+            color: createChecked ? 'var(--accent)' : 'var(--ink-2)',
+            opacity: creating ? 0.6 : 1,
+            transition: 'background .1s ease, border-color .1s ease',
+          }}
         >
           <span
-            className={`material-symbols-outlined text-[20px] transition-colors ${
-              creating ? 'animate-spin' : createChecked ? 'text-primary' : 'text-outline'
-            }`}
+            className={`material-symbols-outlined ${creating ? 'animate-spin' : ''}`}
+            style={{
+              fontSize: 16,
+              color: createChecked ? 'var(--accent)' : 'var(--ink-4)',
+            }}
           >
             {creating
               ? 'progress_activity'
@@ -218,11 +238,10 @@ export function SearchableSelect({
                 : 'check_box_outline_blank'}
           </span>
           <div className="min-w-0">
-            <span className="text-xs font-semibold tracking-wider uppercase">
-              {creating ? 'Creating…' : 'Create new category'}
-            </span>
+            <span className="eyebrow block">{creating ? 'Creating…' : 'Create new category'}</span>
             <p
-              className={`truncate text-sm font-medium ${createChecked ? 'text-primary' : 'text-on-surface'}`}
+              className="truncate text-[12.5px] font-medium"
+              style={{ color: createChecked ? 'var(--accent)' : 'var(--ink)' }}
             >
               &ldquo;{trimmed}&rdquo;
             </p>

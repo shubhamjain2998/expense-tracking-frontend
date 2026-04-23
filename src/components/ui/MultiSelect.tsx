@@ -19,14 +19,6 @@ function getInitials(name: string) {
     .slice(0, 2)
 }
 
-const avatarColors = [
-  'bg-primary text-on-primary',
-  'bg-primary-container text-on-primary-container',
-  'bg-secondary text-on-secondary',
-  'bg-tertiary text-on-tertiary',
-  'bg-tertiary-container text-on-tertiary-container',
-]
-
 export function MultiSelect({
   persons,
   selectedIds,
@@ -88,33 +80,36 @@ export function MultiSelect({
 
   return (
     <div ref={containerRef}>
-      {label && (
-        <p className="text-on-surface-variant mb-1.5 text-xs font-semibold tracking-wider uppercase">
-          {label}
-        </p>
-      )}
+      {label && <p className="eyebrow mb-1.5">{label}</p>}
 
       {/* Selected chips */}
       {selected.length > 0 && (
-        <div className="mb-2 flex flex-wrap gap-2">
-          {selected.map((p, i) => (
-            <div
-              key={p.id}
-              className="bg-surface-container-high text-on-surface flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium"
-            >
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {selected.map((p) => (
+            <div key={p.id} className="chip" style={{ paddingRight: 4, height: 24 }}>
               <span
-                className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${avatarColors[i % avatarColors.length]}`}
+                className="flex shrink-0 items-center justify-center"
+                style={{
+                  width: 16,
+                  height: 16,
+                  borderRadius: '50%',
+                  background: 'var(--surface-3)',
+                  color: 'var(--ink-2)',
+                  fontSize: 9,
+                  fontWeight: 600,
+                }}
               >
                 {getInitials(p.name)}
               </span>
-              {p.name}
+              <span style={{ color: 'var(--ink)' }}>{p.name}</span>
               <button
                 type="button"
                 onClick={() => remove(p.id)}
-                className="text-outline hover:text-on-surface ml-0.5"
+                className="ml-0.5 inline-flex items-center"
                 aria-label={`Remove ${p.name}`}
+                style={{ color: 'var(--ink-4)' }}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
                   close
                 </span>
               </button>
@@ -125,7 +120,10 @@ export function MultiSelect({
 
       {/* Search input */}
       <div className="relative">
-        <span className="material-symbols-outlined text-outline pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[18px]">
+        <span
+          className="material-symbols-outlined pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2"
+          style={{ fontSize: 14, color: 'var(--ink-4)' }}
+        >
           person_search
         </span>
         <input
@@ -138,22 +136,44 @@ export function MultiSelect({
           }}
           onFocus={() => setOpen(true)}
           placeholder="Search or add person…"
-          className="input-field w-full"
-          style={{ paddingLeft: '2.25rem' }}
+          className="input"
+          style={{ paddingLeft: 28 }}
           autoComplete="off"
         />
       </div>
 
       {/* Dropdown for existing persons */}
       {open && filtered.length > 0 && (
-        <ul className="bg-surface-container-lowest relative z-30 mt-1 max-h-40 w-full overflow-y-auto rounded-xl shadow-[0_8px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.4)]">
+        <ul
+          className="relative z-30 mt-1 max-h-40 w-full overflow-y-auto"
+          style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--line)',
+            borderRadius: 'var(--radius-lg)',
+            boxShadow: 'var(--shadow-pop)',
+            padding: 4,
+          }}
+        >
           {filtered.map((p) => (
             <li
               key={p.id}
               onMouseDown={() => add(p.id)}
-              className="text-on-surface hover:bg-surface-container-low flex cursor-pointer items-center gap-2.5 px-4 py-2.5 text-sm"
+              className="flex cursor-pointer items-center gap-2"
+              style={{
+                padding: '7px 10px',
+                fontSize: 12.5,
+                color: 'var(--ink-2)',
+                borderRadius: 'var(--radius-sm)',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-2)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             >
-              <span className="material-symbols-outlined text-outline text-[16px]">person</span>
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: 14, color: 'var(--ink-4)' }}
+              >
+                person
+              </span>
               {p.name}
             </li>
           ))}
@@ -164,22 +184,34 @@ export function MultiSelect({
       {isNew && (
         <div
           onMouseDown={handleCreate}
-          className={`mt-2 flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors select-none ${
-            creating
-              ? 'border-primary/40 bg-primary/8 opacity-60'
-              : 'border-outline-variant/40 bg-surface-container text-on-surface-variant hover:border-primary/30'
-          }`}
+          className="mt-2 flex cursor-pointer items-center gap-2.5 select-none"
+          style={{
+            padding: '8px 10px',
+            border: '1px solid var(--line-strong)',
+            borderRadius: 'var(--radius)',
+            background: 'var(--surface)',
+            color: 'var(--ink-2)',
+            opacity: creating ? 0.6 : 1,
+            transition: 'background .1s ease, border-color .1s ease',
+          }}
         >
-          <span className="material-symbols-outlined text-outline text-[20px]">
+          <span
+            className={`material-symbols-outlined ${creating ? 'animate-spin' : ''}`}
+            style={{ fontSize: 16, color: 'var(--ink-4)' }}
+          >
             {creating ? 'progress_activity' : 'person_add'}
           </span>
           <div className="min-w-0">
-            <span className="text-xs font-semibold tracking-wider uppercase">
-              Create new person
-            </span>
-            <p className="text-on-surface truncate text-sm font-medium">&ldquo;{trimmed}&rdquo;</p>
+            <span className="eyebrow block">Create new person</span>
+            <p className="truncate text-[12.5px] font-medium" style={{ color: 'var(--ink)' }}>
+              &ldquo;{trimmed}&rdquo;
+            </p>
           </div>
-          {creating && <span className="text-outline ml-auto text-xs">Creating…</span>}
+          {creating && (
+            <span className="ml-auto text-[11px]" style={{ color: 'var(--ink-3)' }}>
+              Creating…
+            </span>
+          )}
         </div>
       )}
     </div>
