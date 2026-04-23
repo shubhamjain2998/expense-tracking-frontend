@@ -1,20 +1,24 @@
-import { NavLink, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useThemeContext } from '../../hooks/useThemeContext'
 import { useAuth } from '../../contexts/AuthContext'
 
-const navLinks = [
-  { to: '/dashboard', label: 'Dashboard' },
-  { to: '/upload', label: 'Upload' },
-  { to: '/transactions', label: 'Transactions' },
-  { to: '/budget', label: 'Budget' },
-  { to: '/settings', label: 'Settings' },
-]
+const PAGE_NAMES: Record<string, string> = {
+  '/dashboard': 'Dashboard',
+  '/transactions': 'Transactions',
+  '/upload': 'Upload',
+  '/review': 'Review',
+  '/budget': 'Budget',
+  '/settings': 'Settings',
+}
 
 export function TopNav() {
+  const location = useLocation()
   const { isDark, toggleTheme } = useThemeContext()
   const { logout } = useAuth()
   const navigate = useNavigate()
+
+  const pageName = PAGE_NAMES[location.pathname] ?? 'Page'
 
   function handleLogout() {
     logout()
@@ -22,46 +26,63 @@ export function TopNav() {
   }
 
   return (
-    <nav className="bg-surface-container-low animate-fade-down w-full">
-      <div className="mx-auto flex h-16 w-full max-w-screen-2xl items-center justify-between px-8">
-        <div className="flex items-center gap-8">
-          <span className="text-primary text-xl font-black tracking-tight">Personal Finance</span>
-          <div className="hidden items-center gap-6 md:flex">
-            {navLinks.map(({ to, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) =>
-                  isActive
-                    ? 'border-primary text-primary border-b-2 pb-0.5 text-sm font-semibold'
-                    : 'text-on-surface-variant hover:text-primary text-sm transition-colors'
-                }
-              >
-                {label}
-              </NavLink>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={toggleTheme}
-            className="text-on-surface-variant hover:bg-surface-container rounded-full p-2 transition-colors"
-            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            <span className="material-symbols-outlined">{isDark ? 'light_mode' : 'dark_mode'}</span>
-          </button>
-
-          <button
-            onClick={handleLogout}
-            className="text-on-surface-variant hover:bg-surface-container rounded-full p-2 transition-colors"
-            aria-label="Sign out"
-            title="Sign out"
-          >
-            <span className="material-symbols-outlined">logout</span>
-          </button>
-        </div>
+    <header
+      style={{
+        height: 44,
+        borderBottom: '1px solid var(--line)',
+        background: 'var(--bg)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 28px',
+        flexShrink: 0,
+      }}
+    >
+      {/* Breadcrumb */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          fontSize: 12.5,
+          color: 'var(--ink-3)',
+        }}
+      >
+        <span>Personal Finance</span>
+        <span style={{ opacity: 0.4, fontSize: 15, lineHeight: 1 }}>›</span>
+        <span style={{ color: 'var(--ink)', fontWeight: 500 }}>{pageName}</span>
       </div>
-    </nav>
+
+      {/* Actions */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <button className="btn ghost" style={{ gap: 5 }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+            search
+          </span>
+          <span style={{ fontSize: 12 }}>Search</span>
+          <span className="kbd">⌘K</span>
+        </button>
+        <button
+          onClick={toggleTheme}
+          className="btn ghost icon"
+          aria-label={isDark ? 'Light mode' : 'Dark mode'}
+          title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
+            {isDark ? 'light_mode' : 'dark_mode'}
+          </span>
+        </button>
+        <button
+          onClick={handleLogout}
+          className="btn ghost icon"
+          aria-label="Sign out"
+          title="Sign out"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
+            logout
+          </span>
+        </button>
+      </div>
+    </header>
   )
 }

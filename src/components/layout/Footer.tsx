@@ -12,35 +12,56 @@ export function Footer() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className="border-outline-variant/10 bg-surface-container-low/50 mt-16 border-t">
-      <div className="mx-auto max-w-screen-2xl px-8 py-8">
-        <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
-          {/* Brand */}
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-base">
-                account_balance_wallet
-              </span>
-              <span className="text-on-surface text-sm font-black tracking-tight">
-                Personal Finance
-              </span>
-            </div>
-            <p className="text-on-surface-variant text-xs">
-              Track spending. Set budgets. Stay in control.
-            </p>
+    <footer
+      className="mt-12"
+      style={{
+        borderTop: '1px solid var(--line)',
+        background: 'var(--bg)',
+      }}
+    >
+      <div className="mx-auto max-w-screen-2xl px-7 py-6">
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-2.5">
+            <span
+              aria-hidden
+              style={{
+                width: 18,
+                height: 18,
+                background: 'var(--ink)',
+                color: 'var(--bg)',
+                borderRadius: 3,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 700,
+                fontSize: 10,
+              }}
+            >
+              ₹
+            </span>
+            <span
+              className="text-[12px] font-semibold"
+              style={{ color: 'var(--ink-2)', letterSpacing: '-0.005em' }}
+            >
+              Personal Finance
+            </span>
+            <span className="hidden text-[11.5px] sm:inline" style={{ color: 'var(--ink-4)' }}>
+              · privacy-first · local
+            </span>
           </div>
 
-          {/* Nav */}
-          <nav className="flex flex-wrap gap-x-6 gap-y-2">
+          <nav className="flex flex-wrap gap-x-5 gap-y-1.5">
             {navLinks.map(({ to, label }) => (
               <NavLink
                 key={to}
                 to={to}
                 className={({ isActive }) =>
-                  isActive
-                    ? 'text-primary text-xs font-semibold'
-                    : 'text-on-surface-variant hover:text-on-surface text-xs transition-colors'
+                  isActive ? 'text-[11.5px] font-medium' : 'text-[11.5px] transition-colors'
                 }
+                style={({ isActive }) => ({
+                  color: isActive ? 'var(--ink-2)' : 'var(--ink-3)',
+                  textDecoration: 'none',
+                })}
               >
                 {label}
               </NavLink>
@@ -48,12 +69,14 @@ export function Footer() {
           </nav>
         </div>
 
-        {/* Bottom rule + copyright */}
-        <div className="border-outline-variant/10 mt-6 flex flex-col items-start justify-between gap-2 border-t pt-6 sm:flex-row sm:items-center">
-          <p className="text-on-surface-variant text-[11px]">
+        <div
+          className="mt-4 flex flex-col items-start justify-between gap-1 pt-4 sm:flex-row sm:items-center"
+          style={{ borderTop: '1px solid var(--line)' }}
+        >
+          <p className="text-[10.5px]" style={{ color: 'var(--ink-4)' }}>
             © {year} Personal Finance. All rights reserved.
           </p>
-          <p className="text-on-surface-variant/50 text-[11px]">
+          <p className="text-[10.5px]" style={{ color: 'var(--ink-4)' }}>
             Built for clarity, not complexity.
           </p>
         </div>

@@ -1,20 +1,39 @@
 import { Outlet, useLocation } from 'react-router-dom'
 
+import { Sidebar } from './Sidebar'
 import { TopNav } from './TopNav'
-import { Footer } from './Footer'
 import { QuickAddFAB } from '../ui/QuickAddFAB'
 
 export function Layout() {
   const location = useLocation()
   return (
-    <div className="bg-background flex min-h-screen flex-col">
-      <TopNav />
-      <main className="mx-auto w-full max-w-screen-2xl flex-1 px-8 py-8">
-        <div key={location.pathname} className="animate-fade-up">
-          <Outlet />
-        </div>
-      </main>
-      <Footer />
+    <div
+      style={{
+        display: 'flex',
+        height: '100vh',
+        overflow: 'hidden',
+        background: 'var(--bg)',
+      }}
+    >
+      <Sidebar />
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minWidth: 0,
+          overflow: 'hidden',
+        }}
+      >
+        <TopNav />
+        <main style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+          <div style={{ maxWidth: 1380, margin: '0 auto', padding: '24px 28px 56px' }}>
+            <div key={location.pathname} className="animate-fade-up">
+              <Outlet />
+            </div>
+          </div>
+        </main>
+      </div>
       <QuickAddFAB />
     </div>
   )
