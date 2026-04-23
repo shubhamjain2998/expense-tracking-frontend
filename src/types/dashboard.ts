@@ -8,7 +8,7 @@ export interface SummaryRow {
 
 export interface TrendDataPoint {
   month: number
-  amount: number
+  actual_amount: string
 }
 
 export interface SplitLedgerRow {
