@@ -49,11 +49,10 @@ function InlineEditRow({ entry, categories, onDelete }: InlineEditRowProps) {
   })
 
   return (
-    <tr className="group hover:bg-surface-container-low transition-colors">
-      <td className="py-3 pr-4">
-        <div className="w-[200px]">
+    <tr className="group">
+      <td style={{ paddingRight: 12 }}>
+        <div style={{ width: 220 }}>
           <SearchableSelect
-            label=""
             options={categoryOptions}
             value={entry.category_id}
             onChange={(newId) => {
@@ -64,33 +63,34 @@ function InlineEditRow({ entry, categories, onDelete }: InlineEditRowProps) {
           />
         </div>
       </td>
-      <td className="py-3 pr-4">
-        <div className="flex items-center gap-1">
-          <span className="text-outline text-sm">₹</span>
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(Number(e.target.value))}
-            onBlur={() =>
-              amount !== Number(entry.allocated_amount) / 12 &&
-              updateMutation.mutate({ allocated_amount: amount * 12 })
-            }
-            className="input-field w-28"
-            min={0}
-            aria-label="Monthly budget amount"
-          />
-        </div>
+      <td style={{ paddingRight: 12 }}>
+        <input
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(Number(e.target.value))}
+          onBlur={() =>
+            amount !== Number(entry.allocated_amount) / 12 &&
+            updateMutation.mutate({ allocated_amount: amount * 12 })
+          }
+          className="input num"
+          style={{ width: 130, textAlign: 'right' }}
+          min={0}
+          aria-label="Monthly budget amount"
+        />
       </td>
-      <td className="text-on-surface py-3 pr-4 text-right text-sm font-medium">
+      <td className="num" style={{ color: 'var(--ink)', fontWeight: 500 }}>
         {formatCurrency(amount * 12)}
       </td>
-      <td className="py-3 text-right">
+      <td className="text-right">
         <button
           onClick={() => onDelete(entry.id)}
-          className="text-outline hover:bg-error-container hover:text-on-error-container rounded-lg p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
+          className="btn ghost icon sm opacity-0 transition-opacity group-hover:opacity-100"
           aria-label={`Delete ${entry.category}`}
+          title="Delete entry"
         >
-          <span className="material-symbols-outlined">delete</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+            delete
+          </span>
         </button>
       </td>
     </tr>
@@ -203,59 +203,76 @@ export function BudgetPage() {
   const categoryOptions = allCategories.map((c) => ({ value: c.id, label: c.name }))
 
   return (
-    <div className="space-y-8">
-      <header>
-        <h1 className="text-on-surface text-3xl font-black tracking-tight">Budget Setup</h1>
-        <p className="text-on-surface-variant mt-1 text-sm">
-          Define your financial boundaries for the editorial year ahead.
-        </p>
+    <div className="space-y-5">
+      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="card-eyebrow">Budget</p>
+          <h1
+            className="text-[22px] font-semibold"
+            style={{ color: 'var(--ink)', letterSpacing: '-0.02em' }}
+          >
+            Annual budget · {year}
+          </h1>
+          <p className="mt-1 text-[13px]" style={{ color: 'var(--ink-3)' }}>
+            Define your monthly allocation per category for the year.
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setYear((y) => y - 1)}
+            className="btn icon sm"
+            aria-label="Previous year"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+              chevron_left
+            </span>
+          </button>
+          <span
+            className="num text-[13px] font-semibold"
+            style={{ color: 'var(--ink)', minWidth: 48, textAlign: 'center' }}
+          >
+            {year}
+          </span>
+          <button
+            onClick={() => setYear((y) => y + 1)}
+            className="btn icon sm"
+            aria-label="Next year"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+              chevron_right
+            </span>
+          </button>
+        </div>
       </header>
 
-      {/* Year nav */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => setYear((y) => y - 1)}
-          className="bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high rounded-xl p-2"
-          aria-label="Previous year"
-        >
-          <span className="material-symbols-outlined">chevron_left</span>
-        </button>
-        <div className="bg-surface-container-low flex items-center gap-2 rounded-xl px-4 py-2">
-          <span className="material-symbols-outlined text-primary text-sm">calendar_month</span>
-          <span className="text-on-surface text-sm font-bold">{year}</span>
-        </div>
-        <button
-          onClick={() => setYear((y) => y + 1)}
-          className="bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high rounded-xl p-2"
-          aria-label="Next year"
-        >
-          <span className="material-symbols-outlined">chevron_right</span>
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-        {/* Left column: budget table + unbudgeted categories */}
-        <div className="lg:col-span-7">
-          {/* Total hero */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        {/* Left column */}
+        <div className="space-y-4 lg:col-span-7">
           {entries.length > 0 && (
-            <div className="bg-surface-container-low mb-6 rounded-xl px-6 py-5">
-              <p className="text-on-surface-variant text-[11px] font-bold tracking-widest uppercase">
-                Total Annual Budget
-              </p>
-              <p className="text-primary mt-1 text-4xl font-black tracking-tight">
+            <div className="card">
+              <p className="card-eyebrow">Total annual budget</p>
+              <p
+                className="num mt-1 text-[30px] font-semibold"
+                style={{ color: 'var(--ink)', letterSpacing: '-0.02em' }}
+              >
                 {formatCurrency(totalAnnual)}
               </p>
-              <div className="mt-3 flex gap-2">
-                <span className="bg-primary-fixed-dim text-on-primary-fixed rounded-full px-3 py-1 text-xs font-bold">
-                  {entries.length} CATEGORIES
+              <div className="mt-2 flex gap-1.5">
+                <span className="chip">{entries.length} categories</span>
+                <span className="chip">
+                  <span className="num">{formatCurrency(totalAnnual / 12)}</span>
+                  <span style={{ color: 'var(--ink-4)' }}>·</span>
+                  <span style={{ color: 'var(--ink-3)' }}>monthly</span>
                 </span>
               </div>
             </div>
           )}
 
-          <div className="bg-surface-container-low rounded-xl p-6">
+          <div className="card card-flush">
             {budgetQuery.isLoading ? (
-              <SkeletonTable />
+              <div style={{ padding: 20 }}>
+                <SkeletonTable />
+              </div>
             ) : entries.length === 0 && unbudgetedCategories.length === 0 ? (
               <EmptyState
                 icon="account_balance_wallet"
@@ -266,19 +283,13 @@ export function BudgetPage() {
               <>
                 {entries.length > 0 && (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                    <table className="tbl">
                       <thead>
-                        <tr className="border-outline-variant/15 border-b">
-                          {['Category', 'Monthly Budget', 'Annual Allocation', 'Action'].map(
-                            (h, i) => (
-                              <th
-                                key={h}
-                                className={`text-on-surface-variant pb-4 text-[11px] font-bold tracking-widest uppercase ${i === 2 ? 'text-right' : ''}`}
-                              >
-                                {h}
-                              </th>
-                            )
-                          )}
+                        <tr>
+                          <th>Category</th>
+                          <th>Monthly</th>
+                          <th className="num">Annual</th>
+                          <th style={{ width: 36 }} />
                         </tr>
                       </thead>
                       <tbody>
@@ -295,92 +306,101 @@ export function BudgetPage() {
                   </div>
                 )}
 
-                {/* Unbudgeted categories */}
                 {unbudgetedCategories.length > 0 && (
-                  <>
-                    {entries.length > 0 && <hr className="border-outline-variant/15 my-6" />}
+                  <div style={{ padding: 20 }}>
+                    {entries.length > 0 && (
+                      <hr
+                        style={{
+                          border: 0,
+                          borderTop: '1px solid var(--line)',
+                          margin: '0 0 16px',
+                        }}
+                      />
+                    )}
                     <div className="mb-3 flex items-center gap-2">
-                      <p className="text-on-surface-variant text-[11px] font-bold tracking-widest uppercase">
-                        No Budget Set
-                      </p>
-                      <span className="bg-error-container text-on-error-container rounded-full px-2 py-0.5 text-[11px] font-bold">
+                      <p className="eyebrow">No budget set</p>
+                      <span className="chip neg" style={{ height: 18, padding: '0 6px' }}>
                         {unbudgetedCategories.length}
                       </span>
                     </div>
-                    <table className="w-full text-left">
+                    <table className="tbl">
                       <thead>
-                        <tr className="border-outline-variant/15 border-b">
-                          {['Category', 'Monthly Budget', 'Annual', ''].map((h, i) => (
-                            <th
-                              key={i}
-                              className={`text-on-surface-variant pb-3 text-[11px] font-bold tracking-widest uppercase ${i === 2 ? 'text-right' : ''}`}
-                            >
-                              {h}
-                            </th>
-                          ))}
+                        <tr>
+                          <th>Category</th>
+                          <th>Monthly</th>
+                          <th className="num">Annual</th>
+                          <th style={{ width: 36 }} />
                         </tr>
                       </thead>
                       <tbody>
                         {unbudgetedCategories.map((cat) => (
-                          <tr
-                            key={cat.id}
-                            className="border-outline-variant/10 border-b last:border-0"
-                          >
-                            <td className="py-3 pr-4">
-                              <span className="text-on-surface-variant text-sm">{cat.name}</span>
+                          <tr key={cat.id}>
+                            <td style={{ color: 'var(--ink-2)' }}>{cat.name}</td>
+                            <td>
+                              <input
+                                type="number"
+                                value={unbudgetedAmounts[cat.id] ?? ''}
+                                placeholder="0"
+                                min={0}
+                                onChange={(e) =>
+                                  setUnbudgetedAmounts((prev) => ({
+                                    ...prev,
+                                    [cat.id]: e.target.value,
+                                  }))
+                                }
+                                className="input num"
+                                style={{ width: 110, textAlign: 'right' }}
+                                aria-label={`Monthly budget for ${cat.name}`}
+                              />
                             </td>
-                            <td className="py-3 pr-4">
-                              <div className="flex items-center gap-1">
-                                <span className="text-outline text-sm">₹</span>
-                                <input
-                                  type="number"
-                                  value={unbudgetedAmounts[cat.id] ?? ''}
-                                  placeholder="0"
-                                  min={0}
-                                  onChange={(e) =>
-                                    setUnbudgetedAmounts((prev) => ({
-                                      ...prev,
-                                      [cat.id]: e.target.value,
-                                    }))
-                                  }
-                                  className="input-field w-28"
-                                  aria-label={`Monthly budget for ${cat.name}`}
-                                />
-                              </div>
-                            </td>
-                            <td className="text-on-surface-variant py-3 pr-4 text-right text-sm">
+                            <td className="num" style={{ color: 'var(--ink-3)' }}>
                               {unbudgetedAmounts[cat.id] && Number(unbudgetedAmounts[cat.id]) > 0
                                 ? formatCurrency(Number(unbudgetedAmounts[cat.id]) * 12)
                                 : '—'}
                             </td>
-                            <td className="w-8 py-3" />
+                            <td />
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                    <div className="mt-4">
+                    <div className="mt-3">
                       <Button
                         variant="primary"
+                        size="sm"
                         onClick={handleSaveUnbudgeted}
                         loading={createMutation.isPending}
                       >
-                        Save Budget for Selected
+                        Save selected
                       </Button>
                     </div>
-                  </>
+                  </div>
                 )}
               </>
             )}
           </div>
         </div>
 
-        {/* Right column: batch add */}
+        {/* Right column */}
         <div className="space-y-4 lg:col-span-5">
-          <div className="bg-surface-container-low rounded-xl p-6">
-            <h2 className="text-on-surface mb-5 text-base font-bold">Batch Add Entries</h2>
-            <div className="space-y-4">
+          <div className="card">
+            <div className="card-head">
+              <div>
+                <p className="card-title">Add entries</p>
+                <p className="card-sub">Batch-add new categories and budgets.</p>
+              </div>
+            </div>
+            <div className="space-y-3">
               {newRows.map((row, i) => (
-                <div key={row.id} className="bg-surface-container-lowest space-y-3 rounded-xl p-4">
+                <div
+                  key={row.id}
+                  className="space-y-2.5"
+                  style={{
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--line)',
+                    borderRadius: 'var(--radius)',
+                    padding: 12,
+                  }}
+                >
                   <SearchableSelect
                     label="Category"
                     options={categoryOptions}
@@ -395,9 +415,7 @@ export function BudgetPage() {
                     onCreateOption={handleCreateCategory}
                   />
                   <div>
-                    <label className="text-on-surface-variant mb-1 block text-[11px] font-bold tracking-wider uppercase">
-                      Monthly Amount (₹)
-                    </label>
+                    <label className="eyebrow mb-1 block">Monthly amount (₹)</label>
                     <input
                       type="number"
                       value={row.amount}
@@ -407,7 +425,7 @@ export function BudgetPage() {
                           rows.map((r, ri) => (ri === i ? { ...r, amount: e.target.value } : r))
                         )
                       }
-                      className="input-field"
+                      className="input num"
                       min={0}
                       aria-label={`Monthly amount for entry ${i + 1}`}
                     />
@@ -415,7 +433,8 @@ export function BudgetPage() {
                   {newRows.length > 1 && (
                     <button
                       onClick={() => setNewRows((rows) => rows.filter((_, ri) => ri !== i))}
-                      className="text-error hover:bg-error-container/30 rounded-lg px-2 py-1 text-xs font-medium"
+                      className="btn ghost sm"
+                      style={{ color: 'var(--neg)' }}
                     >
                       Remove
                     </button>
@@ -425,9 +444,17 @@ export function BudgetPage() {
 
               <button
                 onClick={handleAddRow}
-                className="text-primary border-outline-variant/40 hover:border-primary/40 w-full rounded-xl border border-dashed py-3 text-sm font-medium transition-colors"
+                className="w-full text-[12px] font-medium"
+                style={{
+                  border: '1px dashed var(--line-strong)',
+                  borderRadius: 'var(--radius)',
+                  color: 'var(--ink-3)',
+                  padding: '10px',
+                  background: 'transparent',
+                  transition: 'border-color .1s ease, color .1s ease',
+                }}
               >
-                + Add Another
+                + Add another
               </button>
 
               <Button
@@ -436,7 +463,7 @@ export function BudgetPage() {
                 onClick={handleSaveNew}
                 loading={createMutation.isPending}
               >
-                Save Entries
+                Save entries
               </Button>
             </div>
           </div>
@@ -445,7 +472,7 @@ export function BudgetPage() {
 
       <ConfirmDialog
         isOpen={deleteId !== null}
-        title="Delete Budget Entry"
+        title="Delete budget entry"
         message="Are you sure you want to delete this budget entry?"
         confirmLabel="Delete"
         danger

@@ -28,14 +28,6 @@ import { SkeletonTable } from '../components/ui/Skeleton'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { useToastContext } from '../hooks/useToastContext'
 
-const avatarColors = [
-  'bg-primary text-on-primary',
-  'bg-primary-container text-on-primary-container',
-  'bg-secondary text-on-secondary',
-  'bg-tertiary text-on-tertiary',
-  'bg-tertiary-container text-on-tertiary-container',
-]
-
 function getInitials(name: string) {
   return name
     .split(' ')
@@ -47,7 +39,6 @@ function getInitials(name: string) {
 
 function PersonCard({
   person,
-  index,
   onDelete,
 }: {
   person: Person
@@ -59,22 +50,48 @@ function PersonCard({
     : null
 
   return (
-    <div className="bg-surface-container-low group flex items-center gap-3 rounded-xl px-4 py-3">
+    <div
+      className="group flex items-center gap-3"
+      style={{
+        background: 'var(--surface)',
+        border: '1px solid var(--line)',
+        borderRadius: 'var(--radius)',
+        padding: '10px 12px',
+        minWidth: 220,
+      }}
+    >
       <div
-        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${avatarColors[index % avatarColors.length]}`}
+        className="flex shrink-0 items-center justify-center"
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: '50%',
+          background: 'var(--surface-3)',
+          color: 'var(--ink-2)',
+          fontSize: 11,
+          fontWeight: 600,
+        }}
       >
         {getInitials(person.name)}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-on-surface text-sm font-bold">{person.name}</p>
-        {joined && <p className="text-on-surface-variant text-[11px]">Joined {joined}</p>}
+        <p className="text-[13px] font-medium" style={{ color: 'var(--ink)' }}>
+          {person.name}
+        </p>
+        {joined && (
+          <p className="text-[11px]" style={{ color: 'var(--ink-3)' }}>
+            Joined {joined}
+          </p>
+        )}
       </div>
       <button
         onClick={() => onDelete(person.id)}
-        className="text-outline hover:bg-error-container hover:text-on-error-container shrink-0 rounded-lg p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
+        className="btn ghost icon sm shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
         aria-label={`Delete ${person.name}`}
       >
-        <span className="material-symbols-outlined text-[16px]">delete</span>
+        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+          delete
+        </span>
       </button>
     </div>
   )
@@ -92,15 +109,12 @@ export function SettingsPage() {
   const [pendingDangerKey, setPendingDangerKey] = useState<string | null>(null)
   const [activeNav, setActiveNav] = useState('persons')
 
-  // Category rename state
   const [renamingCategoryId, setRenamingCategoryId] = useState<string | null>(null)
   const [renamingCategoryName, setRenamingCategoryName] = useState('')
 
-  // New category / tag inputs
   const [newCategoryName, setNewCategoryName] = useState('')
   const [newTagName, setNewTagName] = useState('')
 
-  // Ignore rules (localStorage)
   const [ignoreRules, setIgnoreRules] = useState<string[]>(() => getIgnoreRules())
   const [newIgnoreKeyword, setNewIgnoreKeyword] = useState('')
   const [ignoreKeywordError, setIgnoreKeywordError] = useState('')
@@ -128,8 +142,6 @@ export function SettingsPage() {
   const categoriesQuery = useQuery({ queryKey: ['categories'], queryFn: getCategories })
   const mappingsQuery = useQuery({ queryKey: ['categoryMappings'], queryFn: getCategoryMappings })
   const tagsQuery = useQuery({ queryKey: ['tags'], queryFn: getTags })
-
-  // ─── Persons ─────────────────────────────────────────────────────────
 
   const createPersonMutation = useMutation({
     mutationFn: createPerson,
@@ -167,8 +179,6 @@ export function SettingsPage() {
     }
     createPersonMutation.mutate(newPersonName.trim())
   }
-
-  // ─── Categories ──────────────────────────────────────────────────────
 
   const createCategoryMutation = useMutation({
     mutationFn: createCategory,
@@ -208,8 +218,6 @@ export function SettingsPage() {
     },
   })
 
-  // ─── Mappings ─────────────────────────────────────────────────────────
-
   const deleteMappingMutation = useMutation({
     mutationFn: deleteCategoryMapping,
     onSuccess: () => {
@@ -222,8 +230,6 @@ export function SettingsPage() {
       setDeleteMappingId(null)
     },
   })
-
-  // ─── Tags ─────────────────────────────────────────────────────────────
 
   const createTagMutation = useMutation({
     mutationFn: createTag,
@@ -251,8 +257,6 @@ export function SettingsPage() {
     },
   })
 
-  // ─── Danger zone ─────────────────────────────────────────────────────
-
   const dangerActions: Record<
     string,
     {
@@ -267,41 +271,41 @@ export function SettingsPage() {
   > = {
     raw: {
       icon: 'upload_file',
-      title: 'Raw Transactions',
+      title: 'Raw transactions',
       description: 'All unprocessed transactions from uploaded statements.',
       confirmMessage:
         'This will permanently delete all raw (unprocessed) transactions. Any pending review items will be lost.',
-      confirmLabel: 'Delete Raw Transactions',
+      confirmLabel: 'Delete raw transactions',
       mutationFn: deleteAllRawTransactions,
       invalidateKeys: ['rawTransactions'],
     },
     processed: {
       icon: 'receipt_long',
-      title: 'Processed Transactions',
+      title: 'Processed transactions',
       description: 'All reviewed and categorised transaction history.',
       confirmMessage:
         'This will permanently delete all processed transactions and their category assignments. Your spending history will be wiped.',
-      confirmLabel: 'Delete Processed Transactions',
+      confirmLabel: 'Delete processed transactions',
       mutationFn: deleteAllProcessedTransactions,
       invalidateKeys: ['processedTransactions', 'dashboard'],
     },
     mappings: {
       icon: 'rule',
-      title: 'Category Mappings',
+      title: 'Category mappings',
       description: 'All saved auto-categorisation rules.',
       confirmMessage:
         'This will permanently delete all category mapping rules. Auto-categorisation will stop working until new rules are created.',
-      confirmLabel: 'Delete All Mappings',
+      confirmLabel: 'Delete all mappings',
       mutationFn: clearAllMappings,
       invalidateKeys: ['categoryMappings'],
     },
     budget: {
       icon: 'savings',
-      title: 'Budget Plans',
+      title: 'Budget plans',
       description: 'All budget allocations across all years.',
       confirmMessage:
         'This will permanently delete all budget plans and allocations across every year.',
-      confirmLabel: 'Delete All Budgets',
+      confirmLabel: 'Delete all budgets',
       mutationFn: deleteAllBudget,
       invalidateKeys: ['budget'],
     },
@@ -311,7 +315,7 @@ export function SettingsPage() {
       description: 'All household members and their associations.',
       confirmMessage:
         'This will permanently delete all persons. Split transaction assignments will be removed.',
-      confirmLabel: 'Delete All Persons',
+      confirmLabel: 'Delete all persons',
       mutationFn: deleteAllPersons,
       invalidateKeys: ['persons'],
     },
@@ -321,7 +325,7 @@ export function SettingsPage() {
       description: 'Wipe the entire database — transactions, budgets, mappings, and persons.',
       confirmMessage:
         'This will permanently erase ALL data in your workspace: every transaction, budget plan, category mapping, and person. Your entire financial history will be gone. This cannot be recovered.',
-      confirmLabel: 'Yes, Delete Everything',
+      confirmLabel: 'Yes, delete everything',
       mutationFn: deleteAllData,
     },
   }
@@ -339,7 +343,7 @@ export function SettingsPage() {
       } else {
         void qc.invalidateQueries()
       }
-      toast.success(`${action?.title ?? 'Data'} deleted successfully`)
+      toast.success(`${action?.title ?? 'Data'} deleted`)
       setPendingDangerKey(null)
     },
     onError: (err: { detail: string }) => {
@@ -349,81 +353,88 @@ export function SettingsPage() {
   })
 
   const navItems = [
-    { id: 'persons', label: 'Account Settings', icon: 'manage_accounts' },
-    { id: 'categories', label: 'Categories', icon: 'category' },
-    { id: 'tags', label: 'Tags', icon: 'label' },
-    { id: 'ignore-rules', label: 'Ignore Rules', icon: 'block' },
-    { id: 'mappings', label: 'Rules & Mapping', icon: 'rule' },
-    { id: 'danger', label: 'Danger Zone', icon: 'warning' },
+    { id: 'persons', label: 'Persons' },
+    { id: 'categories', label: 'Categories' },
+    { id: 'tags', label: 'Tags' },
+    { id: 'ignore-rules', label: 'Ignore rules' },
+    { id: 'mappings', label: 'Auto-mappings' },
+    { id: 'danger', label: 'Danger zone' },
   ]
 
-  const categoryColors: Record<string, string> = {
-    Groceries: 'bg-primary-fixed text-on-primary-fixed',
-    Dining: 'bg-tertiary-fixed text-on-tertiary-fixed',
-    Transport: 'bg-secondary-fixed text-on-secondary-fixed',
-    Shopping: 'bg-primary-fixed-dim text-on-primary-fixed',
-    Subscriptions: 'bg-tertiary-fixed-dim text-on-tertiary-fixed',
-  }
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       <header>
-        <h1 className="text-on-surface text-3xl font-black tracking-tight">Settings</h1>
-        <p className="text-on-surface-variant mt-1 text-sm">
-          Configure your financial workspace, manage household members, and define automation rules.
+        <p className="card-eyebrow">Settings</p>
+        <h1
+          className="text-[22px] font-semibold"
+          style={{ color: 'var(--ink)', letterSpacing: '-0.02em' }}
+        >
+          Workspace settings
+        </h1>
+        <p className="mt-1 text-[13px]" style={{ color: 'var(--ink-3)' }}>
+          Configure your workspace, household members, and automation rules.
         </p>
       </header>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-        {/* Sidebar */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
         <nav className="lg:col-span-3" aria-label="Settings navigation">
-          <p className="text-on-surface-variant mb-3 text-[11px] font-bold tracking-widest uppercase">
-            Preferences
-          </p>
-          <ul className="space-y-1">
-            {navItems.map((item) => (
-              <li key={item.id}>
-                <button
-                  onClick={() => setActiveNav(item.id)}
-                  className={`flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors ${
-                    item.id === 'danger'
-                      ? activeNav === 'danger'
-                        ? 'bg-error-container text-on-error-container'
-                        : 'text-error hover:bg-error-container/30'
-                      : activeNav === item.id
-                        ? 'bg-surface-container-low text-primary'
-                        : 'text-on-surface-variant hover:bg-surface-container-low'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-base">{item.icon}</span>
-                  {item.label}
-                </button>
-              </li>
-            ))}
+          <p className="card-eyebrow mb-2">Sections</p>
+          <ul className="space-y-0.5">
+            {navItems.map((item) => {
+              const isActive = activeNav === item.id
+              const isDanger = item.id === 'danger'
+              return (
+                <li key={item.id}>
+                  <button
+                    onClick={() => setActiveNav(item.id)}
+                    className="flex w-full items-center"
+                    style={{
+                      padding: '7px 10px',
+                      borderRadius: 'var(--radius)',
+                      fontSize: 13,
+                      fontWeight: 500,
+                      background: isActive ? 'var(--surface-2)' : 'transparent',
+                      color: isDanger
+                        ? isActive
+                          ? 'var(--neg)'
+                          : 'var(--neg)'
+                        : isActive
+                          ? 'var(--ink)'
+                          : 'var(--ink-3)',
+                      transition: 'background .1s ease, color .1s ease',
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                </li>
+              )
+            })}
           </ul>
         </nav>
 
-        {/* Main content */}
-        <div className="space-y-8 lg:col-span-9">
-          {/* Account Settings — Persons */}
+        <div className="space-y-5 lg:col-span-9">
+          {/* Persons */}
           {activeNav === 'persons' && (
-            <section>
-              <h2 className="text-on-surface mb-1 text-base font-bold">Persons Management</h2>
-              <p className="text-on-surface-variant mb-5 text-sm">
-                Track expenses across different members of your household.
-              </p>
+            <section className="card">
+              <div className="card-head">
+                <div>
+                  <p className="card-title">Persons</p>
+                  <p className="card-sub">Track expenses across household members.</p>
+                </div>
+              </div>
 
               {personsQuery.isLoading ? (
-                <div className="flex gap-4">
+                <div className="flex flex-wrap gap-3">
                   {[1, 2, 3].map((i) => (
                     <div
                       key={i}
-                      className="bg-surface-container-low h-24 w-32 animate-pulse rounded-xl"
+                      className="animate-shimmer"
+                      style={{ height: 56, width: 220, borderRadius: 'var(--radius)' }}
                     />
                   ))}
                 </div>
               ) : (
-                <div className="flex flex-wrap gap-4">
+                <div className="flex flex-wrap gap-2">
                   {(personsQuery.data ?? []).map((person: Person, i) => (
                     <PersonCard
                       key={person.id}
@@ -435,60 +446,75 @@ export function SettingsPage() {
                 </div>
               )}
 
-              <div className="bg-surface-container-low mt-6 rounded-xl p-5">
-                <p className="text-on-surface-variant mb-3 text-[11px] font-bold tracking-wider uppercase">
-                  Add New Member
-                </p>
-                <div className="flex gap-3">
-                  <div className="flex-1">
-                    <input
-                      value={newPersonName}
-                      onChange={(e) => {
-                        setNewPersonName(e.target.value)
-                        setPersonNameError('')
-                      }}
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddPerson()}
-                      placeholder="Full name"
-                      className="input-field"
-                      aria-label="New person name"
-                    />
-                    {personNameError && (
-                      <p className="text-error mt-1 text-xs">{personNameError}</p>
-                    )}
-                  </div>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={handleAddPerson}
-                    loading={createPersonMutation.isPending}
-                  >
-                    + Add
-                  </Button>
+              <div
+                className="mt-4 flex items-end gap-2"
+                style={{ borderTop: '1px solid var(--line)', paddingTop: 16 }}
+              >
+                <div className="flex-1">
+                  <label className="eyebrow mb-1 block">Add member</label>
+                  <input
+                    value={newPersonName}
+                    onChange={(e) => {
+                      setNewPersonName(e.target.value)
+                      setPersonNameError('')
+                    }}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddPerson()}
+                    placeholder="Full name"
+                    className="input"
+                    aria-label="New person name"
+                  />
+                  {personNameError && (
+                    <p className="mt-1 text-[11px]" style={{ color: 'var(--neg)' }}>
+                      {personNameError}
+                    </p>
+                  )}
                 </div>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleAddPerson}
+                  loading={createPersonMutation.isPending}
+                >
+                  Add
+                </Button>
               </div>
             </section>
           )}
 
           {/* Categories */}
           {activeNav === 'categories' && (
-            <section>
-              <h2 className="text-on-surface mb-1 text-base font-bold">Categories</h2>
-              <p className="text-on-surface-variant mb-5 text-sm">
-                Manage the categories used to classify your transactions and budgets.
-              </p>
+            <section className="card">
+              <div className="card-head">
+                <div>
+                  <p className="card-title">Categories</p>
+                  <p className="card-sub">
+                    Manage the categories used to classify transactions and budgets.
+                  </p>
+                </div>
+              </div>
 
               {categoriesQuery.isLoading ? (
                 <SkeletonTable />
               ) : !categoriesQuery.data?.length ? (
-                <div className="bg-surface-container-low rounded-xl px-6 py-8 text-center">
-                  <p className="text-on-surface-variant text-sm">No categories yet.</p>
-                </div>
+                <p className="text-[13px]" style={{ color: 'var(--ink-3)' }}>
+                  No categories yet.
+                </p>
               ) : (
-                <div className="bg-surface-container-low mb-6 overflow-hidden rounded-xl">
-                  {categoriesQuery.data.map((cat: Category) => (
+                <div
+                  style={{
+                    border: '1px solid var(--line)',
+                    borderRadius: 'var(--radius)',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {categoriesQuery.data.map((cat: Category, i) => (
                     <div
                       key={cat.id}
-                      className="border-outline-variant/10 group flex items-center gap-3 border-b px-4 py-3 last:border-0"
+                      className="group flex items-center gap-2"
+                      style={{
+                        padding: '8px 12px',
+                        borderTop: i === 0 ? 'none' : '1px solid var(--line)',
+                      }}
                     >
                       {renamingCategoryId === cat.id ? (
                         <div className="flex flex-1 items-center gap-2">
@@ -503,7 +529,7 @@ export function SettingsPage() {
                                 })
                               if (e.key === 'Escape') setRenamingCategoryId(null)
                             }}
-                            className="input-field flex-1"
+                            className="input flex-1"
                             autoFocus
                             aria-label="Rename category"
                           />
@@ -515,41 +541,52 @@ export function SettingsPage() {
                               })
                             }
                             disabled={renameCategoryMutation.isPending}
-                            className="text-primary hover:bg-primary/10 rounded-lg p-1.5 transition-colors disabled:opacity-50"
+                            className="btn ghost icon sm"
                             aria-label="Confirm rename"
                           >
-                            <span className="material-symbols-outlined text-[16px]">check</span>
+                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                              check
+                            </span>
                           </button>
                           <button
                             onClick={() => setRenamingCategoryId(null)}
-                            className="text-outline hover:bg-surface-container rounded-lg p-1.5 transition-colors"
+                            className="btn ghost icon sm"
                             aria-label="Cancel rename"
                           >
-                            <span className="material-symbols-outlined text-[16px]">close</span>
+                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                              close
+                            </span>
                           </button>
                         </div>
                       ) : (
                         <>
-                          <span className="text-on-surface flex-1 text-sm font-medium">
+                          <span
+                            className="flex-1 text-[13px] font-medium"
+                            style={{ color: 'var(--ink)' }}
+                          >
                             {cat.name}
                           </span>
-                          <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                          <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
                             <button
                               onClick={() => {
                                 setRenamingCategoryId(cat.id)
                                 setRenamingCategoryName(cat.name)
                               }}
-                              className="text-on-surface-variant hover:bg-surface-container-high rounded-lg p-1.5 transition-colors"
+                              className="btn ghost icon sm"
                               aria-label={`Rename ${cat.name}`}
                             >
-                              <span className="material-symbols-outlined text-[16px]">edit</span>
+                              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                                edit
+                              </span>
                             </button>
                             <button
                               onClick={() => setDeleteCategoryId(cat.id)}
-                              className="text-outline hover:bg-error-container hover:text-on-error-container rounded-lg p-1.5 transition-colors"
+                              className="btn ghost icon sm"
                               aria-label={`Delete ${cat.name}`}
                             >
-                              <span className="material-symbols-outlined text-[16px]">delete</span>
+                              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                                delete
+                              </span>
                             </button>
                           </div>
                         </>
@@ -559,11 +596,12 @@ export function SettingsPage() {
                 </div>
               )}
 
-              <div className="bg-surface-container-low rounded-xl p-5">
-                <p className="text-on-surface-variant mb-3 text-[11px] font-bold tracking-wider uppercase">
-                  Create New Category
-                </p>
-                <div className="flex gap-3">
+              <div
+                className="mt-4 flex items-end gap-2"
+                style={{ borderTop: '1px solid var(--line)', paddingTop: 16 }}
+              >
+                <div className="flex-1">
+                  <label className="eyebrow mb-1 block">Create category</label>
                   <input
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
@@ -572,53 +610,52 @@ export function SettingsPage() {
                         createCategoryMutation.mutate(newCategoryName.trim())
                     }}
                     placeholder="Category name"
-                    className="input-field flex-1"
+                    className="input"
                     aria-label="New category name"
                   />
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() =>
-                      newCategoryName.trim() &&
-                      createCategoryMutation.mutate(newCategoryName.trim())
-                    }
-                    loading={createCategoryMutation.isPending}
-                  >
-                    + Create
-                  </Button>
                 </div>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() =>
+                    newCategoryName.trim() && createCategoryMutation.mutate(newCategoryName.trim())
+                  }
+                  loading={createCategoryMutation.isPending}
+                >
+                  Create
+                </Button>
               </div>
             </section>
           )}
 
           {/* Tags */}
           {activeNav === 'tags' && (
-            <section>
-              <h2 className="text-on-surface mb-1 text-base font-bold">Tags</h2>
-              <p className="text-on-surface-variant mb-5 text-sm">
-                Create tags to label and filter transactions across categories.
-              </p>
+            <section className="card">
+              <div className="card-head">
+                <div>
+                  <p className="card-title">Tags</p>
+                  <p className="card-sub">Label and filter transactions across categories.</p>
+                </div>
+              </div>
 
               {tagsQuery.isLoading ? (
                 <SkeletonTable rows={3} />
               ) : !tagsQuery.data?.length ? (
-                <div className="bg-surface-container-low mb-6 rounded-xl px-6 py-8 text-center">
-                  <p className="text-on-surface-variant text-sm">No tags yet.</p>
-                </div>
+                <p className="text-[13px]" style={{ color: 'var(--ink-3)' }}>
+                  No tags yet.
+                </p>
               ) : (
-                <div className="mb-6 flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {(tagsQuery.data ?? []).map((tag: Tag) => (
-                    <div
-                      key={tag.id}
-                      className="bg-surface-container-low group flex items-center gap-1.5 rounded-full px-3 py-1.5"
-                    >
-                      <span className="text-on-surface text-sm font-medium">{tag.name}</span>
+                    <div key={tag.id} className="chip" style={{ paddingRight: 4 }}>
+                      <span style={{ color: 'var(--ink)' }}>{tag.name}</span>
                       <button
                         onClick={() => setDeleteTagId(tag.id)}
-                        className="text-outline hover:text-error ml-0.5 transition-colors"
+                        className="ml-0.5 inline-flex items-center"
+                        style={{ color: 'var(--ink-4)' }}
                         aria-label={`Delete ${tag.name}`}
                       >
-                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
                           close
                         </span>
                       </button>
@@ -627,11 +664,12 @@ export function SettingsPage() {
                 </div>
               )}
 
-              <div className="bg-surface-container-low rounded-xl p-5">
-                <p className="text-on-surface-variant mb-3 text-[11px] font-bold tracking-wider uppercase">
-                  Create New Tag
-                </p>
-                <div className="flex gap-3">
+              <div
+                className="mt-4 flex items-end gap-2"
+                style={{ borderTop: '1px solid var(--line)', paddingTop: 16 }}
+              >
+                <div className="flex-1">
+                  <label className="eyebrow mb-1 block">Create tag</label>
                   <input
                     value={newTagName}
                     onChange={(e) => setNewTagName(e.target.value)}
@@ -640,56 +678,53 @@ export function SettingsPage() {
                         createTagMutation.mutate(newTagName.trim())
                     }}
                     placeholder="Tag name"
-                    className="input-field flex-1"
+                    className="input"
                     aria-label="New tag name"
                   />
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => newTagName.trim() && createTagMutation.mutate(newTagName.trim())}
-                    loading={createTagMutation.isPending}
-                  >
-                    + Create
-                  </Button>
                 </div>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => newTagName.trim() && createTagMutation.mutate(newTagName.trim())}
+                  loading={createTagMutation.isPending}
+                >
+                  Create
+                </Button>
               </div>
             </section>
           )}
 
-          {/* Ignore Rules */}
+          {/* Ignore rules */}
           {activeNav === 'ignore-rules' && (
-            <section>
-              <h2 className="text-on-surface mb-1 text-base font-bold">Ignore Rules</h2>
-              <p className="text-on-surface-variant mb-5 text-sm">
-                Transactions whose description contains any of these keywords will be automatically
-                excluded when you preview a new import.
-              </p>
-
-              {ignoreRules.length === 0 ? (
-                <div className="bg-surface-container-low mb-6 rounded-xl px-6 py-8 text-center">
-                  <p className="text-on-surface-variant text-sm">No ignore rules yet.</p>
-                  <p className="text-outline mt-1 text-xs">
-                    Add keywords like &ldquo;salary&rdquo; or &ldquo;refund&rdquo; to skip matching
-                    rows automatically.
+            <section className="card">
+              <div className="card-head">
+                <div>
+                  <p className="card-title">Ignore rules</p>
+                  <p className="card-sub">
+                    Transactions matching any of these keywords are auto-excluded on import.
                   </p>
                 </div>
+              </div>
+
+              {ignoreRules.length === 0 ? (
+                <p className="text-[13px]" style={{ color: 'var(--ink-3)' }}>
+                  No ignore rules yet. Add keywords like &ldquo;salary&rdquo; or
+                  &ldquo;refund&rdquo; to skip matching rows automatically.
+                </p>
               ) : (
-                <div className="mb-6 flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {ignoreRules.map((keyword) => (
-                    <div
-                      key={keyword}
-                      className="bg-surface-container-low group flex items-center gap-1.5 rounded-full px-3 py-1.5"
-                    >
-                      <span className="material-symbols-outlined text-outline text-[14px]">
-                        block
+                    <div key={keyword} className="chip" style={{ paddingRight: 4 }}>
+                      <span className="mono" style={{ color: 'var(--ink)' }}>
+                        {keyword}
                       </span>
-                      <span className="text-on-surface font-mono text-sm">{keyword}</span>
                       <button
                         onClick={() => handleRemoveIgnoreRule(keyword)}
-                        className="text-outline hover:text-error ml-0.5 transition-colors"
+                        className="ml-0.5 inline-flex items-center"
+                        style={{ color: 'var(--ink-4)' }}
                         aria-label={`Remove rule ${keyword}`}
                       >
-                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
                           close
                         </span>
                       </button>
@@ -698,123 +733,104 @@ export function SettingsPage() {
                 </div>
               )}
 
-              <div className="bg-surface-container-low rounded-xl p-5">
-                <p className="text-on-surface-variant mb-3 text-[11px] font-bold tracking-wider uppercase">
-                  Add Keyword
-                </p>
-                <div className="flex gap-3">
-                  <div className="flex-1">
-                    <input
-                      value={newIgnoreKeyword}
-                      onChange={(e) => {
-                        setNewIgnoreKeyword(e.target.value)
-                        setIgnoreKeywordError('')
-                      }}
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddIgnoreRule()}
-                      placeholder="e.g. salary, refund, transfer"
-                      className="input-field w-full font-mono"
-                      aria-label="New ignore keyword"
-                    />
-                    {ignoreKeywordError && (
-                      <p className="text-error mt-1 text-xs">{ignoreKeywordError}</p>
-                    )}
-                  </div>
-                  <Button variant="primary" size="sm" onClick={handleAddIgnoreRule}>
-                    + Add
-                  </Button>
+              <div
+                className="mt-4 flex items-end gap-2"
+                style={{ borderTop: '1px solid var(--line)', paddingTop: 16 }}
+              >
+                <div className="flex-1">
+                  <label className="eyebrow mb-1 block">Add keyword</label>
+                  <input
+                    value={newIgnoreKeyword}
+                    onChange={(e) => {
+                      setNewIgnoreKeyword(e.target.value)
+                      setIgnoreKeywordError('')
+                    }}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddIgnoreRule()}
+                    placeholder="e.g. salary, refund, transfer"
+                    className="input mono"
+                    aria-label="New ignore keyword"
+                  />
+                  {ignoreKeywordError && (
+                    <p className="mt-1 text-[11px]" style={{ color: 'var(--neg)' }}>
+                      {ignoreKeywordError}
+                    </p>
+                  )}
                 </div>
+                <Button variant="primary" size="sm" onClick={handleAddIgnoreRule}>
+                  Add
+                </Button>
               </div>
             </section>
           )}
 
-          {/* Rules & Mapping */}
+          {/* Mappings */}
           {activeNav === 'mappings' && (
-            <section>
-              <h2 className="text-on-surface mb-1 text-base font-bold">Category Mappings</h2>
-              <p className="text-on-surface-variant mb-5 text-sm">
-                Auto-categorisation rules created when you check &quot;Save as Rule&quot; during
-                review.
-              </p>
+            <section className="card card-flush">
+              <div style={{ padding: 20, paddingBottom: 12 }}>
+                <p className="card-title">Category mappings</p>
+                <p className="card-sub mt-0.5">
+                  Auto-categorisation rules created from the Review page.
+                </p>
+              </div>
 
               {mappingsQuery.isLoading ? (
-                <SkeletonTable />
-              ) : !mappingsQuery.data?.length ? (
-                <div className="bg-surface-container-low rounded-xl px-6 py-8 text-center">
-                  <p className="text-on-surface-variant text-sm">No mappings yet.</p>
-                  <p className="text-outline mt-1 text-xs">
-                    Mappings are created in the Review page when you check &quot;Save Rule&quot;.
-                  </p>
+                <div style={{ padding: '0 20px 20px' }}>
+                  <SkeletonTable />
                 </div>
+              ) : !mappingsQuery.data?.length ? (
+                <p
+                  className="text-center text-[13px]"
+                  style={{ color: 'var(--ink-3)', padding: '0 20px 24px' }}
+                >
+                  No mappings yet. Mappings are created in the Review page when you check
+                  &ldquo;Save rule&rdquo;.
+                </p>
               ) : (
-                <div className="bg-surface-container-low overflow-x-auto rounded-xl">
-                  <table className="w-full text-left">
+                <div className="overflow-x-auto" style={{ borderTop: '1px solid var(--line)' }}>
+                  <table className="tbl">
                     <thead>
-                      <tr className="border-outline-variant/15 border-b">
-                        {[
-                          'Description Pattern',
-                          'Assigned Category',
-                          'Match Count',
-                          'Last Used',
-                          'Actions',
-                        ].map((h) => (
-                          <th
-                            key={h}
-                            className="text-on-surface-variant px-5 py-4 text-[11px] font-bold tracking-widest uppercase"
-                          >
-                            {h}
-                          </th>
-                        ))}
+                      <tr>
+                        <th>Pattern</th>
+                        <th>Category</th>
+                        <th className="num">Matches</th>
+                        <th>Last used</th>
+                        <th style={{ width: 36 }} />
                       </tr>
                     </thead>
-                    <tbody className="divide-outline-variant/5 divide-y">
-                      {mappingsQuery.data.map((mapping) => {
-                        const colorClass =
-                          categoryColors[mapping.category] ??
-                          'bg-secondary-container text-on-secondary-container'
-                        return (
-                          <tr
-                            key={mapping.id}
-                            className="group hover:bg-surface-container-lowest transition-colors"
-                          >
-                            <td className="text-on-surface px-5 py-3 font-mono text-sm">
-                              {mapping.description_pattern}
-                            </td>
-                            <td className="px-5 py-3">
-                              <span
-                                className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${colorClass}`}
-                              >
-                                {mapping.category}
+                    <tbody>
+                      {mappingsQuery.data.map((mapping) => (
+                        <tr key={mapping.id} className="group">
+                          <td className="mono" style={{ color: 'var(--ink)' }}>
+                            {mapping.description_pattern}
+                          </td>
+                          <td>
+                            <span className="chip">{mapping.category}</span>
+                          </td>
+                          <td className="num" style={{ color: 'var(--ink-2)' }}>
+                            {mapping.match_count}
+                          </td>
+                          <td style={{ color: 'var(--ink-3)' }}>
+                            {mapping.last_used
+                              ? new Date(mapping.last_used).toLocaleDateString('en-IN', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                })
+                              : '—'}
+                          </td>
+                          <td>
+                            <button
+                              onClick={() => setDeleteMappingId(mapping.id)}
+                              className="btn ghost icon sm opacity-0 transition-opacity group-hover:opacity-100"
+                              aria-label={`Delete mapping for ${mapping.description_pattern}`}
+                            >
+                              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                                delete
                               </span>
-                            </td>
-                            <td className="text-on-surface-variant px-5 py-3 text-sm">
-                              {mapping.match_count}
-                            </td>
-                            <td className="text-on-surface-variant px-5 py-3 text-sm">
-                              {mapping.last_used
-                                ? new Date(mapping.last_used).toLocaleDateString('en-US', {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    year: 'numeric',
-                                  })
-                                : '—'}
-                            </td>
-                            <td className="px-5 py-3">
-                              <button
-                                onClick={() => setDeleteMappingId(mapping.id)}
-                                className="text-outline hover:bg-error-container hover:text-on-error-container rounded-lg p-1.5 opacity-0 transition-opacity group-hover:opacity-100"
-                                aria-label={`Delete mapping for ${mapping.description_pattern}`}
-                              >
-                                <span
-                                  className="material-symbols-outlined"
-                                  style={{ fontSize: 16 }}
-                                >
-                                  delete
-                                </span>
-                              </button>
-                            </td>
-                          </tr>
-                        )
-                      })}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -822,40 +838,50 @@ export function SettingsPage() {
             </section>
           )}
 
-          {/* Danger Zone */}
+          {/* Danger zone */}
           {activeNav === 'danger' && (
-            <section>
-              <h2 className="text-on-surface mb-1 text-base font-bold">Danger Zone</h2>
-              <p className="text-on-surface-variant mb-5 text-sm">
-                Permanently delete specific data from your workspace. These actions cannot be
-                undone.
-              </p>
-              <div className="space-y-3">
+            <section className="card">
+              <div className="card-head">
+                <div>
+                  <p className="card-title" style={{ color: 'var(--neg)' }}>
+                    Danger zone
+                  </p>
+                  <p className="card-sub">
+                    Permanently delete data. These actions cannot be undone.
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2">
                 {Object.entries(dangerActions).map(([key, action]) => (
                   <div
                     key={key}
-                    className={`flex items-center gap-4 rounded-xl p-4 ${
-                      key === 'all'
-                        ? 'bg-error-container/40 border-error/20 border'
-                        : 'bg-surface-container-low'
-                    }`}
+                    className="flex items-center gap-3"
+                    style={{
+                      border: key === 'all' ? '1px solid var(--neg)' : '1px solid var(--line)',
+                      background: key === 'all' ? 'var(--neg-soft)' : 'var(--surface-2)',
+                      borderRadius: 'var(--radius)',
+                      padding: 12,
+                    }}
                   >
-                    <div
-                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                        key === 'all'
-                          ? 'bg-error-container text-on-error-container'
-                          : 'bg-surface-container text-on-surface-variant'
-                      }`}
+                    <span
+                      className="material-symbols-outlined shrink-0"
+                      style={{
+                        fontSize: 16,
+                        color: key === 'all' ? 'var(--neg)' : 'var(--ink-3)',
+                      }}
                     >
-                      <span className="material-symbols-outlined text-[20px]">{action.icon}</span>
-                    </div>
+                      {action.icon}
+                    </span>
                     <div className="min-w-0 flex-1">
                       <p
-                        className={`text-sm font-bold ${key === 'all' ? 'text-on-error-container' : 'text-on-surface'}`}
+                        className="text-[13px] font-semibold"
+                        style={{ color: key === 'all' ? 'var(--neg)' : 'var(--ink)' }}
                       >
                         {action.title}
                       </p>
-                      <p className="text-on-surface-variant text-xs">{action.description}</p>
+                      <p className="text-[11.5px]" style={{ color: 'var(--ink-3)' }}>
+                        {action.description}
+                      </p>
                     </div>
                     <Button variant="danger" size="sm" onClick={() => setPendingDangerKey(key)}>
                       Delete
@@ -870,7 +896,7 @@ export function SettingsPage() {
 
       <ConfirmDialog
         isOpen={deletePersonId !== null}
-        title="Remove Person"
+        title="Remove person"
         message="Are you sure you want to remove this person? This action cannot be undone."
         confirmLabel="Remove"
         danger
@@ -881,8 +907,8 @@ export function SettingsPage() {
 
       <ConfirmDialog
         isOpen={deleteMappingId !== null}
-        title="Delete Mapping"
-        message="Are you sure you want to delete this category mapping? Future statements won't auto-match this pattern."
+        title="Delete mapping"
+        message="Future statements won't auto-match this pattern. Continue?"
         confirmLabel="Delete"
         danger
         loading={deleteMappingMutation.isPending}
@@ -892,8 +918,8 @@ export function SettingsPage() {
 
       <ConfirmDialog
         isOpen={deleteCategoryId !== null}
-        title="Delete Category"
-        message="Deleting this category will also remove it from any budget entries and transactions. Continue?"
+        title="Delete category"
+        message="This category will be removed from any budget entries and transactions. Continue?"
         confirmLabel="Delete"
         danger
         loading={deleteCategoryMutation.isPending}
@@ -903,7 +929,7 @@ export function SettingsPage() {
 
       <ConfirmDialog
         isOpen={deleteTagId !== null}
-        title="Delete Tag"
+        title="Delete tag"
         message="Are you sure you want to delete this tag?"
         confirmLabel="Delete"
         danger
@@ -915,7 +941,7 @@ export function SettingsPage() {
       {pendingDangerKey && (
         <ConfirmDialog
           isOpen
-          title={`Delete ${dangerActions[pendingDangerKey].title}`}
+          title={`Delete ${dangerActions[pendingDangerKey].title.toLowerCase()}`}
           message={dangerActions[pendingDangerKey].confirmMessage}
           confirmLabel={dangerActions[pendingDangerKey].confirmLabel}
           danger

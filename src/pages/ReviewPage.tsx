@@ -112,47 +112,63 @@ function CategoriseForm({
   const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }))
 
   return (
-    <div className="flex flex-col gap-5">
-      {/* Progress + Navigation */}
+    <div className="card space-y-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-on-surface-variant text-sm font-medium">Reviewing</span>
-          <span className="bg-primary/10 text-primary rounded-full px-3 py-0.5 text-sm font-bold">
-            {currentIndex + 1} / {totalPending}
+        <div className="flex items-center gap-2">
+          <span className="card-eyebrow">Reviewing</span>
+          <span className="chip accent">
+            <span className="num">
+              {currentIndex + 1} / {totalPending}
+            </span>
           </span>
         </div>
         <div className="flex items-center gap-1">
           <button
             onClick={onPrev}
             disabled={currentIndex === 0}
-            className="text-on-surface-variant hover:bg-surface-container-high disabled:text-outline/40 rounded-lg p-1.5 transition-colors disabled:cursor-not-allowed"
+            className="btn ghost icon sm"
             aria-label="Previous transaction"
           >
-            <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+              chevron_left
+            </span>
           </button>
           <button
             onClick={onNext}
             disabled={currentIndex >= totalPending - 1}
-            className="text-on-surface-variant hover:bg-surface-container-high disabled:text-outline/40 rounded-lg p-1.5 transition-colors disabled:cursor-not-allowed"
+            className="btn ghost icon sm"
             aria-label="Next transaction"
           >
-            <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+              chevron_right
+            </span>
           </button>
         </div>
       </div>
 
-      {/* Transaction card */}
-      <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-[0_4px_24px_rgba(24,28,32,0.08)]">
-        <p className="text-on-surface-variant mb-3 text-[11px] leading-relaxed font-bold tracking-widest uppercase">
+      {/* Txn hero */}
+      <div
+        style={{
+          background: 'var(--surface-2)',
+          border: '1px solid var(--line)',
+          borderRadius: 'var(--radius)',
+          padding: 16,
+        }}
+      >
+        <p className="text-[12.5px] font-medium" style={{ color: 'var(--ink-3)' }}>
           {txn.description}
         </p>
-        <p className="text-on-surface text-5xl font-black tracking-tight">
+        <p
+          className="num mt-1 text-[28px] font-semibold"
+          style={{ color: 'var(--ink)', letterSpacing: '-0.02em' }}
+        >
           {formatCurrency(totalAmount)}
         </p>
-        <p className="text-outline mt-2 text-xs">{txn.txn_date?.slice(0, 10)}</p>
+        <p className="num mt-0.5 text-[11px]" style={{ color: 'var(--ink-4)' }}>
+          {txn.txn_date?.slice(0, 10)}
+        </p>
       </div>
 
-      {/* Category */}
       <SearchableSelect
         label="Category"
         options={categoryOptions}
@@ -166,31 +182,42 @@ function CategoriseForm({
         onCreateOption={handleCreateCategory}
       />
 
-      {/* Save as Rule */}
       <button
         type="button"
         onClick={() => setSaveMapping((v) => !v)}
-        className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm transition-colors ${
-          saveMapping
-            ? 'bg-primary/10 text-primary'
-            : 'bg-surface-container text-on-surface-variant'
-        }`}
+        className="flex w-full items-center justify-between"
+        style={{
+          background: saveMapping ? 'var(--accent-soft)' : 'var(--surface-2)',
+          color: saveMapping ? 'var(--accent)' : 'var(--ink-2)',
+          border: '1px solid ' + (saveMapping ? 'transparent' : 'var(--line)'),
+          borderRadius: 'var(--radius)',
+          padding: '8px 12px',
+          fontSize: 12.5,
+          fontWeight: 500,
+          transition: 'background .1s ease',
+        }}
       >
-        <div className="flex items-center gap-2.5">
-          <span className="material-symbols-outlined text-[18px]">rule</span>
-          <span className="font-medium">Save as Rule</span>
-          <span className={`text-xs ${saveMapping ? 'text-primary/70' : 'text-outline'}`}>
+        <span className="flex items-center gap-2">
+          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+            rule
+          </span>
+          Save as rule
+          <span
+            style={{
+              color: saveMapping
+                ? 'color-mix(in oklch, var(--accent) 70%, transparent)'
+                : 'var(--ink-4)',
+              fontWeight: 400,
+            }}
+          >
             — auto-map next time
           </span>
-        </div>
-        <span
-          className={`material-symbols-outlined text-[20px] ${saveMapping ? 'text-primary' : 'text-outline'}`}
-        >
+        </span>
+        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
           {saveMapping ? 'toggle_on' : 'toggle_off'}
         </span>
       </button>
 
-      {/* Person shares */}
       {personsQuery.data && (
         <PersonShareBuilder
           persons={personsQuery.data}
@@ -201,28 +228,22 @@ function CategoriseForm({
         />
       )}
 
-      {/* Notes */}
       <div>
-        <label className="text-on-surface-variant mb-1 block text-xs font-semibold tracking-wider uppercase">
-          Notes (optional)
-        </label>
+        <label className="eyebrow mb-1 block">Notes (optional)</label>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Add a note…"
           rows={2}
-          className="input-field w-full resize-none"
+          className="textarea"
           aria-label="Transaction notes"
         />
       </div>
 
-      {/* Tags */}
       {tagsQuery.data && tagsQuery.data.length > 0 && (
         <div>
-          <p className="text-on-surface-variant mb-2 text-xs font-semibold tracking-wider uppercase">
-            Tags (optional)
-          </p>
-          <div className="flex flex-wrap gap-2">
+          <p className="eyebrow mb-1.5">Tags (optional)</p>
+          <div className="flex flex-wrap gap-1.5">
             {tagsQuery.data.map((tag) => {
               const active = selectedTagIds.includes(tag.id)
               return (
@@ -234,11 +255,8 @@ function CategoriseForm({
                       active ? ids.filter((id) => id !== tag.id) : [...ids, tag.id]
                     )
                   }
-                  className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${
-                    active
-                      ? 'bg-primary text-on-primary'
-                      : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
-                  }`}
+                  className={active ? 'chip accent' : 'chip'}
+                  style={{ cursor: 'pointer' }}
                 >
                   {tag.name}
                 </button>
@@ -254,7 +272,7 @@ function CategoriseForm({
         onClick={handleProcess}
         loading={processMutation.isPending}
       >
-        Process Transaction →
+        Process transaction →
       </Button>
     </div>
   )
@@ -270,25 +288,40 @@ function RawTxnRow({ txn, onDelete, onRestore }: RawTxnRowProps) {
   const isDeleted = txn.status === 'deleted'
   return (
     <div
-      className={`border-outline-variant/10 flex items-center gap-3 border-b px-4 py-3 transition-colors ${
-        isDeleted ? 'opacity-40' : 'hover:bg-surface-container-low'
-      }`}
+      className="flex items-center gap-3"
+      style={{
+        padding: '10px 14px',
+        borderBottom: '1px solid var(--line)',
+        opacity: isDeleted ? 0.4 : 1,
+        transition: 'background .1s ease',
+      }}
+      onMouseEnter={(e) => {
+        if (!isDeleted) e.currentTarget.style.background = 'var(--surface-2)'
+      }}
+      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
     >
       <div className="min-w-0 flex-1">
         <p
-          className={`text-on-surface truncate text-sm font-medium ${isDeleted ? 'line-through' : ''}`}
+          className="truncate text-[12.5px] font-medium"
+          style={{
+            color: 'var(--ink)',
+            textDecoration: isDeleted ? 'line-through' : undefined,
+          }}
         >
           {txn.description}
         </p>
-        <p className="text-on-surface-variant mt-0.5 text-xs">{txn.txn_date?.slice(0, 10)}</p>
+        <p className="num mt-0.5 text-[11px]" style={{ color: 'var(--ink-3)' }}>
+          {txn.txn_date?.slice(0, 10)}
+        </p>
       </div>
-      <p className="text-on-surface shrink-0 text-sm font-semibold">
+      <p className="num shrink-0 text-[12.5px] font-medium" style={{ color: 'var(--ink)' }}>
         {formatCurrency(Number(txn.amount))}
       </p>
       {isDeleted ? (
         <button
           onClick={() => onRestore(txn.id)}
-          className="text-primary hover:bg-secondary-container shrink-0 rounded-lg px-2 py-1 text-xs font-medium"
+          className="btn ghost sm"
+          style={{ color: 'var(--accent)' }}
           aria-label="Restore transaction"
         >
           Restore
@@ -296,10 +329,12 @@ function RawTxnRow({ txn, onDelete, onRestore }: RawTxnRowProps) {
       ) : (
         <button
           onClick={() => onDelete(txn.id)}
-          className="text-outline hover:bg-error-container hover:text-on-error-container shrink-0 rounded-lg p-1.5 transition-colors"
+          className="btn ghost icon sm"
           aria-label="Delete transaction"
         >
-          <span className="material-symbols-outlined text-[16px]">delete</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+            delete
+          </span>
         </button>
       )}
     </div>
@@ -314,7 +349,6 @@ export function ReviewPage() {
   const toast = useToastContext()
   const qc = useQueryClient()
 
-  // Bulk categorisation state
   const [bulkMode, setBulkMode] = useState(false)
   const [selectedBulkIds, setSelectedBulkIds] = useState<Set<string>>(new Set())
   const [bulkCategoryId, setBulkCategoryId] = useState('')
@@ -427,56 +461,71 @@ export function ReviewPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-on-surface text-3xl font-black tracking-tight">
-            Review Transactions
-          </h1>
-          <p className="text-on-surface-variant mt-1 text-sm">
-            Categorise pending transactions and audit your raw data.
-          </p>
-        </div>
+    <div className="space-y-5">
+      <header>
+        <p className="card-eyebrow">Review</p>
+        <h1
+          className="text-[22px] font-semibold"
+          style={{ color: 'var(--ink)', letterSpacing: '-0.02em' }}
+        >
+          Review transactions
+        </h1>
+        <p className="mt-1 text-[13px]" style={{ color: 'var(--ink-3)' }}>
+          Categorise pending transactions and audit your raw data.
+        </p>
       </header>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        {/* PRIMARY: Pending categorisation */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        {/* Pending review */}
         <section className="lg:col-span-7">
           {pendingQuery.isLoading ? (
-            <div className="space-y-4">
+            <div className="space-y-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-surface-container-low h-16 animate-pulse rounded-xl" />
+                <div
+                  key={i}
+                  className="animate-shimmer"
+                  style={{ height: 48, borderRadius: 'var(--radius)' }}
+                />
               ))}
             </div>
           ) : pendingTxns.length === 0 ? (
-            <div className="bg-surface-container-lowest flex h-72 flex-col items-center justify-center rounded-2xl p-8 text-center shadow-[0_4px_24px_rgba(24,28,32,0.06)]">
-              <span className="material-symbols-outlined text-primary mb-3 text-5xl">task_alt</span>
-              <p className="text-on-surface text-xl font-bold">All caught up!</p>
-              <p className="text-on-surface-variant mt-2 max-w-xs text-sm">
-                All transactions have been categorised. Use Auto-Categorise to process new uploads.
-              </p>
-              <Button
-                variant="primary"
-                size="sm"
-                className="mt-5"
-                onClick={() => autoMutation.mutate()}
-                loading={autoMutation.isPending}
+            <div className="card flex flex-col items-center justify-center py-12 text-center">
+              <span
+                className="material-symbols-outlined mb-2"
+                style={{ fontSize: 22, color: 'var(--pos)' }}
               >
-                <span className="material-symbols-outlined text-sm">auto_awesome</span>
-                Auto-Categorise
-              </Button>
+                task_alt
+              </span>
+              <p
+                className="text-[15px] font-semibold"
+                style={{ color: 'var(--ink)', letterSpacing: '-0.005em' }}
+              >
+                All caught up
+              </p>
+              <p className="mt-1 max-w-xs text-[12.5px]" style={{ color: 'var(--ink-3)' }}>
+                All transactions have been categorised. Use auto-categorise to process new uploads.
+              </p>
+              <div className="mt-4">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => autoMutation.mutate()}
+                  loading={autoMutation.isPending}
+                >
+                  Auto-categorise
+                </Button>
+              </div>
             </div>
           ) : bulkMode ? (
-            /* ── Bulk mode ──────────────────────────────────────────── */
-            <div className="bg-surface-container-lowest space-y-4 rounded-2xl p-6 shadow-[0_4px_24px_rgba(24,28,32,0.06)]">
+            <div className="card space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-on-surface text-sm font-bold">Bulk Categorise</h2>
-                  <span className="bg-primary/10 text-primary rounded-full px-2.5 py-0.5 text-xs font-bold">
-                    {pendingTxns.length} pending
+                  <p className="card-title">Bulk categorise</p>
+                  <span className="chip accent">
+                    <span className="num">{pendingTxns.length}</span> pending
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   <button
                     onClick={() => {
                       const allIds = new Set(pendingTxns.map((t) => t.id))
@@ -484,7 +533,7 @@ export function ReviewPage() {
                         selectedBulkIds.size === pendingTxns.length ? new Set() : allIds
                       )
                     }}
-                    className="text-primary text-xs font-medium hover:underline"
+                    className="btn ghost sm"
                   >
                     {selectedBulkIds.size === pendingTxns.length ? 'Deselect all' : 'Select all'}
                   </button>
@@ -495,25 +544,35 @@ export function ReviewPage() {
                       setBulkCategoryId('')
                       setBulkCategoryError('')
                     }}
-                    className="text-on-surface-variant hover:bg-surface-container rounded-lg p-1"
+                    className="btn ghost icon sm"
                     aria-label="Exit bulk mode"
                   >
-                    <span className="material-symbols-outlined text-[18px]">close</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                      close
+                    </span>
                   </button>
                 </div>
               </div>
 
-              <div className="max-h-64 space-y-1 overflow-y-auto">
-                {pendingTxns.map((txn) => {
+              <div
+                className="max-h-64 overflow-y-auto"
+                style={{
+                  border: '1px solid var(--line)',
+                  borderRadius: 'var(--radius)',
+                }}
+              >
+                {pendingTxns.map((txn, i) => {
                   const checked = selectedBulkIds.has(txn.id)
                   return (
                     <label
                       key={txn.id}
-                      className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 transition-colors ${
-                        checked
-                          ? 'bg-primary/8 text-on-surface'
-                          : 'hover:bg-surface-container-low text-on-surface'
-                      }`}
+                      className="flex cursor-pointer items-center gap-2.5"
+                      style={{
+                        padding: '8px 12px',
+                        borderTop: i === 0 ? 'none' : '1px solid var(--line)',
+                        background: checked ? 'var(--accent-soft)' : 'transparent',
+                        transition: 'background .1s ease',
+                      }}
                     >
                       <input
                         type="checkbox"
@@ -526,15 +585,21 @@ export function ReviewPage() {
                             return next
                           })
                         }
-                        className="accent-primary h-4 w-4 rounded"
+                        style={{ accentColor: 'var(--accent)' }}
                       />
-                      <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                      <span
+                        className="min-w-0 flex-1 truncate text-[12.5px] font-medium"
+                        style={{ color: 'var(--ink)' }}
+                      >
                         {txn.description}
                       </span>
-                      <span className="text-on-surface-variant shrink-0 text-xs">
+                      <span className="num shrink-0 text-[11px]" style={{ color: 'var(--ink-3)' }}>
                         {txn.txn_date?.slice(0, 10)}
                       </span>
-                      <span className="shrink-0 text-sm font-semibold">
+                      <span
+                        className="num shrink-0 text-[12.5px] font-medium"
+                        style={{ color: 'var(--ink)' }}
+                      >
                         {formatCurrency(Number(txn.amount))}
                       </span>
                     </label>
@@ -542,7 +607,7 @@ export function ReviewPage() {
                 })}
               </div>
 
-              <div className="border-outline-variant/15 border-t pt-4">
+              <div style={{ borderTop: '1px solid var(--line)', paddingTop: 12 }}>
                 <SearchableSelect
                   label="Apply category to selected"
                   options={(categoriesQuery.data ?? []).map((c) => ({
@@ -566,21 +631,22 @@ export function ReviewPage() {
                   loading={bulkProcessing}
                   disabled={selectedBulkIds.size === 0}
                 >
-                  Process {selectedBulkIds.size > 0 ? selectedBulkIds.size : ''} Selected
+                  Process {selectedBulkIds.size > 0 ? selectedBulkIds.size : ''} selected
                 </Button>
               </div>
             </div>
           ) : (
-            /* ── One-by-one mode ────────────────────────────────────── */
             activePending && (
               <div className="space-y-3">
                 <div className="flex justify-end">
                   <button
                     onClick={() => setBulkMode(true)}
-                    className="bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-colors"
+                    className="btn ghost sm"
                     title="Switch to bulk categorisation"
                   >
-                    <span className="material-symbols-outlined text-[16px]">checklist</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                      checklist
+                    </span>
                     Bulk mode
                   </button>
                 </div>
@@ -602,12 +668,15 @@ export function ReviewPage() {
           )}
         </section>
 
-        {/* SECONDARY: Raw transactions sidebar */}
+        {/* Raw transactions sidebar */}
         <section className="lg:col-span-5">
-          <div className="bg-surface-container-lowest overflow-hidden rounded-2xl shadow-[0_4px_24px_rgba(24,28,32,0.06)]">
-            <div className="border-outline-variant/10 flex items-center justify-between border-b px-4 py-3">
+          <div className="card card-flush overflow-hidden">
+            <div
+              className="flex items-center justify-between"
+              style={{ padding: '12px 14px', borderBottom: '1px solid var(--line)' }}
+            >
               <div className="flex items-center gap-2">
-                <h2 className="text-on-surface text-sm font-bold">Raw Transactions</h2>
+                <p className="card-title">Raw transactions</p>
                 {rawQuery.data?.length ? (
                   <Chip variant="neutral">{rawQuery.data.length}</Chip>
                 ) : null}
@@ -622,24 +691,30 @@ export function ReviewPage() {
                 <button
                   onClick={() => autoMutation.mutate()}
                   disabled={autoMutation.isPending}
-                  title="Auto-Categorise"
-                  className="text-on-surface-variant hover:bg-surface-container-high rounded-lg p-1.5 transition-colors disabled:opacity-50"
+                  title="Auto-categorise"
+                  className="btn ghost icon sm"
                 >
-                  <span className="material-symbols-outlined text-[18px]">
+                  <span
+                    className={`material-symbols-outlined ${autoMutation.isPending ? 'animate-spin' : ''}`}
+                    style={{ fontSize: 14 }}
+                  >
                     {autoMutation.isPending ? 'progress_activity' : 'auto_awesome'}
                   </span>
                 </button>
               </div>
             </div>
 
-            <div className="max-h-[calc(100vh-16rem)] overflow-y-auto">
+            <div
+              className="max-h-[calc(100vh-16rem)] overflow-y-auto"
+              style={{ background: 'var(--surface)' }}
+            >
               {rawQuery.isLoading ? (
-                <div className="p-4">
+                <div style={{ padding: 14 }}>
                   <SkeletonTable />
                 </div>
               ) : !rawQuery.data?.length ? (
-                <div className="px-4 py-8 text-center">
-                  <p className="text-on-surface-variant text-sm">
+                <div className="py-8 text-center">
+                  <p className="text-[12.5px]" style={{ color: 'var(--ink-3)' }}>
                     No transactions for this period.
                   </p>
                 </div>

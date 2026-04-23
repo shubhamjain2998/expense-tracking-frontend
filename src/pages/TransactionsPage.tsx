@@ -51,14 +51,12 @@ interface SortHeaderProps {
 function SortHeader({ label, field, sortField, sortDir, onSort, className = '' }: SortHeaderProps) {
   const isActive = sortField === field
   return (
-    <th
-      className={`text-on-surface-variant cursor-pointer px-6 py-4 text-[11px] font-bold tracking-widest uppercase select-none ${className}`}
-      onClick={() => onSort(field)}
-    >
+    <th className={`cursor-pointer select-none ${className}`} onClick={() => onSort(field)}>
       <span className="inline-flex items-center gap-1">
         {label}
         <span
-          className={`material-symbols-outlined text-[14px] transition-opacity ${isActive ? 'opacity-100' : 'opacity-30'}`}
+          className="material-symbols-outlined"
+          style={{ fontSize: 12, opacity: isActive ? 1 : 0.3 }}
         >
           {isActive && sortDir === 'desc' ? 'arrow_downward' : 'arrow_upward'}
         </span>
@@ -141,26 +139,44 @@ function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessPanelPro
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-outline-variant/15 flex items-center justify-between border-b px-5 py-4">
-        <span className="text-on-surface text-sm font-bold">Process Transaction</span>
-        <button
-          onClick={onClose}
-          className="text-on-surface-variant hover:bg-surface-container rounded-lg p-1.5 transition-colors"
-          aria-label="Close panel"
+      <div
+        className="flex items-center justify-between"
+        style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)' }}
+      >
+        <span
+          className="text-[13px] font-semibold"
+          style={{ color: 'var(--ink)', letterSpacing: '-0.005em' }}
         >
-          <span className="material-symbols-outlined text-[20px]">close</span>
+          Process transaction
+        </span>
+        <button onClick={onClose} className="btn ghost icon sm" aria-label="Close panel">
+          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+            close
+          </span>
         </button>
       </div>
 
-      <div className="flex flex-col gap-5 overflow-y-auto p-5">
-        <div className="bg-surface-container-lowest rounded-2xl p-5 shadow-[0_4px_24px_rgba(24,28,32,0.08)]">
-          <p className="text-on-surface-variant mb-2 text-[10px] leading-relaxed font-bold tracking-widest uppercase">
+      <div className="flex flex-col gap-4 overflow-y-auto" style={{ padding: 16 }}>
+        <div
+          style={{
+            background: 'var(--surface-2)',
+            border: '1px solid var(--line)',
+            borderRadius: 'var(--radius)',
+            padding: 14,
+          }}
+        >
+          <p className="text-[12px] font-medium" style={{ color: 'var(--ink-3)' }}>
             {txn.description}
           </p>
-          <p className="text-on-surface text-4xl font-black tracking-tight">
+          <p
+            className="num mt-1 text-[26px] font-semibold"
+            style={{ color: 'var(--ink)', letterSpacing: '-0.02em' }}
+          >
             {formatCurrency(totalAmount)}
           </p>
-          <p className="text-outline mt-1.5 text-xs">{txn.txn_date?.slice(0, 10)}</p>
+          <p className="num mt-0.5 text-[11px]" style={{ color: 'var(--ink-4)' }}>
+            {txn.txn_date?.slice(0, 10)}
+          </p>
         </div>
 
         <SearchableSelect
@@ -179,22 +195,35 @@ function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessPanelPro
         <button
           type="button"
           onClick={() => setSaveMapping((v) => !v)}
-          className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm transition-colors ${
-            saveMapping
-              ? 'bg-primary/10 text-primary'
-              : 'bg-surface-container text-on-surface-variant'
-          }`}
+          className="flex w-full items-center justify-between"
+          style={{
+            background: saveMapping ? 'var(--accent-soft)' : 'var(--surface-2)',
+            color: saveMapping ? 'var(--accent)' : 'var(--ink-2)',
+            border: '1px solid ' + (saveMapping ? 'transparent' : 'var(--line)'),
+            borderRadius: 'var(--radius)',
+            padding: '8px 12px',
+            fontSize: 12.5,
+            fontWeight: 500,
+            transition: 'background .1s ease',
+          }}
         >
-          <div className="flex items-center gap-2.5">
-            <span className="material-symbols-outlined text-[18px]">rule</span>
-            <span className="font-medium">Save as Rule</span>
-            <span className={`text-xs ${saveMapping ? 'text-primary/70' : 'text-outline'}`}>
+          <span className="flex items-center gap-2">
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+              rule
+            </span>
+            Save as rule
+            <span
+              style={{
+                color: saveMapping
+                  ? 'color-mix(in oklch, var(--accent) 70%, transparent)'
+                  : 'var(--ink-4)',
+                fontWeight: 400,
+              }}
+            >
               — auto-map next time
             </span>
-          </div>
-          <span
-            className={`material-symbols-outlined text-[20px] ${saveMapping ? 'text-primary' : 'text-outline'}`}
-          >
+          </span>
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
             {saveMapping ? 'toggle_on' : 'toggle_off'}
           </span>
         </button>
@@ -210,26 +239,24 @@ function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessPanelPro
         )}
 
         <div>
-          <label className="text-on-surface-variant mb-1 block text-xs font-semibold tracking-wider uppercase">
-            Notes (optional)
-          </label>
+          <label className="eyebrow mb-1 block">Notes (optional)</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Add a note…"
             rows={2}
-            className="input-field w-full resize-none"
+            className="textarea"
           />
         </div>
 
         <div>
-          <p className="text-on-surface-variant mb-2 text-xs font-semibold tracking-wider uppercase">
-            Tags (optional)
-          </p>
+          <p className="eyebrow mb-1.5">Tags (optional)</p>
           {(tagsQuery.data ?? []).length === 0 ? (
-            <p className="text-on-surface-variant text-xs">No tags yet. Create tags in Settings.</p>
+            <p className="text-[11.5px]" style={{ color: 'var(--ink-3)' }}>
+              No tags yet. Create tags in Settings.
+            </p>
           ) : (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {(tagsQuery.data ?? []).map((tag) => {
                 const active = selectedTagIds.includes(tag.id)
                 return (
@@ -241,11 +268,8 @@ function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessPanelPro
                         active ? ids.filter((id) => id !== tag.id) : [...ids, tag.id]
                       )
                     }
-                    className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${
-                      active
-                        ? 'bg-primary text-on-primary'
-                        : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
-                    }`}
+                    className={active ? 'chip accent' : 'chip'}
+                    style={{ cursor: 'pointer' }}
                   >
                     {tag.name}
                   </button>
@@ -261,7 +285,7 @@ function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessPanelPro
           onClick={handleProcess}
           loading={processMutation.isPending}
         >
-          Process Transaction →
+          Process transaction →
         </Button>
       </div>
     </div>
@@ -426,7 +450,10 @@ function RawTab({ year, month }: RawTabProps) {
 
   return (
     <div>
-      <div className="border-outline-variant/15 flex items-center gap-3 border-b px-6 py-3">
+      <div
+        className="flex items-center gap-2"
+        style={{ padding: '10px 14px', borderBottom: '1px solid var(--line)' }}
+      >
         {bulkMode ? (
           <>
             <button
@@ -436,13 +463,13 @@ function RawTab({ year, month }: RawTabProps) {
                   selectedBulkIds.size === pendingIds.length ? new Set() : new Set(pendingIds)
                 )
               }}
-              className="text-primary text-sm font-medium whitespace-nowrap hover:underline"
+              className="btn ghost sm"
             >
               {selectedBulkIds.size === sorted.filter((t) => t.status === 'pending').length
                 ? 'Deselect all'
                 : 'Select all'}
             </button>
-            <span className="text-on-surface-variant text-sm">
+            <span className="text-[12px]" style={{ color: 'var(--ink-3)' }}>
               {selectedBulkIds.size > 0
                 ? `${selectedBulkIds.size} selected`
                 : 'Select transactions'}
@@ -455,16 +482,21 @@ function RawTab({ year, month }: RawTabProps) {
                 setBulkCategoryId('')
                 setBulkCategoryError('')
               }}
-              className="text-on-surface-variant hover:bg-surface-container rounded-lg p-1.5 transition-colors"
+              className="btn ghost icon sm"
               aria-label="Exit bulk mode"
             >
-              <span className="material-symbols-outlined text-[18px]">close</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                close
+              </span>
             </button>
           </>
         ) : (
           <>
             <div className="relative max-w-sm flex-1">
-              <span className="material-symbols-outlined text-outline pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[18px]">
+              <span
+                className="material-symbols-outlined pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2"
+                style={{ fontSize: 14, color: 'var(--ink-4)' }}
+              >
                 search
               </span>
               <input
@@ -472,19 +504,20 @@ function RawTab({ year, month }: RawTabProps) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search description…"
-                className="input-field w-full"
-                style={{ paddingLeft: '2.25rem' }}
+                className="input"
+                style={{ paddingLeft: 28 }}
               />
             </div>
             <button
               onClick={() => autoMutation.mutate()}
               disabled={autoMutation.isPending}
-              className="text-on-surface-variant hover:bg-surface-container-high rounded-lg p-2 transition-colors disabled:opacity-50"
-              title="Auto-Categorise pending transactions"
-              aria-label="Auto-Categorise"
+              className="btn ghost icon sm"
+              title="Auto-categorise pending transactions"
+              aria-label="Auto-categorise"
             >
               <span
-                className={`material-symbols-outlined text-[20px] ${autoMutation.isPending ? 'animate-spin' : ''}`}
+                className={`material-symbols-outlined ${autoMutation.isPending ? 'animate-spin' : ''}`}
+                style={{ fontSize: 14 }}
               >
                 {autoMutation.isPending ? 'progress_activity' : 'auto_awesome'}
               </span>
@@ -494,27 +527,29 @@ function RawTab({ year, month }: RawTabProps) {
                 setBulkMode(true)
                 setSelectedTxnState(null)
               }}
-              className="text-on-surface-variant hover:bg-surface-container-high rounded-lg p-2 transition-colors"
+              className="btn ghost icon sm"
               title="Bulk categorise"
               aria-label="Bulk categorise"
             >
-              <span className="material-symbols-outlined text-[20px]">checklist</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                checklist
+              </span>
             </button>
           </>
         )}
       </div>
 
       {allTxns.length === 0 ? (
-        <p className="text-on-surface-variant py-12 text-center text-sm">
+        <p className="py-10 text-center text-[12.5px]" style={{ color: 'var(--ink-3)' }}>
           No raw transactions for this period.
         </p>
       ) : (
         <div className="flex min-h-0">
           <div className="min-w-0 flex-1 overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="tbl">
               <thead>
-                <tr className="border-outline-variant/15 border-b">
-                  {bulkMode && <th className="w-10 px-4 py-4" />}
+                <tr>
+                  {bulkMode && <th style={{ width: 36 }} />}
                   <SortHeader
                     label="Date"
                     field="txn_date"
@@ -535,7 +570,7 @@ function RawTab({ year, month }: RawTabProps) {
                     sortField={sortField}
                     sortDir={sortDir}
                     onSort={handleSort}
-                    className="text-right"
+                    className="num"
                   />
                   <SortHeader
                     label="Status"
@@ -544,21 +579,18 @@ function RawTab({ year, month }: RawTabProps) {
                     sortDir={sortDir}
                     onSort={handleSort}
                   />
-                  <th className="w-12 px-4 py-4" />
+                  <th style={{ width: 40 }} />
                 </tr>
               </thead>
               <tbody>
                 {sorted.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={5}
-                      className="text-on-surface-variant px-6 py-8 text-center text-sm"
-                    >
+                    <td colSpan={5} className="text-center" style={{ color: 'var(--ink-3)' }}>
                       No transactions match your search.
                     </td>
                   </tr>
                 ) : (
-                  sorted.map((txn, i) => {
+                  sorted.map((txn) => {
                     const isDeleted = txn.status === 'deleted'
                     const isSelected = selectedTxn?.id === txn.id
                     const isBulkChecked = selectedBulkIds.has(txn.id)
@@ -581,24 +613,25 @@ function RawTab({ year, month }: RawTabProps) {
                               ? undefined
                               : () => setSelectedTxnState({ txn, year, month })
                         }
-                        className={`text-sm transition-colors ${
-                          isDeleted
-                            ? 'opacity-40'
-                            : bulkMode
-                              ? isPending
-                                ? isBulkChecked
-                                  ? 'bg-primary/8 cursor-pointer'
-                                  : 'hover:bg-surface-container cursor-pointer'
-                                : 'opacity-40'
+                        className={
+                          bulkMode
+                            ? isPending
+                              ? isBulkChecked
+                                ? 'row sel'
+                                : 'row'
+                              : ''
+                            : isDeleted
+                              ? ''
                               : isSelected
-                                ? 'bg-primary/8'
-                                : i % 2 === 0
-                                  ? 'bg-surface-container-lowest hover:bg-surface-container cursor-pointer'
-                                  : 'bg-surface-container-low hover:bg-surface-container cursor-pointer'
-                        }`}
+                                ? 'row sel'
+                                : 'row'
+                        }
+                        style={{
+                          opacity: isDeleted || (bulkMode && !isPending) ? 0.4 : 1,
+                        }}
                       >
                         {bulkMode && (
-                          <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                          <td onClick={(e) => e.stopPropagation()}>
                             {isPending && !isDeleted && (
                               <input
                                 type="checkbox"
@@ -611,36 +644,31 @@ function RawTab({ year, month }: RawTabProps) {
                                     return next
                                   })
                                 }
-                                className="accent-primary h-4 w-4"
+                                style={{ accentColor: 'var(--accent)' }}
                               />
                             )}
                           </td>
                         )}
-                        <td className="text-on-surface-variant px-6 py-3 whitespace-nowrap">
+                        <td className="num whitespace-nowrap" style={{ color: 'var(--ink-3)' }}>
                           {txn.txn_date?.slice(0, 10)}
                         </td>
-                        <td className="text-on-surface px-6 py-3 font-medium">
-                          <span className={isDeleted ? 'line-through' : ''}>{txn.description}</span>
-                        </td>
-                        <td className="text-on-surface px-6 py-3 text-right font-semibold">
-                          {formatCurrency(Number(txn.amount))}
-                        </td>
-                        <td className="px-6 py-3">
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                              isDeleted
-                                ? 'bg-error-container text-on-error-container'
-                                : 'bg-surface-container-high text-on-surface-variant'
-                            }`}
-                          >
-                            {txn.status}
+                        <td style={{ color: 'var(--ink)', fontWeight: 500 }}>
+                          <span style={{ textDecoration: isDeleted ? 'line-through' : undefined }}>
+                            {txn.description}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                        <td className="num" style={{ color: 'var(--ink)', fontWeight: 500 }}>
+                          {formatCurrency(Number(txn.amount))}
+                        </td>
+                        <td>
+                          <span className={isDeleted ? 'chip neg' : 'chip'}>{txn.status}</span>
+                        </td>
+                        <td className="text-right" onClick={(e) => e.stopPropagation()}>
                           {isDeleted ? (
                             <button
                               onClick={() => restoreMutation.mutate(txn.id)}
-                              className="text-primary hover:bg-secondary-container rounded-lg px-2 py-1 text-xs font-medium transition-colors"
+                              className="btn ghost sm"
+                              style={{ color: 'var(--accent)' }}
                               aria-label="Restore transaction"
                             >
                               Restore
@@ -648,10 +676,12 @@ function RawTab({ year, month }: RawTabProps) {
                           ) : (
                             <button
                               onClick={() => deleteMutation.mutate(txn.id)}
-                              className="text-outline hover:bg-error-container hover:text-on-error-container rounded-lg p-1.5 transition-colors"
+                              className="btn ghost icon sm"
                               aria-label="Delete transaction"
                             >
-                              <span className="material-symbols-outlined text-[16px]">delete</span>
+                              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                                delete
+                              </span>
                             </button>
                           )}
                         </td>
@@ -661,15 +691,21 @@ function RawTab({ year, month }: RawTabProps) {
                 )}
               </tbody>
             </table>
-            <div className="text-on-surface-variant border-outline-variant/15 border-t px-6 py-3 text-xs">
+            <div
+              className="px-4 py-2.5 text-[11.5px]"
+              style={{ borderTop: '1px solid var(--line)', color: 'var(--ink-3)' }}
+            >
               {sorted.length} of {allTxns.length} transaction{allTxns.length !== 1 ? 's' : ''}{' '}
               &middot; {allTxns.filter((t) => t.status === 'deleted').length} deleted
             </div>
           </div>
 
           {bulkMode && (
-            <div className="border-outline-variant/15 flex w-[340px] shrink-0 flex-col gap-4 border-l p-5">
-              <p className="text-on-surface text-sm font-bold">Apply Category</p>
+            <div
+              className="flex w-[320px] shrink-0 flex-col gap-3"
+              style={{ borderLeft: '1px solid var(--line)', padding: 16 }}
+            >
+              <p className="card-title">Apply category</p>
               <SearchableSelect
                 label="Category"
                 options={(categoriesQuery.data ?? []).map((c) => ({ value: c.id, label: c.name }))}
@@ -690,13 +726,13 @@ function RawTab({ year, month }: RawTabProps) {
                 loading={bulkProcessing}
                 disabled={selectedBulkIds.size === 0}
               >
-                Process {selectedBulkIds.size > 0 ? selectedBulkIds.size : ''} Selected
+                Process {selectedBulkIds.size > 0 ? selectedBulkIds.size : ''} selected
               </Button>
             </div>
           )}
 
           {!bulkMode && selectedTxn && (
-            <div className="border-outline-variant/15 w-[380px] shrink-0 border-l">
+            <div className="w-[360px] shrink-0" style={{ borderLeft: '1px solid var(--line)' }}>
               <ProcessPanel
                 key={selectedTxn.id}
                 txn={selectedTxn}
@@ -851,7 +887,7 @@ function ProcessedTab({ year, month }: ProcessedTabProps) {
 
   if (allTxns.length === 0) {
     return (
-      <p className="text-on-surface-variant py-12 text-center text-sm">
+      <p className="py-10 text-center text-[12.5px]" style={{ color: 'var(--ink-3)' }}>
         No processed transactions for this period.
       </p>
     )
@@ -861,7 +897,10 @@ function ProcessedTab({ year, month }: ProcessedTabProps) {
 
   return (
     <div>
-      <div className="border-outline-variant/15 flex flex-col gap-3 border-b px-6 py-3 sm:flex-row sm:items-center">
+      <div
+        className="flex flex-col gap-2 sm:flex-row sm:items-center"
+        style={{ padding: '10px 14px', borderBottom: '1px solid var(--line)' }}
+      >
         {bulkTagMode ? (
           <>
             <button
@@ -871,11 +910,11 @@ function ProcessedTab({ year, month }: ProcessedTabProps) {
                   selectedBulkTagIds.size === allTxns.length ? new Set() : allIds
                 )
               }}
-              className="text-primary text-sm font-medium whitespace-nowrap hover:underline"
+              className="btn ghost sm"
             >
               {selectedBulkTagIds.size === allTxns.length ? 'Deselect all' : 'Select all'}
             </button>
-            <span className="text-on-surface-variant text-sm">
+            <span className="text-[12px]" style={{ color: 'var(--ink-3)' }}>
               {selectedBulkTagIds.size > 0
                 ? `${selectedBulkTagIds.size} selected`
                 : 'Select transactions'}
@@ -887,16 +926,21 @@ function ProcessedTab({ year, month }: ProcessedTabProps) {
                 setSelectedBulkTagIds(new Set())
                 setTagsToApply([])
               }}
-              className="text-on-surface-variant hover:bg-surface-container rounded-lg p-1.5 transition-colors"
+              className="btn ghost icon sm"
               aria-label="Exit bulk tag mode"
             >
-              <span className="material-symbols-outlined text-[18px]">close</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                close
+              </span>
             </button>
           </>
         ) : (
           <>
             <div className="relative max-w-sm flex-1">
-              <span className="material-symbols-outlined text-outline pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[18px]">
+              <span
+                className="material-symbols-outlined pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2"
+                style={{ fontSize: 14, color: 'var(--ink-4)' }}
+              >
                 search
               </span>
               <input
@@ -904,14 +948,15 @@ function ProcessedTab({ year, month }: ProcessedTabProps) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search description…"
-                className="input-field w-full"
-                style={{ paddingLeft: '2.25rem' }}
+                className="input"
+                style={{ paddingLeft: 28 }}
               />
             </div>
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="input-field"
+              className="input"
+              style={{ width: 'auto' }}
               aria-label="Filter by category"
             >
               <option value="">All categories</option>
@@ -926,7 +971,8 @@ function ProcessedTab({ year, month }: ProcessedTabProps) {
             <select
               value={tagFilter}
               onChange={(e) => setTagFilter(e.target.value)}
-              className="input-field"
+              className="input"
+              style={{ width: 'auto' }}
               aria-label="Filter by tag"
             >
               <option value="">All tags</option>
@@ -945,18 +991,20 @@ function ProcessedTab({ year, month }: ProcessedTabProps) {
                   setCategoryFilter('')
                   setTagFilter('')
                 }}
-                className="text-primary text-sm font-medium whitespace-nowrap hover:underline"
+                className="btn ghost sm"
               >
-                Clear filters
+                Clear
               </button>
             )}
             <button
               onClick={() => setBulkTagMode(true)}
-              className="text-on-surface-variant hover:bg-surface-container-high rounded-lg p-2 transition-colors"
+              className="btn ghost icon sm"
               title="Bulk tag transactions"
               aria-label="Bulk tag"
             >
-              <span className="material-symbols-outlined text-[20px]">label</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                label
+              </span>
             </button>
           </>
         )}
@@ -964,10 +1012,10 @@ function ProcessedTab({ year, month }: ProcessedTabProps) {
 
       <div className="flex min-h-0">
         <div className="min-w-0 flex-1 overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="tbl">
             <thead>
-              <tr className="border-outline-variant/15 border-b">
-                {bulkTagMode && <th className="w-10 px-4 py-4" />}
+              <tr>
+                {bulkTagMode && <th style={{ width: 36 }} />}
                 <SortHeader
                   label="Date"
                   field="txn_date"
@@ -995,12 +1043,10 @@ function ProcessedTab({ year, month }: ProcessedTabProps) {
                   sortField={sortField}
                   sortDir={sortDir}
                   onSort={handleSort}
-                  className="text-right"
+                  className="num"
                 />
-                <th className="text-on-surface-variant px-6 py-4 text-[11px] font-bold tracking-widest uppercase">
-                  Shares
-                </th>
-                <th className="w-12 px-4 py-4" />
+                <th>Shares</th>
+                <th style={{ width: 40 }} />
               </tr>
             </thead>
             <tbody>
@@ -1008,13 +1054,14 @@ function ProcessedTab({ year, month }: ProcessedTabProps) {
                 <tr>
                   <td
                     colSpan={bulkTagMode ? 7 : 6}
-                    className="text-on-surface-variant px-6 py-8 text-center text-sm"
+                    className="text-center"
+                    style={{ color: 'var(--ink-3)' }}
                   >
                     No transactions match your filters.
                   </td>
                 </tr>
               ) : (
-                sorted.map((txn: ProcessedTransactionItem, i) => {
+                sorted.map((txn: ProcessedTransactionItem) => {
                   const isBulkChecked = selectedBulkTagIds.has(txn.id)
                   return (
                     <tr
@@ -1030,18 +1077,10 @@ function ProcessedTab({ year, month }: ProcessedTabProps) {
                               })
                           : undefined
                       }
-                      className={`text-sm ${
-                        bulkTagMode
-                          ? isBulkChecked
-                            ? 'bg-primary/8 cursor-pointer'
-                            : 'hover:bg-surface-container cursor-pointer'
-                          : i % 2 === 0
-                            ? 'bg-surface-container-lowest'
-                            : 'bg-surface-container-low'
-                      }`}
+                      className={bulkTagMode ? (isBulkChecked ? 'row sel' : 'row') : ''}
                     >
                       {bulkTagMode && (
-                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        <td onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
                             checked={isBulkChecked}
@@ -1053,27 +1092,34 @@ function ProcessedTab({ year, month }: ProcessedTabProps) {
                                 return next
                               })
                             }
-                            className="accent-primary h-4 w-4"
+                            style={{ accentColor: 'var(--accent)' }}
                           />
                         </td>
                       )}
-                      <td className="text-on-surface-variant px-6 py-3 whitespace-nowrap">
+                      <td className="num whitespace-nowrap" style={{ color: 'var(--ink-3)' }}>
                         {txn.txn_date?.slice(0, 10)}
                       </td>
-                      <td className="text-on-surface max-w-[220px] truncate px-6 py-3 font-medium">
+                      <td
+                        className="max-w-[240px]"
+                        style={{ color: 'var(--ink)', fontWeight: 500 }}
+                      >
                         <div>
-                          {txn.description}
+                          <span className="block truncate">{txn.description}</span>
                           {txn.notes && (
-                            <p className="text-on-surface-variant truncate text-xs font-normal">
+                            <p
+                              className="truncate text-[11px] font-normal"
+                              style={{ color: 'var(--ink-3)' }}
+                            >
                               {txn.notes}
                             </p>
                           )}
                           {txn.tags.length > 0 && (
-                            <div className="mt-0.5 flex gap-1">
+                            <div className="mt-1 flex flex-wrap gap-1">
                               {txn.tags.map((tag) => (
                                 <span
                                   key={tag.id}
-                                  className="bg-secondary-container text-on-secondary-container rounded-full px-2 py-0.5 text-[10px] font-bold"
+                                  className="chip"
+                                  style={{ height: 18, padding: '0 6px', fontSize: 9.5 }}
                                 >
                                   {tag.name}
                                 </span>
@@ -1082,12 +1128,11 @@ function ProcessedTab({ year, month }: ProcessedTabProps) {
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-3" onClick={(e) => e.stopPropagation()}>
+                      <td onClick={(e) => e.stopPropagation()}>
                         {editingId === txn.id ? (
-                          <div className="flex min-w-[200px] items-center gap-1.5">
+                          <div className="flex min-w-[220px] items-center gap-1">
                             <div className="flex-1">
                               <SearchableSelect
-                                label=""
                                 options={categoryOptions}
                                 value={editCategoryId}
                                 onChange={setEditCategoryId}
@@ -1098,47 +1143,54 @@ function ProcessedTab({ year, month }: ProcessedTabProps) {
                             <button
                               onClick={() => submitEditCategory(txn.id)}
                               disabled={editCategoryMutation.isPending || !editCategoryId}
-                              className="text-primary hover:bg-primary/10 rounded p-0.5 transition-colors disabled:opacity-50"
+                              className="btn ghost icon sm"
+                              style={{ color: 'var(--accent)' }}
                               aria-label="Confirm"
                             >
-                              <span className="material-symbols-outlined text-[16px]">check</span>
+                              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                                check
+                              </span>
                             </button>
                             <button
                               onClick={() => setEditingId(null)}
-                              className="text-outline hover:bg-surface-container rounded p-0.5 transition-colors"
+                              className="btn ghost icon sm"
                               aria-label="Cancel"
                             >
-                              <span className="material-symbols-outlined text-[16px]">close</span>
+                              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                                close
+                              </span>
                             </button>
                           </div>
                         ) : (
                           <button
                             onClick={() => startEditCategory(txn)}
-                            className="group hover:bg-secondary-container/70 flex items-center gap-1 rounded-full transition-colors"
+                            className="group inline-flex items-center gap-1"
                             title="Edit category"
+                            style={{ background: 'transparent', border: 'none' }}
                           >
-                            <span className="bg-secondary-container text-on-secondary-container rounded-full px-2 py-0.5 text-[10px] font-bold uppercase">
-                              {txn.category}
-                            </span>
-                            <span className="material-symbols-outlined text-outline pr-1 text-[13px] opacity-0 transition-opacity group-hover:opacity-100">
+                            <span className="chip">{txn.category}</span>
+                            <span
+                              className="material-symbols-outlined opacity-0 transition-opacity group-hover:opacity-100"
+                              style={{ fontSize: 12, color: 'var(--ink-4)' }}
+                            >
                               edit
                             </span>
                           </button>
                         )}
                       </td>
-                      <td className="text-on-surface px-6 py-3 text-right font-semibold">
+                      <td className="num" style={{ color: 'var(--ink)', fontWeight: 500 }}>
                         {formatCurrency(Number(txn.effective_amount))}
                       </td>
-                      <td className="px-6 py-3">
+                      <td>
                         {txn.shares.length > 0 ? (
-                          <div className="space-y-0.5">
+                          <div className="space-y-1">
                             {txn.shares.map((share) => (
                               <div
                                 key={share.person_id}
-                                className="flex items-center gap-1.5 text-xs"
+                                className="flex items-center gap-1.5 text-[11.5px]"
                               >
-                                <span className="text-on-surface-variant">{share.person_name}</span>
-                                <span className="text-on-surface font-medium">
+                                <span style={{ color: 'var(--ink-3)' }}>{share.person_name}</span>
+                                <span className="num font-medium" style={{ color: 'var(--ink)' }}>
                                   {formatCurrency(Number(share.share_amount))}
                                 </span>
                                 <button
@@ -1149,11 +1201,13 @@ function ProcessedTab({ year, month }: ProcessedTabProps) {
                                       settled: !share.settled,
                                     })
                                   }
-                                  className={`rounded px-1.5 py-0.5 text-[10px] font-bold transition-colors ${
-                                    share.settled
-                                      ? 'bg-primary/10 text-primary'
-                                      : 'bg-surface-container text-on-surface-variant hover:bg-primary/10'
-                                  }`}
+                                  className={share.settled ? 'chip pos' : 'chip'}
+                                  style={{
+                                    height: 18,
+                                    padding: '0 6px',
+                                    fontSize: 9.5,
+                                    cursor: 'pointer',
+                                  }}
                                   title={share.settled ? 'Mark unsettled' : 'Mark settled'}
                                 >
                                   {share.settled ? 'settled' : 'pending'}
@@ -1162,20 +1216,22 @@ function ProcessedTab({ year, month }: ProcessedTabProps) {
                             ))}
                           </div>
                         ) : (
-                          <span className="text-on-surface-variant text-sm">—</span>
+                          <span style={{ color: 'var(--ink-4)' }}>—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="text-right">
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
                             deleteMutation.mutate(txn.id)
                           }}
                           disabled={deleteMutation.isPending}
-                          className="text-outline hover:bg-error-container hover:text-on-error-container rounded-lg p-1.5 transition-colors disabled:opacity-50"
+                          className="btn ghost icon sm"
                           aria-label="Delete transaction"
                         >
-                          <span className="material-symbols-outlined text-[16px]">delete</span>
+                          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                            delete
+                          </span>
                         </button>
                       </td>
                     </tr>
@@ -1184,21 +1240,26 @@ function ProcessedTab({ year, month }: ProcessedTabProps) {
               )}
             </tbody>
           </table>
-          <div className="text-on-surface-variant border-outline-variant/15 border-t px-6 py-3 text-xs">
+          <div
+            className="px-4 py-2.5 text-[11.5px]"
+            style={{ borderTop: '1px solid var(--line)', color: 'var(--ink-3)' }}
+          >
             {sorted.length} of {allTxns.length} transaction{allTxns.length !== 1 ? 's' : ''}
           </div>
         </div>
-        {/* end overflow-x-auto */}
 
         {bulkTagMode && (
-          <div className="border-outline-variant/15 flex w-[300px] shrink-0 flex-col gap-4 border-l p-5">
-            <p className="text-on-surface text-sm font-bold">Apply Tags</p>
+          <div
+            className="flex w-[280px] shrink-0 flex-col gap-3"
+            style={{ borderLeft: '1px solid var(--line)', padding: 16 }}
+          >
+            <p className="card-title">Apply tags</p>
             {(tagsQuery.data ?? []).length === 0 ? (
-              <p className="text-on-surface-variant text-xs">
+              <p className="text-[11.5px]" style={{ color: 'var(--ink-3)' }}>
                 No tags yet. Create tags in Settings.
               </p>
             ) : (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {(tagsQuery.data ?? []).map((tag: Tag) => {
                   const active = tagsToApply.includes(tag.id)
                   return (
@@ -1210,11 +1271,8 @@ function ProcessedTab({ year, month }: ProcessedTabProps) {
                           active ? ids.filter((id) => id !== tag.id) : [...ids, tag.id]
                         )
                       }
-                      className={`rounded-full px-3 py-1 text-xs font-bold transition-colors ${
-                        active
-                          ? 'bg-primary text-on-primary'
-                          : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
-                      }`}
+                      className={active ? 'chip accent' : 'chip'}
+                      style={{ cursor: 'pointer' }}
                     >
                       {tag.name}
                     </button>
@@ -1229,12 +1287,11 @@ function ProcessedTab({ year, month }: ProcessedTabProps) {
               loading={bulkTagging}
               disabled={selectedBulkTagIds.size === 0 || tagsToApply.length === 0}
             >
-              Apply to {selectedBulkTagIds.size > 0 ? selectedBulkTagIds.size : ''} Selected
+              Apply to {selectedBulkTagIds.size > 0 ? selectedBulkTagIds.size : ''} selected
             </Button>
           </div>
         )}
       </div>
-      {/* end flex min-h-0 */}
     </div>
   )
 }
@@ -1248,12 +1305,18 @@ export function TransactionsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('raw')
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-4">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-on-surface text-3xl font-black tracking-tight">Transactions</h1>
-          <p className="text-on-surface-variant mt-1 text-sm">
-            View and manage all raw and processed transactions.
+          <p className="card-eyebrow">Transactions</p>
+          <h1
+            className="text-[22px] font-semibold"
+            style={{ color: 'var(--ink)', letterSpacing: '-0.02em' }}
+          >
+            All transactions
+          </h1>
+          <p className="mt-1 text-[13px]" style={{ color: 'var(--ink-3)' }}>
+            View and manage your raw and processed transactions.
           </p>
         </div>
         <YearMonthSelector
@@ -1264,23 +1327,20 @@ export function TransactionsPage() {
         />
       </header>
 
-      <div className="border-outline-variant/20 flex border-b">
+      <div className="seg">
         {(['raw', 'processed'] as Tab[]).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-5 py-3 text-sm font-semibold capitalize transition-colors ${
-              activeTab === tab
-                ? 'border-primary text-primary border-b-2'
-                : 'text-on-surface-variant hover:text-on-surface'
-            }`}
+            className={activeTab === tab ? 'on' : ''}
+            style={{ textTransform: 'capitalize' }}
           >
             {tab}
           </button>
         ))}
       </div>
 
-      <div className="bg-surface-container-low overflow-hidden rounded-xl">
+      <div className="card card-flush overflow-hidden">
         {activeTab === 'raw' ? (
           <RawTab year={year} month={month} />
         ) : (

@@ -31,10 +31,10 @@ function rowSig(date: string, description: string, amount: string | number) {
   return `${date.slice(0, 10)}||${description}||${parseFloat(String(amount)).toFixed(2)}`
 }
 
-const TABS: { id: UploadMode; label: string; icon: string }[] = [
-  { id: 'pdf', label: 'PDF Upload', icon: 'picture_as_pdf' },
-  { id: 'paste', label: 'Paste Text', icon: 'content_paste' },
-  { id: 'manual', label: 'Add Manually', icon: 'edit_note' },
+const TABS: { id: UploadMode; label: string }[] = [
+  { id: 'pdf', label: 'PDF' },
+  { id: 'paste', label: 'Paste' },
+  { id: 'manual', label: 'Manual' },
 ]
 
 export function UploadPage() {
@@ -53,16 +53,12 @@ export function UploadPage() {
   const [dupeIndices, setDupeIndices] = useState<Set<number>>(new Set())
   const [skippedExpanded, setSkippedExpanded] = useState(false)
 
-  // Paste mode state
   const [pasteText, setPasteText] = useState('')
 
-  // Manual entry state
   const [manualDate, setManualDate] = useState('')
   const [manualDesc, setManualDesc] = useState('')
   const [manualAmount, setManualAmount] = useState('')
   const [manualErrors, setManualErrors] = useState<Record<string, string>>({})
-
-  // ── Shared helpers ────────────────────────────────────────────────────────
 
   async function handlePreviewSuccess(data: PreviewResponse) {
     setPreview(data)
@@ -77,7 +73,6 @@ export function UploadPage() {
     )
     setExcludedIndices(autoExcluded)
 
-    // Intra-batch duplicate detection
     const sigCount = new Map<string, number[]>()
     rows.forEach((r, i) => {
       const sig = rowSig(r.txn_date, r.description, r.amount)
@@ -89,7 +84,6 @@ export function UploadPage() {
       if (indices.length > 1) indices.forEach((i) => intraDupes.add(i))
     })
 
-    // Cross-import duplicate detection (compare against DB)
     const monthPairs = [
       ...new Map(
         rows.map((r) => {
@@ -111,7 +105,7 @@ export function UploadPage() {
         existingSigs.add(rowSig(t.txn_date, t.description, t.amount))
       })
     } catch {
-      // Silently ignore — duplicate detection is best-effort
+      // best-effort
     }
 
     const dbDupes = new Set<number>()
@@ -124,7 +118,6 @@ export function UploadPage() {
   }
 
   function handleImportSuccess(data: ImportResponse) {
-    // Auto-delete any rows the user excluded from the preview
     if (excludedIndices.size > 0 && allRows.length > 0) {
       const excludedRows = allRows.filter((_, i) => excludedIndices.has(i))
       data.rows.forEach((imported) => {
@@ -140,8 +133,6 @@ export function UploadPage() {
     toast.success(`${data.inserted} transactions imported, ${data.skipped} skipped`)
     navigate('/review')
   }
-
-  // ── Mutations ─────────────────────────────────────────────────────────────
 
   const previewMutation = useMutation({
     mutationFn: previewStatement,
@@ -188,8 +179,6 @@ export function UploadPage() {
     },
     onError: (err: { detail: string }) => toast.error(err.detail),
   })
-
-  // ── Handlers ──────────────────────────────────────────────────────────────
 
   function validateAndPreview(f: File) {
     if (f.type !== 'application/pdf') {
@@ -259,8 +248,6 @@ export function UploadPage() {
     if (Object.keys(errors).length === 0) manualMutation.mutate()
   }
 
-  // ── Derived values ────────────────────────────────────────────────────────
-
   const allRows = preview?.rows ?? []
   const uniqueDates = [...new Set(allRows.map((r) => r.txn_date.slice(0, 10)))].sort()
 
@@ -282,37 +269,37 @@ export function UploadPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       <header>
-        <h1 className="text-on-surface text-3xl font-black tracking-tight">Import Statement</h1>
-        <p className="text-on-surface-variant mt-1 text-sm">
+        <p className="card-eyebrow">Upload</p>
+        <h1
+          className="text-[22px] font-semibold"
+          style={{ color: 'var(--ink)', letterSpacing: '-0.02em' }}
+        >
+          Import transactions
+        </h1>
+        <p className="mt-1 text-[13px]" style={{ color: 'var(--ink-3)' }}>
           Upload a PDF, paste copied bank text, or add a transaction manually.
         </p>
       </header>
 
-      {/* Tab selector */}
       {!preview && (
-        <div className="bg-surface-container-low inline-flex gap-1 rounded-xl p-1">
+        <div className="seg">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => handleTabSwitch(tab.id)}
-              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                mode === tab.id
-                  ? 'bg-secondary-container text-on-secondary-container'
-                  : 'text-on-surface-variant hover:bg-surface-container'
-              }`}
+              className={mode === tab.id ? 'on' : ''}
             >
-              <span className="material-symbols-outlined text-[18px]">{tab.icon}</span>
               {tab.label}
             </button>
           ))}
         </div>
       )}
 
-      {/* ── PDF mode ────────────────────────────────────────────────────────── */}
+      {/* PDF mode */}
       {mode === 'pdf' && !preview && (
-        <div className="bg-surface-container-low rounded-xl p-8">
+        <div className="card">
           <div
             onDragOver={(e) => {
               e.preventDefault()
@@ -320,35 +307,40 @@ export function UploadPage() {
             }}
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
-            className={`flex min-h-[220px] flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 text-center transition-colors ${
-              dragOver
-                ? 'border-primary bg-primary/5'
-                : 'border-outline-variant/50 bg-surface-container-lowest'
-            }`}
+            className={`dropzone ${dragOver ? 'hot' : ''}`}
           >
             {previewMutation.isPending ? (
               <>
-                <span className="material-symbols-outlined text-primary mb-4 animate-spin text-5xl">
+                <span
+                  className="material-symbols-outlined animate-spin"
+                  style={{ fontSize: 22, color: 'var(--ink-3)' }}
+                >
                   progress_activity
                 </span>
-                <p className="text-on-surface-variant text-sm font-medium">
+                <p className="mt-3 text-[13px] font-medium" style={{ color: 'var(--ink-2)' }}>
                   Parsing your statement…
                 </p>
               </>
             ) : (
               <>
-                <span className="material-symbols-outlined text-primary mb-4 text-5xl">
-                  picture_as_pdf
-                </span>
-                <p className="text-on-surface mb-1 text-base font-semibold">
-                  Drag and drop your statement
+                <p
+                  className="text-[14px] font-semibold"
+                  style={{ color: 'var(--ink)', letterSpacing: '-0.005em' }}
+                >
+                  Drop your statement here
                 </p>
-                <p className="text-on-surface-variant mb-5 text-sm">
-                  Supports .pdf files up to 10MB
+                <p className="mt-1 text-[12.5px]" style={{ color: 'var(--ink-3)' }}>
+                  Parsed in memory · no file stored. PDFs up to 10MB.
                 </p>
-                <Button variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()}>
-                  Select File
-                </Button>
+                <div className="mt-4">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    Select file
+                  </Button>
+                </div>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -360,30 +352,33 @@ export function UploadPage() {
               </>
             )}
           </div>
-          {fileError && <p className="text-error mt-2 text-sm">{fileError}</p>}
+          {fileError && (
+            <p className="mt-2 text-[12px]" style={{ color: 'var(--neg)' }}>
+              {fileError}
+            </p>
+          )}
         </div>
       )}
 
-      {/* ── Paste mode ──────────────────────────────────────────────────────── */}
+      {/* Paste mode */}
       {mode === 'paste' && !preview && (
-        <div className="bg-surface-container-low space-y-4 rounded-xl p-8">
+        <div className="card space-y-3">
           <div>
-            <p className="text-on-surface mb-1 text-sm font-semibold">
-              Paste your bank statement text
+            <p className="card-title">Paste your bank statement text</p>
+            <p className="card-sub mt-0.5">
+              Copy transactions from your bank&apos;s website and paste them below. Supports HDFC
+              credit card format.
             </p>
-            <p className="text-on-surface-variant mb-3 text-xs">
-              Copy transactions from your bank's website and paste them below. Supports HDFC credit
-              card format.
-            </p>
-            <textarea
-              value={pasteText}
-              onChange={(e) => setPasteText(e.target.value)}
-              rows={10}
-              className="input-field w-full resize-y font-mono text-xs"
-              placeholder={`04 Apr 2026\t\nBlinkit Gurgaon I\n₹449.00\tdebit icon\n04 Apr 2026\t\nPyu*swiggy Food Bangalore I\n₹185.00\tdebit icon`}
-              aria-label="Paste bank statement text"
-            />
           </div>
+          <textarea
+            value={pasteText}
+            onChange={(e) => setPasteText(e.target.value)}
+            rows={10}
+            className="textarea mono"
+            style={{ fontSize: 11.5 }}
+            placeholder={`04 Apr 2026\nBlinkit Gurgaon I\n₹449.00\tdebit icon`}
+            aria-label="Paste bank statement text"
+          />
           <div className="flex justify-end">
             <Button
               variant="primary"
@@ -391,48 +386,50 @@ export function UploadPage() {
               loading={pastePreviewMutation.isPending}
               disabled={!pasteText.trim()}
             >
-              Parse &amp; Preview
+              Parse &amp; preview
             </Button>
           </div>
         </div>
       )}
 
-      {/* ── Manual mode ─────────────────────────────────────────────────────── */}
+      {/* Manual mode */}
       {mode === 'manual' && !preview && (
-        <div className="bg-surface-container-low rounded-xl p-8">
-          <p className="text-on-surface mb-4 text-sm font-semibold">Enter transaction details</p>
-          <form onSubmit={handleManualSubmit} className="max-w-md space-y-4">
+        <div className="card">
+          <p className="card-title mb-3">Enter transaction details</p>
+          <form onSubmit={handleManualSubmit} className="max-w-md space-y-3">
             <div>
-              <label className="text-on-surface-variant mb-1 block text-xs font-medium tracking-wide uppercase">
-                Date
-              </label>
+              <label className="eyebrow mb-1 block">Date</label>
               <input
                 type="date"
                 value={manualDate}
                 onChange={(e) => setManualDate(e.target.value)}
-                className="input-field w-full"
+                className="input"
                 aria-label="Transaction date"
               />
-              {manualErrors.date && <p className="text-error mt-1 text-xs">{manualErrors.date}</p>}
+              {manualErrors.date && (
+                <p className="mt-1 text-[11px]" style={{ color: 'var(--neg)' }}>
+                  {manualErrors.date}
+                </p>
+              )}
             </div>
             <div>
-              <label className="text-on-surface-variant mb-1 block text-xs font-medium tracking-wide uppercase">
-                Description
-              </label>
+              <label className="eyebrow mb-1 block">Description</label>
               <input
                 type="text"
                 value={manualDesc}
                 onChange={(e) => setManualDesc(e.target.value)}
                 placeholder="e.g. Blinkit Gurgaon"
-                className="input-field w-full"
+                className="input"
                 aria-label="Transaction description"
               />
-              {manualErrors.desc && <p className="text-error mt-1 text-xs">{manualErrors.desc}</p>}
+              {manualErrors.desc && (
+                <p className="mt-1 text-[11px]" style={{ color: 'var(--neg)' }}>
+                  {manualErrors.desc}
+                </p>
+              )}
             </div>
             <div>
-              <label className="text-on-surface-variant mb-1 block text-xs font-medium tracking-wide uppercase">
-                Amount (₹)
-              </label>
+              <label className="eyebrow mb-1 block">Amount (₹)</label>
               <input
                 type="number"
                 value={manualAmount}
@@ -440,53 +437,68 @@ export function UploadPage() {
                 placeholder="0.00"
                 min="0.01"
                 step="0.01"
-                className="input-field w-full"
+                className="input num"
                 aria-label="Transaction amount"
               />
               {manualErrors.amount && (
-                <p className="text-error mt-1 text-xs">{manualErrors.amount}</p>
+                <p className="mt-1 text-[11px]" style={{ color: 'var(--neg)' }}>
+                  {manualErrors.amount}
+                </p>
               )}
             </div>
-            <div className="pt-2">
+            <div className="pt-1">
               <Button variant="primary" type="submit" loading={manualMutation.isPending}>
-                Add Transaction
+                Add transaction
               </Button>
             </div>
           </form>
         </div>
       )}
 
-      {/* ── Preview table (shared across pdf + paste modes) ─────────────────── */}
+      {/* Preview */}
       {preview && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-on-surface text-base font-bold">Preview Transactions</h2>
-              <Chip variant="success">{readyCount} READY</Chip>
-              {preview.skipped > 0 && <Chip variant="warning">{preview.skipped} SKIPPED</Chip>}
+              <h2
+                className="text-[15px] font-semibold"
+                style={{ color: 'var(--ink)', letterSpacing: '-0.005em' }}
+              >
+                Preview
+              </h2>
+              <Chip variant="success">{readyCount} ready</Chip>
+              {preview.skipped > 0 && <Chip variant="warning">{preview.skipped} skipped</Chip>}
               {excludedIndices.size > 0 && (
-                <Chip variant="warning">{excludedIndices.size} EXCLUDED</Chip>
+                <Chip variant="warning">{excludedIndices.size} excluded</Chip>
               )}
               {dupeIndices.size > 0 && (
                 <Chip variant="warning">
-                  ⚠ {dupeIndices.size} POSSIBLE DUPLICATE{dupeIndices.size > 1 ? 'S' : ''}
+                  {dupeIndices.size} duplicate{dupeIndices.size > 1 ? 's' : ''}
                 </Chip>
               )}
             </div>
-            <div className="flex gap-3">
-              <Button variant="tertiary" onClick={handleCancel}>
+            <div className="flex gap-2">
+              <Button variant="tertiary" size="sm" onClick={handleCancel}>
                 Cancel
               </Button>
-              <Button variant="primary" onClick={handleConfirmImport} loading={isImporting}>
-                Confirm Import
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleConfirmImport}
+                loading={isImporting}
+              >
+                Import {readyCount}
               </Button>
             </div>
           </div>
 
           {/* Filters */}
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <div className="relative flex-1">
-              <span className="material-symbols-outlined text-outline pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[18px]">
+              <span
+                className="material-symbols-outlined pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2"
+                style={{ fontSize: 14, color: 'var(--ink-4)' }}
+              >
                 search
               </span>
               <input
@@ -494,161 +506,165 @@ export function UploadPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search description…"
-                className="input-field w-full"
-                style={{ paddingLeft: '2.25rem' }}
+                className="input"
+                style={{ paddingLeft: 28 }}
                 aria-label="Search descriptions"
               />
             </div>
-            <div className="relative">
-              <span className="material-symbols-outlined text-outline pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[18px]">
-                calendar_today
-              </span>
-              <select
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="input-field pr-8"
-                style={{ paddingLeft: '2.25rem' }}
-                aria-label="Filter by date"
-              >
-                <option value="">All dates</option>
-                {uniqueDates.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="input"
+              style={{ width: 'auto' }}
+              aria-label="Filter by date"
+            >
+              <option value="">All dates</option>
+              {uniqueDates.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
             {(searchQuery || dateFilter) && (
               <button
                 onClick={() => {
                   setSearchQuery('')
                   setDateFilter('')
                 }}
-                className="text-primary self-center text-sm font-medium hover:underline"
+                className="btn ghost sm"
               >
-                Clear filters
+                Clear
               </button>
             )}
           </div>
 
-          <div className="bg-surface-container-low overflow-x-auto rounded-xl">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-outline-variant/15 border-b">
-                  {['Date', 'Description', 'Amount'].map((h, i) => (
-                    <th
-                      key={h}
-                      className={`text-on-surface-variant px-6 py-4 text-[11px] font-bold tracking-widest uppercase ${i === 2 ? 'text-right' : ''}`}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                  <th className="w-10 px-2 py-4" />
-                </tr>
-              </thead>
-              <tbody>
-                {filteredRows.length === 0 ? (
+          <div className="card card-flush overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="tbl">
+                <thead>
                   <tr>
-                    <td
-                      colSpan={4}
-                      className="text-on-surface-variant px-6 py-8 text-center text-sm"
-                    >
-                      No transactions match your filters.
-                    </td>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th className="num">Amount</th>
+                    <th style={{ width: 32 }} />
                   </tr>
-                ) : (
-                  filteredRows.map(({ row: txn, globalIndex }, i) => {
-                    const isExcluded = excludedIndices.has(globalIndex)
-                    const isDupe = dupeIndices.has(globalIndex)
-                    return (
-                      <tr
-                        key={globalIndex}
-                        className={`text-sm transition-colors ${
-                          isExcluded
-                            ? 'opacity-40'
-                            : isDupe
-                              ? 'bg-[color-mix(in_srgb,#f59e0b_8%,transparent)]'
-                              : i % 2 === 0
-                                ? 'bg-surface-container-lowest'
-                                : 'bg-surface-container-low'
-                        }`}
-                      >
-                        <td className="text-on-surface-variant px-6 py-3 whitespace-nowrap">
-                          <span className={isExcluded ? 'line-through' : ''}>
-                            {txn.txn_date.slice(0, 10)}
-                          </span>
-                        </td>
-                        <td className="text-on-surface px-6 py-3 font-medium">
-                          <span className={isExcluded ? 'line-through' : ''}>
-                            {txn.description}
-                          </span>
-                          {isDupe && !isExcluded && (
+                </thead>
+                <tbody>
+                  {filteredRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="text-center" style={{ color: 'var(--ink-3)' }}>
+                        No transactions match your filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredRows.map(({ row: txn, globalIndex }) => {
+                      const isExcluded = excludedIndices.has(globalIndex)
+                      const isDupe = dupeIndices.has(globalIndex)
+                      return (
+                        <tr
+                          key={globalIndex}
+                          style={{
+                            opacity: isExcluded ? 0.4 : 1,
+                            background: isDupe && !isExcluded ? 'var(--warn-soft)' : undefined,
+                          }}
+                        >
+                          <td className="num" style={{ color: 'var(--ink-3)' }}>
                             <span
-                              className="ml-2 text-[10px] font-bold text-amber-600 dark:text-amber-400"
-                              title="Possible duplicate — same date, description, and amount already exists"
+                              style={{ textDecoration: isExcluded ? 'line-through' : undefined }}
                             >
-                              DUPLICATE
+                              {txn.txn_date.slice(0, 10)}
                             </span>
-                          )}
-                        </td>
-                        <td className="text-on-surface px-6 py-3 text-right font-semibold">
-                          <span className={isExcluded ? 'line-through' : ''}>
-                            {formatCurrency(Number(txn.amount))}
-                          </span>
-                        </td>
-                        <td className="px-2 py-3 text-center">
-                          <button
-                            onClick={() => toggleExclude(globalIndex)}
-                            className={`rounded-lg p-1.5 transition-colors ${
-                              isExcluded
-                                ? 'text-primary hover:bg-primary/10'
-                                : 'text-outline hover:bg-error-container hover:text-on-error-container'
-                            }`}
-                            aria-label={isExcluded ? 'Include transaction' : 'Exclude transaction'}
-                            title={
-                              isExcluded ? 'Restore — include in import' : 'Exclude from import'
-                            }
-                          >
-                            <span className="material-symbols-outlined text-[16px]">
-                              {isExcluded ? 'undo' : 'remove_circle'}
+                          </td>
+                          <td style={{ color: 'var(--ink)' }}>
+                            <span
+                              style={{ textDecoration: isExcluded ? 'line-through' : undefined }}
+                            >
+                              {txn.description}
                             </span>
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
-            <div className="text-on-surface-variant border-outline-variant/15 border-t px-6 py-3 text-xs">
+                            {isDupe && !isExcluded && (
+                              <span
+                                className="chip warn ml-2"
+                                style={{ height: 18, padding: '0 6px', fontSize: 9.5 }}
+                                title="Possible duplicate — same date, description, and amount"
+                              >
+                                duplicate
+                              </span>
+                            )}
+                          </td>
+                          <td className="num" style={{ color: 'var(--ink)', fontWeight: 500 }}>
+                            <span
+                              style={{ textDecoration: isExcluded ? 'line-through' : undefined }}
+                            >
+                              {formatCurrency(Number(txn.amount))}
+                            </span>
+                          </td>
+                          <td className="text-center">
+                            <button
+                              onClick={() => toggleExclude(globalIndex)}
+                              className="btn ghost icon sm"
+                              aria-label={
+                                isExcluded ? 'Include transaction' : 'Exclude transaction'
+                              }
+                              title={
+                                isExcluded ? 'Restore — include in import' : 'Exclude from import'
+                              }
+                            >
+                              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                                {isExcluded ? 'undo' : 'remove_circle'}
+                              </span>
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div
+              className="px-4 py-2.5 text-[11.5px]"
+              style={{ borderTop: '1px solid var(--line)', color: 'var(--ink-3)' }}
+            >
               Showing {filteredRows.length} of {allRows.length} transactions
             </div>
           </div>
 
-          {/* Skipped rows */}
           {(preview.skipped_rows?.length ?? 0) > 0 && (
-            <div className="bg-surface-container-low overflow-hidden rounded-xl">
+            <div className="card card-flush overflow-hidden">
               <button
                 onClick={() => setSkippedExpanded((v) => !v)}
-                className="flex w-full items-center justify-between px-5 py-3 text-left"
+                className="flex w-full items-center justify-between px-4 py-3 text-left"
               >
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-outline text-[18px]">
+                  <span
+                    className="material-symbols-outlined"
+                    style={{ fontSize: 14, color: 'var(--warn)' }}
+                  >
                     warning
                   </span>
-                  <span className="text-on-surface-variant text-sm font-semibold">
-                    {preview.skipped_rows.length} row{preview.skipped_rows.length > 1 ? 's' : ''}{' '}
-                    skipped during parsing
+                  <span className="text-[12.5px] font-medium" style={{ color: 'var(--ink-2)' }}>
+                    {preview.skipped_rows.length} row
+                    {preview.skipped_rows.length > 1 ? 's' : ''} skipped during parsing
                   </span>
                 </div>
-                <span className="material-symbols-outlined text-outline text-[18px]">
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontSize: 14, color: 'var(--ink-4)' }}
+                >
                   {skippedExpanded ? 'expand_less' : 'expand_more'}
                 </span>
               </button>
               {skippedExpanded && (
-                <ul className="border-outline-variant/15 space-y-1 border-t px-5 pt-3 pb-4">
+                <ul
+                  className="space-y-1 px-4 pt-2 pb-3"
+                  style={{ borderTop: '1px solid var(--line)' }}
+                >
                   {preview.skipped_rows.map((row, i) => (
-                    <li key={i} className="text-on-surface-variant truncate font-mono text-xs">
+                    <li
+                      key={i}
+                      className="mono truncate text-[11px]"
+                      style={{ color: 'var(--ink-3)' }}
+                    >
                       {row}
                     </li>
                   ))}
