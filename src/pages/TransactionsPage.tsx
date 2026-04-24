@@ -865,6 +865,8 @@ export function TransactionsPage() {
   const [dragOverCatId, setDragOverCatId] = useState<string | null>(null)
   const [draggingUid, setDraggingUid] = useState<string | null>(null)
   const [openMenuUid, setOpenMenuUid] = useState<string | null>(null)
+  const [checkedUids, setCheckedUids] = useState<Set<string>>(new Set())
+  const [hoveredRowUid, setHoveredRowUid] = useState<string | null>(null)
 
   const navigate = useNavigate()
   const toast = useToastContext()
@@ -912,6 +914,7 @@ export function TransactionsPage() {
   function prevMonth() {
     setSelectedUid(null)
     setEditingTxn(null)
+    setCheckedUids(new Set())
     if (month === 1) {
       setYear((y) => y - 1)
       setMonth(12)
@@ -920,10 +923,30 @@ export function TransactionsPage() {
   function nextMonth() {
     setSelectedUid(null)
     setEditingTxn(null)
+    setCheckedUids(new Set())
     if (month === 12) {
       setYear((y) => y + 1)
       setMonth(1)
     } else setMonth((m) => m + 1)
+  }
+
+  async function handleBulkDelete() {
+    const toDelete = filtered.filter((t) => checkedUids.has(t.uid) && t.kind !== 'deleted')
+    if (toDelete.length === 0) return
+    await Promise.allSettled([
+      ...toDelete
+        .filter((t) => t.kind === 'pending' && t.rawId)
+        .map((t) => deleteRawTransaction(t.rawId!)),
+      ...toDelete
+        .filter((t) => t.kind === 'processed' && t.processedId)
+        .map((t) => deleteProcessedTransaction(t.processedId!)),
+    ])
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ['rawTransactions', year, month] }),
+      qc.invalidateQueries({ queryKey: ['processedTransactions', year, month] }),
+    ])
+    setCheckedUids(new Set())
+    toast.success(`Deleted ${toDelete.length} transaction${toDelete.length > 1 ? 's' : ''}`)
   }
 
   // ── Mutations ──
@@ -966,6 +989,7 @@ export function TransactionsPage() {
     mutationFn: deleteProcessedTransaction,
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['processedTransactions', year, month] })
+      void qc.invalidateQueries({ queryKey: ['rawTransactions', year, month] })
       toast.success('Transaction deleted')
     },
     onError: () => toast.error('Failed to delete'),
@@ -1080,12 +1104,14 @@ export function TransactionsPage() {
     changeCategoryMutation,
   ])
 
-  // Close context menu on outside click
+  // Close context menu when clicking outside the menu td
   useEffect(() => {
     if (!openMenuUid) return
-    const handler = () => setOpenMenuUid(null)
-    window.addEventListener('click', handler, { capture: true })
-    return () => window.removeEventListener('click', handler, { capture: true })
+    const handler = (e: MouseEvent) => {
+      if (!(e.target as Element).closest('[data-menu-uid]')) setOpenMenuUid(null)
+    }
+    document.addEventListener('click', handler)
+    return () => document.removeEventListener('click', handler)
   }, [openMenuUid])
 
   // ── Panel logic ──
@@ -1447,6 +1473,56 @@ export function TransactionsPage() {
         </div>
       )}
 
+      {/* ── Bulk action bar ── */}
+      {checkedUids.size > 0 && (
+        <div
+          className="animate-fade-down"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '8px 14px',
+            marginTop: 12,
+            background: 'var(--accent-soft)',
+            border: '1px solid color-mix(in oklch, var(--accent) 30%, transparent)',
+            borderRadius: 'var(--radius)',
+          }}
+        >
+          <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--accent)', flex: 1 }}>
+            {checkedUids.size} selected
+          </span>
+          <button
+            onClick={() => void handleBulkDelete()}
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              padding: '4px 12px',
+              borderRadius: 'var(--radius)',
+              background: 'var(--neg)',
+              color: 'white',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            Delete {checkedUids.size}
+          </button>
+          <button
+            onClick={() => setCheckedUids(new Set())}
+            style={{
+              fontSize: 12,
+              padding: '4px 10px',
+              borderRadius: 'var(--radius)',
+              background: 'none',
+              color: 'var(--ink-3)',
+              border: '1px solid var(--line)',
+              cursor: 'pointer',
+            }}
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
       {/* ── Table card ── */}
       <div className="card card-flush mt-4 overflow-hidden">
         {isLoading ? (
@@ -1459,20 +1535,47 @@ export function TransactionsPage() {
           <div className="flex min-h-0">
             {/* Table */}
             <div className="min-w-0 flex-1 overflow-x-auto">
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse' }}>
                 <colgroup>
+                  <col style={{ width: 36 }} />
                   <col style={{ width: 32 }} />
                   <col style={{ width: 78 }} />
                   <col />
                   <col style={{ width: 160 }} />
-                  <col style={{ width: 120 }} />
+                  <col style={{ width: 100 }} />
                   <col style={{ width: 54 }} />
                   <col style={{ width: 114 }} />
                   <col style={{ width: 38 }} />
                 </colgroup>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--line)' }}>
-                    <th style={{ padding: '8px 0 8px 10px' }} />
+                    {/* Select-all checkbox */}
+                    <th style={{ padding: '8px 0 8px 10px', width: 36 }}>
+                      {filtered.filter((t) => t.kind !== 'deleted').length > 0 && (
+                        <input
+                          type="checkbox"
+                          style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
+                          checked={
+                            checkedUids.size > 0 &&
+                            filtered
+                              .filter((t) => t.kind !== 'deleted')
+                              .every((t) => checkedUids.has(t.uid))
+                          }
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setCheckedUids(
+                                new Set(
+                                  filtered.filter((t) => t.kind !== 'deleted').map((t) => t.uid)
+                                )
+                              )
+                            } else {
+                              setCheckedUids(new Set())
+                            }
+                          }}
+                        />
+                      )}
+                    </th>
+                    <th style={{ padding: '8px 0 8px 4px' }} />
                     {['Date', 'Merchant', 'Category', 'Tags'].map((h) => (
                       <th
                         key={h}
@@ -1523,7 +1626,7 @@ export function TransactionsPage() {
                   {filtered.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={8}
+                        colSpan={9}
                         style={{
                           padding: '40px 0',
                           textAlign: 'center',
@@ -1576,16 +1679,43 @@ export function TransactionsPage() {
                             transition: 'background 0.08s',
                           }}
                           onMouseEnter={(e) => {
+                            setHoveredRowUid(txn.uid)
                             if (!isSelected && !isDeleted)
                               (e.currentTarget as HTMLElement).style.background = 'var(--surface-2)'
                           }}
                           onMouseLeave={(e) => {
+                            setHoveredRowUid(null)
                             if (!isSelected)
                               (e.currentTarget as HTMLElement).style.background = isSelected
                                 ? 'var(--accent-soft)'
                                 : 'transparent'
                           }}
                         >
+                          {/* Checkbox */}
+                          <td
+                            style={{ padding: '0 0 0 10px' }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (isDeleted) return
+                              setCheckedUids((prev) => {
+                                const next = new Set(prev)
+                                if (next.has(txn.uid)) next.delete(txn.uid)
+                                else next.add(txn.uid)
+                                return next
+                              })
+                            }}
+                          >
+                            {(checkedUids.has(txn.uid) || hoveredRowUid === txn.uid) &&
+                              !isDeleted && (
+                                <input
+                                  type="checkbox"
+                                  checked={checkedUids.has(txn.uid)}
+                                  onChange={() => {}}
+                                  style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
+                                />
+                              )}
+                          </td>
+
                           {/* Drag handle */}
                           <td
                             style={{ padding: '0 0 0 6px', cursor: isDeleted ? 'default' : 'grab' }}
@@ -1783,6 +1913,7 @@ export function TransactionsPage() {
 
                           {/* Context menu */}
                           <td
+                            data-menu-uid={txn.uid}
                             style={{
                               padding: '0 6px 0 0',
                               textAlign: 'right',

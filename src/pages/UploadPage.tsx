@@ -12,7 +12,7 @@ import {
   deleteRawTransaction,
 } from '../lib/api'
 import { getIgnoreRules, matchesAnyRule } from '../lib/ignoreRules'
-import type { ImportResponse, PreviewResponse } from '../types/transaction'
+import type { ImportResponse, PreviewResponse, PreviewRow } from '../types/transaction'
 import { Button } from '../components/ui/Button'
 import { Chip } from '../components/ui/Chip'
 import { useToastContext } from '../hooks/useToastContext'
@@ -371,6 +371,35 @@ export function UploadPage() {
   const [manualAmount, setManualAmount] = useState('')
   const [manualErrors, setManualErrors] = useState<Record<string, string>>({})
 
+  // ─── Shared: delete excluded rows after any import ──────────────────────────
+  // Fetches the actual raw transactions for the affected months and deletes any
+  // that match an excluded preview row (handles both newly-inserted and pre-existing).
+  async function deleteExcluded(excludedRows: PreviewRow[]) {
+    if (excludedRows.length === 0) return
+    const excludedSigs = new Set(
+      excludedRows.map((r) => rowSig(r.txn_date, r.description, r.amount))
+    )
+    const monthMap = new Map<string, { year: number; month: number }>()
+    excludedRows.forEach((r) => {
+      const d = new Date(r.txn_date)
+      const key = `${d.getFullYear()}-${d.getMonth() + 1}`
+      monthMap.set(key, { year: d.getFullYear(), month: d.getMonth() + 1 })
+    })
+    const allRaw = (
+      await Promise.all(
+        [...monthMap.values()].map(({ year, month }) => getRawTransactions(year, month))
+      )
+    ).flat()
+    await Promise.allSettled(
+      allRaw
+        .filter(
+          (r) =>
+            r.status !== 'deleted' && excludedSigs.has(rowSig(r.txn_date, r.description, r.amount))
+        )
+        .map((r) => deleteRawTransaction(r.id))
+    )
+  }
+
   // ─── PDF multi-file logic ────────────────────────────────────────────────────
 
   async function previewUpload(upload: FileUpload) {
@@ -518,17 +547,8 @@ export function UploadPage() {
           const data = await importStatement(upload.file)
 
           if (upload.excludedIndices.size > 0 && upload.preview) {
-            const excludedRows = upload.preview.rows.filter((_, i) => upload.excludedIndices.has(i))
-            await Promise.allSettled(
-              data.rows.map((imported) => {
-                const match = excludedRows.find(
-                  (ex) =>
-                    ex.txn_date.slice(0, 10) === imported.txn_date.slice(0, 10) &&
-                    ex.description === imported.description &&
-                    ex.amount === imported.amount
-                )
-                return match ? deleteRawTransaction(imported.id) : Promise.resolve()
-              })
+            await deleteExcluded(
+              upload.preview.rows.filter((_, i) => upload.excludedIndices.has(i))
             )
           }
 
@@ -616,18 +636,9 @@ export function UploadPage() {
     setDupeIndices(new Set([...intraDupes, ...dbDupes]))
   }
 
-  function handlePasteImportSuccess(data: ImportResponse) {
+  async function handlePasteImportSuccess(data: ImportResponse) {
     if (excludedIndices.size > 0 && preview) {
-      const excludedRows = preview.rows.filter((_, i) => excludedIndices.has(i))
-      data.rows.forEach((imported) => {
-        const match = excludedRows.find(
-          (ex) =>
-            ex.txn_date.slice(0, 10) === imported.txn_date.slice(0, 10) &&
-            ex.description === imported.description &&
-            ex.amount === imported.amount
-        )
-        if (match) void deleteRawTransaction(imported.id)
-      })
+      await deleteExcluded(preview.rows.filter((_, i) => excludedIndices.has(i)))
     }
     toast.success(`${data.inserted} transactions imported, ${data.skipped} skipped`)
     navigate('/transactions')
