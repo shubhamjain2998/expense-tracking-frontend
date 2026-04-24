@@ -23,7 +23,7 @@ export function LoginPage() {
     setLoading(true)
     try {
       const { access_token } = await loginApi(email.trim(), password)
-      login(access_token)
+      login(access_token, email.trim())
       navigate('/dashboard', { replace: true })
     } catch (err: unknown) {
       const e = err as { detail?: string }

@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-
+import { useNavigate } from 'react-router-dom'
 import {
   getRawTransactions,
   deleteRawTransaction,
@@ -16,17 +16,23 @@ import {
   createPerson,
   processTransaction,
   getTags,
-  bulkTagTransactions,
+  createRawTransaction,
 } from '../lib/api'
-import type { RawTransaction, ProcessedTransactionItem, PersonShareIn } from '../types/transaction'
-import type { Tag } from '../types/settings'
+import type {
+  EditProcessedPayload,
+  ProcessedTransactionItem,
+  PersonShareIn,
+  RawTransaction,
+} from '../types/transaction'
 import type { Category } from '../types/settings'
-import { YearMonthSelector } from '../components/ui/YearMonthSelector'
-import { SkeletonTable } from '../components/ui/Skeleton'
+import type { Tag } from '../types/settings'
 import { SearchableSelect } from '../components/ui/SearchableSelect'
 import { PersonShareBuilder } from '../components/ui/PersonShareBuilder'
 import { Button } from '../components/ui/Button'
+import { SkeletonTable } from '../components/ui/Skeleton'
 import { useToastContext } from '../hooks/useToastContext'
+
+// ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat('en-IN', {
@@ -36,36 +42,248 @@ function formatCurrency(n: number) {
   }).format(n)
 }
 
-type Tab = 'raw' | 'processed'
-type SortDir = 'asc' | 'desc'
-
-interface SortHeaderProps {
-  label: string
-  field: string
-  sortField: string
-  sortDir: SortDir
-  onSort: (field: string) => void
-  className?: string
+function formatShortDate(dateStr: string) {
+  const d = new Date(dateStr.slice(0, 10) + 'T00:00:00')
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 }
 
-function SortHeader({ label, field, sortField, sortDir, onSort, className = '' }: SortHeaderProps) {
-  const isActive = sortField === field
+function isIncome(amount: string | number): boolean {
+  return Number(amount) < 0
+}
+
+function formatAmount(effectiveAmount: string | number): { display: string; income: boolean } {
+  const n = Number(effectiveAmount)
+  const income = n < 0
+  return {
+    display: formatCurrency(Math.abs(n)),
+    income,
+  }
+}
+
+const CAT_PALETTE = [
+  'var(--cat-1)',
+  'var(--cat-2)',
+  'var(--cat-3)',
+  'var(--cat-4)',
+  'var(--cat-5)',
+  'var(--cat-6)',
+  'var(--cat-7)',
+  'var(--cat-8)',
+]
+
+function categoryColor(categoryId: string): string {
+  let h = 0
+  for (let i = 0; i < categoryId.length; i++) h = (h * 31 + categoryId.charCodeAt(i)) & 0xffffffff
+  return CAT_PALETTE[Math.abs(h) % CAT_PALETTE.length]
+}
+
+const MONTH_NAMES = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+]
+
+// ─── Unified transaction model ──────────────────────────────────────────────────
+
+type TxnKind = 'pending' | 'processed' | 'deleted'
+
+interface UnifiedTxn {
+  uid: string
+  txn_date: string
+  description: string
+  amount: string
+  effectiveAmount: string
+  kind: TxnKind
+  category?: string
+  categoryId?: string
+  tags: Tag[]
+  shares: ProcessedTransactionItem['shares']
+  notes?: string | null
+  rawId?: string
+  processedId?: string
+  rawOriginal?: RawTransaction
+  processedOriginal?: ProcessedTransactionItem
+}
+
+function buildUnified(raw: RawTransaction[], processed: ProcessedTransactionItem[]): UnifiedTxn[] {
+  const list: UnifiedTxn[] = []
+
+  for (const r of raw) {
+    list.push({
+      uid: 'raw_' + r.id,
+      txn_date: r.txn_date,
+      description: r.description,
+      amount: r.amount,
+      effectiveAmount: r.amount,
+      kind: r.status === 'deleted' ? 'deleted' : 'pending',
+      tags: [],
+      shares: [],
+      rawId: r.id,
+      rawOriginal: r,
+    })
+  }
+
+  for (const p of processed) {
+    list.push({
+      uid: 'proc_' + p.id,
+      txn_date: p.txn_date,
+      description: p.description,
+      amount: p.amount,
+      effectiveAmount: p.effective_amount,
+      kind: 'processed',
+      category: p.category,
+      categoryId: p.category_id,
+      tags: p.tags,
+      shares: p.shares,
+      notes: p.notes,
+      rawId: p.raw_txn_id,
+      processedId: p.id,
+      processedOriginal: p,
+    })
+  }
+
+  list.sort(
+    (a, b) => b.txn_date.localeCompare(a.txn_date) || a.description.localeCompare(b.description)
+  )
+  return list
+}
+
+// ─── Manual entry dialog ────────────────────────────────────────────────────────
+
+interface ManualEntryDialogProps {
+  onClose: () => void
+}
+
+function ManualEntryDialog({ onClose }: ManualEntryDialogProps) {
+  const toast = useToastContext()
+  const qc = useQueryClient()
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [description, setDescription] = useState('')
+  const [amount, setAmount] = useState('')
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      createRawTransaction({
+        txn_date: date,
+        description: description.trim(),
+        amount: Number(amount),
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['rawTransactions'] })
+      toast.success('Transaction added')
+      onClose()
+    },
+    onError: () => toast.error('Failed to add transaction'),
+  })
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!description.trim()) {
+      toast.error('Description required')
+      return
+    }
+    const n = Number(amount)
+    if (isNaN(n) || n === 0) {
+      toast.error('Amount must not be zero')
+      return
+    }
+    mutation.mutate()
+  }
+
   return (
-    <th className={`cursor-pointer select-none ${className}`} onClick={() => onSort(field)}>
-      <span className="inline-flex items-center gap-1">
-        {label}
-        <span
-          className="material-symbols-outlined"
-          style={{ fontSize: 12, opacity: isActive ? 1 : 0.3 }}
-        >
-          {isActive && sortDir === 'desc' ? 'arrow_downward' : 'arrow_upward'}
-        </span>
-      </span>
-    </th>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ background: 'rgba(0,0,0,0.35)' }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
+      <div
+        className="flex w-[380px] flex-col gap-4"
+        style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--line)',
+          borderRadius: 'var(--radius-lg)',
+          padding: 24,
+          boxShadow: 'var(--shadow-pop)',
+        }}
+      >
+        <div className="flex items-center justify-between">
+          <span
+            className="text-[13px] font-semibold"
+            style={{ color: 'var(--ink)', letterSpacing: '-0.005em' }}
+          >
+            Manual entry
+          </span>
+          <button onClick={onClose} className="btn ghost icon sm">
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+              close
+            </span>
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <div>
+            <label className="eyebrow mb-1 block">Date</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="input"
+            />
+          </div>
+          <div>
+            <label className="eyebrow mb-1 block">Description</label>
+            <input
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="e.g. Coffee at Blue Tokai"
+              className="input"
+              autoFocus
+            />
+          </div>
+          <div>
+            <label className="eyebrow mb-1 block">Amount (₹)</label>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0.00"
+              className="input num"
+              step="0.01"
+            />
+            <p className="mt-1 text-[11px]" style={{ color: 'var(--ink-4)' }}>
+              Use a negative value (e.g. −1200) for income, refunds, or salary.
+            </p>
+          </div>
+          <Button variant="primary" className="mt-1 w-full" loading={mutation.isPending}>
+            Add transaction
+          </Button>
+        </form>
+      </div>
+    </div>
   )
 }
 
-// ─── Process panel ─────────────────────────────────────────────────────────────
+// ─── Process panel ──────────────────────────────────────────────────────────────
 
 interface ProcessPanelProps {
   txn: RawTransaction
@@ -77,6 +295,7 @@ interface ProcessPanelProps {
 function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessPanelProps) {
   const toast = useToastContext()
   const qc = useQueryClient()
+  const [amount, setAmount] = useState(txn.amount)
   const [categoryId, setCategoryId] = useState('')
   const [saveMapping, setSaveMapping] = useState(true)
   const [shares, setShares] = useState<PersonShareIn[]>([])
@@ -88,20 +307,28 @@ function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessPanelPro
   const tagsQuery = useQuery({ queryKey: ['tags'], queryFn: getTags })
 
   async function handleCreatePerson(name: string) {
-    const newPerson = await createPerson(name)
+    const p = await createPerson(name)
     void qc.invalidateQueries({ queryKey: ['persons'] })
-    return newPerson
+    return p
   }
 
   async function handleCreateCategory(label: string): Promise<string> {
-    const newCat = await createCategory(label)
+    const c = await createCategory(label)
     void qc.invalidateQueries({ queryKey: ['categories'] })
-    return newCat.id
+    return c.id
   }
 
   const processMutation = useMutation({
     mutationFn: processTransaction,
-    onSuccess: () => {
+    onSuccess: async (data) => {
+      const parsedAmount = Number(amount)
+      if (!isNaN(parsedAmount) && parsedAmount !== 0 && parsedAmount !== Number(txn.amount)) {
+        try {
+          await editProcessedTransaction(data.id, { amount: parsedAmount })
+        } catch {
+          /* ignore */
+        }
+      }
       void qc.invalidateQueries({ queryKey: ['rawTransactions'] })
       void qc.invalidateQueries({ queryKey: ['processedTransactions'] })
       void qc.invalidateQueries({ queryKey: ['pendingManual'] })
@@ -114,6 +341,11 @@ function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessPanelPro
   function handleProcess() {
     if (!categoryId) {
       setCategoryError('Please select a category')
+      return
+    }
+    const n = Number(amount)
+    if (isNaN(n) || n === 0) {
+      toast.error('Amount must not be zero')
       return
     }
     const pctSum = shares
@@ -135,7 +367,8 @@ function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessPanelPro
   }
 
   const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }))
-  const totalAmount = Number(txn.amount)
+  const totalAmount = Math.abs(Number(amount) || Number(txn.amount))
+  const txnIsIncome = isIncome(txn.amount)
 
   return (
     <div className="flex h-full flex-col">
@@ -149,7 +382,7 @@ function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessPanelPro
         >
           Process transaction
         </span>
-        <button onClick={onClose} className="btn ghost icon sm" aria-label="Close panel">
+        <button onClick={onClose} className="btn ghost icon sm">
           <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
             close
           </span>
@@ -157,10 +390,35 @@ function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessPanelPro
       </div>
 
       <div className="flex flex-col gap-4 overflow-y-auto" style={{ padding: 16 }}>
+        {txnIsIncome && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 7,
+              padding: '7px 11px',
+              borderRadius: 'var(--radius)',
+              background: 'var(--pos-soft)',
+              border: '1px solid color-mix(in oklch, var(--pos) 25%, transparent)',
+              fontSize: 12,
+              fontWeight: 500,
+              color: 'var(--pos)',
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
+              south_america
+            </span>
+            Income transaction — money received
+          </div>
+        )}
         <div
           style={{
-            background: 'var(--surface-2)',
-            border: '1px solid var(--line)',
+            background: txnIsIncome
+              ? 'color-mix(in oklch, var(--pos-soft) 60%, var(--surface-2))'
+              : 'var(--surface-2)',
+            border:
+              '1px solid ' +
+              (txnIsIncome ? 'color-mix(in oklch, var(--pos) 20%, transparent)' : 'var(--line)'),
             borderRadius: 'var(--radius)',
             padding: 14,
           }}
@@ -168,13 +426,21 @@ function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessPanelPro
           <p className="text-[12px] font-medium" style={{ color: 'var(--ink-3)' }}>
             {txn.description}
           </p>
-          <p
-            className="num mt-1 text-[26px] font-semibold"
-            style={{ color: 'var(--ink)', letterSpacing: '-0.02em' }}
-          >
-            {formatCurrency(totalAmount)}
-          </p>
-          <p className="num mt-0.5 text-[11px]" style={{ color: 'var(--ink-4)' }}>
+          <input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className="input num mt-1 w-full"
+            style={{
+              fontSize: 22,
+              fontWeight: 600,
+              letterSpacing: '-0.02em',
+              height: 38,
+              color: txnIsIncome ? 'var(--pos)' : 'var(--ink)',
+            }}
+            step="0.01"
+          />
+          <p className="num mt-1 text-[11px]" style={{ color: 'var(--ink-4)' }}>
             {txn.txn_date?.slice(0, 10)}
           </p>
         </div>
@@ -183,9 +449,9 @@ function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessPanelPro
           label="Category"
           options={categoryOptions}
           value={categoryId}
-          onChange={(val) => {
-            setCategoryId(val)
-            if (val) setCategoryError('')
+          onChange={(v) => {
+            setCategoryId(v)
+            if (v) setCategoryError('')
           }}
           error={categoryError}
           allowCreate
@@ -204,7 +470,6 @@ function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessPanelPro
             padding: '8px 12px',
             fontSize: 12.5,
             fontWeight: 500,
-            transition: 'background .1s ease',
           }}
         >
           <span className="flex items-center gap-2">
@@ -212,16 +477,6 @@ function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessPanelPro
               rule
             </span>
             Save as rule
-            <span
-              style={{
-                color: saveMapping
-                  ? 'color-mix(in oklch, var(--accent) 70%, transparent)'
-                  : 'var(--ink-4)',
-                fontWeight: 400,
-              }}
-            >
-              — auto-map next time
-            </span>
           </span>
           <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
             {saveMapping ? 'toggle_on' : 'toggle_off'}
@@ -292,55 +547,387 @@ function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessPanelPro
   )
 }
 
-// ─── Raw transactions tab ─────────────────────────────────────────────────────
+// ─── Edit panel ─────────────────────────────────────────────────────────────────
 
-type RawSortField = 'txn_date' | 'description' | 'amount' | 'status'
-
-interface RawTabProps {
-  year: number
-  month: number
+interface EditPanelProps {
+  txn: ProcessedTransactionItem
+  categories: Category[]
+  onClose: () => void
+  onSaved: () => void
 }
 
-function RawTab({ year, month }: RawTabProps) {
+function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps) {
   const toast = useToastContext()
   const qc = useQueryClient()
-  const [sortField, setSortField] = useState<RawSortField>('txn_date')
-  const [sortDir, setSortDir] = useState<SortDir>('asc')
-  const [search, setSearch] = useState('')
-  const [selectedTxnState, setSelectedTxnState] = useState<{
-    txn: RawTransaction
-    year: number
-    month: number
-  } | null>(null)
-  const selectedTxn =
-    selectedTxnState?.year === year && selectedTxnState?.month === month
-      ? selectedTxnState.txn
-      : null
+  const [amount, setAmount] = useState(txn.amount)
+  const [description, setDescription] = useState(txn.description)
+  const [txnDate, setTxnDate] = useState(txn.txn_date?.slice(0, 10) ?? '')
+  const [categoryId, setCategoryId] = useState(txn.category_id)
+  const [saveMapping, setSaveMapping] = useState(false)
+  const [shares, setShares] = useState<PersonShareIn[]>(
+    txn.shares.map((s) => ({
+      person_id: s.person_id,
+      share_type: s.share_type as 'percentage' | 'amount',
+      share_value: Number(s.share_value),
+    }))
+  )
+  const [notes, setNotes] = useState(txn.notes ?? '')
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>(txn.tags.map((t) => t.id))
+  const [categoryError, setCategoryError] = useState('')
 
-  // Bulk mode
-  const [bulkMode, setBulkMode] = useState(false)
-  const [selectedBulkIds, setSelectedBulkIds] = useState<Set<string>>(new Set())
-  const [bulkCategoryId, setBulkCategoryId] = useState('')
-  const [bulkCategoryError, setBulkCategoryError] = useState('')
-  const [bulkProcessing, setBulkProcessing] = useState(false)
+  const personsQuery = useQuery({ queryKey: ['persons'], queryFn: getPersons })
+  const tagsQuery = useQuery({ queryKey: ['tags'], queryFn: getTags })
 
-  function handleSort(field: string) {
-    if (sortField === field) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
-    } else {
-      setSortField(field as RawSortField)
-      setSortDir('asc')
-    }
+  async function handleCreatePerson(name: string) {
+    const p = await createPerson(name)
+    void qc.invalidateQueries({ queryKey: ['persons'] })
+    return p
   }
 
+  async function handleCreateCategory(label: string): Promise<string> {
+    const c = await createCategory(label)
+    void qc.invalidateQueries({ queryKey: ['categories'] })
+    return c.id
+  }
+
+  const editMutation = useMutation({
+    mutationFn: (payload: EditProcessedPayload) => editProcessedTransaction(txn.id, payload),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['processedTransactions'] })
+      toast.success('Transaction updated')
+      onSaved()
+    },
+    onError: (err: { detail: string }) => toast.error(err.detail ?? 'Failed to update'),
+  })
+
+  const settledMutation = useMutation({
+    mutationFn: ({ personId, settled }: { personId: string; settled: boolean }) =>
+      patchShareSettled(txn.id, personId, settled),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['processedTransactions'] }),
+    onError: () => toast.error('Failed to update settlement'),
+  })
+
+  function handleSave() {
+    if (!categoryId) {
+      setCategoryError('Please select a category')
+      return
+    }
+    const n = Number(amount)
+    if (isNaN(n) || n === 0) {
+      toast.error('Amount must not be zero')
+      return
+    }
+    const pctSum = shares
+      .filter((s) => s.share_type === 'percentage')
+      .reduce((a, s) => a + s.share_value, 0)
+    if (pctSum > 100) {
+      toast.error('Percentage shares exceed 100%')
+      return
+    }
+    setCategoryError('')
+    editMutation.mutate({
+      amount: n,
+      description: description.trim() || undefined,
+      txn_date: txnDate || undefined,
+      category_id: categoryId,
+      save_mapping: saveMapping,
+      shares,
+      notes: notes.trim() || null,
+      tag_ids: selectedTagIds,
+    })
+  }
+
+  const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }))
+  const totalAmount = Math.abs(Number(amount) || Number(txn.amount))
+  const txnIsIncome = isIncome(txn.amount)
+
+  return (
+    <div className="flex h-full flex-col">
+      <div
+        className="flex items-center justify-between"
+        style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)' }}
+      >
+        <span
+          className="text-[13px] font-semibold"
+          style={{ color: 'var(--ink)', letterSpacing: '-0.005em' }}
+        >
+          Edit transaction
+        </span>
+        <button onClick={onClose} className="btn ghost icon sm">
+          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+            close
+          </span>
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-4 overflow-y-auto" style={{ padding: 16 }}>
+        {txnIsIncome && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 7,
+              padding: '7px 11px',
+              borderRadius: 'var(--radius)',
+              background: 'var(--pos-soft)',
+              border: '1px solid color-mix(in oklch, var(--pos) 25%, transparent)',
+              fontSize: 12,
+              fontWeight: 500,
+              color: 'var(--pos)',
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
+              south_america
+            </span>
+            Income transaction — money received
+          </div>
+        )}
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <label className="eyebrow mb-1 block">Amount</label>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="input num"
+              style={{ color: txnIsIncome ? 'var(--pos)' : undefined }}
+              step="0.01"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="eyebrow mb-1 block">Date</label>
+            <input
+              type="date"
+              value={txnDate}
+              onChange={(e) => setTxnDate(e.target.value)}
+              className="input"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="eyebrow mb-1 block">Description</label>
+          <input
+            type="text"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="input"
+          />
+        </div>
+
+        <SearchableSelect
+          label="Category"
+          options={categoryOptions}
+          value={categoryId}
+          onChange={(v) => {
+            setCategoryId(v)
+            if (v) setCategoryError('')
+          }}
+          error={categoryError}
+          allowCreate
+          onCreateOption={handleCreateCategory}
+        />
+
+        <button
+          type="button"
+          onClick={() => setSaveMapping((v) => !v)}
+          className="flex w-full items-center justify-between"
+          style={{
+            background: saveMapping ? 'var(--accent-soft)' : 'var(--surface-2)',
+            color: saveMapping ? 'var(--accent)' : 'var(--ink-2)',
+            border: '1px solid ' + (saveMapping ? 'transparent' : 'var(--line)'),
+            borderRadius: 'var(--radius)',
+            padding: '8px 12px',
+            fontSize: 12.5,
+            fontWeight: 500,
+          }}
+        >
+          <span className="flex items-center gap-2">
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+              rule
+            </span>
+            Save as rule
+          </span>
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+            {saveMapping ? 'toggle_on' : 'toggle_off'}
+          </span>
+        </button>
+
+        {personsQuery.data && (
+          <PersonShareBuilder
+            persons={personsQuery.data}
+            shares={shares}
+            onChange={setShares}
+            totalAmount={totalAmount}
+            onCreatePerson={handleCreatePerson}
+          />
+        )}
+
+        {/* Settlement status for existing shares */}
+        {txn.shares.length > 0 && (
+          <div>
+            <p className="eyebrow mb-1.5">Settlement</p>
+            <div className="space-y-1.5">
+              {txn.shares.map((share) => (
+                <div key={share.person_id} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-[12.5px]">
+                    <span style={{ color: 'var(--ink)' }}>{share.person_name}</span>
+                    <span className="num" style={{ color: 'var(--ink-3)' }}>
+                      {formatCurrency(Number(share.share_amount))}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() =>
+                      settledMutation.mutate({ personId: share.person_id, settled: !share.settled })
+                    }
+                    className={share.settled ? 'chip pos' : 'chip'}
+                    style={{ cursor: 'pointer', height: 20, padding: '0 8px', fontSize: 10.5 }}
+                    title={share.settled ? 'Mark unsettled' : 'Mark settled'}
+                  >
+                    {share.settled ? 'settled' : 'pending'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div>
+          <label className="eyebrow mb-1 block">Notes (optional)</label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Add a note…"
+            rows={2}
+            className="textarea"
+          />
+        </div>
+
+        <div>
+          <p className="eyebrow mb-1.5">Tags (optional)</p>
+          {(tagsQuery.data ?? []).length === 0 ? (
+            <p className="text-[11.5px]" style={{ color: 'var(--ink-3)' }}>
+              No tags yet. Create tags in Settings.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {(tagsQuery.data ?? []).map((tag) => {
+                const active = selectedTagIds.includes(tag.id)
+                return (
+                  <button
+                    key={tag.id}
+                    type="button"
+                    onClick={() =>
+                      setSelectedTagIds((ids) =>
+                        active ? ids.filter((id) => id !== tag.id) : [...ids, tag.id]
+                      )
+                    }
+                    className={active ? 'chip accent' : 'chip'}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {tag.name}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        <Button
+          variant="primary"
+          className="w-full"
+          onClick={handleSave}
+          loading={editMutation.isPending}
+        >
+          Save changes
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Page ───────────────────────────────────────────────────────────────────────
+
+type StatusFilter = 'all' | 'pending' | 'income' | 'processed' | 'split'
+
+export function TransactionsPage() {
+  const now = new Date()
+  const [year, setYear] = useState(now.getFullYear())
+  const [month, setMonth] = useState(now.getMonth() + 1)
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [search, setSearch] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('')
+  const [tagFilter, setTagFilter] = useState('')
+  const [showDeleted, setShowDeleted] = useState(false)
+  const [selectedUid, setSelectedUid] = useState<string | null>(null)
+  const [editingTxn, setEditingTxn] = useState<ProcessedTransactionItem | null>(null)
+  const [showManualEntry, setShowManualEntry] = useState(false)
+  const [dragOverCatId, setDragOverCatId] = useState<string | null>(null)
+  const [draggingUid, setDraggingUid] = useState<string | null>(null)
+  const [openMenuUid, setOpenMenuUid] = useState<string | null>(null)
+
+  const navigate = useNavigate()
+  const toast = useToastContext()
+  const qc = useQueryClient()
+
+  // ── Queries ──
   const rawQuery = useQuery({
     queryKey: ['rawTransactions', year, month],
     queryFn: () => getRawTransactions(year, month),
   })
-
+  const processedQuery = useQuery({
+    queryKey: ['processedTransactions', year, month, categoryFilter, tagFilter],
+    queryFn: () =>
+      getProcessedTransactions(year, month, categoryFilter || undefined, tagFilter || undefined),
+  })
   const categoriesQuery = useQuery({ queryKey: ['categories'], queryFn: getCategories })
+  const tagsQuery = useQuery({ queryKey: ['tags'], queryFn: getTags })
 
-  const deleteMutation = useMutation({
+  const isLoading = rawQuery.isLoading || processedQuery.isLoading
+  const categories = categoriesQuery.data ?? []
+  const shortcutCats = categories.slice(0, 9)
+
+  // ── Unified list ──
+  const allTxns = buildUnified(rawQuery.data ?? [], processedQuery.data ?? [])
+
+  // ── Filter ──
+  const filtered = allTxns.filter((t) => {
+    if (t.kind === 'deleted' && !showDeleted) return false
+    if (search && !t.description.toLowerCase().includes(search.toLowerCase())) return false
+    if (statusFilter === 'pending' && t.kind !== 'pending') return false
+    if (statusFilter === 'income' && !isIncome(t.amount)) return false
+    if (statusFilter === 'processed' && t.kind !== 'processed') return false
+    if (statusFilter === 'split' && t.shares.length === 0) return false
+    return true
+  })
+
+  const pendingCount = allTxns.filter((t) => t.kind === 'pending').length
+  const incomeCount = allTxns.filter((t) => t.kind !== 'deleted' && isIncome(t.amount)).length
+  const deletedCount = allTxns.filter((t) => t.kind === 'deleted').length
+  const total = allTxns
+    .filter((t) => t.kind !== 'deleted')
+    .reduce((s, t) => s + Number(t.effectiveAmount), 0)
+
+  // ── Month navigation ──
+  function prevMonth() {
+    setSelectedUid(null)
+    setEditingTxn(null)
+    if (month === 1) {
+      setYear((y) => y - 1)
+      setMonth(12)
+    } else setMonth((m) => m - 1)
+  }
+  function nextMonth() {
+    setSelectedUid(null)
+    setEditingTxn(null)
+    if (month === 12) {
+      setYear((y) => y + 1)
+      setMonth(1)
+    } else setMonth((m) => m + 1)
+  }
+
+  // ── Mutations ──
+  const deleteRawMutation = useMutation({
     mutationFn: deleteRawTransaction,
     onMutate: async (id) => {
       await qc.cancelQueries({ queryKey: ['rawTransactions', year, month] })
@@ -349,16 +936,16 @@ function RawTab({ year, month }: RawTabProps) {
         ['rawTransactions', year, month],
         (old) => old?.map((t) => (t.id === id ? { ...t, status: 'deleted' } : t)) ?? []
       )
-      if (selectedTxn?.id === id) setSelectedTxnState(null)
+      if (selectedUid === 'raw_' + id) setSelectedUid(null)
       return { prev }
     },
     onError: (_err, _id, ctx) => {
       if (ctx?.prev) qc.setQueryData(['rawTransactions', year, month], ctx.prev)
-      toast.error('Failed to delete transaction')
+      toast.error('Failed to delete')
     },
   })
 
-  const restoreMutation = useMutation({
+  const restoreRawMutation = useMutation({
     mutationFn: restoreRawTransaction,
     onMutate: async (id) => {
       await qc.cancelQueries({ queryKey: ['rawTransactions', year, month] })
@@ -371,8 +958,44 @@ function RawTab({ year, month }: RawTabProps) {
     },
     onError: (_err, _id, ctx) => {
       if (ctx?.prev) qc.setQueryData(['rawTransactions', year, month], ctx.prev)
-      toast.error('Failed to restore transaction')
+      toast.error('Failed to restore')
     },
+  })
+
+  const deleteProcMutation = useMutation({
+    mutationFn: deleteProcessedTransaction,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['processedTransactions', year, month] })
+      toast.success('Transaction deleted')
+    },
+    onError: () => toast.error('Failed to delete'),
+  })
+
+  const quickCategorizeMutation = useMutation({
+    mutationFn: ({ rawId, categoryId }: { rawId: string; categoryId: string }) =>
+      processTransaction({
+        raw_txn_id: rawId,
+        category_id: categoryId,
+        save_mapping: true,
+        shares: [],
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['rawTransactions', year, month] })
+      void qc.invalidateQueries({ queryKey: ['processedTransactions', year, month] })
+      void qc.invalidateQueries({ queryKey: ['pendingManual'] })
+      toast.success('Categorized')
+    },
+    onError: (err: { detail: string }) => toast.error(err.detail ?? 'Failed to categorize'),
+  })
+
+  const changeCategoryMutation = useMutation({
+    mutationFn: ({ procId, categoryId }: { procId: string; categoryId: string }) =>
+      editProcessedTransaction(procId, { category_id: categoryId }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['processedTransactions', year, month] })
+      toast.success('Category updated')
+    },
+    onError: () => toast.error('Failed to update category'),
   })
 
   const autoMutation = useMutation({
@@ -382,971 +1005,1055 @@ function RawTab({ year, month }: RawTabProps) {
         `${data.auto_categorised} auto-categorised, ${data.pending_manual} need manual review`
       )
       void qc.invalidateQueries({ queryKey: ['rawTransactions', year, month] })
+      void qc.invalidateQueries({ queryKey: ['processedTransactions', year, month] })
       void qc.invalidateQueries({ queryKey: ['pendingManual'] })
     },
     onError: (err: { detail: string }) => toast.error(err.detail),
   })
 
-  async function handleBulkCreateCategory(label: string): Promise<string> {
-    const newCat = await createCategory(label)
-    void qc.invalidateQueries({ queryKey: ['categories'] })
-    return newCat.id
+  // ── Drag & drop ──
+  function handleDragStart(uid: string) {
+    setDraggingUid(uid)
+    setOpenMenuUid(null)
   }
 
-  async function handleBulkProcess() {
-    if (!bulkCategoryId) {
-      setBulkCategoryError('Please select a category')
-      return
-    }
-    if (selectedBulkIds.size === 0) {
-      toast.warning('Select at least one transaction')
-      return
-    }
-    setBulkCategoryError('')
-    setBulkProcessing(true)
-    try {
-      await Promise.all(
-        [...selectedBulkIds].map((id) =>
-          processTransaction({
-            raw_txn_id: id,
-            category_id: bulkCategoryId,
-            save_mapping: false,
-            shares: [],
-            notes: null,
-          })
-        )
-      )
-      toast.success(
-        `${selectedBulkIds.size} transaction${selectedBulkIds.size > 1 ? 's' : ''} processed`
-      )
-      setSelectedBulkIds(new Set())
-      setBulkCategoryId('')
-      void qc.invalidateQueries({ queryKey: ['rawTransactions', year, month] })
-      void qc.invalidateQueries({ queryKey: ['pendingManual'] })
-      void qc.invalidateQueries({ queryKey: ['processedTransactions', year, month] })
-    } catch {
-      toast.error('Some transactions failed to process')
-    } finally {
-      setBulkProcessing(false)
-    }
+  function handleDragEnd() {
+    setDraggingUid(null)
+    setDragOverCatId(null)
   }
 
-  if (rawQuery.isLoading) return <SkeletonTable />
+  function handleDropOnCategory(categoryId: string) {
+    if (!draggingUid) return
+    const txn = allTxns.find((t) => t.uid === draggingUid)
+    if (!txn) return
+    if (txn.kind === 'pending' && txn.rawId) {
+      quickCategorizeMutation.mutate({ rawId: txn.rawId, categoryId })
+      setSelectedUid(null)
+    } else if (txn.kind === 'processed' && txn.processedId) {
+      changeCategoryMutation.mutate({ procId: txn.processedId, categoryId })
+    }
+    setDraggingUid(null)
+    setDragOverCatId(null)
+  }
 
-  const allTxns = rawQuery.data ?? []
+  // ── Keyboard shortcuts ──
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement).tagName
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return
 
-  const filtered = allTxns.filter(
-    (t) => !search || t.description.toLowerCase().includes(search.toLowerCase())
-  )
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault()
+        const idx = selectedUid ? filtered.findIndex((t) => t.uid === selectedUid) : -1
+        if (e.key === 'ArrowDown')
+          setSelectedUid(filtered[Math.min(idx + 1, filtered.length - 1)]?.uid ?? null)
+        else setSelectedUid(filtered[Math.max(idx - 1, 0)]?.uid ?? null)
+      }
 
-  const sorted = [...filtered].sort((a, b) => {
-    let cmp = 0
-    if (sortField === 'txn_date') cmp = a.txn_date.localeCompare(b.txn_date)
-    else if (sortField === 'description') cmp = a.description.localeCompare(b.description)
-    else if (sortField === 'amount') cmp = Number(a.amount) - Number(b.amount)
-    else if (sortField === 'status') cmp = a.status.localeCompare(b.status)
-    return sortDir === 'asc' ? cmp : -cmp
-  })
+      if (e.key >= '1' && e.key <= '9' && selectedUid) {
+        const cat = shortcutCats[Number(e.key) - 1]
+        if (!cat) return
+        const txn = filtered.find((t) => t.uid === selectedUid)
+        if (!txn) return
+        if (txn.kind === 'pending' && txn.rawId)
+          quickCategorizeMutation.mutate({ rawId: txn.rawId, categoryId: cat.id })
+        else if (txn.kind === 'processed' && txn.processedId)
+          changeCategoryMutation.mutate({ procId: txn.processedId, categoryId: cat.id })
+      }
+
+      if (e.key === 'Escape') {
+        if (editingTxn) {
+          setEditingTxn(null)
+          return
+        }
+        setSelectedUid(null)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [
+    selectedUid,
+    filtered,
+    shortcutCats,
+    editingTxn,
+    quickCategorizeMutation,
+    changeCategoryMutation,
+  ])
+
+  // Close context menu on outside click
+  useEffect(() => {
+    if (!openMenuUid) return
+    const handler = () => setOpenMenuUid(null)
+    window.addEventListener('click', handler, { capture: true })
+    return () => window.removeEventListener('click', handler, { capture: true })
+  }, [openMenuUid])
+
+  // ── Panel logic ──
+  const selectedTxn = selectedUid ? filtered.find((t) => t.uid === selectedUid) : null
+  const showProcessPanel =
+    selectedTxn?.kind === 'pending' && !!selectedTxn.rawOriginal && !editingTxn
+  const showEditPanel = !!editingTxn
+
+  const hasActiveFilters = !!(search || categoryFilter || tagFilter)
 
   return (
-    <div>
-      <div
-        className="flex items-center gap-2"
-        style={{ padding: '10px 14px', borderBottom: '1px solid var(--line)' }}
-      >
-        {bulkMode ? (
-          <>
-            <button
-              onClick={() => {
-                const pendingIds = sorted.filter((t) => t.status === 'pending').map((t) => t.id)
-                setSelectedBulkIds(
-                  selectedBulkIds.size === pendingIds.length ? new Set() : new Set(pendingIds)
-                )
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0, marginTop: -4 }}>
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between gap-4" style={{ paddingBottom: 20 }}>
+        <div>
+          <p className="card-eyebrow mb-1">Transactions</p>
+          <h1
+            className="flex items-baseline gap-3"
+            style={{
+              fontSize: 26,
+              fontWeight: 600,
+              letterSpacing: '-0.025em',
+              color: 'var(--ink)',
+              lineHeight: 1.15,
+            }}
+          >
+            <span>{allTxns.filter((t) => t.kind !== 'deleted').length} transactions</span>
+            <span
+              className="num"
+              style={{
+                fontSize: 17,
+                fontWeight: 500,
+                color: total < 0 ? 'var(--pos)' : 'var(--ink-3)',
               }}
-              className="btn ghost sm"
+              title={total < 0 ? 'Net income this month' : 'Net spend this month'}
             >
-              {selectedBulkIds.size === sorted.filter((t) => t.status === 'pending').length
-                ? 'Deselect all'
-                : 'Select all'}
-            </button>
-            <span className="text-[12px]" style={{ color: 'var(--ink-3)' }}>
-              {selectedBulkIds.size > 0
-                ? `${selectedBulkIds.size} selected`
-                : 'Select transactions'}
+              {total < 0 ? '+' : ''}
+              {formatCurrency(Math.abs(total))}
             </span>
-            <div className="flex-1" />
-            <button
-              onClick={() => {
-                setBulkMode(false)
-                setSelectedBulkIds(new Set())
-                setBulkCategoryId('')
-                setBulkCategoryError('')
-              }}
-              className="btn ghost icon sm"
-              aria-label="Exit bulk mode"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                close
-              </span>
-            </button>
-          </>
-        ) : (
-          <>
-            <div className="relative max-w-sm flex-1">
-              <span
-                className="material-symbols-outlined pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2"
-                style={{ fontSize: 14, color: 'var(--ink-4)' }}
-              >
-                search
-              </span>
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search description…"
-                className="input"
-                style={{ paddingLeft: 28 }}
-              />
-            </div>
-            <button
-              onClick={() => autoMutation.mutate()}
-              disabled={autoMutation.isPending}
-              className="btn ghost icon sm"
-              title="Auto-categorise pending transactions"
-              aria-label="Auto-categorise"
-            >
-              <span
-                className={`material-symbols-outlined ${autoMutation.isPending ? 'animate-spin' : ''}`}
-                style={{ fontSize: 14 }}
-              >
-                {autoMutation.isPending ? 'progress_activity' : 'auto_awesome'}
-              </span>
-            </button>
-            <button
-              onClick={() => {
-                setBulkMode(true)
-                setSelectedTxnState(null)
-              }}
-              className="btn ghost icon sm"
-              title="Bulk categorise"
-              aria-label="Bulk categorise"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                checklist
-              </span>
-            </button>
-          </>
-        )}
-      </div>
+          </h1>
+        </div>
 
-      {allTxns.length === 0 ? (
-        <p className="py-10 text-center text-[12.5px]" style={{ color: 'var(--ink-3)' }}>
-          No raw transactions for this period.
-        </p>
-      ) : (
-        <div className="flex min-h-0">
-          <div className="min-w-0 flex-1 overflow-x-auto">
-            <table className="tbl">
-              <thead>
-                <tr>
-                  {bulkMode && <th style={{ width: 36 }} />}
-                  <SortHeader
-                    label="Date"
-                    field="txn_date"
-                    sortField={sortField}
-                    sortDir={sortDir}
-                    onSort={handleSort}
-                  />
-                  <SortHeader
-                    label="Description"
-                    field="description"
-                    sortField={sortField}
-                    sortDir={sortDir}
-                    onSort={handleSort}
-                  />
-                  <SortHeader
-                    label="Amount"
-                    field="amount"
-                    sortField={sortField}
-                    sortDir={sortDir}
-                    onSort={handleSort}
-                    className="num"
-                  />
-                  <SortHeader
-                    label="Status"
-                    field="status"
-                    sortField={sortField}
-                    sortDir={sortDir}
-                    onSort={handleSort}
-                  />
-                  <th style={{ width: 40 }} />
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="text-center" style={{ color: 'var(--ink-3)' }}>
-                      No transactions match your search.
-                    </td>
-                  </tr>
-                ) : (
-                  sorted.map((txn) => {
-                    const isDeleted = txn.status === 'deleted'
-                    const isSelected = selectedTxn?.id === txn.id
-                    const isBulkChecked = selectedBulkIds.has(txn.id)
-                    const isPending = txn.status === 'pending'
-                    return (
-                      <tr
-                        key={txn.id}
-                        onClick={
-                          bulkMode
-                            ? isPending
-                              ? () =>
-                                  setSelectedBulkIds((prev) => {
-                                    const next = new Set(prev)
-                                    if (next.has(txn.id)) next.delete(txn.id)
-                                    else next.add(txn.id)
-                                    return next
-                                  })
-                              : undefined
-                            : isDeleted
-                              ? undefined
-                              : () => setSelectedTxnState({ txn, year, month })
-                        }
-                        className={
-                          bulkMode
-                            ? isPending
-                              ? isBulkChecked
-                                ? 'row sel'
-                                : 'row'
-                              : ''
-                            : isDeleted
-                              ? ''
-                              : isSelected
-                                ? 'row sel'
-                                : 'row'
-                        }
-                        style={{
-                          opacity: isDeleted || (bulkMode && !isPending) ? 0.4 : 1,
-                        }}
-                      >
-                        {bulkMode && (
-                          <td onClick={(e) => e.stopPropagation()}>
-                            {isPending && !isDeleted && (
-                              <input
-                                type="checkbox"
-                                checked={isBulkChecked}
-                                onChange={() =>
-                                  setSelectedBulkIds((prev) => {
-                                    const next = new Set(prev)
-                                    if (next.has(txn.id)) next.delete(txn.id)
-                                    else next.add(txn.id)
-                                    return next
-                                  })
-                                }
-                                style={{ accentColor: 'var(--accent)' }}
-                              />
-                            )}
-                          </td>
-                        )}
-                        <td className="num whitespace-nowrap" style={{ color: 'var(--ink-3)' }}>
-                          {txn.txn_date?.slice(0, 10)}
-                        </td>
-                        <td style={{ color: 'var(--ink)', fontWeight: 500 }}>
-                          <span style={{ textDecoration: isDeleted ? 'line-through' : undefined }}>
-                            {txn.description}
-                          </span>
-                        </td>
-                        <td className="num" style={{ color: 'var(--ink)', fontWeight: 500 }}>
-                          {formatCurrency(Number(txn.amount))}
-                        </td>
-                        <td>
-                          <span className={isDeleted ? 'chip neg' : 'chip'}>{txn.status}</span>
-                        </td>
-                        <td className="text-right" onClick={(e) => e.stopPropagation()}>
-                          {isDeleted ? (
-                            <button
-                              onClick={() => restoreMutation.mutate(txn.id)}
-                              className="btn ghost sm"
-                              style={{ color: 'var(--accent)' }}
-                              aria-label="Restore transaction"
-                            >
-                              Restore
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => deleteMutation.mutate(txn.id)}
-                              className="btn ghost icon sm"
-                              aria-label="Delete transaction"
-                            >
-                              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                                delete
-                              </span>
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
-            <div
-              className="px-4 py-2.5 text-[11.5px]"
-              style={{ borderTop: '1px solid var(--line)', color: 'var(--ink-3)' }}
+        <div className="flex items-center gap-2">
+          {/* Month nav */}
+          <div
+            className="flex items-center"
+            style={{
+              border: '1px solid var(--line-strong)',
+              borderRadius: 'var(--radius)',
+              overflow: 'hidden',
+            }}
+          >
+            <button
+              onClick={prevMonth}
+              className="btn ghost"
+              style={{
+                borderRadius: 0,
+                height: 30,
+                width: 30,
+                padding: 0,
+                borderRight: '1px solid var(--line)',
+              }}
             >
-              {sorted.length} of {allTxns.length} transaction{allTxns.length !== 1 ? 's' : ''}{' '}
-              &middot; {allTxns.filter((t) => t.status === 'deleted').length} deleted
-            </div>
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                chevron_left
+              </span>
+            </button>
+            <span
+              className="num"
+              style={{
+                padding: '0 14px',
+                fontSize: 12.5,
+                fontWeight: 600,
+                color: 'var(--ink)',
+                minWidth: 80,
+                textAlign: 'center',
+                letterSpacing: '-0.01em',
+              }}
+            >
+              {MONTH_NAMES[month - 1]} {year}
+            </span>
+            <button
+              onClick={nextMonth}
+              className="btn ghost"
+              style={{
+                borderRadius: 0,
+                height: 30,
+                width: 30,
+                padding: 0,
+                borderLeft: '1px solid var(--line)',
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                chevron_right
+              </span>
+            </button>
           </div>
 
-          {bulkMode && (
-            <div
-              className="flex w-[320px] shrink-0 flex-col gap-3"
-              style={{ borderLeft: '1px solid var(--line)', padding: 16 }}
-            >
-              <p className="card-title">Apply category</p>
-              <SearchableSelect
-                label="Category"
-                options={(categoriesQuery.data ?? []).map((c) => ({ value: c.id, label: c.name }))}
-                value={bulkCategoryId}
-                onChange={(val) => {
-                  setBulkCategoryId(val)
-                  if (val) setBulkCategoryError('')
-                }}
-                error={bulkCategoryError}
-                allowCreate
-                onCreateOption={handleBulkCreateCategory}
-                placeholder="Search or create category…"
-              />
-              <Button
-                variant="primary"
-                className="w-full"
-                onClick={() => void handleBulkProcess()}
-                loading={bulkProcessing}
-                disabled={selectedBulkIds.size === 0}
-              >
-                Process {selectedBulkIds.size > 0 ? selectedBulkIds.size : ''} selected
-              </Button>
-            </div>
-          )}
+          <button onClick={() => setShowManualEntry(true)} className="btn" style={{ gap: 5 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+              add
+            </span>
+            Manual entry
+          </button>
 
-          {!bulkMode && selectedTxn && (
-            <div className="w-[360px] shrink-0" style={{ borderLeft: '1px solid var(--line)' }}>
-              <ProcessPanel
-                key={selectedTxn.id}
-                txn={selectedTxn}
-                categories={categoriesQuery.data ?? []}
-                onClose={() => setSelectedTxnState(null)}
-                onProcessed={() => setSelectedTxnState(null)}
-              />
-            </div>
+          <button onClick={() => navigate('/upload')} className="btn primary" style={{ gap: 5 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+              upload
+            </span>
+            Upload
+          </button>
+        </div>
+      </div>
+
+      {/* ── Filter bar ── */}
+      <div
+        className="flex flex-wrap items-center gap-2"
+        style={{ paddingBottom: 10, borderBottom: '1px solid var(--line)' }}
+      >
+        {/* Search */}
+        <div className="relative" style={{ width: 210 }}>
+          <span
+            className="material-symbols-outlined pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2"
+            style={{ fontSize: 14, color: 'var(--ink-4)' }}
+          >
+            search
+          </span>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search merchant…"
+            className="input"
+            style={{ paddingLeft: 28 }}
+          />
+        </div>
+
+        {/* Status tabs */}
+        <div
+          className="flex items-center"
+          style={{
+            border: '1px solid var(--line-strong)',
+            borderRadius: 'var(--radius)',
+            overflow: 'hidden',
+          }}
+        >
+          {(['all', 'pending', 'income', 'processed', 'split'] as StatusFilter[]).map(
+            (f, i, arr) => (
+              <button
+                key={f}
+                onClick={() => setStatusFilter(f)}
+                className="flex items-center gap-1.5"
+                style={{
+                  height: 30,
+                  padding: '0 11px',
+                  fontSize: 12.5,
+                  fontWeight: 500,
+                  background: statusFilter === f ? 'var(--ink)' : 'transparent',
+                  color: statusFilter === f ? 'var(--bg)' : 'var(--ink-3)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  borderRight: i < arr.length - 1 ? '1px solid var(--line)' : 'none',
+                  transition: 'background 0.1s, color 0.1s',
+                  textTransform: 'capitalize',
+                }}
+              >
+                {f}
+                {f === 'pending' && pendingCount > 0 && (
+                  <span
+                    style={{
+                      background:
+                        statusFilter === 'pending' ? 'rgba(255,255,255,0.18)' : 'var(--warn-soft)',
+                      color: statusFilter === 'pending' ? 'inherit' : 'var(--warn)',
+                      borderRadius: 4,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      padding: '1px 5px',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {pendingCount}
+                  </span>
+                )}
+                {f === 'income' && incomeCount > 0 && (
+                  <span
+                    style={{
+                      background:
+                        statusFilter === 'income' ? 'rgba(255,255,255,0.18)' : 'var(--pos-soft)',
+                      color: statusFilter === 'income' ? 'inherit' : 'var(--pos)',
+                      borderRadius: 4,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      padding: '1px 5px',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {incomeCount}
+                  </span>
+                )}
+              </button>
+            )
+          )}
+        </div>
+
+        {/* Category filter */}
+        <select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+          className="input"
+          style={{ width: 'auto' }}
+          aria-label="Filter by category"
+        >
+          <option value="">All categories</option>
+          {(categoriesQuery.data ?? [])
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+        </select>
+
+        {/* Tag filter */}
+        {(tagsQuery.data ?? []).length > 0 && (
+          <select
+            value={tagFilter}
+            onChange={(e) => setTagFilter(e.target.value)}
+            className="input"
+            style={{ width: 'auto' }}
+            aria-label="Filter by tag"
+          >
+            <option value="">All tags</option>
+            {(tagsQuery.data ?? [])
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+          </select>
+        )}
+
+        {hasActiveFilters && (
+          <button
+            onClick={() => {
+              setSearch('')
+              setCategoryFilter('')
+              setTagFilter('')
+            }}
+            className="btn ghost sm"
+          >
+            Clear filters
+          </button>
+        )}
+
+        <div style={{ flex: 1 }} />
+
+        {/* Auto-categorise */}
+        <button
+          onClick={() => autoMutation.mutate()}
+          disabled={autoMutation.isPending}
+          className="btn ghost sm"
+          title="Auto-categorise pending transactions"
+        >
+          <span
+            className={`material-symbols-outlined ${autoMutation.isPending ? 'animate-spin' : ''}`}
+            style={{ fontSize: 14 }}
+          >
+            {autoMutation.isPending ? 'progress_activity' : 'auto_awesome'}
+          </span>
+          Auto-categorise
+        </button>
+
+        {/* Shortcuts hint */}
+        <span
+          className="flex items-center gap-1 text-[11px]"
+          style={{ color: 'var(--ink-4)', userSelect: 'none' }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 12 }}>
+            keyboard
+          </span>
+          1–9 categorize · ↑↓ navigate
+        </span>
+      </div>
+
+      {/* ── Category drag strip ── */}
+      {categories.length > 0 && (
+        <div
+          className="flex flex-wrap items-center gap-2"
+          style={{ padding: '8px 0', borderBottom: '1px solid var(--line)' }}
+        >
+          <span className="shrink-0 text-[11.5px]" style={{ color: 'var(--ink-4)' }}>
+            Drop to categorize:
+          </span>
+          {shortcutCats.map((cat, idx) => {
+            const color = categoryColor(cat.id)
+            const isOver = dragOverCatId === cat.id
+            return (
+              <div
+                key={cat.id}
+                onDragOver={(e) => {
+                  e.preventDefault()
+                  setDragOverCatId(cat.id)
+                }}
+                onDragLeave={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOverCatId(null)
+                }}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  handleDropOnCategory(cat.id)
+                }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '3px 10px 3px 8px',
+                  borderRadius: 'var(--radius)',
+                  border: '1.5px solid ' + (isOver ? color : 'var(--line)'),
+                  background: isOver
+                    ? `color-mix(in oklch, ${color} 14%, var(--surface))`
+                    : 'var(--surface)',
+                  cursor: 'default',
+                  transition: 'border-color 0.1s, background 0.1s',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: isOver ? color : 'var(--ink-2)',
+                  userSelect: 'none',
+                }}
+              >
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    background: color,
+                    flexShrink: 0,
+                  }}
+                />
+                <span>{cat.name}</span>
+                <span
+                  style={{
+                    marginLeft: 2,
+                    fontSize: 10,
+                    fontVariantNumeric: 'tabular-nums',
+                    color: 'var(--ink-4)',
+                    fontWeight: 600,
+                  }}
+                >
+                  {idx + 1}
+                </span>
+              </div>
+            )
+          })}
+          {categories.length > 9 && (
+            <span className="text-[11px]" style={{ color: 'var(--ink-4)' }}>
+              +{categories.length - 9} more
+            </span>
           )}
         </div>
       )}
-    </div>
-  )
-}
 
-// ─── Processed transactions tab ───────────────────────────────────────────────
-
-type ProcessedSortField = 'txn_date' | 'description' | 'category' | 'amount'
-
-interface ProcessedTabProps {
-  year: number
-  month: number
-}
-
-function ProcessedTab({ year, month }: ProcessedTabProps) {
-  const toast = useToastContext()
-  const qc = useQueryClient()
-  const [sortField, setSortField] = useState<ProcessedSortField>('txn_date')
-  const [sortDir, setSortDir] = useState<SortDir>('asc')
-  const [search, setSearch] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('')
-  const [tagFilter, setTagFilter] = useState('')
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editCategoryId, setEditCategoryId] = useState('')
-
-  // Bulk tag mode
-  const [bulkTagMode, setBulkTagMode] = useState(false)
-  const [selectedBulkTagIds, setSelectedBulkTagIds] = useState<Set<string>>(new Set())
-  const [tagsToApply, setTagsToApply] = useState<string[]>([])
-  const [bulkTagging, setBulkTagging] = useState(false)
-
-  function handleSort(field: string) {
-    if (sortField === field) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
-    } else {
-      setSortField(field as ProcessedSortField)
-      setSortDir('asc')
-    }
-  }
-
-  const processedQuery = useQuery({
-    queryKey: ['processedTransactions', year, month, categoryFilter, tagFilter],
-    queryFn: () =>
-      getProcessedTransactions(year, month, categoryFilter || undefined, tagFilter || undefined),
-  })
-
-  const categoriesQuery = useQuery({ queryKey: ['categories'], queryFn: getCategories })
-  const tagsQuery = useQuery({ queryKey: ['tags'], queryFn: getTags })
-
-  const deleteMutation = useMutation({
-    mutationFn: deleteProcessedTransaction,
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['processedTransactions', year, month] })
-    },
-    onError: () => toast.error('Failed to delete transaction'),
-  })
-
-  const editCategoryMutation = useMutation({
-    mutationFn: ({ id, category_id }: { id: string; category_id: string }) =>
-      editProcessedTransaction(id, { category_id, save_mapping: false }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['processedTransactions', year, month] })
-      toast.success('Category updated')
-      setEditingId(null)
-    },
-    onError: () => toast.error('Failed to update category'),
-  })
-
-  const settledMutation = useMutation({
-    mutationFn: ({
-      txnId,
-      personId,
-      settled,
-    }: {
-      txnId: string
-      personId: string
-      settled: boolean
-    }) => patchShareSettled(txnId, personId, settled),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['processedTransactions', year, month] })
-    },
-    onError: () => toast.error('Failed to update share'),
-  })
-
-  async function handleCreateCategory(label: string): Promise<string> {
-    const newCat = await createCategory(label)
-    void qc.invalidateQueries({ queryKey: ['categories'] })
-    return newCat.id
-  }
-
-  async function handleBulkTag() {
-    if (tagsToApply.length === 0) {
-      toast.warning('Select at least one tag to apply')
-      return
-    }
-    if (selectedBulkTagIds.size === 0) {
-      toast.warning('Select at least one transaction')
-      return
-    }
-    setBulkTagging(true)
-    try {
-      await bulkTagTransactions([...selectedBulkTagIds], tagsToApply)
-      toast.success(
-        `Tags applied to ${selectedBulkTagIds.size} transaction${selectedBulkTagIds.size > 1 ? 's' : ''}`
-      )
-      setSelectedBulkTagIds(new Set())
-      setTagsToApply([])
-      void qc.invalidateQueries({ queryKey: ['processedTransactions', year, month] })
-    } catch {
-      toast.error('Failed to apply tags')
-    } finally {
-      setBulkTagging(false)
-    }
-  }
-
-  function startEditCategory(txn: ProcessedTransactionItem) {
-    setEditingId(txn.id)
-    setEditCategoryId(txn.category_id)
-  }
-
-  function submitEditCategory(id: string) {
-    if (!editCategoryId) return
-    editCategoryMutation.mutate({ id, category_id: editCategoryId })
-  }
-
-  if (processedQuery.isLoading) return <SkeletonTable />
-
-  const allTxns = processedQuery.data ?? []
-
-  const filtered = allTxns.filter(
-    (t) => !search || t.description.toLowerCase().includes(search.toLowerCase())
-  )
-
-  const sorted = [...filtered].sort((a, b) => {
-    let cmp = 0
-    if (sortField === 'txn_date') cmp = a.txn_date.localeCompare(b.txn_date)
-    else if (sortField === 'description') cmp = a.description.localeCompare(b.description)
-    else if (sortField === 'category') cmp = a.category.localeCompare(b.category)
-    else if (sortField === 'amount') cmp = Number(a.effective_amount) - Number(b.effective_amount)
-    return sortDir === 'asc' ? cmp : -cmp
-  })
-
-  if (allTxns.length === 0) {
-    return (
-      <p className="py-10 text-center text-[12.5px]" style={{ color: 'var(--ink-3)' }}>
-        No processed transactions for this period.
-      </p>
-    )
-  }
-
-  const categoryOptions = (categoriesQuery.data ?? []).map((c) => ({ value: c.id, label: c.name }))
-
-  return (
-    <div>
-      <div
-        className="flex flex-col gap-2 sm:flex-row sm:items-center"
-        style={{ padding: '10px 14px', borderBottom: '1px solid var(--line)' }}
-      >
-        {bulkTagMode ? (
-          <>
-            <button
-              onClick={() => {
-                const allIds = new Set(allTxns.map((t) => t.id))
-                setSelectedBulkTagIds(
-                  selectedBulkTagIds.size === allTxns.length ? new Set() : allIds
-                )
-              }}
-              className="btn ghost sm"
-            >
-              {selectedBulkTagIds.size === allTxns.length ? 'Deselect all' : 'Select all'}
-            </button>
-            <span className="text-[12px]" style={{ color: 'var(--ink-3)' }}>
-              {selectedBulkTagIds.size > 0
-                ? `${selectedBulkTagIds.size} selected`
-                : 'Select transactions'}
-            </span>
-            <div className="flex-1" />
-            <button
-              onClick={() => {
-                setBulkTagMode(false)
-                setSelectedBulkTagIds(new Set())
-                setTagsToApply([])
-              }}
-              className="btn ghost icon sm"
-              aria-label="Exit bulk tag mode"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                close
-              </span>
-            </button>
-          </>
+      {/* ── Table card ── */}
+      <div className="card card-flush mt-4 overflow-hidden">
+        {isLoading ? (
+          <SkeletonTable />
+        ) : allTxns.filter((t) => t.kind !== 'deleted').length === 0 ? (
+          <p className="py-10 text-center text-[12.5px]" style={{ color: 'var(--ink-3)' }}>
+            No transactions for this period.
+          </p>
         ) : (
-          <>
-            <div className="relative max-w-sm flex-1">
-              <span
-                className="material-symbols-outlined pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2"
-                style={{ fontSize: 14, color: 'var(--ink-4)' }}
-              >
-                search
-              </span>
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search description…"
-                className="input"
-                style={{ paddingLeft: 28 }}
-              />
-            </div>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="input"
-              style={{ width: 'auto' }}
-              aria-label="Filter by category"
-            >
-              <option value="">All categories</option>
-              {(categoriesQuery.data ?? [])
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-            </select>
-            <select
-              value={tagFilter}
-              onChange={(e) => setTagFilter(e.target.value)}
-              className="input"
-              style={{ width: 'auto' }}
-              aria-label="Filter by tag"
-            >
-              <option value="">All tags</option>
-              {(tagsQuery.data ?? [])
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-            </select>
-            {(search || categoryFilter || tagFilter) && (
-              <button
-                onClick={() => {
-                  setSearch('')
-                  setCategoryFilter('')
-                  setTagFilter('')
-                }}
-                className="btn ghost sm"
-              >
-                Clear
-              </button>
-            )}
-            <button
-              onClick={() => setBulkTagMode(true)}
-              className="btn ghost icon sm"
-              title="Bulk tag transactions"
-              aria-label="Bulk tag"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                label
-              </span>
-            </button>
-          </>
-        )}
-      </div>
-
-      <div className="flex min-h-0">
-        <div className="min-w-0 flex-1 overflow-x-auto">
-          <table className="tbl">
-            <thead>
-              <tr>
-                {bulkTagMode && <th style={{ width: 36 }} />}
-                <SortHeader
-                  label="Date"
-                  field="txn_date"
-                  sortField={sortField}
-                  sortDir={sortDir}
-                  onSort={handleSort}
-                />
-                <SortHeader
-                  label="Description"
-                  field="description"
-                  sortField={sortField}
-                  sortDir={sortDir}
-                  onSort={handleSort}
-                />
-                <SortHeader
-                  label="Category"
-                  field="category"
-                  sortField={sortField}
-                  sortDir={sortDir}
-                  onSort={handleSort}
-                />
-                <SortHeader
-                  label="Amount"
-                  field="amount"
-                  sortField={sortField}
-                  sortDir={sortDir}
-                  onSort={handleSort}
-                  className="num"
-                />
-                <th>Shares</th>
-                <th style={{ width: 40 }} />
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={bulkTagMode ? 7 : 6}
-                    className="text-center"
-                    style={{ color: 'var(--ink-3)' }}
-                  >
-                    No transactions match your filters.
-                  </td>
-                </tr>
-              ) : (
-                sorted.map((txn: ProcessedTransactionItem) => {
-                  const isBulkChecked = selectedBulkTagIds.has(txn.id)
-                  return (
-                    <tr
-                      key={txn.id}
-                      onClick={
-                        bulkTagMode
-                          ? () =>
-                              setSelectedBulkTagIds((prev) => {
-                                const next = new Set(prev)
-                                if (next.has(txn.id)) next.delete(txn.id)
-                                else next.add(txn.id)
-                                return next
-                              })
-                          : undefined
-                      }
-                      className={bulkTagMode ? (isBulkChecked ? 'row sel' : 'row') : ''}
-                    >
-                      {bulkTagMode && (
-                        <td onClick={(e) => e.stopPropagation()}>
-                          <input
-                            type="checkbox"
-                            checked={isBulkChecked}
-                            onChange={() =>
-                              setSelectedBulkTagIds((prev) => {
-                                const next = new Set(prev)
-                                if (next.has(txn.id)) next.delete(txn.id)
-                                else next.add(txn.id)
-                                return next
-                              })
-                            }
-                            style={{ accentColor: 'var(--accent)' }}
-                          />
-                        </td>
-                      )}
-                      <td className="num whitespace-nowrap" style={{ color: 'var(--ink-3)' }}>
-                        {txn.txn_date?.slice(0, 10)}
-                      </td>
-                      <td
-                        className="max-w-[240px]"
-                        style={{ color: 'var(--ink)', fontWeight: 500 }}
+          <div className="flex min-h-0">
+            {/* Table */}
+            <div className="min-w-0 flex-1 overflow-x-auto">
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <colgroup>
+                  <col style={{ width: 32 }} />
+                  <col style={{ width: 78 }} />
+                  <col />
+                  <col style={{ width: 160 }} />
+                  <col style={{ width: 120 }} />
+                  <col style={{ width: 54 }} />
+                  <col style={{ width: 114 }} />
+                  <col style={{ width: 38 }} />
+                </colgroup>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--line)' }}>
+                    <th style={{ padding: '8px 0 8px 10px' }} />
+                    {['Date', 'Merchant', 'Category', 'Tags'].map((h) => (
+                      <th
+                        key={h}
+                        style={{
+                          padding: '8px 12px',
+                          textAlign: 'left',
+                          fontSize: 10.5,
+                          fontWeight: 600,
+                          letterSpacing: '0.07em',
+                          textTransform: 'uppercase',
+                          color: 'var(--ink-4)',
+                        }}
                       >
-                        <div>
-                          <span className="block truncate">{txn.description}</span>
-                          {txn.notes && (
-                            <p
-                              className="truncate text-[11px] font-normal"
-                              style={{ color: 'var(--ink-3)' }}
-                            >
-                              {txn.notes}
-                            </p>
-                          )}
-                          {txn.tags.length > 0 && (
-                            <div className="mt-1 flex flex-wrap gap-1">
-                              {txn.tags.map((tag) => (
-                                <span
-                                  key={tag.id}
-                                  className="chip"
-                                  style={{ height: 18, padding: '0 6px', fontSize: 9.5 }}
-                                >
-                                  {tag.name}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td onClick={(e) => e.stopPropagation()}>
-                        {editingId === txn.id ? (
-                          <div className="flex min-w-[220px] items-center gap-1">
-                            <div className="flex-1">
-                              <SearchableSelect
-                                options={categoryOptions}
-                                value={editCategoryId}
-                                onChange={setEditCategoryId}
-                                allowCreate
-                                onCreateOption={handleCreateCategory}
-                              />
-                            </div>
-                            <button
-                              onClick={() => submitEditCategory(txn.id)}
-                              disabled={editCategoryMutation.isPending || !editCategoryId}
-                              className="btn ghost icon sm"
-                              style={{ color: 'var(--accent)' }}
-                              aria-label="Confirm"
-                            >
-                              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                                check
-                              </span>
-                            </button>
-                            <button
-                              onClick={() => setEditingId(null)}
-                              className="btn ghost icon sm"
-                              aria-label="Cancel"
-                            >
-                              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                                close
-                              </span>
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => startEditCategory(txn)}
-                            className="group inline-flex items-center gap-1"
-                            title="Edit category"
-                            style={{ background: 'transparent', border: 'none' }}
-                          >
-                            <span className="chip">{txn.category}</span>
-                            <span
-                              className="material-symbols-outlined opacity-0 transition-opacity group-hover:opacity-100"
-                              style={{ fontSize: 12, color: 'var(--ink-4)' }}
-                            >
-                              edit
-                            </span>
-                          </button>
-                        )}
-                      </td>
-                      <td className="num" style={{ color: 'var(--ink)', fontWeight: 500 }}>
-                        {formatCurrency(Number(txn.effective_amount))}
-                      </td>
-                      <td>
-                        {txn.shares.length > 0 ? (
-                          <div className="space-y-1">
-                            {txn.shares.map((share) => (
-                              <div
-                                key={share.person_id}
-                                className="flex items-center gap-1.5 text-[11.5px]"
-                              >
-                                <span style={{ color: 'var(--ink-3)' }}>{share.person_name}</span>
-                                <span className="num font-medium" style={{ color: 'var(--ink)' }}>
-                                  {formatCurrency(Number(share.share_amount))}
-                                </span>
-                                <button
-                                  onClick={() =>
-                                    settledMutation.mutate({
-                                      txnId: txn.id,
-                                      personId: share.person_id,
-                                      settled: !share.settled,
-                                    })
-                                  }
-                                  className={share.settled ? 'chip pos' : 'chip'}
-                                  style={{
-                                    height: 18,
-                                    padding: '0 6px',
-                                    fontSize: 9.5,
-                                    cursor: 'pointer',
-                                  }}
-                                  title={share.settled ? 'Mark unsettled' : 'Mark settled'}
-                                >
-                                  {share.settled ? 'settled' : 'pending'}
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <span style={{ color: 'var(--ink-4)' }}>—</span>
-                        )}
-                      </td>
-                      <td className="text-right">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            deleteMutation.mutate(txn.id)
-                          }}
-                          disabled={deleteMutation.isPending}
-                          className="btn ghost icon sm"
-                          aria-label="Delete transaction"
-                        >
-                          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                            delete
-                          </span>
-                        </button>
+                        {h}
+                      </th>
+                    ))}
+                    <th
+                      style={{
+                        padding: '8px 12px',
+                        textAlign: 'center',
+                        fontSize: 10.5,
+                        fontWeight: 600,
+                        letterSpacing: '0.07em',
+                        textTransform: 'uppercase',
+                        color: 'var(--ink-4)',
+                      }}
+                    >
+                      Split
+                    </th>
+                    <th
+                      style={{
+                        padding: '8px 12px',
+                        textAlign: 'right',
+                        fontSize: 10.5,
+                        fontWeight: 600,
+                        letterSpacing: '0.07em',
+                        textTransform: 'uppercase',
+                        color: 'var(--ink-4)',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      Amount
+                    </th>
+                    <th />
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={8}
+                        style={{
+                          padding: '40px 0',
+                          textAlign: 'center',
+                          fontSize: 12.5,
+                          color: 'var(--ink-3)',
+                        }}
+                      >
+                        No transactions match your filters.
                       </td>
                     </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
-          <div
-            className="px-4 py-2.5 text-[11.5px]"
-            style={{ borderTop: '1px solid var(--line)', color: 'var(--ink-3)' }}
-          >
-            {sorted.length} of {allTxns.length} transaction{allTxns.length !== 1 ? 's' : ''}
-          </div>
-        </div>
+                  ) : (
+                    filtered.map((txn) => {
+                      const isSelected = selectedUid === txn.uid
+                      const catColor = txn.categoryId
+                        ? categoryColor(txn.categoryId)
+                        : 'var(--warn)'
+                      const isDragging = draggingUid === txn.uid
+                      const isDeleted = txn.kind === 'deleted'
+                      const hasMenu = openMenuUid === txn.uid
+                      const { display: amtDisplay, income: txnIncome } = formatAmount(
+                        txn.effectiveAmount
+                      )
 
-        {bulkTagMode && (
-          <div
-            className="flex w-[280px] shrink-0 flex-col gap-3"
-            style={{ borderLeft: '1px solid var(--line)', padding: 16 }}
-          >
-            <p className="card-title">Apply tags</p>
-            {(tagsQuery.data ?? []).length === 0 ? (
-              <p className="text-[11.5px]" style={{ color: 'var(--ink-3)' }}>
-                No tags yet. Create tags in Settings.
-              </p>
-            ) : (
-              <div className="flex flex-wrap gap-1.5">
-                {(tagsQuery.data ?? []).map((tag: Tag) => {
-                  const active = tagsToApply.includes(tag.id)
-                  return (
-                    <button
-                      key={tag.id}
-                      type="button"
-                      onClick={() =>
-                        setTagsToApply((ids) =>
-                          active ? ids.filter((id) => id !== tag.id) : [...ids, tag.id]
-                        )
-                      }
-                      className={active ? 'chip accent' : 'chip'}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      {tag.name}
-                    </button>
-                  )
-                })}
+                      return (
+                        <tr
+                          key={txn.uid}
+                          draggable={!isDeleted}
+                          onDragStart={(e) => {
+                            e.dataTransfer.effectAllowed = 'move'
+                            handleDragStart(txn.uid)
+                          }}
+                          onDragEnd={handleDragEnd}
+                          onClick={() => {
+                            if (isDeleted) return
+                            if (txn.kind === 'pending') {
+                              setSelectedUid(isSelected ? null : txn.uid)
+                              setEditingTxn(null)
+                            } else if (txn.processedOriginal) {
+                              setEditingTxn(
+                                editingTxn?.id === txn.processedId ? null : txn.processedOriginal
+                              )
+                              setSelectedUid(txn.uid)
+                            }
+                          }}
+                          style={{
+                            borderBottom: '1px solid var(--line)',
+                            background: isSelected ? 'var(--accent-soft)' : 'transparent',
+                            opacity: isDragging || isDeleted ? 0.4 : 1,
+                            cursor: isDeleted ? 'default' : 'pointer',
+                            transition: 'background 0.08s',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isSelected && !isDeleted)
+                              (e.currentTarget as HTMLElement).style.background = 'var(--surface-2)'
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isSelected)
+                              (e.currentTarget as HTMLElement).style.background = isSelected
+                                ? 'var(--accent-soft)'
+                                : 'transparent'
+                          }}
+                        >
+                          {/* Drag handle */}
+                          <td
+                            style={{ padding: '0 0 0 6px', cursor: isDeleted ? 'default' : 'grab' }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <span
+                              className="material-symbols-outlined"
+                              style={{
+                                fontSize: 16,
+                                color: 'var(--ink-4)',
+                                display: 'block',
+                                opacity: isDeleted ? 0.3 : 1,
+                              }}
+                            >
+                              drag_indicator
+                            </span>
+                          </td>
+
+                          {/* Date */}
+                          <td
+                            style={{
+                              padding: '11px 12px',
+                              fontSize: 12.5,
+                              color: 'var(--ink-3)',
+                              fontVariantNumeric: 'tabular-nums',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {formatShortDate(txn.txn_date)}
+                          </td>
+
+                          {/* Merchant */}
+                          <td style={{ padding: '11px 12px', minWidth: 0 }}>
+                            <span
+                              style={{
+                                display: 'block',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                fontSize: 13,
+                                fontWeight: 500,
+                                color: 'var(--ink)',
+                                textDecoration: isDeleted ? 'line-through' : 'none',
+                              }}
+                            >
+                              {txn.description}
+                            </span>
+                            {txn.notes && (
+                              <span
+                                style={{
+                                  display: 'block',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                  fontSize: 11,
+                                  color: 'var(--ink-3)',
+                                  marginTop: 1,
+                                }}
+                              >
+                                {txn.notes}
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Category */}
+                          <td style={{ padding: '11px 12px' }}>
+                            {txn.kind === 'pending' ? (
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 5,
+                                  padding: '3px 8px',
+                                  borderRadius: 'var(--radius-sm)',
+                                  background: txnIncome ? 'var(--pos-soft)' : 'var(--warn-soft)',
+                                  fontSize: 12,
+                                  fontWeight: 500,
+                                  color: txnIncome ? 'var(--pos)' : 'var(--warn)',
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    width: 6,
+                                    height: 6,
+                                    borderRadius: '50%',
+                                    background: txnIncome ? 'var(--pos)' : 'var(--warn)',
+                                    flexShrink: 0,
+                                  }}
+                                />
+                                {txnIncome ? 'income' : 'pending'}
+                              </span>
+                            ) : isDeleted ? (
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 5,
+                                  padding: '3px 8px',
+                                  borderRadius: 'var(--radius-sm)',
+                                  background: 'var(--neg-soft)',
+                                  fontSize: 12,
+                                  fontWeight: 500,
+                                  color: 'var(--neg)',
+                                }}
+                              >
+                                deleted
+                              </span>
+                            ) : (
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 5,
+                                  padding: '3px 8px',
+                                  borderRadius: 'var(--radius-sm)',
+                                  background: `color-mix(in oklch, ${catColor} 13%, var(--surface))`,
+                                  fontSize: 12,
+                                  fontWeight: 500,
+                                  color: catColor,
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    width: 6,
+                                    height: 6,
+                                    borderRadius: '50%',
+                                    background: catColor,
+                                    flexShrink: 0,
+                                  }}
+                                />
+                                {txn.category}
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Tags */}
+                          <td style={{ padding: '11px 12px' }}>
+                            {txn.tags.length > 0 ? (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                                {txn.tags.map((tag) => (
+                                  <span
+                                    key={tag.id}
+                                    className="chip"
+                                    style={{ height: 18, padding: '0 6px', fontSize: 9.5 }}
+                                  >
+                                    {tag.name}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span style={{ color: 'var(--ink-4)', fontSize: 14 }}>—</span>
+                            )}
+                          </td>
+
+                          {/* Split */}
+                          <td
+                            style={{ padding: '11px 12px', textAlign: 'center' }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              onClick={() => {
+                                if (txn.processedOriginal) setEditingTxn(txn.processedOriginal)
+                                else if (txn.rawOriginal) setSelectedUid(txn.uid)
+                              }}
+                              className="btn ghost icon sm"
+                              title={txn.shares.length > 0 ? 'View split' : 'Add split'}
+                              style={{
+                                margin: '0 auto',
+                                opacity: txn.shares.length > 0 ? 1 : 0.3,
+                                color: txn.shares.length > 0 ? 'var(--accent)' : 'var(--ink-3)',
+                              }}
+                              disabled={isDeleted}
+                            >
+                              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                                call_split
+                              </span>
+                            </button>
+                          </td>
+
+                          {/* Amount */}
+                          <td
+                            style={{
+                              padding: '11px 12px',
+                              textAlign: 'right',
+                              fontSize: 13.5,
+                              fontWeight: 600,
+                              color: txnIncome ? 'var(--pos)' : 'var(--ink)',
+                              fontVariantNumeric: 'tabular-nums',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {txnIncome ? '+' : ''}
+                            {amtDisplay}
+                          </td>
+
+                          {/* Context menu */}
+                          <td
+                            style={{
+                              padding: '0 6px 0 0',
+                              textAlign: 'right',
+                              position: 'relative',
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setOpenMenuUid(hasMenu ? null : txn.uid)
+                              }}
+                              className="btn ghost icon sm"
+                            >
+                              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                                more_horiz
+                              </span>
+                            </button>
+
+                            {hasMenu && (
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  right: 6,
+                                  top: '100%',
+                                  zIndex: 30,
+                                  background: 'var(--surface)',
+                                  border: '1px solid var(--line)',
+                                  borderRadius: 'var(--radius)',
+                                  boxShadow: 'var(--shadow-pop)',
+                                  minWidth: 140,
+                                  padding: '4px 0',
+                                }}
+                              >
+                                {txn.kind === 'pending' && txn.rawOriginal && (
+                                  <button
+                                    onClick={() => {
+                                      setSelectedUid(txn.uid)
+                                      setEditingTxn(null)
+                                      setOpenMenuUid(null)
+                                    }}
+                                    style={{
+                                      display: 'flex',
+                                      width: '100%',
+                                      alignItems: 'center',
+                                      gap: 8,
+                                      padding: '7px 12px',
+                                      fontSize: 12.5,
+                                      color: 'var(--ink)',
+                                      background: 'none',
+                                      border: 'none',
+                                      cursor: 'pointer',
+                                      textAlign: 'left',
+                                    }}
+                                    onMouseEnter={(e) =>
+                                      ((e.currentTarget as HTMLElement).style.background =
+                                        'var(--surface-2)')
+                                    }
+                                    onMouseLeave={(e) =>
+                                      ((e.currentTarget as HTMLElement).style.background = 'none')
+                                    }
+                                  >
+                                    <span
+                                      className="material-symbols-outlined"
+                                      style={{ fontSize: 14 }}
+                                    >
+                                      receipt_long
+                                    </span>
+                                    Process
+                                  </button>
+                                )}
+                                {txn.kind === 'processed' && txn.processedOriginal && (
+                                  <button
+                                    onClick={() => {
+                                      setEditingTxn(txn.processedOriginal!)
+                                      setOpenMenuUid(null)
+                                    }}
+                                    style={{
+                                      display: 'flex',
+                                      width: '100%',
+                                      alignItems: 'center',
+                                      gap: 8,
+                                      padding: '7px 12px',
+                                      fontSize: 12.5,
+                                      color: 'var(--ink)',
+                                      background: 'none',
+                                      border: 'none',
+                                      cursor: 'pointer',
+                                      textAlign: 'left',
+                                    }}
+                                    onMouseEnter={(e) =>
+                                      ((e.currentTarget as HTMLElement).style.background =
+                                        'var(--surface-2)')
+                                    }
+                                    onMouseLeave={(e) =>
+                                      ((e.currentTarget as HTMLElement).style.background = 'none')
+                                    }
+                                  >
+                                    <span
+                                      className="material-symbols-outlined"
+                                      style={{ fontSize: 14 }}
+                                    >
+                                      edit
+                                    </span>
+                                    Edit
+                                  </button>
+                                )}
+                                {isDeleted ? (
+                                  <button
+                                    onClick={() => {
+                                      if (txn.rawId) restoreRawMutation.mutate(txn.rawId)
+                                      setOpenMenuUid(null)
+                                    }}
+                                    style={{
+                                      display: 'flex',
+                                      width: '100%',
+                                      alignItems: 'center',
+                                      gap: 8,
+                                      padding: '7px 12px',
+                                      fontSize: 12.5,
+                                      color: 'var(--accent)',
+                                      background: 'none',
+                                      border: 'none',
+                                      cursor: 'pointer',
+                                      textAlign: 'left',
+                                    }}
+                                    onMouseEnter={(e) =>
+                                      ((e.currentTarget as HTMLElement).style.background =
+                                        'var(--surface-2)')
+                                    }
+                                    onMouseLeave={(e) =>
+                                      ((e.currentTarget as HTMLElement).style.background = 'none')
+                                    }
+                                  >
+                                    <span
+                                      className="material-symbols-outlined"
+                                      style={{ fontSize: 14 }}
+                                    >
+                                      restore
+                                    </span>
+                                    Restore
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => {
+                                      if (txn.kind === 'pending' && txn.rawId)
+                                        deleteRawMutation.mutate(txn.rawId)
+                                      else if (txn.kind === 'processed' && txn.processedId)
+                                        deleteProcMutation.mutate(txn.processedId)
+                                      setOpenMenuUid(null)
+                                    }}
+                                    style={{
+                                      display: 'flex',
+                                      width: '100%',
+                                      alignItems: 'center',
+                                      gap: 8,
+                                      padding: '7px 12px',
+                                      fontSize: 12.5,
+                                      color: 'var(--neg)',
+                                      background: 'none',
+                                      border: 'none',
+                                      cursor: 'pointer',
+                                      textAlign: 'left',
+                                    }}
+                                    onMouseEnter={(e) =>
+                                      ((e.currentTarget as HTMLElement).style.background =
+                                        'var(--surface-2)')
+                                    }
+                                    onMouseLeave={(e) =>
+                                      ((e.currentTarget as HTMLElement).style.background = 'none')
+                                    }
+                                  >
+                                    <span
+                                      className="material-symbols-outlined"
+                                      style={{ fontSize: 14 }}
+                                    >
+                                      delete
+                                    </span>
+                                    Delete
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+
+              {/* Footer */}
+              <div
+                style={{
+                  padding: '8px 14px',
+                  borderTop: '1px solid var(--line)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  fontSize: 11.5,
+                  color: 'var(--ink-3)',
+                }}
+              >
+                <span>
+                  {filtered.filter((t) => t.kind !== 'deleted').length} of{' '}
+                  {allTxns.filter((t) => t.kind !== 'deleted').length} transactions
+                </span>
+                {deletedCount > 0 && (
+                  <button
+                    onClick={() => setShowDeleted((v) => !v)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: 11.5,
+                      color: showDeleted ? 'var(--ink-2)' : 'var(--ink-4)',
+                      padding: 0,
+                      textDecoration: 'underline',
+                      textDecorationStyle: 'dotted',
+                    }}
+                  >
+                    {showDeleted ? 'Hide' : 'Show'} {deletedCount} deleted
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* ProcessPanel */}
+            {showProcessPanel && selectedTxn?.rawOriginal && (
+              <div
+                className="shrink-0"
+                style={{
+                  width: 360,
+                  borderLeft: '1px solid var(--line)',
+                  overflowY: 'auto',
+                }}
+              >
+                <ProcessPanel
+                  key={selectedTxn.rawId}
+                  txn={selectedTxn.rawOriginal}
+                  categories={categories}
+                  onClose={() => setSelectedUid(null)}
+                  onProcessed={() => setSelectedUid(null)}
+                />
               </div>
             )}
-            <Button
-              variant="primary"
-              className="mt-auto w-full"
-              onClick={() => void handleBulkTag()}
-              loading={bulkTagging}
-              disabled={selectedBulkTagIds.size === 0 || tagsToApply.length === 0}
-            >
-              Apply to {selectedBulkTagIds.size > 0 ? selectedBulkTagIds.size : ''} selected
-            </Button>
+
+            {/* EditPanel */}
+            {showEditPanel && (
+              <div
+                className="shrink-0"
+                style={{
+                  width: 360,
+                  borderLeft: '1px solid var(--line)',
+                  overflowY: 'auto',
+                }}
+              >
+                <EditPanel
+                  key={editingTxn!.id}
+                  txn={editingTxn!}
+                  categories={categories}
+                  onClose={() => setEditingTxn(null)}
+                  onSaved={() => setEditingTxn(null)}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>
-    </div>
-  )
-}
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
-export function TransactionsPage() {
-  const now = new Date()
-  const [year, setYear] = useState(now.getFullYear())
-  const [month, setMonth] = useState(now.getMonth() + 1)
-  const [activeTab, setActiveTab] = useState<Tab>('raw')
-
-  return (
-    <div className="space-y-4">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="card-eyebrow">Transactions</p>
-          <h1
-            className="text-[22px] font-semibold"
-            style={{ color: 'var(--ink)', letterSpacing: '-0.02em' }}
-          >
-            All transactions
-          </h1>
-          <p className="mt-1 text-[13px]" style={{ color: 'var(--ink-3)' }}>
-            View and manage your raw and processed transactions.
-          </p>
-        </div>
-        <YearMonthSelector
-          year={year}
-          month={month}
-          onYearChange={setYear}
-          onMonthChange={setMonth}
-        />
-      </header>
-
-      <div className="seg">
-        {(['raw', 'processed'] as Tab[]).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={activeTab === tab ? 'on' : ''}
-            style={{ textTransform: 'capitalize' }}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      <div className="card card-flush overflow-hidden">
-        {activeTab === 'raw' ? (
-          <RawTab year={year} month={month} />
-        ) : (
-          <ProcessedTab year={year} month={month} />
-        )}
-      </div>
+      {showManualEntry && <ManualEntryDialog onClose={() => setShowManualEntry(false)} />}
     </div>
   )
 }

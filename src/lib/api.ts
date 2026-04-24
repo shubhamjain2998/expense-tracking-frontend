@@ -44,6 +44,9 @@ client.interceptors.response.use(
       window.location.href = '/login'
       return Promise.reject(err)
     }
+    if (!err.response) {
+      window.dispatchEvent(new CustomEvent('backend:offline'))
+    }
     const detail =
       err.response?.data?.detail ??
       (typeof err.response?.data === 'string' ? err.response.data : null) ??

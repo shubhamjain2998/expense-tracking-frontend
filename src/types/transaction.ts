@@ -99,6 +99,9 @@ export interface EditProcessedPayload {
   shares?: PersonShareIn[]
   notes?: string | null
   tag_ids?: string[]
+  amount?: number
+  txn_date?: string
+  description?: string
 }
 
 export interface CreateRawTransactionPayload {

@@ -1,6 +1,8 @@
-import { NavLink } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getDashboardSummary, getSplitLedger, getPendingManual } from '../../lib/api'
+import { useAuth } from '../../contexts/AuthContext'
 
 const now = new Date()
 const CY = now.getFullYear()
@@ -12,6 +14,15 @@ function fmt(n: number) {
   return `₹${Math.round(n)}`
 }
 
+function getInitials(email: string): string {
+  if (!email) return '?'
+  const local = email.split('@')[0]
+  const parts = local.split(/[._-]+/).filter(Boolean)
+  return parts.length >= 2
+    ? (parts[0][0] + parts[1][0]).toUpperCase()
+    : local.slice(0, 2).toUpperCase()
+}
+
 const NAV = [
   { to: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
   { to: '/transactions', icon: 'receipt_long', label: 'Transactions' },
@@ -21,6 +32,51 @@ const NAV = [
 ]
 
 export function Sidebar() {
+  const { email, logout } = useAuth()
+  const navigate = useNavigate()
+  const initials = getInitials(email)
+
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [displayName, setDisplayName] = useState(
+    () => localStorage.getItem('pf_display_name') || email.split('@')[0] || ''
+  )
+  const [editingName, setEditingName] = useState(false)
+  const [nameInput, setNameInput] = useState(displayName)
+
+  const popoverRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (!profileOpen) return
+    function onPointerDown(e: PointerEvent) {
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(e.target as Node) &&
+        triggerRef.current &&
+        !triggerRef.current.contains(e.target as Node)
+      ) {
+        setProfileOpen(false)
+        setEditingName(false)
+      }
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => document.removeEventListener('pointerdown', onPointerDown)
+  }, [profileOpen])
+
+  function saveName() {
+    const trimmed = nameInput.trim()
+    if (trimmed) {
+      localStorage.setItem('pf_display_name', trimmed)
+      setDisplayName(trimmed)
+    }
+    setEditingName(false)
+  }
+
+  function handleSignOut() {
+    logout()
+    navigate('/login', { replace: true })
+  }
+
   const summaryQ = useQuery({
     queryKey: ['dashboardSummary', CY, CM],
     queryFn: () => getDashboardSummary(CY, CM),
@@ -59,9 +115,31 @@ export function Sidebar() {
         flexShrink: 0,
       }}
     >
-      {/* Brand */}
-      <div style={{ padding: '16px 14px 14px', borderBottom: '1px solid var(--line)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      {/* Profile / Brand */}
+      <div style={{ position: 'relative', borderBottom: '1px solid var(--line)' }}>
+        <button
+          ref={triggerRef}
+          onClick={() => {
+            setProfileOpen((v) => !v)
+            setNameInput(displayName)
+            setEditingName(false)
+          }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '12px 14px',
+            width: '100%',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            textAlign: 'left',
+            transition: 'background .1s',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-2)')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+        >
+          {/* Avatar */}
           <span
             style={{
               width: 26,
@@ -73,12 +151,12 @@ export function Sidebar() {
               alignItems: 'center',
               justifyContent: 'center',
               fontWeight: 700,
-              fontSize: 13,
-              letterSpacing: '-0.03em',
+              fontSize: 11,
+              letterSpacing: '-0.02em',
               flexShrink: 0,
             }}
           >
-            L
+            {initials}
           </span>
           <span
             style={{
@@ -86,11 +164,215 @@ export function Sidebar() {
               fontSize: 14,
               color: 'var(--ink)',
               letterSpacing: '-0.01em',
+              flex: 1,
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
+              textOverflow: 'ellipsis',
             }}
           >
-            Personal Finance
+            {displayName || 'Personal Finance'}
           </span>
-        </div>
+          <span
+            className="material-symbols-outlined"
+            style={{ fontSize: 14, color: 'var(--ink-4)', flexShrink: 0 }}
+          >
+            unfold_more
+          </span>
+        </button>
+
+        {/* Profile popover */}
+        {profileOpen && (
+          <div
+            ref={popoverRef}
+            style={{
+              position: 'absolute',
+              top: 'calc(100% + 4px)',
+              left: 8,
+              right: 8,
+              zIndex: 200,
+              background: 'var(--bg)',
+              border: '1px solid var(--line)',
+              borderRadius: 'var(--radius)',
+              boxShadow:
+                '0 8px 24px color-mix(in oklch, var(--ink) 10%, transparent), 0 2px 6px color-mix(in oklch, var(--ink) 6%, transparent)',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Avatar + email header */}
+            <div
+              style={{
+                padding: '12px 12px 10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                borderBottom: '1px solid var(--line)',
+              }}
+            >
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  background: 'var(--ink)',
+                  color: 'var(--bg)',
+                  borderRadius: 8,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700,
+                  fontSize: 14,
+                  letterSpacing: '-0.02em',
+                  flexShrink: 0,
+                }}
+              >
+                {initials}
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <p
+                  style={{
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    color: 'var(--ink)',
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                    textOverflow: 'ellipsis',
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {displayName}
+                </p>
+                <p
+                  style={{
+                    fontSize: 10.5,
+                    color: 'var(--ink-3)',
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                    textOverflow: 'ellipsis',
+                    lineHeight: 1.3,
+                    marginTop: 1,
+                  }}
+                >
+                  {email}
+                </p>
+              </div>
+            </div>
+
+            {/* Display name */}
+            <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--line)' }}>
+              <p
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: '0.07em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-4)',
+                  marginBottom: 6,
+                }}
+              >
+                Display name
+              </p>
+              {editingName ? (
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <input
+                    autoFocus
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') saveName()
+                      if (e.key === 'Escape') setEditingName(false)
+                    }}
+                    className="input"
+                    style={{ fontSize: 12, height: 28, flex: 1 }}
+                  />
+                  <button
+                    onClick={saveName}
+                    className="btn ghost icon sm"
+                    style={{ color: 'var(--accent)', flexShrink: 0 }}
+                    aria-label="Save name"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
+                      check
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setEditingName(false)}
+                    className="btn ghost icon sm"
+                    style={{ flexShrink: 0 }}
+                    aria-label="Cancel"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
+                      close
+                    </span>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setNameInput(displayName)
+                    setEditingName(true)
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--line)',
+                    borderRadius: 'var(--radius)',
+                    padding: '5px 8px',
+                    cursor: 'pointer',
+                    gap: 6,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--ink)',
+                      overflow: 'hidden',
+                      whiteSpace: 'nowrap',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {displayName}
+                  </span>
+                  <span
+                    className="material-symbols-outlined"
+                    style={{ fontSize: 12, color: 'var(--ink-4)', flexShrink: 0 }}
+                  >
+                    edit
+                  </span>
+                </button>
+              )}
+            </div>
+
+            {/* Sign out */}
+            <div style={{ padding: '6px 6px' }}>
+              <button
+                onClick={handleSignOut}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 7,
+                  width: '100%',
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: 6,
+                  padding: '6px 8px',
+                  cursor: 'pointer',
+                  fontSize: 12.5,
+                  color: 'var(--ink-2)',
+                  transition: 'background .1s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-2)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                  logout
+                </span>
+                Sign out
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Nav */}
@@ -209,10 +491,10 @@ export function Sidebar() {
 
       <div style={{ flex: 1 }} />
 
-      {/* Workspace / user */}
+      {/* Account footer */}
       <div
         style={{
-          padding: '12px 14px',
+          padding: '10px 14px',
           borderTop: '1px solid var(--line)',
           display: 'flex',
           alignItems: 'center',
@@ -221,39 +503,33 @@ export function Sidebar() {
       >
         <div
           style={{
-            width: 26,
-            height: 26,
+            width: 24,
+            height: 24,
             borderRadius: '50%',
             background: 'var(--surface-3)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: 10,
+            fontSize: 9,
             fontWeight: 700,
             color: 'var(--ink-2)',
             flexShrink: 0,
           }}
         >
-          YO
+          {initials}
         </div>
-        <div style={{ overflow: 'hidden' }}>
-          <p
-            style={{
-              fontSize: 12,
-              fontWeight: 500,
-              color: 'var(--ink)',
-              lineHeight: 1.2,
-              overflow: 'hidden',
-              whiteSpace: 'nowrap',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            Your workspace
-          </p>
-          <p style={{ fontSize: 10, color: 'var(--ink-4)', lineHeight: 1.2, marginTop: 1 }}>
-            privacy-first · local
-          </p>
-        </div>
+        <p
+          style={{
+            fontSize: 11.5,
+            color: 'var(--ink-3)',
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
+            textOverflow: 'ellipsis',
+            flex: 1,
+          }}
+        >
+          {email}
+        </p>
       </div>
     </aside>
   )

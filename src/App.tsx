@@ -6,13 +6,13 @@ import { AuthProvider } from './contexts/AuthContext'
 import { Layout } from './components/layout/Layout'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { ToastContainer } from './components/ui/Toast'
+import { BackendStatus } from './components/ui/BackendStatus'
 import { ToastContext } from './hooks/useToastContext'
 import { ThemeContext } from './hooks/useThemeContext'
 import { useToast } from './hooks/useToast'
 import { useTheme } from './hooks/useTheme'
 import { DashboardPage } from './pages/DashboardPage'
 import { UploadPage } from './pages/UploadPage'
-import { ReviewPage } from './pages/ReviewPage'
 import { BudgetPage } from './pages/BudgetPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { TransactionsPage } from './pages/TransactionsPage'
@@ -43,7 +43,7 @@ function AppWithProviders() {
                 <Route element={<Layout />}>
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/upload" element={<UploadPage />} />
-                  <Route path="/review" element={<ReviewPage />} />
+                  <Route path="/review" element={<Navigate to="/transactions" replace />} />
                   <Route path="/budget" element={<BudgetPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="/transactions" element={<TransactionsPage />} />
@@ -53,6 +53,7 @@ function AppWithProviders() {
             </Routes>
           </BrowserRouter>
           <ToastContainer toasts={toasts} onDismiss={dismiss} />
+          <BackendStatus />
         </div>
       </ToastContext.Provider>
     </ThemeContext.Provider>

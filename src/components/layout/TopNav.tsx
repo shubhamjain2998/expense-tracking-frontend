@@ -1,13 +1,11 @@
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 
 import { useThemeContext } from '../../hooks/useThemeContext'
-import { useAuth } from '../../contexts/AuthContext'
 
 const PAGE_NAMES: Record<string, string> = {
   '/dashboard': 'Dashboard',
   '/transactions': 'Transactions',
   '/upload': 'Upload',
-  '/review': 'Review',
   '/budget': 'Budget',
   '/settings': 'Settings',
 }
@@ -15,15 +13,8 @@ const PAGE_NAMES: Record<string, string> = {
 export function TopNav() {
   const location = useLocation()
   const { isDark, toggleTheme } = useThemeContext()
-  const { logout } = useAuth()
-  const navigate = useNavigate()
 
   const pageName = PAGE_NAMES[location.pathname] ?? 'Page'
-
-  function handleLogout() {
-    logout()
-    navigate('/login', { replace: true })
-  }
 
   return (
     <header
@@ -70,16 +61,6 @@ export function TopNav() {
         >
           <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
             {isDark ? 'light_mode' : 'dark_mode'}
-          </span>
-        </button>
-        <button
-          onClick={handleLogout}
-          className="btn ghost icon"
-          aria-label="Sign out"
-          title="Sign out"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
-            logout
           </span>
         </button>
       </div>

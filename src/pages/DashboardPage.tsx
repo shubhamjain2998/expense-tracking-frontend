@@ -255,7 +255,7 @@ function DashboardHeader({
                   {' '}
                   ·{' '}
                   <Link
-                    to="/review"
+                    to="/transactions"
                     style={{ color: 'var(--accent)', fontWeight: 500, textDecoration: 'none' }}
                   >
                     {pendingCount} pending categorization
@@ -1377,7 +1377,7 @@ function NeedsReview({ pendingItems, isLoading }: NeedsReviewProps) {
           <p className="card-sub">{pendingItems.length} pending</p>
         </div>
         {pendingItems.length > 0 && (
-          <Link to="/review" className="btn sm" style={{ gap: 4 }}>
+          <Link to="/transactions" className="btn sm" style={{ gap: 4 }}>
             Review all
             <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
               arrow_forward
