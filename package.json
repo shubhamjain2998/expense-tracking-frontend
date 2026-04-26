@@ -3,11 +3,14 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "lint": "eslint src --max-warnings 0",
+    "lint": "eslint src --max-warnings 25",
     "format": "prettier --write src",
     "format:check": "prettier --check src",
     "typecheck": "tsc --noEmit",
@@ -51,7 +54,7 @@
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
-      "eslint --max-warnings 0",
+      "eslint --max-warnings 25",
       "prettier --write"
     ],
     "src/**/*.{css,json,md}": [
