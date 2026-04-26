@@ -1,5 +1,7 @@
+import { formatCurrency } from '../../lib/format'
 import type { Person } from '../../types/settings'
 import type { PersonShareIn } from '../../types/transaction'
+
 import { MultiSelect } from './MultiSelect'
 
 interface PersonShareBuilderProps {
@@ -10,13 +12,7 @@ interface PersonShareBuilderProps {
   onCreatePerson?: (name: string) => Promise<Person>
 }
 
-function formatCurrency(n: number) {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 2,
-  }).format(n)
-}
+const fmt = (n: number) => formatCurrency(n, { fractionDigits: 2 })
 
 function getEffectiveAmount(total: number, shares: PersonShareIn[]): number {
   let deducted = 0
@@ -130,8 +126,8 @@ export function PersonShareBuilder({
                   style={{ color: 'var(--ink-3)' }}
                 >
                   {share.share_type === 'percentage'
-                    ? formatCurrency(totalAmount * (share.share_value / 100))
-                    : formatCurrency(share.share_value)}
+                    ? fmt(totalAmount * (share.share_value / 100))
+                    : fmt(share.share_value)}
                 </span>
               </div>
             )
@@ -161,7 +157,7 @@ export function PersonShareBuilder({
             className="num text-[13px] font-semibold"
             style={{ color: 'var(--accent)', letterSpacing: '-0.005em' }}
           >
-            {formatCurrency(yourShare)}
+            {fmt(yourShare)}
           </span>
         </div>
       )}

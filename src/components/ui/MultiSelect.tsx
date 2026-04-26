@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 
+import { getInitials } from '../../lib/strings'
 import type { Person } from '../../types/settings'
 
 interface MultiSelectProps {
@@ -8,15 +9,6 @@ interface MultiSelectProps {
   onChange: (ids: string[]) => void
   onCreatePerson?: (name: string) => Promise<Person>
   label?: string
-}
-
-function getInitials(name: string) {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
 }
 
 export function MultiSelect({

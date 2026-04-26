@@ -8,10 +8,10 @@ export function useBackendHealth() {
   const [status, setStatus] = useState<'online' | 'offline' | 'recovered'>('online')
   const [retryIn, setRetryIn] = useState(0)
   const offlineRef = useRef(false)
-  const timerRef = useRef<ReturnType<typeof setTimeout>>()
-  const cdRef = useRef<ReturnType<typeof setInterval>>()
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const cdRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
   // Ref so the scheduled retry always calls the latest ping without a circular useCallback dep
-  const pingRef = useRef<() => Promise<void>>()
+  const pingRef = useRef<(() => Promise<void>) | undefined>(undefined)
 
   const startCountdown = useCallback(() => {
     clearInterval(cdRef.current)
