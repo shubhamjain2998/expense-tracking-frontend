@@ -1,19 +1,5 @@
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-
-const MONTH_FULL = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-]
+import { usePeriodMode } from '../../hooks/usePeriodMode'
+import { formatYearLabel, monthLongLabel } from '../../lib/period'
 
 interface YearMonthSelectorProps {
   year: number
@@ -49,6 +35,8 @@ export function YearMonthSelector({
   onYearChange,
   onMonthChange,
 }: YearMonthSelectorProps) {
+  const { mode } = usePeriodMode()
+
   return (
     <div className="flex items-center gap-2">
       <select
@@ -57,9 +45,9 @@ export function YearMonthSelector({
         aria-label="Select month"
         style={selectStyle}
       >
-        {MONTHS.map((_, i) => (
-          <option key={i + 1} value={i + 1}>
-            {MONTH_FULL[i]}
+        {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+          <option key={m} value={m}>
+            {monthLongLabel(m, mode)}
           </option>
         ))}
       </select>
@@ -72,7 +60,7 @@ export function YearMonthSelector({
       >
         {[year - 2, year - 1, year, year + 1].map((y) => (
           <option key={y} value={y}>
-            {y}
+            {formatYearLabel(y, mode)}
           </option>
         ))}
       </select>
