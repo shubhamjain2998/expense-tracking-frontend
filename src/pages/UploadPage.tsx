@@ -1,7 +1,10 @@
+import { useMutation } from '@tanstack/react-query'
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useMutation } from '@tanstack/react-query'
 
+import { Button } from '../components/ui/Button'
+import { Chip } from '../components/ui/Chip'
+import { useToastContext } from '../hooks/useToastContext'
 import {
   previewStatement,
   importStatement,
@@ -13,9 +16,6 @@ import {
 } from '../lib/api'
 import { getIgnoreRules, matchesAnyRule } from '../lib/ignoreRules'
 import type { ImportResponse, PreviewResponse, PreviewRow } from '../types/transaction'
-import { Button } from '../components/ui/Button'
-import { Chip } from '../components/ui/Chip'
-import { useToastContext } from '../hooks/useToastContext'
 
 type UploadMode = 'pdf' | 'paste' | 'manual'
 type FileStatus = 'previewing' | 'ready' | 'error' | 'importing' | 'done'
@@ -42,10 +42,10 @@ function rowSig(date: string, description: string, amount: string | number) {
   return `${date.slice(0, 10)}||${description}||${parseFloat(String(amount)).toFixed(2)}`
 }
 
-const TABS: { id: UploadMode; label: string }[] = [
-  { id: 'pdf', label: 'PDF' },
-  { id: 'paste', label: 'Paste' },
-  { id: 'manual', label: 'Manual' },
+const TABS: { id: UploadMode; label: string; icon: string }[] = [
+  { id: 'pdf', label: 'PDF statement', icon: 'picture_as_pdf' },
+  { id: 'paste', label: 'Paste text', icon: 'content_paste' },
+  { id: 'manual', label: 'Manual entry', icon: 'add' },
 ]
 
 // ─── FileCard ──────────────────────────────────────────────────────────────────
@@ -761,22 +761,44 @@ export function UploadPage() {
           Import transactions
         </h1>
         <p className="mt-1 text-[13px]" style={{ color: 'var(--ink-3)' }}>
-          Upload PDFs, paste copied bank text, or add a transaction manually.
+          PDFs are parsed in memory and never stored. Only extracted transaction data is saved.
         </p>
       </header>
 
       {/* Mode tabs — hide when paste preview is active */}
       {!(mode === 'paste' && preview) && (
-        <div className="seg">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => handleTabSwitch(tab.id)}
-              className={mode === tab.id ? 'on' : ''}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="flex gap-1.5">
+          {TABS.map((tab) => {
+            const isOn = mode === tab.id
+            return (
+              <button
+                key={tab.id}
+                onClick={() => handleTabSwitch(tab.id)}
+                className="flex items-center gap-1.5"
+                style={{
+                  height: 30,
+                  padding: '0 11px',
+                  border: isOn ? '1.5px solid var(--accent)' : '1px solid var(--line-strong)',
+                  borderRadius: 'var(--radius)',
+                  background: isOn ? 'var(--accent-soft)' : 'transparent',
+                  color: isOn ? 'var(--accent)' : 'var(--ink-3)',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  transition: 'all 0.12s ease',
+                }}
+              >
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontSize: 13, color: 'inherit' }}
+                >
+                  {tab.icon}
+                </span>
+                {tab.label}
+              </button>
+            )
+          })}
         </div>
       )}
 
@@ -793,18 +815,26 @@ export function UploadPage() {
               onDrop={handleDrop}
               className={`dropzone ${dragOver ? 'hot' : ''}`}
             >
-              <p
-                className="text-[14px] font-semibold"
-                style={{ color: 'var(--ink)', letterSpacing: '-0.005em' }}
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: 32, color: 'var(--ink-3)', display: 'block', marginBottom: 12 }}
               >
-                {uploads.length > 0 ? 'Drop more PDFs to add them' : 'Drop your statement here'}
+                upload
+              </span>
+              <p
+                className="text-[14.5px] font-semibold"
+                style={{ color: 'var(--ink)', letterSpacing: '-0.01em' }}
+              >
+                {uploads.length > 0 ? 'Drop more PDFs to add them' : 'Drop a PDF statement here'}
               </p>
               <p className="mt-1 text-[12.5px]" style={{ color: 'var(--ink-3)' }}>
-                Parsed in memory · no file stored. PDFs up to 10 MB. Multiple files supported.
+                {uploads.length > 0
+                  ? 'Multiple files supported · up to 10 MB each'
+                  : 'HDFC, ICICI, SBI, Axis, Kotak · or any statement with a transaction table'}
               </p>
               <div className="mt-4">
                 <Button variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()}>
-                  {uploads.length > 0 ? 'Add more files' : 'Select files'}
+                  {uploads.length > 0 ? 'Add more files' : 'Choose a file'}
                 </Button>
               </div>
               <input
@@ -816,6 +846,35 @@ export function UploadPage() {
                 className="hidden"
                 aria-label="Choose PDF files"
               />
+              <div
+                className="mt-5 flex flex-wrap items-center justify-center gap-4"
+                style={{ color: 'var(--ink-4)', fontSize: 11.5 }}
+              >
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined" style={{ fontSize: 12 }}>
+                    lock
+                  </span>
+                  Parsed in memory
+                </span>
+                <span className="flex items-center gap-1">
+                  <span
+                    className="material-symbols-outlined"
+                    style={{ fontSize: 12, color: 'var(--ink-4)' }}
+                  >
+                    close
+                  </span>
+                  Not stored
+                </span>
+                <span className="flex items-center gap-1">
+                  <span
+                    className="material-symbols-outlined"
+                    style={{ fontSize: 12, color: 'var(--ink-4)' }}
+                  >
+                    close
+                  </span>
+                  No bank connection
+                </span>
+              </div>
             </div>
             {fileError && (
               <p className="mt-2 text-[12px]" style={{ color: 'var(--neg)' }}>
