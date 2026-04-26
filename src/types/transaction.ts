@@ -1,11 +1,14 @@
 import type { Tag } from './settings'
 
+export type TransactionStatus = 'pending' | 'processed' | 'deleted'
+export type ShareType = 'percentage' | 'amount'
+
 export interface RawTransaction {
   id: string
   txn_date: string
   description: string
   amount: string
-  status: string
+  status: TransactionStatus
 }
 
 export interface PendingManualTransaction {
@@ -13,13 +16,13 @@ export interface PendingManualTransaction {
   txn_date: string
   description: string
   amount: string
-  status: string
+  status: TransactionStatus
 }
 
 export interface PersonShareOut {
   person_id: string
   person_name: string
-  share_type: string
+  share_type: ShareType
   share_value: string
   share_amount: string
   settled: boolean
@@ -27,7 +30,7 @@ export interface PersonShareOut {
 
 export interface PersonShareIn {
   person_id: string
-  share_type: 'percentage' | 'amount'
+  share_type: ShareType
   share_value: number
 }
 
@@ -68,7 +71,7 @@ export interface ImportedRow {
   txn_date: string
   description: string
   amount: string
-  status: string
+  status: TransactionStatus
 }
 
 export interface ImportResponse {
