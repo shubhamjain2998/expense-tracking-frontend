@@ -1,8 +1,9 @@
 import { Outlet, useLocation } from 'react-router-dom'
 
+import { QuickAddFAB } from '../ui/QuickAddFAB'
+
 import { Sidebar } from './Sidebar'
 import { TopNav } from './TopNav'
-import { QuickAddFAB } from '../ui/QuickAddFAB'
 
 export function Layout() {
   const location = useLocation()

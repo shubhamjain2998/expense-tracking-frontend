@@ -1,27 +1,11 @@
+import { useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { getDashboardSummary, getSplitLedger, getPendingManual } from '../../lib/api'
+
 import { useAuth } from '../../contexts/AuthContext'
-
-const now = new Date()
-const CY = now.getFullYear()
-const CM = now.getMonth() + 1
-
-function fmt(n: number) {
-  if (n >= 100000) return `₹${(n / 100000).toFixed(1)}L`
-  if (n >= 1000) return `₹${(n / 1000).toFixed(0)}k`
-  return `₹${Math.round(n)}`
-}
-
-function getInitials(email: string): string {
-  if (!email) return '?'
-  const local = email.split('@')[0]
-  const parts = local.split(/[._-]+/).filter(Boolean)
-  return parts.length >= 2
-    ? (parts[0][0] + parts[1][0]).toUpperCase()
-    : local.slice(0, 2).toUpperCase()
-}
+import { getDashboardSummary, getSplitLedger, getPendingManual } from '../../lib/api'
+import { formatCompact } from '../../lib/format'
+import { getInitials } from '../../lib/strings'
 
 const NAV = [
   { to: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
@@ -77,14 +61,21 @@ export function Sidebar() {
     navigate('/login', { replace: true })
   }
 
+  // Compute current calendar month inside the component so the value stays
+  // current across midnight / month boundaries instead of being captured at
+  // module load.
+  const today = new Date()
+  const currentYear = today.getFullYear()
+  const currentMonth = today.getMonth() + 1
+
   const summaryQ = useQuery({
-    queryKey: ['dashboardSummary', CY, CM],
-    queryFn: () => getDashboardSummary(CY, CM),
+    queryKey: ['dashboardSummary', currentYear, currentMonth],
+    queryFn: () => getDashboardSummary(currentYear, currentMonth),
     staleTime: 5 * 60_000,
   })
   const ledgerQ = useQuery({
-    queryKey: ['splitLedger', CY, CM, false],
-    queryFn: () => getSplitLedger(CY, CM, false),
+    queryKey: ['splitLedger', currentYear, currentMonth, false],
+    queryFn: () => getSplitLedger(currentYear, currentMonth, false),
     staleTime: 5 * 60_000,
   })
   const pendingQ = useQuery({
@@ -457,13 +448,18 @@ export function Sidebar() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
             {(
               [
-                { label: 'Spent', value: fmt(spent), color: 'var(--ink)', weight: 600 },
-                { label: 'Budget', value: fmt(totalBudget), color: 'var(--ink-2)', weight: 400 },
+                { label: 'Spent', value: formatCompact(spent), color: 'var(--ink)', weight: 600 },
+                {
+                  label: 'Budget',
+                  value: formatCompact(totalBudget),
+                  color: 'var(--ink-2)',
+                  weight: 400,
+                },
                 ...(owedToYou > 0
                   ? [
                       {
                         label: 'Owed to you',
-                        value: fmt(owedToYou),
+                        value: formatCompact(owedToYou),
                         color: 'var(--pos)',
                         weight: 600,
                       },
