@@ -1,6 +1,13 @@
-import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+
+import { Button } from '../components/ui/Button'
+import { PersonShareBuilder } from '../components/ui/PersonShareBuilder'
+import { SearchableSelect } from '../components/ui/SearchableSelect'
+import { SkeletonTable } from '../components/ui/Skeleton'
+import { usePeriodMode } from '../hooks/usePeriodMode'
+import { useToastContext } from '../hooks/useToastContext'
 import {
   getRawTransactions,
   deleteRawTransaction,
@@ -16,21 +23,18 @@ import {
   createPerson,
   processTransaction,
   getTags,
+  createTag,
   createRawTransaction,
 } from '../lib/api'
+import { formatYearLabel, getCurrentPeriod, loadPeriodMode, monthLongLabel } from '../lib/period'
+import type { Tag } from '../types/settings'
+import type { Category } from '../types/settings'
 import type {
   EditProcessedPayload,
   ProcessedTransactionItem,
   PersonShareIn,
   RawTransaction,
 } from '../types/transaction'
-import type { Category } from '../types/settings'
-import type { Tag } from '../types/settings'
-import { SearchableSelect } from '../components/ui/SearchableSelect'
-import { PersonShareBuilder } from '../components/ui/PersonShareBuilder'
-import { Button } from '../components/ui/Button'
-import { SkeletonTable } from '../components/ui/Skeleton'
-import { useToastContext } from '../hooks/useToastContext'
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -76,21 +80,6 @@ function categoryColor(categoryId: string): string {
   for (let i = 0; i < categoryId.length; i++) h = (h * 31 + categoryId.charCodeAt(i)) & 0xffffffff
   return CAT_PALETTE[Math.abs(h) % CAT_PALETTE.length]
 }
-
-const MONTH_NAMES = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-]
 
 // ─── Unified transaction model ──────────────────────────────────────────────────
 
@@ -283,6 +272,122 @@ function ManualEntryDialog({ onClose }: ManualEntryDialogProps) {
   )
 }
 
+// ─── NewTagChip ──────────────────────────────────────────────────────────────────
+// Inline "+ New tag" chip that expands to a text input on click.
+
+function NewTagChip({ onCreated }: { onCreated: (id: string) => void }) {
+  const [editing, setEditing] = useState(false)
+  const [value, setValue] = useState('')
+  const [busy, setBusy] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const qc = useQueryClient()
+  const toast = useToastContext()
+
+  useEffect(() => {
+    if (editing) inputRef.current?.focus()
+  }, [editing])
+
+  function cancel() {
+    setEditing(false)
+    setValue('')
+  }
+
+  async function handleCreate() {
+    const name = value.trim()
+    if (!name) {
+      cancel()
+      return
+    }
+    setBusy(true)
+    try {
+      const tag = await createTag(name)
+      void qc.invalidateQueries({ queryKey: ['tags'] })
+      onCreated(tag.id)
+      cancel()
+    } catch {
+      toast.error('Failed to create tag')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (editing) {
+    return (
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        <input
+          ref={inputRef}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              void handleCreate()
+            }
+            if (e.key === 'Escape') cancel()
+          }}
+          onBlur={() => {
+            if (!busy) cancel()
+          }}
+          disabled={busy}
+          placeholder="Tag name…"
+          style={{
+            height: 24,
+            fontSize: 12,
+            padding: '0 8px',
+            borderRadius: 'var(--radius)',
+            border: '1px solid var(--accent)',
+            background: 'var(--surface)',
+            color: 'var(--ink)',
+            outline: 'none',
+            width: 110,
+          }}
+        />
+        <button
+          type="button"
+          onMouseDown={(e) => {
+            e.preventDefault()
+            void handleCreate()
+          }}
+          disabled={busy}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 22,
+            height: 22,
+            borderRadius: 'var(--radius)',
+            background: 'var(--accent)',
+            border: 'none',
+            cursor: 'pointer',
+            flexShrink: 0,
+          }}
+        >
+          <span
+            className="material-symbols-outlined"
+            style={{ fontSize: 13, color: 'var(--surface)' }}
+          >
+            check
+          </span>
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      className="chip"
+      onClick={() => setEditing(true)}
+      style={{ cursor: 'pointer', gap: 3, color: 'var(--ink-3)' }}
+    >
+      <span className="material-symbols-outlined" style={{ fontSize: 12 }}>
+        add
+      </span>
+      New tag
+    </button>
+  )
+}
+
 // ─── Process panel ──────────────────────────────────────────────────────────────
 
 interface ProcessPanelProps {
@@ -296,6 +401,7 @@ function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessPanelPro
   const toast = useToastContext()
   const qc = useQueryClient()
   const [amount, setAmount] = useState(txn.amount)
+  const [txnDate, setTxnDate] = useState(txn.txn_date?.slice(0, 10) ?? '')
   const [categoryId, setCategoryId] = useState('')
   const [saveMapping, setSaveMapping] = useState(true)
   const [shares, setShares] = useState<PersonShareIn[]>([])
@@ -322,9 +428,15 @@ function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessPanelPro
     mutationFn: processTransaction,
     onSuccess: async (data) => {
       const parsedAmount = Number(amount)
-      if (!isNaN(parsedAmount) && parsedAmount !== 0 && parsedAmount !== Number(txn.amount)) {
+      const amountChanged =
+        !isNaN(parsedAmount) && parsedAmount !== 0 && parsedAmount !== Number(txn.amount)
+      const dateChanged = txnDate && txnDate !== txn.txn_date?.slice(0, 10)
+      if (amountChanged || dateChanged) {
         try {
-          await editProcessedTransaction(data.id, { amount: parsedAmount })
+          await editProcessedTransaction(data.id, {
+            ...(amountChanged ? { amount: parsedAmount } : {}),
+            ...(dateChanged ? { txn_date: txnDate } : {}),
+          })
         } catch {
           /* ignore */
         }
@@ -440,9 +552,13 @@ function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessPanelPro
             }}
             step="0.01"
           />
-          <p className="num mt-1 text-[11px]" style={{ color: 'var(--ink-4)' }}>
-            {txn.txn_date?.slice(0, 10)}
-          </p>
+          <input
+            type="date"
+            value={txnDate}
+            onChange={(e) => setTxnDate(e.target.value)}
+            className="input num mt-1"
+            style={{ fontSize: 11.5, height: 26, padding: '0 6px', width: 'auto' }}
+          />
         </div>
 
         <SearchableSelect
@@ -506,32 +622,27 @@ function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessPanelPro
 
         <div>
           <p className="eyebrow mb-1.5">Tags (optional)</p>
-          {(tagsQuery.data ?? []).length === 0 ? (
-            <p className="text-[11.5px]" style={{ color: 'var(--ink-3)' }}>
-              No tags yet. Create tags in Settings.
-            </p>
-          ) : (
-            <div className="flex flex-wrap gap-1.5">
-              {(tagsQuery.data ?? []).map((tag) => {
-                const active = selectedTagIds.includes(tag.id)
-                return (
-                  <button
-                    key={tag.id}
-                    type="button"
-                    onClick={() =>
-                      setSelectedTagIds((ids) =>
-                        active ? ids.filter((id) => id !== tag.id) : [...ids, tag.id]
-                      )
-                    }
-                    className={active ? 'chip accent' : 'chip'}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    {tag.name}
-                  </button>
-                )
-              })}
-            </div>
-          )}
+          <div className="flex flex-wrap gap-1.5">
+            {(tagsQuery.data ?? []).map((tag) => {
+              const active = selectedTagIds.includes(tag.id)
+              return (
+                <button
+                  key={tag.id}
+                  type="button"
+                  onClick={() =>
+                    setSelectedTagIds((ids) =>
+                      active ? ids.filter((id) => id !== tag.id) : [...ids, tag.id]
+                    )
+                  }
+                  className={active ? 'chip accent' : 'chip'}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {tag.name}
+                </button>
+              )
+            })}
+            <NewTagChip onCreated={(id) => setSelectedTagIds((ids) => [...ids, id])} />
+          </div>
         </div>
 
         <Button
@@ -805,32 +916,27 @@ function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps) {
 
         <div>
           <p className="eyebrow mb-1.5">Tags (optional)</p>
-          {(tagsQuery.data ?? []).length === 0 ? (
-            <p className="text-[11.5px]" style={{ color: 'var(--ink-3)' }}>
-              No tags yet. Create tags in Settings.
-            </p>
-          ) : (
-            <div className="flex flex-wrap gap-1.5">
-              {(tagsQuery.data ?? []).map((tag) => {
-                const active = selectedTagIds.includes(tag.id)
-                return (
-                  <button
-                    key={tag.id}
-                    type="button"
-                    onClick={() =>
-                      setSelectedTagIds((ids) =>
-                        active ? ids.filter((id) => id !== tag.id) : [...ids, tag.id]
-                      )
-                    }
-                    className={active ? 'chip accent' : 'chip'}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    {tag.name}
-                  </button>
-                )
-              })}
-            </div>
-          )}
+          <div className="flex flex-wrap gap-1.5">
+            {(tagsQuery.data ?? []).map((tag) => {
+              const active = selectedTagIds.includes(tag.id)
+              return (
+                <button
+                  key={tag.id}
+                  type="button"
+                  onClick={() =>
+                    setSelectedTagIds((ids) =>
+                      active ? ids.filter((id) => id !== tag.id) : [...ids, tag.id]
+                    )
+                  }
+                  className={active ? 'chip accent' : 'chip'}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {tag.name}
+                </button>
+              )
+            })}
+            <NewTagChip onCreated={(id) => setSelectedTagIds((ids) => [...ids, id])} />
+          </div>
         </div>
 
         <Button
@@ -849,11 +955,14 @@ function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps) {
 // ─── Page ───────────────────────────────────────────────────────────────────────
 
 type StatusFilter = 'all' | 'pending' | 'income' | 'processed' | 'split'
+type SortCol = 'date' | 'amount' | 'category'
+type SortDir = 'asc' | 'desc'
 
 export function TransactionsPage() {
-  const now = new Date()
-  const [year, setYear] = useState(now.getFullYear())
-  const [month, setMonth] = useState(now.getMonth() + 1)
+  const { mode } = usePeriodMode()
+  const initial = getCurrentPeriod(loadPeriodMode())
+  const [year, setYear] = useState(initial.year)
+  const [month, setMonth] = useState(initial.month)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
@@ -867,6 +976,8 @@ export function TransactionsPage() {
   const [openMenuUid, setOpenMenuUid] = useState<string | null>(null)
   const [checkedUids, setCheckedUids] = useState<Set<string>>(new Set())
   const [hoveredRowUid, setHoveredRowUid] = useState<string | null>(null)
+  const [sortCol, setSortCol] = useState<SortCol>('date')
+  const [sortDir, setSortDir] = useState<SortDir>('desc')
 
   const navigate = useNavigate()
   const toast = useToastContext()
@@ -874,13 +985,19 @@ export function TransactionsPage() {
 
   // ── Queries ──
   const rawQuery = useQuery({
-    queryKey: ['rawTransactions', year, month],
-    queryFn: () => getRawTransactions(year, month),
+    queryKey: ['rawTransactions', year, month, mode],
+    queryFn: () => getRawTransactions(year, month, mode),
   })
   const processedQuery = useQuery({
-    queryKey: ['processedTransactions', year, month, categoryFilter, tagFilter],
+    queryKey: ['processedTransactions', year, month, categoryFilter, tagFilter, mode],
     queryFn: () =>
-      getProcessedTransactions(year, month, categoryFilter || undefined, tagFilter || undefined),
+      getProcessedTransactions(
+        year,
+        month,
+        categoryFilter || undefined,
+        tagFilter || undefined,
+        mode
+      ),
   })
   const categoriesQuery = useQuery({ queryKey: ['categories'], queryFn: getCategories })
   const tagsQuery = useQuery({ queryKey: ['tags'], queryFn: getTags })
@@ -901,6 +1018,24 @@ export function TransactionsPage() {
     if (statusFilter === 'processed' && t.kind !== 'processed') return false
     if (statusFilter === 'split' && t.shares.length === 0) return false
     return true
+  })
+
+  // ── Sort ──
+  function toggleSort(col: SortCol) {
+    if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    else {
+      setSortCol(col)
+      setSortDir(col === 'amount' ? 'desc' : 'asc')
+    }
+  }
+
+  const sorted = [...filtered].sort((a, b) => {
+    let cmp = 0
+    if (sortCol === 'date') cmp = a.txn_date.localeCompare(b.txn_date)
+    else if (sortCol === 'amount')
+      cmp = Math.abs(Number(a.effectiveAmount)) - Math.abs(Number(b.effectiveAmount))
+    else if (sortCol === 'category') cmp = (a.category ?? '').localeCompare(b.category ?? '')
+    return sortDir === 'asc' ? cmp : -cmp
   })
 
   const pendingCount = allTxns.filter((t) => t.kind === 'pending').length
@@ -1191,7 +1326,7 @@ export function TransactionsPage() {
                 letterSpacing: '-0.01em',
               }}
             >
-              {MONTH_NAMES[month - 1]} {year}
+              {monthLongLabel(month, mode).slice(0, 3)} {formatYearLabel(year, mode)}
             </span>
             <button
               onClick={nextMonth}
@@ -1406,7 +1541,7 @@ export function TransactionsPage() {
           <span className="shrink-0 text-[11.5px]" style={{ color: 'var(--ink-4)' }}>
             Drop to categorize:
           </span>
-          {shortcutCats.map((cat, idx) => {
+          {categories.map((cat, idx) => {
             const color = categoryColor(cat.id)
             const isOver = dragOverCatId === cat.id
             return (
@@ -1451,25 +1586,22 @@ export function TransactionsPage() {
                   }}
                 />
                 <span>{cat.name}</span>
-                <span
-                  style={{
-                    marginLeft: 2,
-                    fontSize: 10,
-                    fontVariantNumeric: 'tabular-nums',
-                    color: 'var(--ink-4)',
-                    fontWeight: 600,
-                  }}
-                >
-                  {idx + 1}
-                </span>
+                {idx < 9 && (
+                  <span
+                    style={{
+                      marginLeft: 2,
+                      fontSize: 10,
+                      fontVariantNumeric: 'tabular-nums',
+                      color: 'var(--ink-4)',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {idx + 1}
+                  </span>
+                )}
               </div>
             )
           })}
-          {categories.length > 9 && (
-            <span className="text-[11px]" style={{ color: 'var(--ink-4)' }}>
-              +{categories.length - 9} more
-            </span>
-          )}
         </div>
       )}
 
@@ -1524,7 +1656,7 @@ export function TransactionsPage() {
       )}
 
       {/* ── Table card ── */}
-      <div className="card card-flush mt-4 overflow-hidden">
+      <div className="card card-flush mt-4" style={{ overflow: 'clip' }}>
         {isLoading ? (
           <SkeletonTable />
         ) : allTxns.filter((t) => t.kind !== 'deleted').length === 0 ? (
@@ -1576,9 +1708,17 @@ export function TransactionsPage() {
                       )}
                     </th>
                     <th style={{ padding: '8px 0 8px 4px' }} />
-                    {['Date', 'Merchant', 'Category', 'Tags'].map((h) => (
+                    {(
+                      [
+                        { label: 'Date', col: 'date' as SortCol },
+                        { label: 'Merchant', col: null },
+                        { label: 'Category', col: 'category' as SortCol },
+                        { label: 'Tags', col: null },
+                      ] as { label: string; col: SortCol | null }[]
+                    ).map(({ label, col }) => (
                       <th
-                        key={h}
+                        key={label}
+                        onClick={col ? () => toggleSort(col) : undefined}
                         style={{
                           padding: '8px 12px',
                           textAlign: 'left',
@@ -1586,10 +1726,21 @@ export function TransactionsPage() {
                           fontWeight: 600,
                           letterSpacing: '0.07em',
                           textTransform: 'uppercase',
-                          color: 'var(--ink-4)',
+                          color: col && sortCol === col ? 'var(--ink-2)' : 'var(--ink-4)',
+                          cursor: col ? 'pointer' : 'default',
+                          userSelect: 'none',
+                          whiteSpace: 'nowrap',
                         }}
                       >
-                        {h}
+                        {label}
+                        {col && sortCol === col && (
+                          <span
+                            className="material-symbols-outlined"
+                            style={{ fontSize: 12, marginLeft: 3, verticalAlign: 'middle' }}
+                          >
+                            {sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                          </span>
+                        )}
                       </th>
                     ))}
                     <th
@@ -1606,6 +1757,7 @@ export function TransactionsPage() {
                       Split
                     </th>
                     <th
+                      onClick={() => toggleSort('amount')}
                       style={{
                         padding: '8px 12px',
                         textAlign: 'right',
@@ -1613,17 +1765,28 @@ export function TransactionsPage() {
                         fontWeight: 600,
                         letterSpacing: '0.07em',
                         textTransform: 'uppercase',
-                        color: 'var(--ink-4)',
+                        color: sortCol === 'amount' ? 'var(--ink-2)' : 'var(--ink-4)',
                         fontVariantNumeric: 'tabular-nums',
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       Amount
+                      {sortCol === 'amount' && (
+                        <span
+                          className="material-symbols-outlined"
+                          style={{ fontSize: 12, marginLeft: 3, verticalAlign: 'middle' }}
+                        >
+                          {sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                        </span>
+                      )}
                     </th>
                     <th />
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.length === 0 ? (
+                  {sorted.length === 0 ? (
                     <tr>
                       <td
                         colSpan={9}
@@ -1638,7 +1801,7 @@ export function TransactionsPage() {
                       </td>
                     </tr>
                   ) : (
-                    filtered.map((txn) => {
+                    sorted.map((txn) => {
                       const isSelected = selectedUid === txn.uid
                       const catColor = txn.categoryId
                         ? categoryColor(txn.categoryId)
@@ -2148,6 +2311,10 @@ export function TransactionsPage() {
                 style={{
                   width: 360,
                   borderLeft: '1px solid var(--line)',
+                  position: 'sticky',
+                  top: 24,
+                  alignSelf: 'flex-start',
+                  maxHeight: 'calc(100vh - 80px)',
                   overflowY: 'auto',
                 }}
               >
@@ -2168,6 +2335,10 @@ export function TransactionsPage() {
                 style={{
                   width: 360,
                   borderLeft: '1px solid var(--line)',
+                  position: 'sticky',
+                  top: 24,
+                  alignSelf: 'flex-start',
+                  maxHeight: 'calc(100vh - 80px)',
                   overflowY: 'auto',
                 }}
               >
