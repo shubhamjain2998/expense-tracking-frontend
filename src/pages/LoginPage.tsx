@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 
-import { login as loginApi } from '../lib/api'
-import { useAuth } from '../contexts/AuthContext'
 import { Button } from '../components/ui/Button'
+import { useAuth } from '../contexts/AuthContext'
+import { login as loginApi } from '../lib/api'
 
 export function LoginPage() {
   const navigate = useNavigate()

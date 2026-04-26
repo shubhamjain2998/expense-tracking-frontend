@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 
-import { register as registerApi } from '../lib/api'
-import { useAuth } from '../contexts/AuthContext'
 import { Button } from '../components/ui/Button'
+import { useAuth } from '../contexts/AuthContext'
+import { register as registerApi } from '../lib/api'
 
 export function RegisterPage() {
   const navigate = useNavigate()
