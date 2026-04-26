@@ -1,4 +1,6 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+
+import { setUnauthorizedHandler } from '../lib/api/client'
 
 interface AuthContextValue {
   token: string | null
@@ -9,23 +11,39 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('access_token'))
-  const [email, setEmail] = useState<string>(() => localStorage.getItem('user_email') ?? '')
+const TOKEN_KEY = 'access_token'
+const EMAIL_KEY = 'user_email'
 
-  function login(t: string, userEmail: string) {
-    localStorage.setItem('access_token', t)
-    localStorage.setItem('user_email', userEmail)
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY))
+  const [email, setEmail] = useState<string>(() => localStorage.getItem(EMAIL_KEY) ?? '')
+
+  const login = useCallback((t: string, userEmail: string) => {
+    localStorage.setItem(TOKEN_KEY, t)
+    localStorage.setItem(EMAIL_KEY, userEmail)
     setToken(t)
     setEmail(userEmail)
-  }
+  }, [])
 
-  function logout() {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('user_email')
+  const logout = useCallback(() => {
+    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(EMAIL_KEY)
     setToken(null)
     setEmail('')
-  }
+  }, [])
+
+  // Wire the API client's 401 handler to React state. The router-level
+  // <ProtectedRoute /> reacts to the cleared token by redirecting — no need
+  // for window.location.href, which would full-reload and lose query cache.
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setToken(null)
+      setEmail('')
+    })
+    return () => {
+      setUnauthorizedHandler(() => {})
+    }
+  }, [])
 
   return (
     <AuthContext.Provider value={{ token, email, login, logout }}>{children}</AuthContext.Provider>
