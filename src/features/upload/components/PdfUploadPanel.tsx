@@ -1,0 +1,163 @@
+import { useRef, useState } from 'react'
+
+import { Button } from '@/components/ui/Button'
+
+import type { FileUpload } from '../types'
+
+import { FileCard } from './FileCard'
+
+interface PdfUploadPanelProps {
+  uploads: FileUpload[]
+  fileError: string
+  isImportingAll: boolean
+  readyUploads: FileUpload[]
+  totalReadyTxns: number
+  hasPreviewing: boolean
+  addPdfFiles: (files: File[]) => void
+  removeUpload: (id: string) => void
+  toggleExcludeInUpload: (uploadId: string, rowIndex: number) => void
+  importAllPdfs: () => void
+}
+
+export function PdfUploadPanel({
+  uploads,
+  fileError,
+  isImportingAll,
+  readyUploads,
+  totalReadyTxns,
+  hasPreviewing,
+  addPdfFiles,
+  removeUpload,
+  toggleExcludeInUpload,
+  importAllPdfs,
+}: PdfUploadPanelProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [dragOver, setDragOver] = useState(false)
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (e.target.files) addPdfFiles(Array.from(e.target.files))
+    e.target.value = ''
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault()
+    setDragOver(false)
+    addPdfFiles(Array.from(e.dataTransfer.files))
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="card">
+        <div
+          onDragOver={(e) => {
+            e.preventDefault()
+            setDragOver(true)
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={handleDrop}
+          className={`dropzone ${dragOver ? 'hot' : ''}`}
+        >
+          <span
+            className="material-symbols-outlined"
+            style={{ fontSize: 32, color: 'var(--ink-3)', display: 'block', marginBottom: 12 }}
+          >
+            upload
+          </span>
+          <p
+            className="text-[14.5px] font-semibold"
+            style={{ color: 'var(--ink)', letterSpacing: '-0.01em' }}
+          >
+            {uploads.length > 0 ? 'Drop more PDFs to add them' : 'Drop a PDF statement here'}
+          </p>
+          <p className="mt-1 text-[12.5px]" style={{ color: 'var(--ink-3)' }}>
+            {uploads.length > 0
+              ? 'Multiple files supported · up to 10 MB each'
+              : 'HDFC, ICICI, SBI, Axis, Kotak · or any statement with a transaction table'}
+          </p>
+          <div className="mt-4">
+            <Button variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()}>
+              {uploads.length > 0 ? 'Add more files' : 'Choose a file'}
+            </Button>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf"
+            multiple
+            onChange={handleFileChange}
+            className="hidden"
+            aria-label="Choose PDF files"
+          />
+          <div
+            className="mt-5 flex flex-wrap items-center justify-center gap-4"
+            style={{ color: 'var(--ink-4)', fontSize: 11.5 }}
+          >
+            <span className="flex items-center gap-1">
+              <span className="material-symbols-outlined" style={{ fontSize: 12 }}>
+                lock
+              </span>
+              Parsed in memory
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="material-symbols-outlined" style={{ fontSize: 12, color: 'var(--ink-4)' }}>
+                close
+              </span>
+              Not stored
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="material-symbols-outlined" style={{ fontSize: 12, color: 'var(--ink-4)' }}>
+                close
+              </span>
+              No bank connection
+            </span>
+          </div>
+        </div>
+        {fileError && (
+          <p className="mt-2 text-[12px]" style={{ color: 'var(--neg)' }}>
+            {fileError}
+          </p>
+        )}
+      </div>
+
+      {uploads.length > 0 && (
+        <>
+          {readyUploads.length > 0 && (
+            <div className="flex items-center justify-between">
+              <p className="text-[12.5px]" style={{ color: 'var(--ink-3)' }}>
+                {readyUploads.length} file{readyUploads.length > 1 ? 's' : ''} ready
+                {totalReadyTxns > 0 && (
+                  <>
+                    {' '}
+                    ·{' '}
+                    <span className="num font-medium" style={{ color: 'var(--ink)' }}>
+                      {totalReadyTxns}
+                    </span>{' '}
+                    transactions
+                  </>
+                )}
+              </p>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => void importAllPdfs()}
+                loading={isImportingAll}
+                disabled={hasPreviewing}
+              >
+                Import {totalReadyTxns > 0 ? totalReadyTxns : ''} transactions
+              </Button>
+            </div>
+          )}
+
+          {uploads.map((upload) => (
+            <FileCard
+              key={upload.id}
+              upload={upload}
+              onRemove={() => removeUpload(upload.id)}
+              onToggleExclude={(i) => toggleExcludeInUpload(upload.id, i)}
+            />
+          ))}
+        </>
+      )}
+    </div>
+  )
+}
