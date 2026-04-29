@@ -1,73 +1,85 @@
-# React + TypeScript + Vite
+# personal-finance
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A personal finance and expense tracking single-page application built with React and TypeScript. The app connects to a FastAPI backend, supports multiple users via JWT authentication, and is INR-aware throughout (currency formatting, budget thresholds, and reporting). Users can upload bank statements, review and categorise transactions, track budgets by category, and visualise spending trends on a dashboard.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+| Layer | Technology |
+|---|---|
+| UI | React 19, TypeScript |
+| Build | Vite 8 |
+| Routing | React Router 7 |
+| Data fetching | TanStack Query 5 |
+| Charts | Recharts |
+| Styling | Tailwind CSS 4 |
+| HTTP | Axios |
 
-## React Compiler
+## Getting started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+**Prerequisites:** Node 22+ (`.nvmrc` is provided — use `nvm use` to switch automatically).
 
-## Expanding the ESLint configuration
+```bash
+# Install dependencies
+npm install
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+# Start the dev server (http://localhost:5173)
+npm run dev
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+# Production build
+npm run build
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+# Preview the production build locally
+npm run preview
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Lint
+npm run lint
+
+# Type-check without emitting
+npm run typecheck
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Environment
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Copy `.env.example` to `.env.local` and adjust as needed:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Variable | Default | Purpose |
+|---|---|---|
+| `VITE_API_URL` | `http://localhost:8000` | Base URL of the FastAPI backend |
+
+The variable is read once in `src/lib/config.ts` and re-exported as typed constants (`API_URL`, `IS_DEV`, `IS_PROD`). Import from there — do not read `import.meta.env` directly in feature code.
+
+## Architecture
+
 ```
+src/
+├── features/          # Feature modules (dashboard, upload, review, budget, settings, transactions)
+├── lib/
+│   ├── api/           # Axios client + per-resource API functions
+│   ├── config.ts      # Runtime env config (single source of truth)
+│   ├── format.ts      # INR/date/number formatters
+│   ├── strings.ts     # String utilities
+│   └── queryKeys.ts   # TanStack Query key factories
+├── hooks/             # Shared React hooks
+├── components/        # Shared UI components
+├── types/             # Shared TypeScript types
+├── contexts/          # React contexts
+└── pages/             # Route-level page components
+```
+
+Path alias `@/*` maps to `src/*` — use it for all cross-directory imports.
+
+## Conventions
+
+Commits follow [Conventional Commits](https://www.conventionalcommits.org/). Scopes are enforced by commitlint:
+
+`dashboard` · `upload` · `review` · `budget` · `transactions` · `settings` · `api` · `types` · `components` · `hooks` · `layout` · `config` · `deps` · `docs`
+
+Pre-commit hook runs lint-staged (ESLint + Prettier) over staged `src/` files.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Security
+
+See [SECURITY.md](SECURITY.md).
