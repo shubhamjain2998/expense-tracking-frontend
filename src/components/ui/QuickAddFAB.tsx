@@ -3,6 +3,7 @@ import { useState } from 'react'
 
 import { useToastContext } from '../../hooks/useToastContext'
 import { createRawTransaction } from '../../lib/api'
+import { qk } from '../../lib/queryKeys'
 
 import { Button } from './Button'
 
@@ -25,8 +26,7 @@ export function QuickAddFAB() {
         amount: parseFloat(amount),
       }),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['rawTransactions'] })
-      void qc.invalidateQueries({ queryKey: ['pendingManual'] })
+      void qc.invalidateQueries({ queryKey: qk.transactions.all })
       toast.success('Transaction added — go to Review to categorise')
       setDesc('')
       setAmount('')

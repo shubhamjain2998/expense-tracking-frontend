@@ -1,0 +1,150 @@
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  LabelList,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
+
+import { Skeleton } from '@/components/ui/Skeleton'
+import { formatCompact, formatCurrency } from '@/lib/format'
+
+import { PIE_COLORS, TOOLTIP_STYLE } from '../lib/chartTheme'
+
+interface SixMonthTrendProps {
+  stackedTrendData: Record<string, number | string>[]
+  stackCategories: string[]
+  trendMode: 'stacked' | 'total'
+  onTrendModeChange: (mode: 'stacked' | 'total') => void
+  isLoading: boolean
+  isDark: boolean
+}
+
+export function SixMonthTrend({
+  stackedTrendData,
+  stackCategories,
+  trendMode,
+  onTrendModeChange,
+  isLoading,
+  isDark,
+}: SixMonthTrendProps) {
+  const gridStroke = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
+  const tickColor = isDark ? '#9A9A9A' : '#6A6A6B'
+
+  return (
+    <section className="card">
+      <div className="card-head">
+        <div>
+          <p className="card-title">6-month trend</p>
+          <p className="card-sub">
+            Monthly spend by category · each stack shows where the money went
+          </p>
+        </div>
+        <div className="seg">
+          <button
+            className={trendMode === 'stacked' ? 'on' : ''}
+            onClick={() => onTrendModeChange('stacked')}
+          >
+            Stacked
+          </button>
+          <button
+            className={trendMode === 'total' ? 'on' : ''}
+            onClick={() => onTrendModeChange('total')}
+          >
+            Total
+          </button>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <Skeleton className="h-56 w-full" />
+      ) : (
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart
+            data={stackedTrendData}
+            barSize={38}
+            margin={{ top: 16, right: 8, left: 8, bottom: 0 }}
+          >
+            <CartesianGrid vertical={false} stroke={gridStroke} strokeDasharray="4 4" />
+            <XAxis
+              dataKey="month"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: 11, fill: tickColor }}
+            />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: 10, fill: tickColor }}
+              tickFormatter={formatCompact}
+              width={50}
+            />
+            <Tooltip
+              cursor={false}
+              contentStyle={TOOLTIP_STYLE}
+              formatter={(v) => (v ? formatCurrency(Number(v)) : '')}
+            />
+
+            {trendMode === 'stacked' ? (
+              stackCategories.map((cat, i) => (
+                <Bar
+                  key={cat}
+                  dataKey={cat}
+                  stackId="a"
+                  fill={PIE_COLORS[i % PIE_COLORS.length]}
+                  // Only the topmost bar in the stack gets rounded corners
+                  radius={i === stackCategories.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                />
+              ))
+            ) : (
+              <Bar
+                dataKey="_total"
+                fill={isDark ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.7)'}
+                radius={[3, 3, 0, 0]}
+              >
+                <LabelList
+                  dataKey="_total"
+                  position="top"
+                  formatter={(v: unknown) => formatCompact(Number(v))}
+                  style={{ fontSize: 10, fill: tickColor, fontWeight: 600 }}
+                />
+              </Bar>
+            )}
+          </BarChart>
+        </ResponsiveContainer>
+      )}
+
+      {/* Category legend — only relevant in stacked mode */}
+      {trendMode === 'stacked' && stackCategories.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 14px', marginTop: 12 }}>
+          {stackCategories.map((cat, i) => (
+            <span
+              key={cat}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                fontSize: 11,
+                color: tickColor,
+              }}
+            >
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 2,
+                  background: PIE_COLORS[i % PIE_COLORS.length],
+                  flexShrink: 0,
+                }}
+              />
+              {cat}
+            </span>
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}

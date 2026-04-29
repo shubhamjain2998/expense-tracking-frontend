@@ -1,0 +1,54 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+
+import { useToastContext } from '@/hooks/useToastContext'
+import {
+  deleteProcessedTransaction,
+  editProcessedTransaction,
+  processTransaction,
+} from '@/lib/api/transactions'
+import type { PeriodMode } from '@/lib/period'
+import { qk } from '@/lib/queryKeys'
+
+export function useProcessedMutations(year: number, month: number, mode: PeriodMode) {
+  const qc = useQueryClient()
+  const toast = useToastContext()
+
+  const deleteProcMutation = useMutation({
+    mutationFn: deleteProcessedTransaction,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qk.transactions.processed(year, month) })
+      void qc.invalidateQueries({ queryKey: qk.transactions.raw(year, month, mode) })
+      toast.success('Transaction deleted')
+    },
+    onError: () => toast.error('Failed to delete'),
+  })
+
+  const quickCategorizeMutation = useMutation({
+    mutationFn: ({ rawId, categoryId }: { rawId: string; categoryId: string }) =>
+      processTransaction({
+        raw_txn_id: rawId,
+        category_id: categoryId,
+        save_mapping: true,
+        shares: [],
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qk.transactions.raw(year, month, mode) })
+      void qc.invalidateQueries({ queryKey: qk.transactions.processed(year, month) })
+      void qc.invalidateQueries({ queryKey: qk.transactions.pendingManual() })
+      toast.success('Categorized')
+    },
+    onError: (err: { detail: string }) => toast.error(err.detail ?? 'Failed to categorize'),
+  })
+
+  const changeCategoryMutation = useMutation({
+    mutationFn: ({ procId, categoryId }: { procId: string; categoryId: string }) =>
+      editProcessedTransaction(procId, { category_id: categoryId }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qk.transactions.processed(year, month) })
+      toast.success('Category updated')
+    },
+    onError: () => toast.error('Failed to update category'),
+  })
+
+  return { deleteProcMutation, quickCategorizeMutation, changeCategoryMutation }
+}
