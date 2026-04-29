@@ -9,6 +9,7 @@ export default {
         'upload',
         'review',
         'budget',
+        'transactions',
         'settings',
         'api',
         'types',
