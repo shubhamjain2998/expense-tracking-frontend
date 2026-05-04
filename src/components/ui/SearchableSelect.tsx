@@ -57,10 +57,7 @@ export function SearchableSelect({
 
   useEffect(() => {
     if (isNewValue && !onCreateOption) {
-      setCreateChecked(true)
       onChange(trimmed)
-    } else if (!isNewValue) {
-      setCreateChecked(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trimmed, isNewValue])
@@ -157,9 +154,18 @@ export function SearchableSelect({
           value={query}
           placeholder={placeholder}
           onChange={(e) => {
-            setQuery(e.target.value)
+            const newQuery = e.target.value
+            setQuery(newQuery)
             setOpen(true)
             setHighlightIndex(0)
+            if (allowCreate) {
+              const newTrimmed = newQuery.trim()
+              const newIsNew =
+                newTrimmed !== '' &&
+                !normalised.some((o) => o.label.toLowerCase() === newTrimmed.toLowerCase())
+              if (newIsNew && !onCreateOption) setCreateChecked(true)
+              else if (!newIsNew) setCreateChecked(false)
+            }
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}

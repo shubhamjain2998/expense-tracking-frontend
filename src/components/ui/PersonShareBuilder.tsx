@@ -1,4 +1,5 @@
 import { formatCurrency } from '../../lib/format'
+import { getEffectiveAmount } from '../../lib/shareMath'
 import type { Person } from '../../types/settings'
 import type { PersonShareIn } from '../../types/transaction'
 
@@ -14,17 +15,6 @@ interface PersonShareBuilderProps {
 
 const fmt = (n: number) => formatCurrency(n, { fractionDigits: 2 })
 
-function getEffectiveAmount(total: number, shares: PersonShareIn[]): number {
-  let deducted = 0
-  for (const s of shares) {
-    if (s.share_type === 'percentage') {
-      deducted += total * (s.share_value / 100)
-    } else {
-      deducted += s.share_value
-    }
-  }
-  return total - deducted
-}
 
 export function PersonShareBuilder({
   persons,
