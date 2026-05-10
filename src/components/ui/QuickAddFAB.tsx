@@ -1,15 +1,10 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
-import { useToastContext } from '../../hooks/useToastContext'
-import { createRawTransaction } from '../../lib/api'
-import { qk } from '../../lib/queryKeys'
+import { useQuickAdd } from '../../hooks/useQuickAdd'
 
 import { Button } from './Button'
 
 export function QuickAddFAB() {
-  const toast = useToastContext()
-  const qc = useQueryClient()
   const todayStr = () => new Date().toISOString().slice(0, 10)
 
   const [open, setOpen] = useState(false)
@@ -18,22 +13,13 @@ export function QuickAddFAB() {
   const [amount, setAmount] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const mutation = useMutation({
-    mutationFn: () =>
-      createRawTransaction({
-        txn_date: `${date}T00:00:00`,
-        description: desc.trim(),
-        amount: parseFloat(amount),
-      }),
+  const mutation = useQuickAdd({
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.transactions.all })
-      toast.success('Transaction added — go to Review to categorise')
       setDesc('')
       setAmount('')
       setDate(todayStr)
       setErrors({})
     },
-    onError: (err: { detail: string }) => toast.error(err.detail),
   })
 
   function handleClose() {
@@ -52,7 +38,8 @@ export function QuickAddFAB() {
     const amt = parseFloat(amount)
     if (!amount || isNaN(amt) || amt <= 0) errs.amount = 'Enter a valid amount'
     setErrors(errs)
-    if (!Object.keys(errs).length) mutation.mutate()
+    if (!Object.keys(errs).length)
+      mutation.mutate({ txn_date: `${date}T00:00:00`, description: desc.trim(), amount: amt })
   }
 
   return (

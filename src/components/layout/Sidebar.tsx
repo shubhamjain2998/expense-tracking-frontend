@@ -1,9 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../../contexts/AuthContext'
-import { getDashboardSummary, getSplitLedger, getPendingManual } from '../../lib/api'
+import { useSidebarStats } from '../../hooks/useSidebarStats'
 import { formatCompact } from '../../lib/format'
 import { getInitials } from '../../lib/strings'
 
@@ -61,34 +60,7 @@ export function Sidebar() {
     navigate('/login', { replace: true })
   }
 
-  // Compute current calendar month inside the component so the value stays
-  // current across midnight / month boundaries instead of being captured at
-  // module load.
-  const today = new Date()
-  const currentYear = today.getFullYear()
-  const currentMonth = today.getMonth() + 1
-
-  const summaryQ = useQuery({
-    queryKey: ['dashboardSummary', currentYear, currentMonth],
-    queryFn: () => getDashboardSummary(currentYear, currentMonth),
-    staleTime: 5 * 60_000,
-  })
-  const ledgerQ = useQuery({
-    queryKey: ['splitLedger', currentYear, currentMonth, false],
-    queryFn: () => getSplitLedger(currentYear, currentMonth, false),
-    staleTime: 5 * 60_000,
-  })
-  const pendingQ = useQuery({
-    queryKey: ['pendingManual'],
-    queryFn: getPendingManual,
-    staleTime: 60_000,
-  })
-
-  const rows = summaryQ.data ?? []
-  const spent = rows.filter((r) => Number(r.actual) > 0).reduce((s, r) => s + Number(r.actual), 0)
-  const totalBudget = rows.reduce((s, r) => s + Number(r.allocated_monthly), 0)
-  const owedToYou = (ledgerQ.data ?? []).reduce((s, r) => s + Number(r.total_split_amount), 0)
-  const pendingCount = (pendingQ.data ?? []).length
+  const { spent, totalBudget, owedToYou, pendingCount } = useSidebarStats()
 
   return (
     <aside

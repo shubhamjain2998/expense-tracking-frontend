@@ -52,5 +52,21 @@ export default tseslint.config(
       eqeqeq: ['error', 'always', { null: 'ignore' }],
     },
   },
+  // Enforce that useQuery/useMutation/useQueries are only called inside domain hooks.
+  // Files under src/features/**/hooks/ and src/hooks/ are exempt — that's where hooks live.
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/features/**', 'src/hooks/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'warn',
+        {
+          selector: 'CallExpression[callee.name=/^(useQuery|useMutation|useQueries)$/]',
+          message:
+            'Wrap useQuery/useMutation/useQueries in a domain hook under src/features/*/hooks/ or src/hooks/.',
+        },
+      ],
+    },
+  },
   prettier
 )
