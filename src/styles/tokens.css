@@ -1,0 +1,176 @@
+/* ─── Personal Finance design tokens (light / paper) ──────────────────────── */
+:root {
+  /* Personal Finance core neutrals */
+  --bg: #fafaf9;
+  --surface: #ffffff;
+  --surface-2: #f4f4f2;
+  --surface-3: #ededea;
+  --line: #e6e5e1;
+  --line-strong: #d4d3ce;
+  --ink: #0b0b0c;
+  --ink-2: #3c3c3d;
+  --ink-3: #6a6a6b;
+  --ink-4: #9a9a9a;
+
+  /* Personal Finance accents (OKLCH) */
+  --accent: oklch(0.55 0.14 255);
+  --accent-soft: oklch(0.94 0.03 255);
+  --pos: oklch(0.58 0.12 155);
+  --pos-soft: oklch(0.94 0.04 155);
+  --neg: oklch(0.56 0.16 28);
+  --neg-soft: oklch(0.95 0.03 28);
+  --warn: oklch(0.72 0.13 75);
+  --warn-soft: oklch(0.95 0.04 75);
+
+  /* Category palette */
+  --cat-1: oklch(0.62 0.1 250);
+  --cat-2: oklch(0.65 0.1 155);
+  --cat-3: oklch(0.68 0.1 75);
+  --cat-4: oklch(0.63 0.1 25);
+  --cat-5: oklch(0.62 0.1 310);
+  --cat-6: oklch(0.65 0.1 200);
+  --cat-7: oklch(0.6 0.1 350);
+  --cat-8: oklch(0.65 0.08 100);
+
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 10px;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-pop: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.08);
+
+  --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+
+  /* ── Map legacy --app-* token names to Personal Finance palette ───────────
+     This lets every existing Tailwind utility (bg-surface, text-on-surface,
+     text-primary, etc.) inherit the new aesthetic without code changes. */
+  --app-background: var(--bg);
+  --app-on-background: var(--ink);
+  --app-surface: var(--surface);
+  --app-surface-dim: var(--surface-3);
+  --app-surface-bright: var(--surface);
+  --app-surface-container-lowest: var(--surface);
+  --app-surface-container-low: var(--surface-2);
+  --app-surface-container: var(--surface-2);
+  --app-surface-container-high: var(--surface-3);
+  --app-surface-container-highest: var(--surface-3);
+  --app-on-surface: var(--ink);
+  --app-on-surface-variant: var(--ink-3);
+  --app-outline: var(--ink-4);
+  --app-outline-variant: var(--line);
+  --app-primary: var(--accent);
+  --app-on-primary: var(--surface);
+  --app-primary-container: var(--ink);
+  --app-on-primary-container: var(--surface);
+  --app-primary-fixed: var(--accent-soft);
+  --app-primary-fixed-dim: var(--accent-soft);
+  --app-on-primary-fixed: var(--accent);
+  --app-on-primary-fixed-variant: var(--ink);
+  --app-secondary: var(--ink-2);
+  --app-secondary-container: var(--surface-2);
+  --app-secondary-fixed: var(--surface-2);
+  --app-secondary-fixed-dim: var(--surface-3);
+  --app-on-secondary: var(--surface);
+  --app-on-secondary-container: var(--ink-2);
+  --app-on-secondary-fixed: var(--ink);
+  --app-on-secondary-fixed-variant: var(--ink-2);
+  --app-tertiary: var(--ink);
+  --app-tertiary-container: var(--warn-soft);
+  --app-tertiary-fixed: var(--warn-soft);
+  --app-tertiary-fixed-dim: var(--warn-soft);
+  --app-on-tertiary: var(--surface);
+  --app-on-tertiary-container: var(--warn);
+  --app-on-tertiary-fixed: var(--ink);
+  --app-on-tertiary-fixed-variant: var(--warn);
+  --app-error: var(--neg);
+  --app-on-error: var(--surface);
+  --app-error-container: var(--neg-soft);
+  --app-on-error-container: var(--neg);
+  --app-inverse-surface: var(--ink);
+  --app-inverse-on-surface: var(--bg);
+  --app-inverse-primary: var(--accent);
+  --app-surface-tint: var(--accent);
+}
+
+/* ─── Personal Finance design tokens (dark) ───────────────────────────────── */
+html.dark {
+  --bg: #0b0b0c;
+  --surface: #141416;
+  --surface-2: #1b1b1e;
+  --surface-3: #232327;
+  --line: #26262a;
+  --line-strong: #32323a;
+  --ink: #f5f5f4;
+  --ink-2: #d4d4d2;
+  --ink-3: #9a9a9a;
+  --ink-4: #6a6a6b;
+
+  --accent: oklch(0.72 0.14 255);
+  --accent-soft: oklch(0.3 0.08 255);
+  --pos: oklch(0.72 0.14 155);
+  --pos-soft: oklch(0.28 0.06 155);
+  --neg: oklch(0.68 0.17 28);
+  --neg-soft: oklch(0.3 0.08 28);
+  --warn: oklch(0.78 0.14 75);
+  --warn-soft: oklch(0.3 0.08 75);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-pop: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 28px rgba(0, 0, 0, 0.5);
+}
+
+/* ─── Tailwind v4: map utilities to CSS vars ──────────────────────── */
+@theme inline {
+  --color-background: var(--app-background);
+  --color-on-background: var(--app-on-background);
+  --color-surface: var(--app-surface);
+  --color-surface-dim: var(--app-surface-dim);
+  --color-surface-bright: var(--app-surface-bright);
+  --color-surface-container-lowest: var(--app-surface-container-lowest);
+  --color-surface-container-low: var(--app-surface-container-low);
+  --color-surface-container: var(--app-surface-container);
+  --color-surface-container-high: var(--app-surface-container-high);
+  --color-surface-container-highest: var(--app-surface-container-highest);
+  --color-on-surface: var(--app-on-surface);
+  --color-on-surface-variant: var(--app-on-surface-variant);
+  --color-outline: var(--app-outline);
+  --color-outline-variant: var(--app-outline-variant);
+  --color-primary: var(--app-primary);
+  --color-on-primary: var(--app-on-primary);
+  --color-primary-container: var(--app-primary-container);
+  --color-on-primary-container: var(--app-on-primary-container);
+  --color-primary-fixed: var(--app-primary-fixed);
+  --color-primary-fixed-dim: var(--app-primary-fixed-dim);
+  --color-on-primary-fixed: var(--app-on-primary-fixed);
+  --color-on-primary-fixed-variant: var(--app-on-primary-fixed-variant);
+  --color-secondary: var(--app-secondary);
+  --color-secondary-container: var(--app-secondary-container);
+  --color-secondary-fixed: var(--app-secondary-fixed);
+  --color-secondary-fixed-dim: var(--app-secondary-fixed-dim);
+  --color-on-secondary: var(--app-on-secondary);
+  --color-on-secondary-container: var(--app-on-secondary-container);
+  --color-on-secondary-fixed: var(--app-on-secondary-fixed);
+  --color-on-secondary-fixed-variant: var(--app-on-secondary-fixed-variant);
+  --color-tertiary: var(--app-tertiary);
+  --color-tertiary-container: var(--app-tertiary-container);
+  --color-tertiary-fixed: var(--app-tertiary-fixed);
+  --color-tertiary-fixed-dim: var(--app-tertiary-fixed-dim);
+  --color-on-tertiary: var(--app-on-tertiary);
+  --color-on-tertiary-container: var(--app-on-tertiary-container);
+  --color-on-tertiary-fixed: var(--app-on-tertiary-fixed);
+  --color-on-tertiary-fixed-variant: var(--app-on-tertiary-fixed-variant);
+  --color-error: var(--app-error);
+  --color-on-error: var(--app-on-error);
+  --color-error-container: var(--app-error-container);
+  --color-on-error-container: var(--app-on-error-container);
+  --color-inverse-surface: var(--app-inverse-surface);
+  --color-inverse-on-surface: var(--app-inverse-on-surface);
+  --color-inverse-primary: var(--app-inverse-primary);
+  --color-surface-tint: var(--app-surface-tint);
+
+  /* ─── Animation utilities ─────────────────────────────────────────── */
+  --animate-fade-up: fade-up 0.18s ease both;
+  --animate-fade-down: fade-down 0.15s ease both;
+  --animate-scale-in: pop 0.18s ease both;
+  --animate-toast-in: toast-in 0.18s ease both;
+  --animate-dialog-in: pop 0.18s ease both;
+}
