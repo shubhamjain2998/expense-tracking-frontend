@@ -5,7 +5,34 @@
 [![License: MIT](https://img.shields.io/github/license/shubhamjain2998/expense-tracking-frontend)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%E2%89%A522-339933?logo=node.js&logoColor=white)](.nvmrc)
 
+<div align="center">
+  <img src=".github/assets/chart-line.gif" width="400" alt="spending trends" />
+  <p><em>Upload statements &rarr; categorise &rarr; visualise. Know where every rupee goes.</em></p>
+</div>
+
 A personal finance and expense tracking single-page application built with React and TypeScript. The app connects to a FastAPI backend, supports multiple users via JWT authentication, and is INR-aware throughout (currency formatting, budget thresholds, and reporting). Users can upload bank statements, review and categorise transactions, track budgets by category, and visualise spending trends on a dashboard.
+
+## Features
+
+<table>
+<tr>
+<td valign="top" width="55%">
+
+- **Dashboard** — category breakdown pie chart, spending trends, tag-spend charts, and a category-tag matrix at a glance
+- **Budget tracking** — set monthly and annual thresholds per category, see unbudgeted categories with quick-add amounts
+- **Bank statement upload** — PDF, paste-as-text, or manual entry; preview before import with auto-applied ignore rules
+- **Transaction review** — paginated prev/next flow, category + tag assignment, person-share splitting and settlement
+- **INR-aware** — Indian financial year period mode (Apr–Mar), ₹ formatting throughout
+- **Multi-user** — JWT auth, per-user data isolation, shared expense settlement
+
+</td>
+<td valign="top" align="center" width="45%">
+  <img src=".github/assets/chart-pie.gif" width="175" alt="category breakdown" />
+  &nbsp;
+  <img src=".github/assets/chart-bar.gif" width="175" alt="monthly trends" />
+</td>
+</tr>
+</table>
 
 ## Stack
 
@@ -103,5 +130,9 @@ See [SECURITY.md](SECURITY.md) for the private vulnerability reporting process.
 See [CHANGELOG.md](CHANGELOG.md) for release-by-release notes, or the [Releases page](https://github.com/shubhamjain2998/expense-tracking-frontend/releases) for the rendered version.
 
 ## License
+
+<div align="center">
+  <img src=".github/assets/budget.gif" width="260" alt="track your budget" />
+</div>
 
 [MIT](LICENSE) © Shubham Jain
