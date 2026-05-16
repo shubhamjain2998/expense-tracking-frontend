@@ -1,5 +1,10 @@
 # personal-finance
 
+[![CI](https://github.com/shubhamjain2998/expense-tracking-frontend/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/shubhamjain2998/expense-tracking-frontend/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/shubhamjain2998/expense-tracking-frontend?sort=semver)](https://github.com/shubhamjain2998/expense-tracking-frontend/releases)
+[![License: MIT](https://img.shields.io/github/license/shubhamjain2998/expense-tracking-frontend)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%E2%89%A522-339933?logo=node.js&logoColor=white)](.nvmrc)
+
 A personal finance and expense tracking single-page application built with React and TypeScript. The app connects to a FastAPI backend, supports multiple users via JWT authentication, and is INR-aware throughout (currency formatting, budget thresholds, and reporting). Users can upload bank statements, review and categorise transactions, track budgets by category, and visualise spending trends on a dashboard.
 
 ## Stack
@@ -36,6 +41,15 @@ npm run lint
 
 # Type-check without emitting
 npm run typecheck
+
+# Tests
+npm test                # run once
+npm run test:watch      # watch mode
+npm run test:ui         # Vitest UI
+npm run test:coverage   # coverage report
+
+# Bundle analyzer (writes stats.html after build)
+npm run analyze
 ```
 
 ## Environment
@@ -78,8 +92,16 @@ Pre-commit hook runs lint-staged (ESLint + Prettier) over staged `src/` files.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit conventions, and the PR checklist. All participants are expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Security
 
-See [SECURITY.md](SECURITY.md).
+See [SECURITY.md](SECURITY.md) for the private vulnerability reporting process.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for release-by-release notes, or the [Releases page](https://github.com/shubhamjain2998/expense-tracking-frontend/releases) for the rendered version.
+
+## License
+
+[MIT](LICENSE) © Shubham Jain
