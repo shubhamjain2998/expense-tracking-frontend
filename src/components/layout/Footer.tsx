@@ -12,40 +12,20 @@ export function Footer() {
   const year = new Date().getFullYear()
 
   return (
-    <footer
-      className="mt-12"
-      style={{
-        borderTop: '1px solid var(--line)',
-        background: 'var(--bg)',
-      }}
-    >
+    <footer className="mt-12 border-t border-[var(--line)] bg-[var(--bg)]">
       <div className="mx-auto max-w-screen-2xl px-7 py-6">
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2.5">
             <span
               aria-hidden
-              style={{
-                width: 18,
-                height: 18,
-                background: 'var(--ink)',
-                color: 'var(--bg)',
-                borderRadius: 3,
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 700,
-                fontSize: 10,
-              }}
+              className="w-[18px] h-[18px] bg-[var(--ink)] text-[var(--bg)] rounded-[3px] inline-flex items-center justify-center font-bold text-[10px]"
             >
               ₹
             </span>
-            <span
-              className="text-[12px] font-semibold"
-              style={{ color: 'var(--ink-2)', letterSpacing: '-0.005em' }}
-            >
+            <span className="text-[12px] font-semibold text-[var(--ink-2)] tracking-[-0.005em]">
               Personal Finance
             </span>
-            <span className="hidden text-[11.5px] sm:inline" style={{ color: 'var(--ink-4)' }}>
+            <span className="hidden text-[11.5px] sm:inline text-[var(--ink-4)]">
               · privacy-first · local
             </span>
           </div>
@@ -56,12 +36,10 @@ export function Footer() {
                 key={to}
                 to={to}
                 className={({ isActive }) =>
-                  isActive ? 'text-[11.5px] font-medium' : 'text-[11.5px] transition-colors'
+                  isActive
+                    ? 'text-[11.5px] font-medium text-[var(--ink-2)] no-underline'
+                    : 'text-[11.5px] transition-colors text-[var(--ink-3)] no-underline'
                 }
-                style={({ isActive }) => ({
-                  color: isActive ? 'var(--ink-2)' : 'var(--ink-3)',
-                  textDecoration: 'none',
-                })}
               >
                 {label}
               </NavLink>
@@ -69,14 +47,11 @@ export function Footer() {
           </nav>
         </div>
 
-        <div
-          className="mt-4 flex flex-col items-start justify-between gap-1 pt-4 sm:flex-row sm:items-center"
-          style={{ borderTop: '1px solid var(--line)' }}
-        >
-          <p className="text-[10.5px]" style={{ color: 'var(--ink-4)' }}>
+        <div className="mt-4 flex flex-col items-start justify-between gap-1 pt-4 sm:flex-row sm:items-center border-t border-[var(--line)]">
+          <p className="text-[10.5px] text-[var(--ink-4)]">
             © {year} Personal Finance. All rights reserved.
           </p>
-          <p className="text-[10.5px]" style={{ color: 'var(--ink-4)' }}>
+          <p className="text-[10.5px] text-[var(--ink-4)]">
             Built for clarity, not complexity.
           </p>
         </div>
