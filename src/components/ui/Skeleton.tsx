@@ -3,7 +3,7 @@ interface SkeletonProps {
 }
 
 export function Skeleton({ className = '' }: SkeletonProps) {
-  return <div className={`animate-shimmer ${className}`} style={{ borderRadius: 6 }} />
+  return <div className={`animate-shimmer rounded-[6px] ${className}`} />
 }
 
 export function SkeletonRow() {
@@ -33,13 +33,7 @@ export function SkeletonTable({ rows = 5 }: SkeletonTableProps) {
 export function SkeletonCard({ className = '' }: SkeletonProps) {
   return (
     <div
-      className={`space-y-3 ${className}`}
-      style={{
-        background: 'var(--surface)',
-        border: '1px solid var(--line)',
-        borderRadius: 'var(--radius-lg)',
-        padding: 20,
-      }}
+      className={`space-y-3 bg-[var(--surface)] border border-[var(--line)] rounded-[var(--radius-lg)] p-5 ${className}`}
     >
       <Skeleton className="h-4 w-1/3" />
       <Skeleton className="h-3.5 w-full" />

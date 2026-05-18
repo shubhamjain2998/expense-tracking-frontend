@@ -12,28 +12,17 @@ interface EmptyStateProps {
 
 export function EmptyState({ icon, title, description, action }: EmptyStateProps) {
   return (
-    <div
-      className="flex flex-col items-center justify-center py-12 text-center"
-      style={{ color: 'var(--ink-3)' }}
-    >
+    <div className="flex flex-col items-center justify-center py-12 text-center text-[var(--ink-3)]">
       {icon && (
-        <span
-          className="material-symbols-outlined mb-3"
-          style={{ fontSize: 22, color: 'var(--ink-4)' }}
-        >
+        <span className="material-symbols-outlined mb-3 text-[22px] text-[var(--ink-4)]">
           {icon}
         </span>
       )}
-      <h3
-        className="text-[13px] font-semibold"
-        style={{ color: 'var(--ink-2)', letterSpacing: '-0.005em' }}
-      >
+      <h3 className="text-[13px] font-semibold text-[var(--ink-2)] tracking-[-0.005em]">
         {title}
       </h3>
       {description && (
-        <p className="mt-1 text-[12px]" style={{ color: 'var(--ink-3)' }}>
-          {description}
-        </p>
+        <p className="mt-1 text-[12px] text-[var(--ink-3)]">{description}</p>
       )}
       {action && (
         <div className="mt-4">

@@ -8,27 +8,12 @@ import { TopNav } from './TopNav'
 export function Layout() {
   const location = useLocation()
   return (
-    <div
-      style={{
-        display: 'flex',
-        height: '100vh',
-        overflow: 'hidden',
-        background: 'var(--bg)',
-      }}
-    >
+    <div className="flex h-screen overflow-hidden bg-[var(--bg)]">
       <Sidebar />
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          minWidth: 0,
-          overflow: 'hidden',
-        }}
-      >
+      <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
         <TopNav />
-        <main style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
-          <div style={{ maxWidth: 1380, margin: '0 auto', padding: '24px 28px 56px' }}>
+        <main className="flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="max-w-[1380px] mx-auto pt-6 px-7 pb-14">
             <div key={location.pathname} className="animate-fade-up">
               <Outlet />
             </div>

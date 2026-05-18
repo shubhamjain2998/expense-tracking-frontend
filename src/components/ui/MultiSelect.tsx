@@ -78,30 +78,18 @@ export function MultiSelect({
       {selected.length > 0 && (
         <div className="mb-2 flex flex-wrap gap-1.5">
           {selected.map((p) => (
-            <div key={p.id} className="chip" style={{ paddingRight: 4, height: 24 }}>
-              <span
-                className="flex shrink-0 items-center justify-center"
-                style={{
-                  width: 16,
-                  height: 16,
-                  borderRadius: '50%',
-                  background: 'var(--surface-3)',
-                  color: 'var(--ink-2)',
-                  fontSize: 9,
-                  fontWeight: 600,
-                }}
-              >
+            <div key={p.id} className="chip pr-1 h-6">
+              <span className="flex shrink-0 items-center justify-center w-4 h-4 rounded-full bg-[var(--surface-3)] text-[var(--ink-2)] text-[9px] font-semibold">
                 {getInitials(p.name)}
               </span>
-              <span style={{ color: 'var(--ink)' }}>{p.name}</span>
+              <span className="text-[var(--ink)]">{p.name}</span>
               <button
                 type="button"
                 onClick={() => remove(p.id)}
-                className="ml-0.5 inline-flex items-center"
+                className="ml-0.5 inline-flex items-center text-[var(--ink-4)]"
                 aria-label={`Remove ${p.name}`}
-                style={{ color: 'var(--ink-4)' }}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
+                <span className="material-symbols-outlined text-[13px]">
                   close
                 </span>
               </button>
@@ -112,10 +100,7 @@ export function MultiSelect({
 
       {/* Search input */}
       <div className="relative">
-        <span
-          className="material-symbols-outlined pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2"
-          style={{ fontSize: 14, color: 'var(--ink-4)' }}
-        >
+        <span className="material-symbols-outlined pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[14px] text-[var(--ink-4)]">
           person_search
         </span>
         <input
@@ -128,42 +113,21 @@ export function MultiSelect({
           }}
           onFocus={() => setOpen(true)}
           placeholder="Search or add person…"
-          className="input"
-          style={{ paddingLeft: 28 }}
+          className="input pl-7"
           autoComplete="off"
         />
       </div>
 
       {/* Dropdown for existing persons */}
       {open && filtered.length > 0 && (
-        <ul
-          className="relative z-30 mt-1 max-h-40 w-full overflow-y-auto"
-          style={{
-            background: 'var(--surface)',
-            border: '1px solid var(--line)',
-            borderRadius: 'var(--radius-lg)',
-            boxShadow: 'var(--shadow-pop)',
-            padding: 4,
-          }}
-        >
+        <ul className="relative z-30 mt-1 max-h-40 w-full overflow-y-auto bg-[var(--surface)] border border-[var(--line)] rounded-[var(--radius-lg)] shadow-[var(--shadow-pop)] p-1">
           {filtered.map((p) => (
             <li
               key={p.id}
               onMouseDown={() => add(p.id)}
-              className="flex cursor-pointer items-center gap-2"
-              style={{
-                padding: '7px 10px',
-                fontSize: 12.5,
-                color: 'var(--ink-2)',
-                borderRadius: 'var(--radius-sm)',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-2)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              className="flex cursor-pointer items-center gap-2 py-[7px] px-2.5 text-[12.5px] text-[var(--ink-2)] rounded-[var(--radius-sm)] hover:bg-[var(--surface-2)]"
             >
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 14, color: 'var(--ink-4)' }}
-              >
+              <span className="material-symbols-outlined text-[14px] text-[var(--ink-4)]">
                 person
               </span>
               {p.name}
@@ -176,31 +140,20 @@ export function MultiSelect({
       {isNew && (
         <div
           onMouseDown={handleCreate}
-          className="mt-2 flex cursor-pointer items-center gap-2.5 select-none"
-          style={{
-            padding: '8px 10px',
-            border: '1px solid var(--line-strong)',
-            borderRadius: 'var(--radius)',
-            background: 'var(--surface)',
-            color: 'var(--ink-2)',
-            opacity: creating ? 0.6 : 1,
-            transition: 'background .1s ease, border-color .1s ease',
-          }}
+          className="mt-2 flex cursor-pointer items-center gap-2.5 select-none py-2 px-2.5 border border-[var(--line-strong)] rounded-[var(--radius)] bg-[var(--surface)] text-[var(--ink-2)] [transition:background_.1s_ease,border-color_.1s_ease]"
+          style={{ opacity: creating ? 0.6 : 1 }}
         >
-          <span
-            className={`material-symbols-outlined ${creating ? 'animate-spin' : ''}`}
-            style={{ fontSize: 16, color: 'var(--ink-4)' }}
-          >
+          <span className={`material-symbols-outlined text-[16px] text-[var(--ink-4)] ${creating ? 'animate-spin' : ''}`}>
             {creating ? 'progress_activity' : 'person_add'}
           </span>
           <div className="min-w-0">
             <span className="eyebrow block">Create new person</span>
-            <p className="truncate text-[12.5px] font-medium" style={{ color: 'var(--ink)' }}>
+            <p className="truncate text-[12.5px] font-medium text-[var(--ink)]">
               &ldquo;{trimmed}&rdquo;
             </p>
           </div>
           {creating && (
-            <span className="ml-auto text-[11px]" style={{ color: 'var(--ink-3)' }}>
+            <span className="ml-auto text-[11px] text-[var(--ink-3)]">
               Creating…
             </span>
           )}

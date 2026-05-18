@@ -39,7 +39,7 @@ export function Button({
       className={`${variantClass[variant]} ${sizeClass[size]} ${className}`.trim()}
     >
       {loading && (
-        <span className="material-symbols-outlined animate-spin" style={{ fontSize: 14 }}>
+        <span className="material-symbols-outlined animate-spin text-[14px]">
           progress_activity
         </span>
       )}

@@ -142,10 +142,7 @@ export function SearchableSelect({
         </label>
       )}
       <div className="relative">
-        <span
-          className="material-symbols-outlined pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2"
-          style={{ fontSize: 14, color: 'var(--ink-4)' }}
-        >
+        <span className="material-symbols-outlined pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[14px] text-[var(--ink-4)]">
           search
         </span>
         <input
@@ -169,15 +166,14 @@ export function SearchableSelect({
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
-          className="input"
-          style={{ paddingLeft: 28 }}
+          className="input pl-7"
           autoComplete="off"
           aria-expanded={open}
           aria-autocomplete="list"
         />
       </div>
       {error && (
-        <p className="mt-1 text-[11px]" style={{ color: 'var(--neg)' }}>
+        <p className="mt-1 text-[11px] text-[var(--neg)]">
           {error}
         </p>
       )}
@@ -185,14 +181,7 @@ export function SearchableSelect({
       {open && filtered.length > 0 && (
         <ul
           role="listbox"
-          className="absolute z-30 mt-1 max-h-52 w-full overflow-y-auto"
-          style={{
-            background: 'var(--surface)',
-            border: '1px solid var(--line)',
-            borderRadius: 'var(--radius-lg)',
-            boxShadow: 'var(--shadow-pop)',
-            padding: 4,
-          }}
+          className="absolute z-30 mt-1 max-h-52 w-full overflow-y-auto bg-[var(--surface)] border border-[var(--line)] rounded-[var(--radius-lg)] shadow-[var(--shadow-pop)] p-1"
         >
           {filtered.map((opt, i) => (
             <li

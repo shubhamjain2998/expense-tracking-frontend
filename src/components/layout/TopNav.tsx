@@ -17,40 +17,21 @@ export function TopNav() {
   const pageName = PAGE_NAMES[location.pathname] ?? 'Page'
 
   return (
-    <header
-      style={{
-        height: 44,
-        borderBottom: '1px solid var(--line)',
-        background: 'var(--bg)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 28px',
-        flexShrink: 0,
-      }}
-    >
+    <header className="h-11 border-b border-[var(--line)] bg-[var(--bg)] flex items-center justify-between px-7 shrink-0">
       {/* Breadcrumb */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          fontSize: 12.5,
-          color: 'var(--ink-3)',
-        }}
-      >
+      <div className="flex items-center gap-1.5 text-[12.5px] text-[var(--ink-3)]">
         <span>Personal Finance</span>
-        <span style={{ opacity: 0.4, fontSize: 15, lineHeight: 1 }}>›</span>
-        <span style={{ color: 'var(--ink)', fontWeight: 500 }}>{pageName}</span>
+        <span className="opacity-40 text-[15px] leading-none">›</span>
+        <span className="text-[var(--ink)] font-medium">{pageName}</span>
       </div>
 
       {/* Actions */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        <button className="btn ghost" style={{ gap: 5 }}>
-          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+      <div className="flex items-center gap-0.5">
+        <button className="btn ghost gap-[5px]">
+          <span className="material-symbols-outlined text-[14px]">
             search
           </span>
-          <span style={{ fontSize: 12 }}>Search</span>
+          <span className="text-[12px]">Search</span>
           <span className="kbd">⌘K</span>
         </button>
         <button
@@ -59,7 +40,7 @@ export function TopNav() {
           aria-label={isDark ? 'Light mode' : 'Dark mode'}
           title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
+          <span className="material-symbols-outlined text-[15px]">
             {isDark ? 'light_mode' : 'dark_mode'}
           </span>
         </button>

@@ -27,46 +27,26 @@ export function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center"
+      className="fixed inset-0 z-50 grid place-items-center p-10 backdrop-blur-[8px]"
       style={{
-        padding: 40,
         background: 'color-mix(in oklch, var(--bg) 60%, transparent)',
-        backdropFilter: 'blur(8px)',
         animation: 'fade-up .15s ease',
       }}
     >
       <div className="absolute inset-0" onClick={onCancel} />
       <div
-        className="relative z-10 flex w-full max-w-md flex-col"
-        style={{
-          background: 'var(--surface)',
-          border: '1px solid var(--line)',
-          borderRadius: 'var(--radius-lg)',
-          boxShadow: 'var(--shadow-pop)',
-          animation: 'pop .18s ease',
-          maxHeight: '90vh',
-        }}
+        className="relative z-10 flex w-full max-w-md flex-col bg-[var(--surface)] border border-[var(--line)] rounded-[var(--radius-lg)] shadow-[var(--shadow-pop)] max-h-[90vh]"
+        style={{ animation: 'pop .18s ease' }}
       >
-        <div
-          className="px-5"
-          style={{ padding: '18px 20px 12px', borderBottom: '1px solid var(--line)' }}
-        >
-          <h2
-            className="text-[15px] font-semibold"
-            style={{ color: 'var(--ink)', letterSpacing: '-0.01em' }}
-          >
+        <div className="pt-[18px] px-5 pb-3 border-b border-[var(--line)]">
+          <h2 className="text-[15px] font-semibold text-[var(--ink)] tracking-[-0.01em]">
             {title}
           </h2>
         </div>
-        <div className="overflow-auto" style={{ padding: '18px 20px' }}>
-          <p className="text-[13px]" style={{ color: 'var(--ink-2)', lineHeight: 1.55 }}>
-            {message}
-          </p>
+        <div className="overflow-auto py-[18px] px-5">
+          <p className="text-[13px] text-[var(--ink-2)] leading-[1.55]">{message}</p>
         </div>
-        <div
-          className="flex justify-end gap-2"
-          style={{ padding: '12px 20px', borderTop: '1px solid var(--line)' }}
-        >
+        <div className="flex justify-end gap-2 py-3 px-5 border-t border-[var(--line)]">
           <Button variant="tertiary" size="sm" onClick={onCancel} disabled={loading}>
             {cancelLabel}
           </Button>
