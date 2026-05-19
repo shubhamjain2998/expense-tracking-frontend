@@ -86,8 +86,19 @@ Copy `.env.example` to `.env.local` and adjust as needed:
 | Variable | Default | Purpose |
 |---|---|---|
 | `VITE_API_URL` | `http://localhost:8000` | Base URL of the FastAPI backend |
+| `VITE_SENTRY_DSN` | _(empty)_ | Sentry DSN — leave blank to disable error tracking |
+| `VITE_SENTRY_ENV` | `production` / `development` | Sentry environment tag |
+| `VITE_APP_VERSION` | `dev` | Release identifier sent to Sentry |
 
 The variable is read once in `src/lib/config.ts` and re-exported as typed constants (`API_URL`, `IS_DEV`, `IS_PROD`). Import from there — do not read `import.meta.env` directly in feature code.
+
+## Error tracking
+
+Sentry is wired but disabled by default. When `VITE_SENTRY_DSN` is empty (the default), the SDK never initialises and no beacons are sent. To enable it in production, set the DSN in your deployment environment — do not commit it to the repository.
+
+- `sendDefaultPii` is `false` — emails and IP addresses are never captured.
+- `Authorization` request headers are redacted to `[redacted]` before any event is sent.
+- Source-map upload is a follow-up CI task and is not included here.
 
 ## Architecture
 

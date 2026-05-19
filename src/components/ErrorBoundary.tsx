@@ -1,5 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 
+import { reportError } from '@/lib/sentry'
+
 interface Props {
   children: ReactNode
   /** Optional fallback. Receives the caught error and a reset callback. */
@@ -22,6 +24,7 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, info: ErrorInfo): void {
     this.props.onError?.(error, info)
     console.error('[ErrorBoundary]', error, info)
+    reportError(error, { componentStack: info.componentStack ?? undefined })
   }
 
   reset = (): void => {

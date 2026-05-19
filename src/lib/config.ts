@@ -19,3 +19,8 @@ export const API_URL = readApiUrl()
 
 export const IS_DEV = import.meta.env.DEV
 export const IS_PROD = import.meta.env.PROD
+
+export const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN?.trim() || null
+export const SENTRY_ENVIRONMENT =
+  import.meta.env.VITE_SENTRY_ENV?.trim() || (IS_PROD ? 'production' : 'development')
+export const APP_VERSION = import.meta.env.VITE_APP_VERSION?.trim() || 'dev'
