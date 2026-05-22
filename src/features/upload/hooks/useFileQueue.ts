@@ -132,12 +132,26 @@ export function useFileQueue() {
         } catch (err) {
           errorCount++
           const e = err as { detail?: string; status?: number }
-          const errMsg = e.status === 409 ? 'Already imported' : (e.detail ?? 'Import failed')
-          setUploads((prev) =>
-            prev.map((u) =>
-              u.id === upload.id ? { ...u, status: 'error' as FileStatus, error: errMsg } : u
+          if (e.status === 409) {
+            const msg =
+              typeof e.detail === 'string'
+                ? e.detail
+                : 'This statement has already been imported.'
+            toast.warning(msg)
+            setUploads((prev) =>
+              prev.map((u) =>
+                u.id === upload.id ? { ...u, status: 'error' as FileStatus, error: 'Already imported' } : u
+              )
             )
-          )
+          } else {
+            setUploads((prev) =>
+              prev.map((u) =>
+                u.id === upload.id
+                  ? { ...u, status: 'error' as FileStatus, error: e.detail ?? 'Import failed' }
+                  : u
+              )
+            )
+          }
         }
       })
     )
