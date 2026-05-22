@@ -109,9 +109,11 @@ export function TransactionsPage() {
   const pendingCount = allTxns.filter((t) => t.kind === 'pending').length
   const incomeCount = allTxns.filter((t) => t.kind !== 'deleted' && isIncome(t.amount)).length
   const deletedCount = allTxns.filter((t) => t.kind === 'deleted').length
-  const total = allTxns
-    .filter((t) => t.kind !== 'deleted')
-    .reduce((s, t) => s + Number(t.effectiveAmount), 0)
+  // Heading reflects the active tab/filter so the count and sum match the
+  // visible table (e.g. "Processed" tab shows the processed-only total).
+  const visibleForHeading = filtered.filter((t) => t.kind !== 'deleted')
+  const headingCount = visibleForHeading.length
+  const total = visibleForHeading.reduce((s, t) => s + Number(t.effectiveAmount), 0)
   const hasActiveFilters = !!(search || categoryFilter || tagFilter)
   const selectedTxn = selectedUid ? filtered.find((t) => t.uid === selectedUid) : null
   const showProcessPanel =
@@ -223,7 +225,7 @@ export function TransactionsPage() {
         year={year}
         month={month}
         mode={mode}
-        allTxnsCount={allTxns.filter((t) => t.kind !== 'deleted').length}
+        allTxnsCount={headingCount}
         total={total}
         onPrevMonth={prevMonth}
         onNextMonth={nextMonth}
