@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useId } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useId } from 'react'
 
 export interface SelectOption {
   value: string
@@ -49,6 +49,18 @@ export function SearchableSelect({
   const [creating, setCreating] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const skipSyncRef = useRef(false)
+  // Refs so the mousedown-outside handler always reads the current committed
+  // values without needing to re-register on every render (prevents the
+  // stale-closure race where a programmatic or rapid click-to-next-field runs
+  // before effects re-fire with the updated value).
+  const valueRef = useRef(value)
+  const normalisedRef = useRef(normalised)
+  const createCheckedRef = useRef(createChecked)
+  useLayoutEffect(() => {
+    valueRef.current = value
+    normalisedRef.current = normalised
+    createCheckedRef.current = createChecked
+  })
 
   const filtered = normalised.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()))
   const trimmed = query.trim()
@@ -78,18 +90,21 @@ export function SearchableSelect({
     function handleClickOutside(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false)
-        if (!createChecked) {
-          const lbl = normalised.find((o) => o.value === value)?.label ?? value
+        if (!createCheckedRef.current) {
+          const v = valueRef.current
+          const lbl = normalisedRef.current.find((o) => o.value === v)?.label ?? v
           setQuery(lbl)
         }
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
+    // refs keep the closure fresh; no deps needed
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value, createChecked])
+  }, [])
 
   function select(option: SelectOption) {
+    skipSyncRef.current = true // skip the value→query sync effect; we set it here
     onChange(option.value)
     setQuery(option.label)
     setOpen(false)
@@ -176,16 +191,12 @@ export function SearchableSelect({
           aria-autocomplete="list"
         />
       </div>
-      {error && (
-        <p className="mt-1 text-[11px] text-[var(--neg)]">
-          {error}
-        </p>
-      )}
+      {error && <p className="mt-1 text-[11px] text-[var(--neg)]">{error}</p>}
 
       {open && filtered.length > 0 && (
         <ul
           role="listbox"
-          className="absolute z-30 mt-1 max-h-52 w-full overflow-y-auto bg-[var(--surface)] border border-[var(--line)] rounded-[var(--radius-lg)] shadow-[var(--shadow-pop)] p-1"
+          className="absolute z-30 mt-1 max-h-52 w-full overflow-y-auto rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface)] p-1 shadow-[var(--shadow-pop)]"
         >
           {filtered.map((opt, i) => (
             <li
