@@ -1,13 +1,9 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { useThemeContext } from '@/hooks/useThemeContext'
-import {
-  formatYearLabel,
-  getCurrentPeriod,
-  loadPeriodMode,
-  resolvePeriodMonth,
-} from '@/lib/period'
+import { formatYearLabel, getCurrentPeriod, loadPeriodMode, resolvePeriodMonth } from '@/lib/period'
 
 import { BudgetPaceBars } from './components/BudgetPaceBars'
 import { CategoryDeepDive } from './components/CategoryDeepDive'
@@ -29,15 +25,34 @@ export function DashboardPage() {
   const { isDark } = useThemeContext()
   const { mode } = usePeriodMode()
 
-  // ── UI state ────────────────────────────────────────────────────────────────
+  // ── UI state ───────────────────────────────────────────────────────────────────────────────
+  const [searchParams, setSearchParams] = useSearchParams()
   const initial = getCurrentPeriod(loadPeriodMode(), now)
-  const [year, setYear] = useState(initial.year)
-  const [month, setMonth] = useState(initial.month)
+  const year = Number(searchParams.get('year')) || initial.year
+  const month = Number(searchParams.get('month')) || initial.month
+  function setYear(y: number) {
+    setSearchParams(
+      (p) => {
+        p.set('year', String(y))
+        return p
+      },
+      { replace: true }
+    )
+  }
+  function setMonth(m: number) {
+    setSearchParams(
+      (p) => {
+        p.set('month', String(m))
+        return p
+      },
+      { replace: true }
+    )
+  }
   const [selectedTagId, setSelectedTagId] = useState('')
   const [includeSettled, setIncludeSettled] = useState(false)
   const [trendMode, setTrendMode] = useState<'stacked' | 'total'>('stacked')
 
-  // ── Date helpers ────────────────────────────────────────────────────────────
+  // ── Date helpers ──────────────────────────────────────────────────────────────────────────
   const { year: calYear, month: calMonth } = resolvePeriodMonth(year, month, mode)
   const isCurrentMonth = calYear === now.getFullYear() && calMonth === now.getMonth() + 1
   // For past months treat the last day as "today" so pace = 100%
@@ -46,11 +61,11 @@ export function DashboardPage() {
   const paceAt = dayOfMonth / daysInMonth
   const currentMonthLabel = MONTH_LABELS_FULL[calMonth]
 
-  // ── Calendar layout ─────────────────────────────────────────────────────────
+  // ── Calendar layout ───────────────────────────────────────────────────────────────────────────
   const firstDayOfMonth = new Date(calYear, calMonth - 1, 1).getDay()
   const totalCells = Math.ceil((firstDayOfMonth + daysInMonth) / 7) * 7
 
-  // ── Data ────────────────────────────────────────────────────────────────────
+  // ── Data ────────────────────────────────────────────────────────────────────────────────────
   const data = useDashboardData({
     year,
     month,
@@ -64,7 +79,7 @@ export function DashboardPage() {
 
   const overPaceAmount = data.totalDebit - data.totalBudget * paceAt
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // ── Render ──────────────────────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-4">
       <DashboardHeader

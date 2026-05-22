@@ -15,10 +15,16 @@ import { client } from './client'
 export async function getRawTransactions(
   year: number,
   month: number,
-  periodMode?: PeriodMode
+  periodMode?: PeriodMode,
+  includeDeleted?: boolean
 ): Promise<RawTransaction[]> {
   const { data } = await client.get<RawTransaction[]>('/transactions/raw', {
-    params: { year, month, ...(periodMode ? { period_mode: periodMode } : {}) },
+    params: {
+      year,
+      month,
+      ...(periodMode ? { period_mode: periodMode } : {}),
+      ...(includeDeleted ? { include_deleted: true } : {}),
+    },
   })
   return data
 }

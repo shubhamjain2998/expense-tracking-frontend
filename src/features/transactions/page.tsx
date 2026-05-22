@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { getCurrentPeriod, loadPeriodMode } from '@/lib/period'
@@ -22,9 +22,22 @@ import type { SortCol, SortDir, StatusFilter } from './types'
 
 export function TransactionsPage() {
   const { mode } = usePeriodMode()
+  const [searchParams, setSearchParams] = useSearchParams()
   const initial = getCurrentPeriod(loadPeriodMode())
-  const [year, setYear] = useState(initial.year)
-  const [month, setMonth] = useState(initial.month)
+
+  const year = Number(searchParams.get('year')) || initial.year
+  const month = Number(searchParams.get('month')) || initial.month
+
+  function setMonth(m: number) {
+    setSearchParams(
+      (p) => {
+        p.set('month', String(m))
+        return p
+      },
+      { replace: true }
+    )
+  }
+
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
@@ -47,7 +60,8 @@ export function TransactionsPage() {
     month,
     categoryFilter,
     tagFilter,
-    mode
+    mode,
+    showDeleted
   )
   const { deleteRawMutation, restoreRawMutation, handleBulkDelete } = useRawMutations(
     year,
@@ -109,18 +123,34 @@ export function TransactionsPage() {
     setEditingTxn(null)
     setCheckedUids(new Set())
     if (month === 1) {
-      setYear((y) => y - 1)
-      setMonth(12)
-    } else setMonth((m) => m - 1)
+      setSearchParams(
+        (p) => {
+          p.set('year', String(year - 1))
+          p.set('month', '12')
+          return p
+        },
+        { replace: true }
+      )
+    } else {
+      setMonth(month - 1)
+    }
   }
   function nextMonth() {
     setSelectedUid(null)
     setEditingTxn(null)
     setCheckedUids(new Set())
     if (month === 12) {
-      setYear((y) => y + 1)
-      setMonth(1)
-    } else setMonth((m) => m + 1)
+      setSearchParams(
+        (p) => {
+          p.set('year', String(year + 1))
+          p.set('month', '1')
+          return p
+        },
+        { replace: true }
+      )
+    } else {
+      setMonth(month + 1)
+    }
   }
 
   function handleDragStart(uid: string) {

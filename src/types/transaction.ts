@@ -1,6 +1,7 @@
 import type { Tag } from './settings'
 
 export type TransactionStatus = 'pending' | 'processed' | 'deleted'
+export type TxnType = 'expense' | 'income' | 'refund' | 'transfer'
 export type ShareType = 'percentage' | 'amount'
 
 export interface RawTransaction {
@@ -9,6 +10,7 @@ export interface RawTransaction {
   description: string
   amount: string
   status: TransactionStatus
+  deleted_at?: string | null
 }
 
 export interface PendingManualTransaction {
@@ -47,6 +49,7 @@ export interface ProcessedTransactionItem {
   month: number
   year: number
   notes: string | null
+  txn_type: TxnType
   shares: PersonShareOut[]
   tags: Tag[]
 }
@@ -105,6 +108,7 @@ export interface EditProcessedPayload {
   amount?: number
   txn_date?: string
   description?: string
+  txn_type?: TxnType
 }
 
 export interface CreateRawTransactionPayload {

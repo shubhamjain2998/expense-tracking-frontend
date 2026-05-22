@@ -49,6 +49,7 @@ export function makeProcessedTransaction(
     month: 5,
     year: 2026,
     notes: null,
+    txn_type: 'expense',
     shares: [],
     tags: [],
     ...overrides,

@@ -21,7 +21,7 @@ interface ToastItemProps {
 
 function ToastItem({ toast, onDismiss }: ToastItemProps) {
   return (
-    <div className="animate-toast-in flex items-start gap-2.5 bg-[var(--ink)] text-[var(--bg)] rounded-[8px] py-2.5 px-3 shadow-[var(--shadow-pop)] min-w-[280px] max-w-[380px]">
+    <div className="animate-toast-in flex max-w-[380px] min-w-[280px] items-start gap-2.5 rounded-[8px] bg-[var(--ink)] px-3 py-2.5 text-[var(--bg)] shadow-[var(--shadow-pop)]">
       <span
         className="material-symbols-outlined mt-0.5 shrink-0 text-[16px]"
         style={{ color: variantAccent[toast.variant] }}
@@ -29,14 +29,24 @@ function ToastItem({ toast, onDismiss }: ToastItemProps) {
         {variantIcons[toast.variant]}
       </span>
       <p className="flex-1 text-[12.5px] leading-snug font-medium">{toast.message}</p>
+      {toast.action && (
+        <button
+          onClick={() => {
+            toast.action!.onClick()
+            onDismiss(toast.id)
+          }}
+          className="shrink-0 text-[12px] font-semibold underline"
+          style={{ color: variantAccent[toast.variant] }}
+        >
+          {toast.action.label}
+        </button>
+      )}
       <button
         onClick={() => onDismiss(toast.id)}
         className="ml-1 shrink-0 text-[var(--ink-4)] opacity-70"
         aria-label="Dismiss"
       >
-        <span className="material-symbols-outlined text-[14px]">
-          close
-        </span>
+        <span className="material-symbols-outlined text-[14px]">close</span>
       </button>
     </div>
   )

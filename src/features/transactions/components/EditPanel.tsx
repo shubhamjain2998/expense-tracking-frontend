@@ -16,9 +16,8 @@ import type {
   EditProcessedPayload,
   PersonShareIn,
   ProcessedTransactionItem,
+  TxnType,
 } from '@/types/transaction'
-
-import { isIncome } from '../lib/txnFormat'
 
 import { NewTagChip } from './NewTagChip'
 
@@ -45,6 +44,7 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
     }))
   )
   const [notes, setNotes] = useState(txn.notes ?? '')
+  const [txnType, setTxnType] = useState<TxnType>(txn.txn_type ?? 'expense')
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(txn.tags.map((t) => t.id))
   const [categoryError, setCategoryError] = useState('')
   const personsQuery = useQuery({ queryKey: qk.persons.all, queryFn: getPersons })
@@ -105,12 +105,19 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
       shares,
       notes: notes.trim() || null,
       tag_ids: selectedTagIds,
+      txn_type: txnType,
     })
   }
 
   const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }))
   const totalAmount = Math.abs(Number(amount) || Number(txn.amount))
-  const txnIsIncome = isIncome(txn.amount)
+
+  const TXN_TYPE_OPTIONS: { value: TxnType; label: string; color: string }[] = [
+    { value: 'expense', label: 'Expense', color: 'var(--ink)' },
+    { value: 'income', label: 'Income', color: 'var(--pos)' },
+    { value: 'refund', label: 'Refund', color: 'var(--pos)' },
+    { value: 'transfer', label: 'Transfer', color: 'var(--ink-3)' },
+  ]
 
   return (
     <div className="flex h-full flex-col">
@@ -132,27 +139,34 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
       </div>
 
       <div className="flex flex-col gap-4 overflow-y-auto" style={{ padding: 16 }}>
-        {txnIsIncome && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 7,
-              padding: '7px 11px',
-              borderRadius: 'var(--radius)',
-              background: 'var(--pos-soft)',
-              border: '1px solid color-mix(in oklch, var(--pos) 25%, transparent)',
-              fontSize: 12,
-              fontWeight: 500,
-              color: 'var(--pos)',
-            }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
-              south_america
-            </span>
-            Income transaction — money received
+        <div>
+          <p className="eyebrow mb-1.5">Type</p>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {TXN_TYPE_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setTxnType(opt.value)}
+                style={{
+                  flex: 1,
+                  padding: '5px 0',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: 11.5,
+                  fontWeight: 500,
+                  border: '1px solid ' + (txnType === opt.value ? opt.color : 'var(--line)'),
+                  background:
+                    txnType === opt.value
+                      ? `color-mix(in oklch, ${opt.color} 12%, var(--surface))`
+                      : 'var(--surface-2)',
+                  color: txnType === opt.value ? opt.color : 'var(--ink-3)',
+                  cursor: 'pointer',
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
-        )}
+        </div>
         <div className="flex gap-2">
           <div className="flex-1">
             <label className="eyebrow mb-1 block">Amount</label>
@@ -161,7 +175,7 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               className="input num"
-              style={{ color: txnIsIncome ? 'var(--pos)' : undefined }}
+              style={{ color: txnType === 'income' ? 'var(--pos)' : undefined }}
               min={0.01}
               max={Number.MAX_SAFE_INTEGER}
               step="0.01"

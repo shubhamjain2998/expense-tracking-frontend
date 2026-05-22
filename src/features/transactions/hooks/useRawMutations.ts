@@ -23,24 +23,6 @@ export function useRawMutations(
   const toast = useToastContext()
   const rawKey = qk.transactions.raw(year, month, mode)
 
-  const deleteRawMutation = useMutation({
-    mutationFn: deleteRawTransaction,
-    onMutate: async (id) => {
-      await qc.cancelQueries({ queryKey: rawKey })
-      const prev = qc.getQueryData<RawTransaction[]>(rawKey)
-      qc.setQueryData<RawTransaction[]>(
-        rawKey,
-        (old) => old?.map((t) => (t.id === id ? { ...t, status: 'deleted' } : t)) ?? []
-      )
-      if (selectedUid === 'raw_' + id) setSelectedUid(null)
-      return { prev }
-    },
-    onError: (_err, _id, ctx) => {
-      if (ctx?.prev) qc.setQueryData(rawKey, ctx.prev)
-      toast.error('Failed to delete')
-    },
-  })
-
   const restoreRawMutation = useMutation({
     mutationFn: restoreRawTransaction,
     onMutate: async (id) => {
@@ -55,6 +37,30 @@ export function useRawMutations(
     onError: (_err, _id, ctx) => {
       if (ctx?.prev) qc.setQueryData(rawKey, ctx.prev)
       toast.error('Failed to restore')
+    },
+  })
+
+  const deleteRawMutation = useMutation({
+    mutationFn: deleteRawTransaction,
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: rawKey })
+      const prev = qc.getQueryData<RawTransaction[]>(rawKey)
+      qc.setQueryData<RawTransaction[]>(
+        rawKey,
+        (old) => old?.map((t) => (t.id === id ? { ...t, status: 'deleted' } : t)) ?? []
+      )
+      if (selectedUid === 'raw_' + id) setSelectedUid(null)
+      return { prev, id }
+    },
+    onSuccess: (_data, id) => {
+      toast.info(`Transaction deleted. [Undo]`, {
+        action: { label: 'Undo', onClick: () => restoreRawMutation.mutate(id) },
+        duration: 8000,
+      })
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.prev) qc.setQueryData(rawKey, ctx.prev)
+      toast.error('Failed to delete')
     },
   })
 
