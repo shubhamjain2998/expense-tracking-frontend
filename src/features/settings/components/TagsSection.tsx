@@ -66,6 +66,7 @@ export function TagsSection() {
               }}
               placeholder="Tag name"
               className="input"
+              maxLength={64}
               aria-label="New tag name"
             />
           </div>
