@@ -68,6 +68,7 @@ export function CategoriesSection() {
                         if (e.key === 'Escape') setRenamingCategoryId(null)
                       }}
                       className="input flex-1"
+                      maxLength={64}
                       autoFocus
                       aria-label="Rename category"
                     />
@@ -186,6 +187,7 @@ export function CategoriesSection() {
               }}
               placeholder="Category name"
               className="input"
+              maxLength={64}
               aria-label="New category name"
             />
           </div>

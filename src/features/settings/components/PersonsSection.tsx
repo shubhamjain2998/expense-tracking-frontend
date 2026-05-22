@@ -120,6 +120,7 @@ export function PersonsSection() {
               onKeyDown={(e) => e.key === 'Enter' && handleAddPerson()}
               placeholder="Full name"
               className="input"
+              maxLength={64}
               aria-label="New person name"
             />
             {personNameError && (
