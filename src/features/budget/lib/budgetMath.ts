@@ -4,6 +4,10 @@ import type { Category } from '@/types/settings'
 
 import type { CategoryTableRow, HeatmapRowData, UnbudgetedCategoryRow } from '../types'
 
+// Backend stores allocated_amount as ANNUAL; UI shows/edits MONTHLY values.
+export const monthlyToAnnual = (m: number): number => m * 12
+export const annualToMonthly = (a: number): number => a / 12
+
 export function buildTableRows(
   entries: BudgetEntry[],
   summary: SummaryRow[],
@@ -16,10 +20,12 @@ export function buildTableRows(
 
   return entries.map((entry, i) => {
     const annualBudget = Number(entry.allocated_amount)
-    const defaultMonthly = annualBudget / 12
+    const defaultMonthly = annualToMonthly(annualBudget)
     const overrideKey = `${month}:${entry.category_id}`
     const hasOverride = overrideMap.has(overrideKey)
-    const monthlyBudget = hasOverride ? (overrideMap.get(overrideKey) ?? defaultMonthly) : defaultMonthly
+    const monthlyBudget = hasOverride
+      ? (overrideMap.get(overrideKey) ?? defaultMonthly)
+      : defaultMonthly
     const s = summaryByName.get(entry.category)
     const y = ytdByName.get(entry.category)
     const thisMonthSpent = Number(s?.actual ?? 0)
@@ -48,7 +54,7 @@ export function buildHeatmapRows(
   currentYearMonth: number
 ): HeatmapRowData[] {
   return entries.map((entry, i) => {
-    const defaultMonthly = Number(entry.allocated_amount) / 12
+    const defaultMonthly = annualToMonthly(Number(entry.allocated_amount))
 
     const cells = Array.from({ length: 12 }, (_, mi) => {
       const m = mi + 1

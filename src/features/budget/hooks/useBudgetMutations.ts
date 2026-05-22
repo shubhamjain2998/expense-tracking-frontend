@@ -13,6 +13,8 @@ import { monthLongLabel } from '@/lib/period'
 import type { PeriodMode } from '@/lib/period'
 import { qk } from '@/lib/queryKeys'
 
+import { monthlyToAnnual } from '../lib/budgetMath'
+
 export function useBudgetMutations({
   year,
   month,
@@ -28,7 +30,7 @@ export function useBudgetMutations({
 
   const updateAnnualMutation = useMutation({
     mutationFn: ({ id, monthlyAmount }: { id: string; monthlyAmount: number }) =>
-      updateBudgetEntry(id, { allocated_amount: monthlyAmount * 12 }),
+      updateBudgetEntry(id, { allocated_amount: monthlyToAnnual(monthlyAmount) }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: qk.budget.all })
       void qc.invalidateQueries({ queryKey: qk.dashboard.all })
@@ -48,9 +50,10 @@ export function useBudgetMutations({
     onError: (err: { detail: string; status?: number }, vars) => {
       if (err.status === 404 || err.status === 405 || err.status === 422) {
         updateAnnualMutation.mutate({ id: vars.entryId, monthlyAmount: vars.amount })
-        toast.warning(
-          'Saved as annual budget. Implement /budget/{year}/{month}/categories/{id} for per-month overrides.'
-        )
+        // TODO: wire per-month override once backend adds
+        // PUT /budget/{year}/{month}/categories/{id}
+        // Tracked: https://github.com/shubhamjain2998/expense-tracking-frontend/issues/37
+        toast.warning('Per-month overrides are not yet supported; saved as the annual budget.')
       } else {
         toast.error(err.detail)
       }
@@ -84,7 +87,9 @@ export function useBudgetMutations({
     mutationFn: (vars: { categoryId: string; monthlyAmount: number }) =>
       createBudget({
         year,
-        entries: [{ category_id: vars.categoryId, allocated_amount: vars.monthlyAmount * 12 }],
+        entries: [
+          { category_id: vars.categoryId, allocated_amount: monthlyToAnnual(vars.monthlyAmount) },
+        ],
       }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: qk.budget.all })
