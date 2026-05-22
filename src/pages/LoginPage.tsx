@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 
 import { Button } from '../components/ui/Button'
 import { useAuth } from '../contexts/AuthContext'
@@ -7,6 +7,7 @@ import { login as loginApi } from '../lib/api'
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -24,7 +25,8 @@ export function LoginPage() {
     try {
       const { access_token } = await loginApi(email.trim(), password)
       login(access_token, email.trim())
-      navigate('/dashboard', { replace: true })
+      const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname
+      navigate(from ?? '/dashboard', { replace: true })
     } catch (err: unknown) {
       const e = err as { detail?: string }
       setError(e.detail ?? 'Invalid email or password')
@@ -82,11 +84,13 @@ export function LoginPage() {
               <label className="eyebrow mb-1 block">Email</label>
               <input
                 type="email"
+                name="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 className="input"
                 autoComplete="email"
+                required
                 autoFocus
               />
             </div>
@@ -94,11 +98,13 @@ export function LoginPage() {
               <label className="eyebrow mb-1 block">Password</label>
               <input
                 type="password"
+                name="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 className="input"
                 autoComplete="current-password"
+                required
               />
             </div>
 
