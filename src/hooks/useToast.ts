@@ -2,10 +2,21 @@ import { useState, useCallback } from 'react'
 
 export type ToastVariant = 'success' | 'error' | 'warning' | 'info'
 
+export interface ToastAction {
+  label: string
+  onClick: () => void
+}
+
+export interface ToastOptions {
+  duration?: number
+  action?: ToastAction
+}
+
 export interface Toast {
   id: string
   message: string
   variant: ToastVariant
+  action?: ToastAction
 }
 
 let idCounter = 0
@@ -18,19 +29,19 @@ export function useToast() {
   }, [])
 
   const show = useCallback(
-    (message: string, variant: ToastVariant) => {
+    (message: string, variant: ToastVariant, opts: ToastOptions = {}) => {
       const id = String(++idCounter)
-      setToasts((prev) => [...prev, { id, message, variant }])
-      setTimeout(() => dismiss(id), 4000)
+      setToasts((prev) => [...prev, { id, message, variant, action: opts.action }])
+      setTimeout(() => dismiss(id), opts.duration ?? 4000)
     },
     [dismiss]
   )
 
   const toast = {
-    success: (msg: string) => show(msg, 'success'),
-    error: (msg: string) => show(msg, 'error'),
-    warning: (msg: string) => show(msg, 'warning'),
-    info: (msg: string) => show(msg, 'info'),
+    success: (msg: string, opts?: ToastOptions) => show(msg, 'success', opts),
+    error: (msg: string, opts?: ToastOptions) => show(msg, 'error', opts),
+    warning: (msg: string, opts?: ToastOptions) => show(msg, 'warning', opts),
+    info: (msg: string, opts?: ToastOptions) => show(msg, 'info', opts),
   }
 
   return { toasts, toast, dismiss }

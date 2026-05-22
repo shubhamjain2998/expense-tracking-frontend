@@ -11,11 +11,12 @@ export function useTransactionsData(
   month: number,
   categoryFilter: string,
   tagFilter: string,
-  mode: PeriodMode
+  mode: PeriodMode,
+  showDeleted: boolean = false
 ) {
   const rawQuery = useQuery({
-    queryKey: qk.transactions.raw(year, month, mode),
-    queryFn: () => getRawTransactions(year, month, mode),
+    queryKey: [...qk.transactions.raw(year, month, mode), showDeleted],
+    queryFn: () => getRawTransactions(year, month, mode, showDeleted),
   })
 
   const processedQuery = useQuery({

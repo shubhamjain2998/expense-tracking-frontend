@@ -190,7 +190,7 @@ export function TransactionRow({
                 flexShrink: 0,
               }}
             />
-            {txnIncome ? 'income' : 'pending'}
+            {txnIncome ? 'refund?' : 'pending'}
           </span>
         ) : isDeleted ? (
           <span
@@ -216,10 +216,21 @@ export function TransactionRow({
               gap: 5,
               padding: '3px 8px',
               borderRadius: 'var(--radius-sm)',
-              background: `color-mix(in oklch, ${catColor} 13%, var(--surface))`,
+              background:
+                txn.txnType === 'refund'
+                  ? 'var(--pos-soft)'
+                  : txn.txnType === 'transfer'
+                    ? 'var(--surface-2)'
+                    : `color-mix(in oklch, ${catColor} 13%, var(--surface))`,
               fontSize: 12,
               fontWeight: 500,
-              color: catColor,
+              color:
+                txn.txnType === 'refund'
+                  ? 'var(--pos)'
+                  : txn.txnType === 'transfer'
+                    ? 'var(--ink-3)'
+                    : catColor,
+              border: txn.txnType === 'transfer' ? '1px solid var(--line)' : undefined,
             }}
           >
             <span
@@ -227,11 +238,20 @@ export function TransactionRow({
                 width: 6,
                 height: 6,
                 borderRadius: '50%',
-                background: catColor,
+                background:
+                  txn.txnType === 'refund'
+                    ? 'var(--pos)'
+                    : txn.txnType === 'transfer'
+                      ? 'var(--ink-4)'
+                      : catColor,
                 flexShrink: 0,
               }}
             />
-            {txn.category}
+            {txn.txnType === 'refund'
+              ? `refund · ${txn.category}`
+              : txn.txnType === 'transfer'
+                ? 'transfer'
+                : txn.category}
           </span>
         )}
       </td>
@@ -287,12 +307,25 @@ export function TransactionRow({
           textAlign: 'right',
           fontSize: 13.5,
           fontWeight: 600,
-          color: txnIncome ? 'var(--pos)' : 'var(--ink)',
+          color:
+            txn.txnType === 'income'
+              ? 'var(--pos)'
+              : txn.txnType === 'refund'
+                ? 'var(--pos)'
+                : txn.txnType === 'transfer'
+                  ? 'var(--ink-3)'
+                  : txnIncome
+                    ? 'var(--pos)'
+                    : 'var(--ink)',
           fontVariantNumeric: 'tabular-nums',
           whiteSpace: 'nowrap',
         }}
       >
-        {txnIncome ? '+' : ''}
+        {txn.txnType === 'refund'
+          ? '-'
+          : txn.txnType === 'income' || (txnIncome && !txn.txnType)
+            ? '+'
+            : ''}
         {amtDisplay}
       </td>
 

@@ -1,10 +1,12 @@
 import { createContext, useContext } from 'react'
 
+import type { ToastOptions } from './useToast'
+
 export interface ToastFns {
-  success: (msg: string) => void
-  error: (msg: string) => void
-  warning: (msg: string) => void
-  info: (msg: string) => void
+  success: (msg: string, opts?: ToastOptions) => void
+  error: (msg: string, opts?: ToastOptions) => void
+  warning: (msg: string, opts?: ToastOptions) => void
+  info: (msg: string, opts?: ToastOptions) => void
 }
 
 export const ToastContext = createContext<ToastFns>({
