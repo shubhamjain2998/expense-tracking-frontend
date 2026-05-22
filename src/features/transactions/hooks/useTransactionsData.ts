@@ -12,11 +12,15 @@ export function useTransactionsData(
   categoryFilter: string,
   tagFilter: string,
   mode: PeriodMode,
-  showDeleted: boolean = false
+  // showDeleted now controls only client-side visibility (see TransactionsList).
+  // The query ALWAYS fetches with include_deleted=true so deletedCount is
+  // accurate and the "Show N deleted" toggle is discoverable when there are
+  // recoverable rows. Keeping the param for backwards-compat with callers.
+  _showDeleted: boolean = false
 ) {
   const rawQuery = useQuery({
-    queryKey: [...qk.transactions.raw(year, month, mode), showDeleted],
-    queryFn: () => getRawTransactions(year, month, mode, showDeleted),
+    queryKey: qk.transactions.raw(year, month, mode),
+    queryFn: () => getRawTransactions(year, month, mode, true),
   })
 
   const processedQuery = useQuery({
