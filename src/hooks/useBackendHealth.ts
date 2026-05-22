@@ -4,6 +4,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 export const RETRY_SECONDS = 12
 
+// Show the offline banner only after this many consecutive failures within FAILURE_WINDOW_MS.
+// A single isolated 500 (e.g. a duplicate-upload conflict) must NOT trigger the banner.
+const FAILURE_THRESHOLD = 3
+const FAILURE_WINDOW_MS = 30_000
+
 export function useBackendHealth() {
   const [status, setStatus] = useState<'online' | 'offline' | 'recovered'>('online')
   const [retryIn, setRetryIn] = useState(0)
@@ -12,6 +17,8 @@ export function useBackendHealth() {
   const cdRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
   // Ref so the scheduled retry always calls the latest ping without a circular useCallback dep
   const pingRef = useRef<(() => Promise<void>) | undefined>(undefined)
+  // Sliding window of recent failure timestamps for debouncing
+  const failureTimesRef = useRef<number[]>([])
 
   const startCountdown = useCallback(() => {
     clearInterval(cdRef.current)
@@ -56,6 +63,16 @@ export function useBackendHealth() {
   useEffect(() => {
     const goOffline = () => {
       if (offlineRef.current) return
+
+      // Debounce: only show the banner after FAILURE_THRESHOLD failures in FAILURE_WINDOW_MS.
+      const now = Date.now()
+      failureTimesRef.current = failureTimesRef.current.filter(
+        (t) => now - t < FAILURE_WINDOW_MS
+      )
+      failureTimesRef.current.push(now)
+      if (failureTimesRef.current.length < FAILURE_THRESHOLD) return
+
+      failureTimesRef.current = []
       offlineRef.current = true
       clearTimeout(timerRef.current)
       clearInterval(cdRef.current)
