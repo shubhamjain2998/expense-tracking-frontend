@@ -9,6 +9,8 @@ import { createCategory } from '@/lib/api/categories'
 import { qk } from '@/lib/queryKeys'
 import type { Category } from '@/types/settings'
 
+import { monthlyToAnnual } from '../lib/budgetMath'
+
 export function AddBudgetModal({
   categories,
   existingCategoryIds,
@@ -60,7 +62,7 @@ export function AddBudgetModal({
       year,
       entries: valid.map((r) => ({
         category_id: r.categoryId,
-        allocated_amount: Number(r.amount) * 12,
+        allocated_amount: monthlyToAnnual(Number(r.amount)),
       })),
     })
   }
