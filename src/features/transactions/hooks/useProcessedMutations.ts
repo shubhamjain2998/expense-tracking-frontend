@@ -8,6 +8,7 @@ import {
 } from '@/lib/api/transactions'
 import type { PeriodMode } from '@/lib/period'
 import { qk } from '@/lib/queryKeys'
+import type { PersonShareIn } from '@/types/transaction'
 
 export function useProcessedMutations(year: number, month: number, mode: PeriodMode) {
   const qc = useQueryClient()
@@ -24,12 +25,26 @@ export function useProcessedMutations(year: number, month: number, mode: PeriodM
   })
 
   const quickCategorizeMutation = useMutation({
-    mutationFn: ({ rawId, categoryId }: { rawId: string; categoryId: string }) =>
+    mutationFn: ({
+      rawId,
+      categoryId,
+      shares = [],
+      notes,
+      tag_ids,
+    }: {
+      rawId: string
+      categoryId: string
+      shares?: PersonShareIn[]
+      notes?: string | null
+      tag_ids?: string[]
+    }) =>
       processTransaction({
         raw_txn_id: rawId,
         category_id: categoryId,
         save_mapping: true,
-        shares: [],
+        shares,
+        notes,
+        tag_ids,
       }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: qk.transactions.raw(year, month, mode) })

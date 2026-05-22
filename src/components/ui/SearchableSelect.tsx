@@ -14,6 +14,7 @@ interface SearchableSelectProps {
   error?: string
   allowCreate?: boolean
   onCreateOption?: (label: string) => Promise<string>
+  onCreateError?: (msg: string) => void
 }
 
 function normalise(options: string[] | SelectOption[]): SelectOption[] {
@@ -33,6 +34,7 @@ export function SearchableSelect({
   error,
   allowCreate = false,
   onCreateOption,
+  onCreateError,
 }: SearchableSelectProps) {
   const id = useId()
   const normalised = normalise(options)
@@ -124,6 +126,8 @@ export function SearchableSelect({
         setQuery(trimmed)
         setCreateChecked(true)
         setOpen(false)
+      } catch {
+        onCreateError?.('Failed to create category')
       } finally {
         setCreating(false)
       }

@@ -57,12 +57,21 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
       const parsedAmount = Number(amount)
       const amountChanged =
         !isNaN(parsedAmount) && parsedAmount !== 0 && parsedAmount !== Number(txn.amount)
-      const dateChanged = txnDate && txnDate !== txn.txn_date?.slice(0, 10)
-      if (amountChanged || dateChanged) {
+      const dateChanged = !!txnDate && txnDate !== txn.txn_date?.slice(0, 10)
+      if (
+        amountChanged ||
+        dateChanged ||
+        selectedTagIds.length > 0 ||
+        shares.length > 0 ||
+        notes.trim()
+      ) {
         try {
           await editProcessedTransaction(data.id, {
             ...(amountChanged ? { amount: parsedAmount } : {}),
             ...(dateChanged ? { txn_date: txnDate } : {}),
+            tag_ids: selectedTagIds,
+            shares,
+            notes: notes.trim() || null,
           })
         } catch {
           /* ignore */
@@ -199,6 +208,7 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
           error={categoryError}
           allowCreate
           onCreateOption={handleCreateCategory}
+          onCreateError={(msg) => toast.error(msg)}
         />
 
         <button
@@ -233,6 +243,7 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
             onChange={setShares}
             totalAmount={totalAmount}
             onCreatePerson={handleCreatePerson}
+            onCreatePersonError={(msg) => toast.error(msg)}
           />
         )}
 
@@ -268,7 +279,7 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
                 </button>
               )
             })}
-            <NewTagChip onCreated={(id) => setSelectedTagIds((ids) => [...ids, id])} />
+            <NewTagChip onCreated={() => {}} />
           </div>
         </div>
 

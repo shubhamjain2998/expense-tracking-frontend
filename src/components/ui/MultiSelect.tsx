@@ -8,6 +8,7 @@ interface MultiSelectProps {
   selectedIds: string[]
   onChange: (ids: string[]) => void
   onCreatePerson?: (name: string) => Promise<Person>
+  onCreateError?: (msg: string) => void
   label?: string
 }
 
@@ -16,6 +17,7 @@ export function MultiSelect({
   selectedIds,
   onChange,
   onCreatePerson,
+  onCreateError,
   label,
 }: MultiSelectProps) {
   const [query, setQuery] = useState('')
@@ -23,6 +25,12 @@ export function MultiSelect({
   const [creating, setCreating] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const selectedIdsRef = useRef(selectedIds)
+  const onChangeRef = useRef(onChange)
+  useEffect(() => {
+    selectedIdsRef.current = selectedIds
+    onChangeRef.current = onChange
+  })
 
   const selected = persons.filter((p) => selectedIds.includes(p.id))
   const trimmed = query.trim()
@@ -62,9 +70,11 @@ export function MultiSelect({
     setCreating(true)
     try {
       const newPerson = await onCreatePerson(trimmed)
-      onChange([...selectedIds, newPerson.id])
+      onChangeRef.current([...selectedIdsRef.current, newPerson.id])
       setQuery('')
       setOpen(false)
+    } catch {
+      onCreateError?.('Failed to create person')
     } finally {
       setCreating(false)
     }

@@ -50,6 +50,28 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
   const personsQuery = useQuery({ queryKey: qk.persons.all, queryFn: getPersons })
   const tagsQuery = useQuery({ queryKey: qk.tags.all, queryFn: getTags })
 
+  const initialShareIds = txn.shares
+    .map((s) => s.person_id)
+    .sort()
+    .join(',')
+  const currentShareIds = shares
+    .map((s) => s.person_id)
+    .sort()
+    .join(',')
+  const initialTagIds = txn.tags
+    .map((t) => t.id)
+    .sort()
+    .join(',')
+  const currentTagIds = [...selectedTagIds].sort().join(',')
+  const isDirty =
+    amount !== txn.amount ||
+    description !== txn.description ||
+    txnDate !== (txn.txn_date?.slice(0, 10) ?? '') ||
+    categoryId !== txn.category_id ||
+    notes !== (txn.notes ?? '') ||
+    currentTagIds !== initialTagIds ||
+    currentShareIds !== initialShareIds
+
   async function handleCreatePerson(name: string) {
     const p = await createPerson(name)
     void qc.invalidateQueries({ queryKey: qk.persons.all })
@@ -125,11 +147,26 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
         className="flex items-center justify-between"
         style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)' }}
       >
-        <span
-          className="text-[13px] font-semibold"
-          style={{ color: 'var(--ink)', letterSpacing: '-0.005em' }}
-        >
-          Edit transaction
+        <span className="flex items-center gap-2">
+          <span
+            className="text-[13px] font-semibold"
+            style={{ color: 'var(--ink)', letterSpacing: '-0.005em' }}
+          >
+            Edit transaction
+          </span>
+          {isDirty && (
+            <span
+              className="text-[10.5px] font-medium"
+              style={{
+                color: 'var(--accent)',
+                background: 'var(--accent-soft)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '1px 6px',
+              }}
+            >
+              Unsaved
+            </span>
+          )}
         </span>
         <button onClick={onClose} className="btn ghost icon sm">
           <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
@@ -213,6 +250,7 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
           error={categoryError}
           allowCreate
           onCreateOption={handleCreateCategory}
+          onCreateError={(msg) => toast.error(msg)}
         />
 
         <button
@@ -247,6 +285,7 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
             onChange={setShares}
             totalAmount={totalAmount}
             onCreatePerson={handleCreatePerson}
+            onCreatePersonError={(msg) => toast.error(msg)}
           />
         )}
 

@@ -153,6 +153,22 @@ export function TransactionsPage() {
     }
   }
 
+  function findBaseContext(description: string) {
+    const base = (processedQuery.data ?? [])
+      .filter((p) => p.description === description)
+      .sort((a, b) => b.txn_date.localeCompare(a.txn_date))[0]
+    if (!base) return {}
+    return {
+      shares: base.shares.map((s) => ({
+        person_id: s.person_id,
+        share_type: s.share_type as 'percentage' | 'amount',
+        share_value: Number(s.share_value),
+      })),
+      notes: base.notes ?? undefined,
+      tag_ids: base.tags.map((t) => t.id),
+    }
+  }
+
   function handleDragStart(uid: string) {
     setDraggingUid(uid)
     setOpenMenuUid(null)
@@ -166,7 +182,11 @@ export function TransactionsPage() {
     const txn = allTxns.find((t) => t.uid === draggingUid)
     if (!txn) return
     if (txn.kind === 'pending' && txn.rawId)
-      quickCategorizeMutation.mutate({ rawId: txn.rawId, categoryId })
+      quickCategorizeMutation.mutate({
+        rawId: txn.rawId,
+        categoryId,
+        ...findBaseContext(txn.description),
+      })
     else if (txn.kind === 'processed' && txn.processedId)
       changeCategoryMutation.mutate({ procId: txn.processedId, categoryId })
     if (txn.kind === 'pending') setSelectedUid(null)
@@ -181,7 +201,10 @@ export function TransactionsPage() {
     editingTxn,
     setSelectedUid,
     setEditingTxn,
-    quickCategorize: (p) => quickCategorizeMutation.mutate(p),
+    quickCategorize: (p) => {
+      const txn = filtered.find((t) => t.rawId === p.rawId && t.kind === 'pending')
+      quickCategorizeMutation.mutate({ ...p, ...(txn ? findBaseContext(txn.description) : {}) })
+    },
     changeCategory: (p) => changeCategoryMutation.mutate(p),
   })
 

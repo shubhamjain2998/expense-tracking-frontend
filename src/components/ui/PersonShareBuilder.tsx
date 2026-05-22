@@ -11,10 +11,10 @@ interface PersonShareBuilderProps {
   onChange: (shares: PersonShareIn[]) => void
   totalAmount: number
   onCreatePerson?: (name: string) => Promise<Person>
+  onCreatePersonError?: (msg: string) => void
 }
 
 const fmt = (n: number) => formatCurrency(n, { fractionDigits: 2 })
-
 
 export function PersonShareBuilder({
   persons,
@@ -22,6 +22,7 @@ export function PersonShareBuilder({
   onChange,
   totalAmount,
   onCreatePerson,
+  onCreatePersonError,
 }: PersonShareBuilderProps) {
   const selectedIds = shares.map((s) => s.person_id)
 
@@ -60,6 +61,7 @@ export function PersonShareBuilder({
         selectedIds={selectedIds}
         onChange={handlePersonChange}
         onCreatePerson={onCreatePerson}
+        onCreateError={onCreatePersonError}
       />
 
       {shares.length > 0 && (
