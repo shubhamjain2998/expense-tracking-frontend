@@ -171,7 +171,7 @@ export function FileCard({ upload, onRemove, onToggleExclude }: FileCardProps) {
             onToggleExclude={upload.status === 'ready' ? onToggleExclude : undefined}
           />
 
-          {(upload.preview.skipped_rows?.length ?? 0) > 0 && (
+          {upload.preview.skipped > 0 && (
             <div style={{ borderTop: '1px solid var(--line)' }}>
               <button
                 onClick={() => setSkippedExpanded((v) => !v)}
@@ -185,8 +185,8 @@ export function FileCard({ upload, onRemove, onToggleExclude }: FileCardProps) {
                     warning
                   </span>
                   <span className="text-[12.5px] font-medium" style={{ color: 'var(--ink-2)' }}>
-                    {upload.preview.skipped_rows.length} row
-                    {upload.preview.skipped_rows.length > 1 ? 's' : ''} skipped during parsing
+                    {upload.preview.skipped} row{upload.preview.skipped > 1 ? 's' : ''} skipped
+                    during parsing — import continues without them
                   </span>
                 </div>
                 <span
