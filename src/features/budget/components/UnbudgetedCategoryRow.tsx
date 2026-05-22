@@ -66,7 +66,8 @@ export function UnbudgetedCategoryRow({
             }}
             className="input num"
             style={{ width: 110, textAlign: 'right' }}
-            min={0}
+            min={0.01}
+            max={Number.MAX_SAFE_INTEGER}
             placeholder="e.g. 5000"
             disabled={isSaving}
             aria-label={`Set monthly budget for ${row.categoryName}`}

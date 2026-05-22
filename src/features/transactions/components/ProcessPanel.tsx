@@ -175,6 +175,8 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
               height: 38,
               color: txnIsIncome ? 'var(--pos)' : 'var(--ink)',
             }}
+            min={0.01}
+            max={Number.MAX_SAFE_INTEGER}
             step="0.01"
           />
           <input

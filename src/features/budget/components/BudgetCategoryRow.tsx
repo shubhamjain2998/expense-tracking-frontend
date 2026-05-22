@@ -75,7 +75,8 @@ export function BudgetCategoryRow({
             }}
             className="input num"
             style={{ width: 110, textAlign: 'right' }}
-            min={0}
+            min={0.01}
+            max={Number.MAX_SAFE_INTEGER}
             aria-label={`Monthly budget for ${row.categoryName}`}
           />
         ) : (
