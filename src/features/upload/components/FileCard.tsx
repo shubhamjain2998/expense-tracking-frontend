@@ -28,6 +28,7 @@ export function FileCard({ upload, onRemove, onToggleExclude }: FileCardProps) {
         !searchQuery || row.description.toLowerCase().includes(searchQuery.toLowerCase())
       return matchesDate && matchesSearch
     })
+    .sort((a, b) => b.row.txn_date.localeCompare(a.row.txn_date))
 
   const readyCount = (upload.preview?.would_insert ?? 0) - upload.excludedIndices.size
   const isActive = upload.status === 'ready' || upload.status === 'done'
