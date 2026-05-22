@@ -25,3 +25,17 @@ export interface YTDRow {
   variance: number
   pct_used: number | null
 }
+
+export interface MultiMonthCategoryRow {
+  category: string
+  actual: string
+}
+
+export interface MultiMonthSummaryItem {
+  year: number
+  /** Calendar month (1=Jan … 12=Dec) */
+  month: number
+  expense_total: string
+  income_total: string
+  category_breakdown: MultiMonthCategoryRow[]
+}

@@ -1,7 +1,13 @@
-import { useQueries, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 
-import { getDashboardSummary, getMonthlyTrend, getSplitLedger, getYTD } from '@/lib/api/dashboard'
+import {
+  getDashboardSummary,
+  getMonthlyTrend,
+  getMultiMonthSummary,
+  getSplitLedger,
+  getYTD,
+} from '@/lib/api/dashboard'
 import { getTags } from '@/lib/api/tags'
 import { getPendingManual, getProcessedTransactions } from '@/lib/api/transactions'
 import type { PeriodMode } from '@/lib/period'
@@ -14,7 +20,6 @@ import type { PendingManualTransaction, ProcessedTransactionItem } from '@/types
 import {
   computeCategoryStats,
   computeDailySpend,
-  computeIncomeTrendData,
   computeStackedTrend,
   computeYtdExtras,
   computeYtdLineData,
@@ -95,7 +100,7 @@ export function useDashboardData({
   includeSettled,
   mode,
 }: Params): DashboardDataResult {
-  // ── Queries ─────────────────────────────────────────────────────────────────
+  // ── Queries ──────────────────────────────────────────────────────────────────────
 
   const summaryQuery = useQuery({
     queryKey: qk.dashboard.summary(year, month, mode, selectedTagId || undefined),
@@ -133,6 +138,19 @@ export function useDashboardData({
     queryFn: () => getMonthlyTrend(year, undefined, undefined, mode),
   })
 
+  // Single batch call replaces 6×summary + 6×transactions/processed (finding 1.3).
+  // Returns per-category expense + income/expense totals for the 6 calendar months
+  // ending at the currently selected calendar month.
+  const multiMonthSummaryQuery = useQuery({
+    queryKey: qk.dashboard.multiMonthSummary(
+      calYear,
+      calMonth,
+      6,
+      selectedTagId || undefined
+    ),
+    queryFn: () => getMultiMonthSummary(calYear, calMonth, 6, selectedTagId || undefined),
+  })
+
   // The 6 calendar months ending at (and including) the selected month
   const last6Months = useMemo(() => {
     return Array.from({ length: 6 }, (_, i) => {
@@ -145,22 +163,7 @@ export function useDashboardData({
     }).reverse()
   }, [calYear, calMonth])
 
-  // Per-month summary queries — always use 'calendar' mode since year/month are calendar values
-  const trendQueries = useQueries({
-    queries: last6Months.map((m) => ({
-      queryKey: qk.dashboard.summary(m.year, m.month, 'calendar', selectedTagId || undefined),
-      queryFn: () => getDashboardSummary(m.year, m.month, selectedTagId || undefined, 'calendar'),
-    })),
-  })
-
-  const incomeQueries = useQueries({
-    queries: last6Months.map((m) => ({
-      queryKey: qk.transactions.processed(m.year, m.month, undefined, undefined, 'calendar'),
-      queryFn: () => getProcessedTransactions(m.year, m.month, undefined, undefined, 'calendar'),
-    })),
-  })
-
-  // ── Derived: monthly summary ────────────────────────────────────────────────
+  // ── Derived: monthly summary ─────────────────────────────────────────────────────────
 
   const summaryRows = useMemo(() => summaryQuery.data ?? [], [summaryQuery.data])
 
@@ -197,7 +200,7 @@ export function useDashboardData({
     [summaryRows]
   )
 
-  // ── Derived: income ─────────────────────────────────────────────────────────
+  // ── Derived: income ────────────────────────────────────────────────────────────────
 
   const allTransactions = useMemo(() => allTxnQuery.data ?? [], [allTxnQuery.data])
 
@@ -220,24 +223,37 @@ export function useDashboardData({
       .sort((a, b) => b.total - a.total)
   }, [allTransactions])
 
-  const incomeTrendData = useMemo(
-    () => computeIncomeTrendData(incomeQueries.map((q) => q.data), last6Months),
-    [incomeQueries, last6Months]
-  )
+  // Derive 6-month income/expense trend from the batch endpoint instead of
+  // fetching 6×transactions/processed (finding 1.3).
+  const incomeTrendData = useMemo((): IncomeExpenseTrendPoint[] => {
+    const items = multiMonthSummaryQuery.data ?? []
+    return last6Months.map((m) => {
+      const item = items.find((d) => d.year === m.year && d.month === m.month)
+      const income = item ? Number(item.income_total) : 0
+      const expense = item ? Number(item.expense_total) : 0
+      return { month: m.label, income, expense, savings: income - expense }
+    })
+  }, [multiMonthSummaryQuery.data, last6Months])
 
-  // ── Derived: transaction stats + daily spend ────────────────────────────────
+  // ── Derived: transaction stats + daily spend ─────────────────────────────────
 
   const categoryStats = useMemo(() => computeCategoryStats(allTransactions), [allTransactions])
   const dailySpend = useMemo(() => computeDailySpend(allTransactions), [allTransactions])
 
-  // ── Derived: 6-month stacked trend ─────────────────────────────────────────
+  // ── Derived: 6-month stacked trend ──────────────────────────────────────────
 
   const { stackedTrendData, stackCategories } = useMemo(
-    () => computeStackedTrend(trendQueries.map((q) => q.data), last6Months),
-    [trendQueries, last6Months]
+    () =>
+      computeStackedTrend(
+        multiMonthSummaryQuery.data
+          ? multiMonthSummaryQuery.data.map((item) => item.category_breakdown)
+          : last6Months.map(() => undefined),
+        last6Months
+      ),
+    [multiMonthSummaryQuery.data, last6Months]
   )
 
-  // ── Derived: YTD ────────────────────────────────────────────────────────────
+  // ── Derived: YTD ──────────────────────────────────────────────────────────────────────
 
   const ytdRows = useMemo(() => ytdQuery.data ?? [], [ytdQuery.data])
   const ytdSpentTotal = useMemo(
@@ -298,7 +314,7 @@ export function useDashboardData({
     [ytdRows, yearlyTrendData, ytdSpentTotal, month, projectedFY, expectedYtd]
   )
 
-  // ── Return ──────────────────────────────────────────────────────────────────
+  // ── Return ────────────────────────────────────────────────────────────────────────
 
   return {
     summaryRows,
@@ -331,7 +347,7 @@ export function useDashboardData({
     ytdLoading: ytdQuery.isLoading,
     pendingLoading: pendingQuery.isLoading,
     yearlyTrendLoading: yearlyTrendQuery.isLoading,
-    trendQueriesLoading: trendQueries.some((q) => q.isLoading),
-    incomeQueriesLoading: incomeQueries.some((q) => q.isLoading),
+    trendQueriesLoading: multiMonthSummaryQuery.isLoading,
+    incomeQueriesLoading: multiMonthSummaryQuery.isLoading,
   }
 }

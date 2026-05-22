@@ -41,6 +41,8 @@ export const qk = {
     splitLedger: (year: number, month: number, includeSettled: boolean, mode?: PeriodMode) =>
       ['dashboard', 'splitLedger', year, month, includeSettled, mode] as const,
     ytd: (year: number, mode?: PeriodMode) => ['dashboard', 'ytd', year, mode] as const,
+    multiMonthSummary: (endYear: number, endMonth: number, months: number, tagId?: string) =>
+      ['dashboard', 'multiMonthSummary', endYear, endMonth, months, tagId] as const,
   },
   transactions: {
     all: ['transactions'] as const,

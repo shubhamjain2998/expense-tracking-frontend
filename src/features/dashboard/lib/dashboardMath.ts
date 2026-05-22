@@ -1,6 +1,6 @@
 import type { PeriodMode } from '@/lib/period'
 import { monthShortLabel } from '@/lib/period'
-import type { SummaryRow, TrendDataPoint, YTDRow } from '@/types/dashboard'
+import type { TrendDataPoint, YTDRow } from '@/types/dashboard'
 import type { ProcessedTransactionItem } from '@/types/transaction'
 
 import type {
@@ -45,8 +45,13 @@ interface Last6Month {
   label: string
 }
 
+/**
+ * Build the stacked-bar trend data.
+ * Accepts any array of objects with `category` and `actual` fields so it works
+ * with both the legacy SummaryRow and the leaner MultiMonthCategoryRow.
+ */
 export function computeStackedTrend(
-  trendQueriesData: (SummaryRow[] | undefined)[],
+  trendQueriesData: ({ category: string; actual: number | string }[] | undefined)[],
   last6Months: Last6Month[]
 ): { stackedTrendData: Record<string, number | string>[]; stackCategories: string[] } {
   const catSet = new Set<string>()
@@ -91,7 +96,11 @@ export function computeYtdLineData(
 ): YtdDataPoint[] {
   const byMonth = new Map<number, number>()
   for (const dp of yearlyTrendData) {
-    byMonth.set(dp.month, Number(dp.actual_amount))
+    // dp.month is always a calendar month (1=Jan … 12=Dec) per the backend contract.
+    // Convert to period month so the 1-12 loop below aligns correctly in FY mode
+    // (where loop index 1 = April, 2 = May, …).
+    const pm = mode === 'fy' ? ((dp.month - 4 + 12) % 12) + 1 : dp.month
+    byMonth.set(pm, Number(dp.actual_amount))
   }
   const fyIndex = month
 
@@ -152,10 +161,13 @@ export function computeYtdExtras(params: {
   const projectedFYSavingsRate =
     projectedFYIncome > 0 ? Math.round((projectedFYSavings / projectedFYIncome) * 100) : null
 
+  // yearlyTrendData.month is always a calendar month after the QA-E backend fix.
+  // Store as periodMonth so YtdMonthlyHighlights can index into MONTH_LABELS_FULL
+  // (which is also keyed by calendar month) and display the correct name.
   const monthlyStats: MonthStat[] = yearlyTrendData
     .filter((d) => Number(d.actual_amount) > 0 || Number(d.income_amount ?? 0) > 0)
     .map((d) => ({
-      periodMonth: d.month,
+      periodMonth: d.month, // calendar month — MONTH_LABELS_FULL[calMonth] = correct label
       expense: Number(d.actual_amount),
       income: Number(d.income_amount ?? 0),
       savings: Number(d.income_amount ?? 0) - Number(d.actual_amount),
