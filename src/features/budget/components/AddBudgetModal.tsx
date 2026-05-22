@@ -139,7 +139,8 @@ export function AddBudgetModal({
                       )
                     }
                     className="input num"
-                    min={0}
+                    min={0.01}
+                    max={Number.MAX_SAFE_INTEGER}
                     aria-label={`Monthly amount for entry ${i + 1}`}
                   />
                 </div>

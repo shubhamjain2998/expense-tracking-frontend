@@ -162,6 +162,8 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
               onChange={(e) => setAmount(e.target.value)}
               className="input num"
               style={{ color: txnIsIncome ? 'var(--pos)' : undefined }}
+              min={0.01}
+              max={Number.MAX_SAFE_INTEGER}
               step="0.01"
             />
           </div>
