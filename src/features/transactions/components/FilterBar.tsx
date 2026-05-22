@@ -1,7 +1,6 @@
 import type { UseMutationResult } from '@tanstack/react-query'
 
 import type { Category, Tag } from '@/types/settings'
-import type { AutoCategoriseResponse } from '@/types/transaction'
 
 import type { StatusFilter } from '../types'
 
@@ -20,7 +19,8 @@ interface FilterBarProps {
   onTagFilter: (v: string) => void
   hasActiveFilters: boolean
   onClearFilters: () => void
-  autoMutation: UseMutationResult<AutoCategoriseResponse, { detail: string }, void>
+  // FilterBar only calls mutate() and reads isPending — decouple from data shape.
+  autoMutation: Pick<UseMutationResult<unknown, { detail: string }, void>, 'mutate' | 'isPending'>
 }
 
 export function FilterBar({
