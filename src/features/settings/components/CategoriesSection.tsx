@@ -1,9 +1,27 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { SkeletonTable } from '@/components/ui/Skeleton'
+import { useToastContext } from '@/hooks/useToastContext'
+import { createCategory } from '@/lib/api/categories'
+import { qk } from '@/lib/queryKeys'
 import type { Category } from '@/types/settings'
 
 import { useCategories } from '../hooks/useCategories'
+
+// Common Indian household categories. One-click seed for new users; everything
+// here is renameable / deletable from the same UI afterwards.
+const SUGGESTED_DEFAULTS = [
+  'Groceries',
+  'Rent',
+  'Eating Out',
+  'Transport',
+  'Entertainment',
+  'Bills',
+  'Travel',
+  'Health',
+]
 
 export function CategoriesSection() {
   const {
@@ -22,6 +40,28 @@ export function CategoriesSection() {
     incomeFlagMutation,
   } = useCategories()
 
+  const qc = useQueryClient()
+  const toast = useToastContext()
+  // Sequential creates: backend rejects duplicates with 409, but creating
+  // serially keeps error messages tied to the specific category that failed.
+  const seedDefaultsMutation = useMutation({
+    mutationFn: async () => {
+      for (const name of SUGGESTED_DEFAULTS) {
+        await createCategory(name)
+      }
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qk.categories.all })
+      toast.success(`Added ${SUGGESTED_DEFAULTS.length} suggested categories`)
+    },
+    onError: (err: { detail?: string }) => {
+      // Even on partial failure the categories endpoint will have created some
+      // rows — refetch so the user sees the actual state.
+      void qc.invalidateQueries({ queryKey: qk.categories.all })
+      toast.error(err.detail ?? 'Could not add all suggested categories')
+    },
+  })
+
   return (
     <>
       <section className="card">
@@ -37,9 +77,44 @@ export function CategoriesSection() {
         {query.isLoading ? (
           <SkeletonTable />
         ) : !query.data?.length ? (
-          <p className="text-[13px]" style={{ color: 'var(--ink-3)' }}>
-            No categories yet.
-          </p>
+          <div
+            className="flex flex-col items-center justify-center gap-3 py-8 text-center"
+            style={{
+              border: '1px dashed var(--line)',
+              borderRadius: 'var(--radius)',
+            }}
+          >
+            <span
+              className="material-symbols-outlined"
+              style={{ fontSize: 22, color: 'var(--ink-4)' }}
+              aria-hidden
+            >
+              category
+            </span>
+            <div>
+              <p
+                className="text-[13px] font-semibold"
+                style={{ color: 'var(--ink)', letterSpacing: '-0.005em' }}
+              >
+                No categories yet
+              </p>
+              <p className="mt-1 text-[12px]" style={{ color: 'var(--ink-3)', maxWidth: 320 }}>
+                Categories are the buckets you budget against. Start with a common set — you can
+                rename or remove any of them after.
+              </p>
+            </div>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => seedDefaultsMutation.mutate()}
+              loading={seedDefaultsMutation.isPending}
+            >
+              Add {SUGGESTED_DEFAULTS.length} suggested categories
+            </Button>
+            <p className="text-[11px]" style={{ color: 'var(--ink-4)' }}>
+              {SUGGESTED_DEFAULTS.join(' · ')}
+            </p>
+          </div>
         ) : (
           <div
             style={{

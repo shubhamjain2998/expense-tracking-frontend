@@ -7,6 +7,7 @@ import { CategoriesSection } from './components/CategoriesSection'
 import { DangerZoneSection } from './components/DangerZoneSection'
 import { IgnoreRulesSection } from './components/IgnoreRulesSection'
 import { MappingsSection } from './components/MappingsSection'
+import { OnboardingResetSection } from './components/OnboardingResetSection'
 import { PersonsSection } from './components/PersonsSection'
 import { TagsSection } from './components/TagsSection'
 
@@ -178,7 +179,12 @@ export function SettingsPage() {
             </section>
           )}
 
-          {activeNav === 'privacy' && <BackupImportSection />}
+          {activeNav === 'privacy' && (
+            <>
+              <BackupImportSection />
+              <OnboardingResetSection />
+            </>
+          )}
           {activeNav === 'danger' && <DangerZoneSection />}
         </div>
       </div>

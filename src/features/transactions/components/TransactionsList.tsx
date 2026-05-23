@@ -1,6 +1,8 @@
 import type { UseMutationResult } from '@tanstack/react-query'
 import type { Dispatch, SetStateAction } from 'react'
+import { Link } from 'react-router-dom'
 
+import { EmptyState } from '@/components/ui/EmptyState'
 import { SkeletonTable } from '@/components/ui/Skeleton'
 import type { Category } from '@/types/settings'
 import type { ProcessedTransactionItem } from '@/types/transaction'
@@ -95,9 +97,21 @@ export function TransactionsList({
       {isLoading ? (
         <SkeletonTable />
       ) : allNonDeleted.length === 0 ? (
-        <p className="py-10 text-center text-[12.5px]" style={{ color: 'var(--ink-3)' }}>
-          No transactions for this period.
-        </p>
+        <div className="py-6">
+          <EmptyState
+            icon="receipt_long"
+            title="No transactions for this period"
+            description="Upload a bank-statement PDF to populate this view, or add a transaction by hand."
+          />
+          <div className="mt-1 flex justify-center">
+            <Link to="/upload" className="btn primary sm" style={{ gap: 4 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }} aria-hidden>
+                upload
+              </span>
+              Upload a statement
+            </Link>
+          </div>
+        </div>
       ) : (
         <div className="flex min-h-0">
           <div className="min-w-0 flex-1 overflow-x-auto">
