@@ -39,16 +39,24 @@ export function useAutoCategorise() {
           // Newly auto-categorised = appeared after the API call
           const newTxns = afterData.filter((p) => !beforeIds.has(p.id))
 
-          // For each new transaction, apply context from the most recent matching reference
+          // For each new transaction, apply context from the most recent matching
+          // reference. Prefer same mapping_id (backend's auto-categorisation rule —
+          // catches "ZOMATO LTD" / "ZOMATONEW" hitting the same mapping); fall back
+          // to exact description for paths that don't go through mappings.
           await Promise.all(
             newTxns.map(async (newTxn) => {
-              const reference = beforeData
-                .filter(
-                  (p) =>
-                    p.description === newTxn.description &&
-                    (p.tags.length > 0 || p.shares.length > 0 || p.notes)
-                )
-                .sort((a, b) => b.txn_date.localeCompare(a.txn_date))[0]
+              const hasContext = (p: ProcessedTransactionItem) =>
+                p.tags.length > 0 || p.shares.length > 0 || !!p.notes
+              const sortedByRecency = [...beforeData].sort((a, b) =>
+                b.txn_date.localeCompare(a.txn_date)
+              )
+
+              const reference =
+                (newTxn.mapping_id &&
+                  sortedByRecency.find(
+                    (p) => p.mapping_id === newTxn.mapping_id && hasContext(p)
+                  )) ||
+                sortedByRecency.find((p) => p.description === newTxn.description && hasContext(p))
 
               if (!reference) return
 
