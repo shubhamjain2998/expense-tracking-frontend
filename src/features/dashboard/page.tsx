@@ -104,11 +104,9 @@ export function DashboardPage() {
   // ── Render ──────────────────────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-4">
-      <WelcomeModal
-        isOpen={welcomeOpen}
-        onGetStarted={handleWelcomeGetStarted}
-        onSkip={handleWelcomeSkip}
-      />
+      {welcomeOpen && (
+        <WelcomeModal onGetStarted={handleWelcomeGetStarted} onSkip={handleWelcomeSkip} />
+      )}
       {showChecklist && <GettingStartedChecklist onDismiss={() => setShowChecklist(false)} />}
       <DashboardHeader
         totalDebit={data.totalDebit}
