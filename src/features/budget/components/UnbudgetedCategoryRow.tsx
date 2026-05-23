@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 
+import { AmountInput } from '@/components/ui/AmountInput'
 import { formatCurrency } from '@/lib/format'
 
 import { CAT_COLORS } from '../lib/heatColor'
@@ -54,11 +55,10 @@ export function UnbudgetedCategoryRow({
       {/* Monthly Budget — set budget inline */}
       <td className="num">
         {editing ? (
-          <input
+          <AmountInput
             ref={inputRef}
-            type="number"
             value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
+            onChange={setEditValue}
             onBlur={handleSave}
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleSave()
@@ -66,9 +66,7 @@ export function UnbudgetedCategoryRow({
             }}
             className="input num"
             style={{ width: 110, textAlign: 'right' }}
-            min={0.01}
-            max={Number.MAX_SAFE_INTEGER}
-            placeholder="e.g. 5000"
+            placeholder="e.g. 5,000"
             disabled={isSaving}
             aria-label={`Set monthly budget for ${row.categoryName}`}
           />

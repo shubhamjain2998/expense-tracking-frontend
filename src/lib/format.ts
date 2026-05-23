@@ -50,3 +50,23 @@ export function formatLongDate(dateStr: string): string {
 export function todayIsoDate(): string {
   return new Date().toISOString().slice(0, 10)
 }
+
+/**
+ * Format a raw numeric string with en-IN grouping for display in inputs.
+ * "60000" → "60,000"; "100000" → "1,00,000"; "60000.5" → "60,000.5"; "" → "".
+ * Preserves trailing decimal so user can keep typing ("60." stays "60.").
+ */
+export function formatNumberGrouped(raw: string): string {
+  if (raw === '' || raw === '.') return raw
+  const [intPart, decPart] = raw.split('.')
+  const groupedInt = intPart === '' ? '' : Number(intPart).toLocaleString('en-IN')
+  return decPart !== undefined ? `${groupedInt}.${decPart}` : groupedInt
+}
+
+/** Strip commas/whitespace; keep digits and at most one decimal point. */
+export function parseNumberInput(formatted: string): string {
+  const cleaned = formatted.replace(/[^\d.]/g, '')
+  const dotIdx = cleaned.indexOf('.')
+  if (dotIdx === -1) return cleaned
+  return cleaned.slice(0, dotIdx + 1) + cleaned.slice(dotIdx + 1).replace(/\./g, '')
+}

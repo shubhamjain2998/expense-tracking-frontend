@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
+import { AmountInput } from '@/components/ui/AmountInput'
 import { Button } from '@/components/ui/Button'
 import { SearchableSelect } from '@/components/ui/SearchableSelect'
 import { useToastContext } from '@/hooks/useToastContext'
@@ -27,6 +28,7 @@ export function AddBudgetModal({
   const toast = useToastContext()
   const qc = useQueryClient()
   const [rows, setRows] = useState([{ id: 0, categoryId: '', amount: '' }])
+  const [period, setPeriod] = useState<'annual' | 'monthly'>('annual')
 
   const availableOptions = categories
     .filter((c) => !existingCategoryIds.has(c.id) && !c.is_income)
@@ -62,7 +64,8 @@ export function AddBudgetModal({
       year,
       entries: valid.map((r) => ({
         category_id: r.categoryId,
-        allocated_amount: monthlyToAnnual(Number(r.amount)),
+        allocated_amount:
+          period === 'annual' ? Number(r.amount) : monthlyToAnnual(Number(r.amount)),
       })),
     })
   }
@@ -91,7 +94,7 @@ export function AddBudgetModal({
           <div>
             <p className="card-title">Add budget entries</p>
             <p className="card-sub" style={{ marginTop: 2 }}>
-              Set monthly budgets for new categories in {year}.
+              Set {period} budgets for new categories in {year}.
             </p>
           </div>
           <button
@@ -103,6 +106,15 @@ export function AddBudgetModal({
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
               close
             </span>
+          </button>
+        </div>
+
+        <div className="seg" style={{ marginBottom: 16 }} aria-label="Budget period">
+          <button className={period === 'annual' ? 'on' : ''} onClick={() => setPeriod('annual')}>
+            Annual
+          </button>
+          <button className={period === 'monthly' ? 'on' : ''} onClick={() => setPeriod('monthly')}>
+            Monthly
           </button>
         </div>
 
@@ -130,20 +142,17 @@ export function AddBudgetModal({
                   onCreateOption={handleCreateCategory}
                 />
                 <div>
-                  <label className="eyebrow mb-1 block">Monthly amount (₹)</label>
-                  <input
-                    type="number"
+                  <label className="eyebrow mb-1 block">
+                    {period === 'annual' ? 'Annual' : 'Monthly'} amount (₹)
+                  </label>
+                  <AmountInput
                     value={row.amount}
-                    placeholder="e.g. 5000"
-                    onChange={(e) =>
-                      setRows((rs) =>
-                        rs.map((r, ri) => (ri === i ? { ...r, amount: e.target.value } : r))
-                      )
+                    placeholder={period === 'annual' ? 'e.g. 60,000' : 'e.g. 5,000'}
+                    onChange={(raw) =>
+                      setRows((rs) => rs.map((r, ri) => (ri === i ? { ...r, amount: raw } : r)))
                     }
                     className="input num"
-                    min={0.01}
-                    max={Number.MAX_SAFE_INTEGER}
-                    aria-label={`Monthly amount for entry ${i + 1}`}
+                    aria-label={`${period === 'annual' ? 'Annual' : 'Monthly'} amount for entry ${i + 1}`}
                   />
                 </div>
                 {rows.length > 1 && (

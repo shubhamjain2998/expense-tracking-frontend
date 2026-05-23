@@ -160,24 +160,26 @@
 }
 
 /* Personal Finance input. */
-.input {
-  height: 30px;
-  padding: 0 10px;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 12.5px;
-  font-family: inherit;
-  outline: none;
-  width: 100%;
-  transition: border-color 0.1s ease;
-}
-.input:focus {
-  border-color: var(--accent);
-}
-.input::placeholder {
-  color: var(--ink-4);
+@layer components {
+  .input {
+    height: 30px;
+    padding: 0 10px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 12.5px;
+    font-family: inherit;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.1s ease;
+  }
+  .input:focus {
+    border-color: var(--accent);
+  }
+  .input::placeholder {
+    color: var(--ink-4);
+  }
 }
 
 .textarea {
@@ -248,6 +250,7 @@ textarea.input-field {
   background: var(--surface-2);
   color: var(--ink-2);
   border: 1px solid var(--line);
+  white-space: nowrap;
 }
 .chip .dot {
   width: 6px;
