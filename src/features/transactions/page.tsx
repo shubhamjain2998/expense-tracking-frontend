@@ -93,16 +93,25 @@ export function TransactionsPage() {
     if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
     else {
       setSortCol(col)
-      setSortDir(col === 'amount' ? 'desc' : 'asc')
+      setSortDir(col === 'amount' || col === 'split' ? 'desc' : 'asc')
     }
   }
 
   const sorted = [...filtered].sort((a, b) => {
     let cmp = 0
     if (sortCol === 'date') cmp = a.txn_date.localeCompare(b.txn_date)
+    else if (sortCol === 'merchant') cmp = a.description.localeCompare(b.description)
+    else if (sortCol === 'category') cmp = (a.category ?? '').localeCompare(b.category ?? '')
+    else if (sortCol === 'tags') {
+      // Sort by first tag name; rows with no tags go to the end of the asc list.
+      const ta = a.tags[0]?.name ?? ''
+      const tb = b.tags[0]?.name ?? ''
+      if (ta === '' && tb !== '') cmp = 1
+      else if (ta !== '' && tb === '') cmp = -1
+      else cmp = ta.localeCompare(tb)
+    } else if (sortCol === 'split') cmp = a.shares.length - b.shares.length
     else if (sortCol === 'amount')
       cmp = Math.abs(Number(a.effectiveAmount)) - Math.abs(Number(b.effectiveAmount))
-    else if (sortCol === 'category') cmp = (a.category ?? '').localeCompare(b.category ?? '')
     return sortDir === 'asc' ? cmp : -cmp
   })
 

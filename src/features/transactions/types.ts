@@ -24,5 +24,5 @@ export interface UnifiedTxn {
 }
 
 export type StatusFilter = 'all' | 'pending' | 'income' | 'processed' | 'split'
-export type SortCol = 'date' | 'amount' | 'category'
+export type SortCol = 'date' | 'merchant' | 'category' | 'tags' | 'split' | 'amount'
 export type SortDir = 'asc' | 'desc'

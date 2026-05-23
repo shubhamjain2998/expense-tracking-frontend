@@ -11,22 +11,24 @@ interface TransactionsTableHeadProps {
   setCheckedUids: Dispatch<SetStateAction<Set<string>>>
 }
 
-const sortableCols = [
-  { label: 'Date', col: 'date' as SortCol },
-  { label: 'Merchant', col: null },
-  { label: 'Category', col: 'category' as SortCol },
-  { label: 'Tags', col: null },
-] as { label: string; col: SortCol | null }[]
+const columns: { label: string; col: SortCol; align: 'left' | 'center' | 'right' }[] = [
+  { label: 'Date', col: 'date', align: 'left' },
+  { label: 'Merchant', col: 'merchant', align: 'left' },
+  { label: 'Category', col: 'category', align: 'left' },
+  { label: 'Tags', col: 'tags', align: 'left' },
+  { label: 'Split', col: 'split', align: 'center' },
+  { label: 'Amount', col: 'amount', align: 'right' },
+]
 
 const thBase: React.CSSProperties = {
   padding: '8px 12px',
-  textAlign: 'left',
   fontSize: 10.5,
   fontWeight: 600,
   letterSpacing: '0.07em',
   textTransform: 'uppercase',
   userSelect: 'none',
   whiteSpace: 'nowrap',
+  cursor: 'pointer',
 }
 
 export function TransactionsTableHead({
@@ -54,57 +56,32 @@ export function TransactionsTableHead({
           )}
         </th>
         <th style={{ padding: '8px 0 8px 4px' }} />
-        {sortableCols.map(({ label, col }) => (
-          <th
-            key={label}
-            onClick={col ? () => onToggleSort(col) : undefined}
-            style={{
-              ...thBase,
-              color: col && sortCol === col ? 'var(--ink-2)' : 'var(--ink-4)',
-              cursor: col ? 'pointer' : 'default',
-            }}
-          >
-            {label}
-            {col && sortCol === col && (
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 12, marginLeft: 3, verticalAlign: 'middle' }}
-              >
-                {sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'}
-              </span>
-            )}
-          </th>
-        ))}
-        <th
-          style={{
-            ...thBase,
-            textAlign: 'center',
-            color: 'var(--ink-4)',
-            cursor: 'default',
-          }}
-        >
-          Split
-        </th>
-        <th
-          onClick={() => onToggleSort('amount')}
-          style={{
-            ...thBase,
-            textAlign: 'right',
-            color: sortCol === 'amount' ? 'var(--ink-2)' : 'var(--ink-4)',
-            fontVariantNumeric: 'tabular-nums',
-            cursor: 'pointer',
-          }}
-        >
-          Amount
-          {sortCol === 'amount' && (
-            <span
-              className="material-symbols-outlined"
-              style={{ fontSize: 12, marginLeft: 3, verticalAlign: 'middle' }}
+        {columns.map(({ label, col, align }) => {
+          const active = sortCol === col
+          return (
+            <th
+              key={col}
+              onClick={() => onToggleSort(col)}
+              aria-sort={active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+              style={{
+                ...thBase,
+                textAlign: align,
+                color: active ? 'var(--ink-2)' : 'var(--ink-4)',
+                fontVariantNumeric: col === 'amount' ? 'tabular-nums' : 'normal',
+              }}
             >
-              {sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'}
-            </span>
-          )}
-        </th>
+              {label}
+              {active && (
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontSize: 12, marginLeft: 3, verticalAlign: 'middle' }}
+                >
+                  {sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                </span>
+              )}
+            </th>
+          )
+        })}
         <th />
       </tr>
     </thead>
