@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
+import { GettingStartedChecklist } from '@/components/onboarding/GettingStartedChecklist'
+import { WelcomeModal } from '@/components/onboarding/WelcomeModal'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { useThemeContext } from '@/hooks/useThemeContext'
+import { onboardingStorage } from '@/lib/onboardingStorage'
 import { formatYearLabel, getCurrentPeriod, loadPeriodMode, resolvePeriodMonth } from '@/lib/period'
 
 import { BudgetPaceBars } from './components/BudgetPaceBars'
@@ -52,6 +55,25 @@ export function DashboardPage() {
   const [includeSettled, setIncludeSettled] = useState(false)
   const [trendMode, setTrendMode] = useState<'stacked' | 'total'>('stacked')
 
+  // ── Onboarding (welcome modal + Getting Started checklist) ─────────────────
+  // Initial state is derived from localStorage to avoid the modal/checklist
+  // briefly flashing-then-vanishing on mount. The two flags are intentionally
+  // independent — dismissing the welcome modal does NOT hide the checklist,
+  // which persists until the user explicitly dismisses it or completes all
+  // four steps (handled inside GettingStartedChecklist).
+  const [welcomeOpen, setWelcomeOpen] = useState(() => !onboardingStorage.isOnboarded())
+  const [showChecklist, setShowChecklist] = useState(
+    () => !onboardingStorage.isChecklistDismissed()
+  )
+  function handleWelcomeGetStarted() {
+    onboardingStorage.setOnboarded(true)
+    setWelcomeOpen(false)
+  }
+  function handleWelcomeSkip() {
+    onboardingStorage.setOnboarded(true)
+    setWelcomeOpen(false)
+  }
+
   // ── Date helpers ──────────────────────────────────────────────────────────────────────────
   const { year: calYear, month: calMonth } = resolvePeriodMonth(year, month, mode)
   const isCurrentMonth = calYear === now.getFullYear() && calMonth === now.getMonth() + 1
@@ -82,6 +104,12 @@ export function DashboardPage() {
   // ── Render ──────────────────────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-4">
+      <WelcomeModal
+        isOpen={welcomeOpen}
+        onGetStarted={handleWelcomeGetStarted}
+        onSkip={handleWelcomeSkip}
+      />
+      {showChecklist && <GettingStartedChecklist onDismiss={() => setShowChecklist(false)} />}
       <DashboardHeader
         totalDebit={data.totalDebit}
         totalBudget={data.totalBudget}
