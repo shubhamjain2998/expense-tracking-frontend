@@ -1,16 +1,10 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 
-import { Button } from '@/components/ui/Button'
-import { useToastContext } from '@/hooks/useToastContext'
-import { createRawTransaction } from '@/lib/api/transactions'
-import { todayIsoDate } from '@/lib/format'
-import { invalidateDomains } from '@/lib/queryKeys'
-import type { TxnType } from '@/types/transaction'
+import { useQuickAdd } from '../../hooks/useQuickAdd'
+import { todayIsoDate } from '../../lib/format'
+import type { TxnType } from '../../types/transaction'
 
-interface ManualEntryDialogProps {
-  onClose: () => void
-}
+import { Button } from './Button'
 
 const TXN_TYPE_OPTIONS: { value: TxnType; label: string; color: string }[] = [
   { value: 'expense', label: 'Expense', color: 'var(--ink)' },
@@ -19,29 +13,18 @@ const TXN_TYPE_OPTIONS: { value: TxnType; label: string; color: string }[] = [
   { value: 'transfer', label: 'Transfer', color: 'var(--ink-3)' },
 ]
 
-export function ManualEntryDialog({ onClose }: ManualEntryDialogProps) {
-  const toast = useToastContext()
-  const qc = useQueryClient()
-  const [date, setDate] = useState(todayIsoDate())
-  const [description, setDescription] = useState('')
+interface AddTransactionDialogProps {
+  onClose: () => void
+}
+
+export function AddTransactionDialog({ onClose }: AddTransactionDialogProps) {
+  const [date, setDate] = useState(todayIsoDate)
+  const [desc, setDesc] = useState('')
   const [amount, setAmount] = useState('')
   const [txnType, setTxnType] = useState<TxnType>('expense')
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const mutation = useMutation({
-    mutationFn: () =>
-      createRawTransaction({
-        txn_date: date,
-        description: description.trim(),
-        amount: Number(amount),
-        txn_type: txnType,
-      }),
-    onSuccess: () => {
-      invalidateDomains(qc, ['transactions'])
-      toast.success('Transaction added')
-      onClose()
-    },
-    onError: () => toast.error('Failed to add transaction'),
-  })
+  const mutation = useQuickAdd({ onSuccess: onClose })
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -53,51 +36,71 @@ export function ManualEntryDialog({ onClose }: ManualEntryDialogProps) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!description.trim()) {
-      toast.error('Description required')
-      return
-    }
-    const n = Number(amount)
-    if (isNaN(n) || n === 0) {
-      toast.error('Amount must not be zero')
-      return
-    }
-    mutation.mutate()
+    const errs: Record<string, string> = {}
+    if (!date) errs.date = 'Required'
+    if (!desc.trim()) errs.desc = 'Required'
+    const amt = parseFloat(amount)
+    if (!amount || isNaN(amt) || amt <= 0) errs.amount = 'Enter a valid amount'
+    setErrors(errs)
+    if (!Object.keys(errs).length)
+      mutation.mutate({
+        txn_date: `${date}T00:00:00`,
+        description: desc.trim(),
+        amount: amt,
+        txn_type: txnType,
+      })
   }
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.35)' }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose()
+      className="fixed inset-0 z-50 grid place-items-center"
+      style={{
+        padding: 24,
+        background: 'color-mix(in oklch, var(--bg) 60%, transparent)',
+        backdropFilter: 'blur(8px)',
+        animation: 'fade-up .15s ease',
       }}
+      role="dialog"
+      aria-modal
+      aria-label="Add transaction"
     >
+      <div className="absolute inset-0" onClick={onClose} />
       <div
-        className="flex w-full max-w-[380px] flex-col gap-4"
+        className="relative z-10 w-full max-w-sm"
         style={{
           background: 'var(--surface)',
           border: '1px solid var(--line)',
           borderRadius: 'var(--radius-lg)',
-          padding: 24,
           boxShadow: 'var(--shadow-pop)',
+          animation: 'pop .18s ease',
         }}
       >
-        <div className="flex items-center justify-between">
-          <span
-            className="text-[13px] font-semibold"
-            style={{ color: 'var(--ink)', letterSpacing: '-0.005em' }}
-          >
-            Manual entry
-          </span>
-          <button onClick={onClose} className="btn ghost icon sm">
+        <div
+          className="flex items-center justify-between"
+          style={{ padding: '14px 18px', borderBottom: '1px solid var(--line)' }}
+        >
+          <div className="flex items-center gap-2">
+            <span
+              className="material-symbols-outlined"
+              style={{ fontSize: 16, color: 'var(--ink-3)' }}
+            >
+              add
+            </span>
+            <h2
+              className="text-[13.5px] font-semibold"
+              style={{ color: 'var(--ink)', letterSpacing: '-0.005em' }}
+            >
+              Add transaction
+            </h2>
+          </div>
+          <button onClick={onClose} className="btn ghost icon sm" aria-label="Close">
             <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
               close
             </span>
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <form onSubmit={handleSubmit} style={{ padding: 18 }} className="space-y-3.5">
           <div>
             <label className="eyebrow mb-1 block">Type</label>
             <div style={{ display: 'flex', gap: 6 }}>
@@ -126,6 +129,7 @@ export function ManualEntryDialog({ onClose }: ManualEntryDialogProps) {
               ))}
             </div>
           </div>
+
           <div>
             <label className="eyebrow mb-1 block">Date</label>
             <input
@@ -133,19 +137,33 @@ export function ManualEntryDialog({ onClose }: ManualEntryDialogProps) {
               value={date}
               onChange={(e) => setDate(e.target.value)}
               className="input"
+              aria-label="Transaction date"
             />
+            {errors.date && (
+              <p className="mt-1 text-[11px]" style={{ color: 'var(--neg)' }}>
+                {errors.date}
+              </p>
+            )}
           </div>
+
           <div>
             <label className="eyebrow mb-1 block">Description</label>
             <input
               type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g. Coffee at Blue Tokai"
+              value={desc}
+              onChange={(e) => setDesc(e.target.value)}
+              placeholder="e.g. Blinkit Gurgaon"
               className="input"
               autoFocus
+              aria-label="Transaction description"
             />
+            {errors.desc && (
+              <p className="mt-1 text-[11px]" style={{ color: 'var(--neg)' }}>
+                {errors.desc}
+              </p>
+            )}
           </div>
+
           <div>
             <label className="eyebrow mb-1 block">Amount (₹)</label>
             <input
@@ -153,12 +171,19 @@ export function ManualEntryDialog({ onClose }: ManualEntryDialogProps) {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0.00"
-              className="input num"
-              step="0.01"
               min="0.01"
+              step="0.01"
+              className="input num"
+              aria-label="Transaction amount"
             />
+            {errors.amount && (
+              <p className="mt-1 text-[11px]" style={{ color: 'var(--neg)' }}>
+                {errors.amount}
+              </p>
+            )}
           </div>
-          <Button variant="primary" className="mt-1 w-full" loading={mutation.isPending}>
+
+          <Button variant="primary" type="submit" loading={mutation.isPending} className="w-full">
             Add transaction
           </Button>
         </form>

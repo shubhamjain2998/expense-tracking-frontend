@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
+import { AddTransactionDialog } from '@/components/ui/AddTransactionDialog'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { getCurrentPeriod, loadPeriodMode } from '@/lib/period'
 import type { ProcessedTransactionItem } from '@/types/transaction'
@@ -8,7 +9,6 @@ import type { ProcessedTransactionItem } from '@/types/transaction'
 import { BulkActionsBar } from './components/BulkActionsBar'
 import { DragDropCategoryGrid } from './components/DragDropCategoryGrid'
 import { FilterBar } from './components/FilterBar'
-import { ManualEntryDialog } from './components/ManualEntryDialog'
 import { TransactionsHeader } from './components/TransactionsHeader'
 import { TransactionsList } from './components/TransactionsList'
 import { useAutoCategorise } from './hooks/useAutoCategorise'
@@ -308,7 +308,7 @@ export function TransactionsPage() {
         showEditPanel={showEditPanel}
         selectedTxn={selectedTxn}
       />
-      {showManualEntry && <ManualEntryDialog onClose={() => setShowManualEntry(false)} />}
+      {showManualEntry && <AddTransactionDialog onClose={() => setShowManualEntry(false)} />}
     </div>
   )
 }
