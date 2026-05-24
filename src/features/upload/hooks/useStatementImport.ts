@@ -6,9 +6,7 @@ import { rowSig } from '../lib/rowSig'
 
 async function deleteExcluded(excludedRows: PreviewRow[]): Promise<void> {
   if (excludedRows.length === 0) return
-  const excludedSigs = new Set(
-    excludedRows.map((r) => rowSig(r.txn_date, r.description, r.amount))
-  )
+  const excludedSigs = new Set(excludedRows.map((r) => rowSig(r.txn_date, r.description, r.amount)))
   const monthMap = new Map<string, { year: number; month: number }>()
   excludedRows.forEach((r) => {
     const d = new Date(r.txn_date)
@@ -24,16 +22,19 @@ async function deleteExcluded(excludedRows: PreviewRow[]): Promise<void> {
     allRaw
       .filter(
         (r) =>
-          r.status !== 'deleted' &&
-          excludedSigs.has(rowSig(r.txn_date, r.description, r.amount))
+          r.status !== 'deleted' && excludedSigs.has(rowSig(r.txn_date, r.description, r.amount))
       )
       .map((r) => deleteRawTransaction(r.id))
   )
 }
 
 export function useStatementImport() {
-  async function importFile(file: File, excludedRows: PreviewRow[]): Promise<ImportResponse> {
-    const data = await importStatement(file)
+  async function importFile(
+    file: File,
+    excludedRows: PreviewRow[],
+    password?: string
+  ): Promise<ImportResponse> {
+    const data = await importStatement(file, password)
     await deleteExcluded(excludedRows)
     return data
   }

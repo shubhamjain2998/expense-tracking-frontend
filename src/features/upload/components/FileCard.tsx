@@ -73,6 +73,18 @@ export function FileCard({ upload, onRemove, onToggleExclude }: FileCardProps) {
           {upload.status === 'ready' && <Chip variant="success">{readyCount} ready</Chip>}
           {upload.status === 'importing' && <span className="chip">Importing…</span>}
           {upload.status === 'done' && <Chip variant="success">Imported</Chip>}
+          {upload.status === 'needs_password' && (
+            <span className="chip warn" title="Password-protected PDF">
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: 11, marginRight: 4 }}
+                aria-hidden
+              >
+                lock
+              </span>
+              Password required
+            </span>
+          )}
           {upload.status === 'error' && (
             <span className="chip neg" title={upload.error}>
               {upload.error ?? 'Error'}

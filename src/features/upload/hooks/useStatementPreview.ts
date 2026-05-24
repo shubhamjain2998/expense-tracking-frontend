@@ -64,8 +64,8 @@ async function buildPreviewResult(
 export function useStatementPreview() {
   const ignoreRules = useIgnoreRules()
 
-  async function previewFile(file: File): Promise<PreviewResult> {
-    const data = await previewStatement(file)
+  async function previewFile(file: File, password?: string): Promise<PreviewResult> {
+    const data = await previewStatement(file, password)
     return buildPreviewResult(data, ignoreRules)
   }
 

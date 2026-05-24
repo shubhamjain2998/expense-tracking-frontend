@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { useToastContext } from '@/hooks/useToastContext'
+import { PDF_PASSWORD_INCORRECT, PDF_PASSWORD_REQUIRED } from '@/lib/api/uploads'
 
 import type { FileStatus, FileUpload } from '../types'
 
@@ -18,9 +19,9 @@ export function useFileQueue() {
   const [fileError, setFileError] = useState('')
   const [isImportingAll, setIsImportingAll] = useState(false)
 
-  async function previewUpload(upload: FileUpload) {
+  async function previewUpload(upload: FileUpload, password?: string) {
     try {
-      const { preview, autoExcluded, dupeIndices } = await previewFile(upload.file)
+      const { preview, autoExcluded, dupeIndices } = await previewFile(upload.file, password)
       setUploads((prev) =>
         prev.map((u) =>
           u.id === upload.id
@@ -30,23 +31,60 @@ export function useFileQueue() {
                 excludedIndices: autoExcluded,
                 dupeIndices,
                 status: 'ready' as FileStatus,
+                // Stash the password so importFile can reuse it without
+                // re-prompting; in-memory only.
+                password: password ?? u.password,
+                passwordError: undefined,
               }
             : u
         )
       )
     } catch (err) {
+      const e = err as { detail?: string; code?: string }
+      if (e.code === PDF_PASSWORD_REQUIRED || e.code === PDF_PASSWORD_INCORRECT) {
+        setUploads((prev) =>
+          prev.map((u) =>
+            u.id === upload.id
+              ? {
+                  ...u,
+                  status: 'needs_password' as FileStatus,
+                  passwordError:
+                    e.code === PDF_PASSWORD_INCORRECT
+                      ? (e.detail ?? 'Incorrect password')
+                      : undefined,
+                }
+              : u
+          )
+        )
+        return
+      }
       setUploads((prev) =>
         prev.map((u) =>
           u.id === upload.id
             ? {
                 ...u,
                 status: 'error' as FileStatus,
-                error: (err as { detail?: string }).detail ?? 'Failed to parse file',
+                error: e.detail ?? 'Failed to parse file',
               }
             : u
         )
       )
     }
+  }
+
+  async function submitPassword(uploadId: string, password: string) {
+    const target = uploads.find((u) => u.id === uploadId)
+    if (!target) return
+    setUploads((prev) =>
+      prev.map((u) => (u.id === uploadId ? { ...u, status: 'previewing' as FileStatus } : u))
+    )
+    await previewUpload(target, password)
+  }
+
+  function cancelPasswordPrompt(uploadId: string) {
+    // User backed out — drop the file from the queue rather than leaving a
+    // half-stuck row behind.
+    setUploads((prev) => prev.filter((u) => u.id !== uploadId))
   }
 
   function addPdfFiles(newFiles: File[]) {
@@ -123,7 +161,7 @@ export function useFileQueue() {
           const excludedRows = upload.preview
             ? upload.preview.rows.filter((_, i) => upload.excludedIndices.has(i))
             : []
-          const data = await importFile(upload.file, excludedRows)
+          const data = await importFile(upload.file, excludedRows, upload.password)
           totalInserted += data.inserted
           totalSkipped += data.skipped
           setUploads((prev) =>
@@ -134,13 +172,13 @@ export function useFileQueue() {
           const e = err as { detail?: string; status?: number }
           if (e.status === 409) {
             const msg =
-              typeof e.detail === 'string'
-                ? e.detail
-                : 'This statement has already been imported.'
+              typeof e.detail === 'string' ? e.detail : 'This statement has already been imported.'
             toast.warning(msg)
             setUploads((prev) =>
               prev.map((u) =>
-                u.id === upload.id ? { ...u, status: 'error' as FileStatus, error: 'Already imported' } : u
+                u.id === upload.id
+                  ? { ...u, status: 'error' as FileStatus, error: 'Already imported' }
+                  : u
               )
             )
           } else {
@@ -189,5 +227,7 @@ export function useFileQueue() {
     toggleExcludeInUpload,
     importAllPdfs,
     clearAll,
+    submitPassword,
+    cancelPasswordPrompt,
   }
 }

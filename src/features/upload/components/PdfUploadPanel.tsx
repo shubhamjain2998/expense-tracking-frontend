@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/Button'
+import { PasswordPromptDialog } from '@/components/ui/PasswordPromptDialog'
 
 import type { FileUpload } from '../types'
 
@@ -17,6 +18,8 @@ interface PdfUploadPanelProps {
   removeUpload: (id: string) => void
   toggleExcludeInUpload: (uploadId: string, rowIndex: number) => void
   importAllPdfs: () => void
+  submitPassword: (uploadId: string, password: string) => void
+  cancelPasswordPrompt: (uploadId: string) => void
 }
 
 export function PdfUploadPanel({
@@ -30,9 +33,15 @@ export function PdfUploadPanel({
   removeUpload,
   toggleExcludeInUpload,
   importAllPdfs,
+  submitPassword,
+  cancelPasswordPrompt,
 }: PdfUploadPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = useState(false)
+
+  // One dialog at a time — surface whichever upload is currently waiting
+  // for a password. Re-prompts as the next file in the queue gets parsed.
+  const pendingPassword = uploads.find((u) => u.status === 'needs_password')
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files) addPdfFiles(Array.from(e.target.files))
@@ -99,13 +108,19 @@ export function PdfUploadPanel({
               Parsed in memory
             </span>
             <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined" style={{ fontSize: 12, color: 'var(--ink-4)' }}>
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: 12, color: 'var(--ink-4)' }}
+              >
                 close
               </span>
               Not stored
             </span>
             <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined" style={{ fontSize: 12, color: 'var(--ink-4)' }}>
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: 12, color: 'var(--ink-4)' }}
+              >
                 close
               </span>
               No bank connection
@@ -158,6 +173,14 @@ export function PdfUploadPanel({
           ))}
         </>
       )}
+
+      <PasswordPromptDialog
+        isOpen={!!pendingPassword}
+        fileName={pendingPassword?.file.name ?? ''}
+        errorMessage={pendingPassword?.passwordError}
+        onSubmit={(pw) => pendingPassword && submitPassword(pendingPassword.id, pw)}
+        onCancel={() => pendingPassword && cancelPasswordPrompt(pendingPassword.id)}
+      />
     </div>
   )
 }
