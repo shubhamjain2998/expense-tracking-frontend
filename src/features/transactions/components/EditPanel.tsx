@@ -10,7 +10,7 @@ import { createPerson, getPersons } from '@/lib/api/persons'
 import { getTags } from '@/lib/api/tags'
 import { editProcessedTransaction, patchShareSettled } from '@/lib/api/transactions'
 import { formatCurrency } from '@/lib/format'
-import { qk } from '@/lib/queryKeys'
+import { invalidateDomains, qk } from '@/lib/queryKeys'
 import type { Category } from '@/types/settings'
 import type {
   EditProcessedPayload,
@@ -74,19 +74,21 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
 
   async function handleCreatePerson(name: string) {
     const p = await createPerson(name)
-    void qc.invalidateQueries({ queryKey: qk.persons.all })
+    invalidateDomains(qc, ['persons'])
     return p
   }
   async function handleCreateCategory(label: string): Promise<string> {
     const c = await createCategory(label)
-    void qc.invalidateQueries({ queryKey: qk.categories.all })
+    invalidateDomains(qc, ['categories'])
     return c.id
   }
 
   const editMutation = useMutation({
     mutationFn: (payload: EditProcessedPayload) => editProcessedTransaction(txn.id, payload),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.transactions.all })
+      // Amount / category / date / shares edits all roll up into dashboard
+      // aggregates and the sidebar's split ledger.
+      invalidateDomains(qc, ['transactions', 'dashboard'])
       toast.success('Transaction updated')
       onSaved()
     },
@@ -96,7 +98,7 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
   const settledMutation = useMutation({
     mutationFn: ({ personId, settled }: { personId: string; settled: boolean }) =>
       patchShareSettled(txn.id, personId, settled),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: qk.transactions.all }),
+    onSuccess: () => invalidateDomains(qc, ['transactions', 'dashboard']),
     onError: () => toast.error('Failed to update settlement'),
   })
 

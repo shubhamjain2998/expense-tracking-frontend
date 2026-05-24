@@ -9,6 +9,8 @@
  * broader invalidation — `qk.budget.all` invalidates all year-scoped budgets.
  */
 
+import type { QueryClient, QueryKey } from '@tanstack/react-query'
+
 import type { PeriodMode } from './period'
 
 export const qk = {
@@ -59,3 +61,48 @@ export const qk = {
     pendingManual: () => ['transactions', 'pendingManual'] as const,
   },
 } as const
+
+/**
+ * Maps a logical data domain to every top-level query key that holds data
+ * from that domain. Use with `invalidateDomains` so callers don't have to
+ * remember that, e.g., `budget` lives under two unrelated prefixes
+ * (`['budget', ...]` AND `['budgetOverrides', ...]`).
+ *
+ * Add new domains here when introducing a new top-level cache.
+ */
+const domainKeys = {
+  auth: [qk.auth.all],
+  persons: [qk.persons.all],
+  categories: [qk.categories.all],
+  tags: [qk.tags.all],
+  categoryMappings: [qk.categoryMappings.all],
+  budget: [qk.budget.all, ['budgetOverrides']],
+  dashboard: [qk.dashboard.all],
+  transactions: [qk.transactions.all],
+} satisfies Record<string, readonly QueryKey[]>
+
+export type QueryDomain = keyof typeof domainKeys
+
+/**
+ * Invalidate every query under each of the given domains. Active queries
+ * refetch immediately; inactive queries are marked stale and refetch on
+ * next mount. Prefer this over hand-rolling `invalidateQueries` calls so
+ * cross-domain effects (e.g. deleting a category also touches transactions
+ * and the dashboard) aren't forgotten at one call site.
+ */
+export function invalidateDomains(qc: QueryClient, domains: readonly QueryDomain[]): void {
+  for (const domain of domains) {
+    for (const key of domainKeys[domain]) {
+      void qc.invalidateQueries({ queryKey: key })
+    }
+  }
+}
+
+/**
+ * Hard-reset the entire query cache. Use for "Delete everything" wipes
+ * and for logout — plain invalidation leaves the stale rows in memory
+ * and they can briefly render before the refetch resolves.
+ */
+export function clearAllQueries(qc: QueryClient): void {
+  qc.clear()
+}

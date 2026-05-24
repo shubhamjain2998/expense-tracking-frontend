@@ -3,7 +3,7 @@ import { useState } from 'react'
 
 import { useToastContext } from '@/hooks/useToastContext'
 import { createPerson, deletePerson, getPersons } from '@/lib/api/persons'
-import { qk } from '@/lib/queryKeys'
+import { invalidateDomains, qk } from '@/lib/queryKeys'
 
 export function usePersons() {
   const toast = useToastContext()
@@ -17,7 +17,7 @@ export function usePersons() {
   const createMutation = useMutation({
     mutationFn: createPerson,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.persons.all })
+      invalidateDomains(qc, ['persons'])
       setNewPersonName('')
       setPersonNameError('')
       toast.success('Person added')
@@ -31,7 +31,7 @@ export function usePersons() {
   const deleteMutation = useMutation({
     mutationFn: deletePerson,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.persons.all })
+      invalidateDomains(qc, ['persons'])
       toast.success('Person removed')
       setDeletePersonId(null)
     },

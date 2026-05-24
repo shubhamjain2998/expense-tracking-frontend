@@ -1,4 +1,6 @@
-import { qk } from './queryKeys'
+import { QueryClient } from '@tanstack/react-query'
+
+import { clearAllQueries, invalidateDomains, qk } from './queryKeys'
 
 describe('queryKeys (qk)', () => {
   describe('static keys', () => {
@@ -115,5 +117,45 @@ describe('queryKeys (qk)', () => {
     it('pendingManual', () => {
       expect(qk.transactions.pendingManual()).toEqual(['transactions', 'pendingManual'])
     })
+  })
+})
+
+describe('invalidateDomains', () => {
+  function makeClient() {
+    const qc = new QueryClient()
+    qc.setQueryData(qk.budget.byYear(2025), [{ id: 'b1' }])
+    qc.setQueryData(qk.budget.overrides(2025), [{ id: 'o1' }])
+    qc.setQueryData(qk.dashboard.summary(2025, 4), [{ id: 's1' }])
+    qc.setQueryData(qk.transactions.processed(2025, 4), [{ id: 't1' }])
+    qc.setQueryData(qk.categories.all, [{ id: 'c1' }])
+    return qc
+  }
+
+  it('invalidates budgetOverrides when domain "budget" is passed', () => {
+    const qc = makeClient()
+    invalidateDomains(qc, ['budget'])
+    expect(qc.getQueryState(qk.budget.byYear(2025))?.isInvalidated).toBe(true)
+    expect(qc.getQueryState(qk.budget.overrides(2025))?.isInvalidated).toBe(true)
+    expect(qc.getQueryState(qk.dashboard.summary(2025, 4))?.isInvalidated).toBe(false)
+  })
+
+  it('invalidates multiple domains in one call', () => {
+    const qc = makeClient()
+    invalidateDomains(qc, ['budget', 'dashboard'])
+    expect(qc.getQueryState(qk.budget.byYear(2025))?.isInvalidated).toBe(true)
+    expect(qc.getQueryState(qk.budget.overrides(2025))?.isInvalidated).toBe(true)
+    expect(qc.getQueryState(qk.dashboard.summary(2025, 4))?.isInvalidated).toBe(true)
+    expect(qc.getQueryState(qk.categories.all)?.isInvalidated).toBe(false)
+  })
+})
+
+describe('clearAllQueries', () => {
+  it('removes every cached query', () => {
+    const qc = new QueryClient()
+    qc.setQueryData(qk.budget.byYear(2025), [{ id: 'b1' }])
+    qc.setQueryData(qk.transactions.processed(2025, 4), [{ id: 't1' }])
+    clearAllQueries(qc)
+    expect(qc.getQueryData(qk.budget.byYear(2025))).toBeUndefined()
+    expect(qc.getQueryData(qk.transactions.processed(2025, 4))).toBeUndefined()
   })
 })

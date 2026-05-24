@@ -1,5 +1,8 @@
+import { useQueryClient } from '@tanstack/react-query'
+
 import { deleteRawTransaction, getRawTransactions } from '@/lib/api/transactions'
 import { importStatement, importStatementText } from '@/lib/api/uploads'
+import { invalidateDomains } from '@/lib/queryKeys'
 import type { ImportResponse, PreviewRow } from '@/types/transaction'
 
 import { rowSig } from '../lib/rowSig'
@@ -29,6 +32,8 @@ async function deleteExcluded(excludedRows: PreviewRow[]): Promise<void> {
 }
 
 export function useStatementImport() {
+  const qc = useQueryClient()
+
   async function importFile(
     file: File,
     excludedRows: PreviewRow[],
@@ -36,12 +41,16 @@ export function useStatementImport() {
   ): Promise<ImportResponse> {
     const data = await importStatement(file, password)
     await deleteExcluded(excludedRows)
+    // New raw rows land in the transactions list and feed the sidebar's
+    // pending-manual count — both depend on the transactions cache.
+    invalidateDomains(qc, ['transactions'])
     return data
   }
 
   async function importText(text: string, excludedRows: PreviewRow[]): Promise<ImportResponse> {
     const data = await importStatementText(text)
     await deleteExcluded(excludedRows)
+    invalidateDomains(qc, ['transactions'])
     return data
   }
 

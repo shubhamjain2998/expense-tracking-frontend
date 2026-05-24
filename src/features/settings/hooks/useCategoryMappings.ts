@@ -3,7 +3,7 @@ import { useState } from 'react'
 
 import { useToastContext } from '@/hooks/useToastContext'
 import { deleteCategoryMapping, getCategoryMappings } from '@/lib/api/categories'
-import { qk } from '@/lib/queryKeys'
+import { invalidateDomains, qk } from '@/lib/queryKeys'
 
 export function useCategoryMappings() {
   const toast = useToastContext()
@@ -15,7 +15,7 @@ export function useCategoryMappings() {
   const deleteMutation = useMutation({
     mutationFn: deleteCategoryMapping,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.categoryMappings.all })
+      invalidateDomains(qc, ['categoryMappings'])
       toast.success('Mapping deleted')
       setDeleteMappingId(null)
     },

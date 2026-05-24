@@ -3,7 +3,7 @@ import { useState } from 'react'
 
 import { useToastContext } from '@/hooks/useToastContext'
 import { createTag, deleteTag, getTags } from '@/lib/api/tags'
-import { qk } from '@/lib/queryKeys'
+import { invalidateDomains, qk } from '@/lib/queryKeys'
 
 export function useTags() {
   const toast = useToastContext()
@@ -16,7 +16,7 @@ export function useTags() {
   const createMutation = useMutation({
     mutationFn: createTag,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.tags.all })
+      invalidateDomains(qc, ['tags'])
       setNewTagName('')
       toast.success('Tag created')
     },
@@ -29,7 +29,8 @@ export function useTags() {
   const deleteMutation = useMutation({
     mutationFn: deleteTag,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.tags.all })
+      // Transactions and dashboard tag-filtered views need to drop the tag.
+      invalidateDomains(qc, ['tags', 'transactions', 'dashboard'])
       toast.success('Tag deleted')
       setDeleteTagId(null)
     },

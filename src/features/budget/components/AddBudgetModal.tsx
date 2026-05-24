@@ -7,7 +7,7 @@ import { SearchableSelect } from '@/components/ui/SearchableSelect'
 import { useToastContext } from '@/hooks/useToastContext'
 import { createBudget } from '@/lib/api/budget'
 import { createCategory } from '@/lib/api/categories'
-import { qk } from '@/lib/queryKeys'
+import { invalidateDomains } from '@/lib/queryKeys'
 import type { Category } from '@/types/settings'
 
 import { monthlyToAnnual } from '../lib/budgetMath'
@@ -37,7 +37,7 @@ export function AddBudgetModal({
   const createMutation = useMutation({
     mutationFn: createBudget,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.budget.all })
+      invalidateDomains(qc, ['budget', 'dashboard'])
       toast.success('Budget entries saved')
       onSaved()
     },
@@ -50,7 +50,7 @@ export function AddBudgetModal({
 
   async function handleCreateCategory(name: string): Promise<string> {
     const cat = await createCategory(name)
-    void qc.invalidateQueries({ queryKey: qk.categories.all })
+    invalidateDomains(qc, ['categories'])
     return cat.id
   }
 

@@ -5,7 +5,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { SkeletonTable } from '@/components/ui/Skeleton'
 import { useToastContext } from '@/hooks/useToastContext'
 import { createCategory } from '@/lib/api/categories'
-import { qk } from '@/lib/queryKeys'
+import { invalidateDomains } from '@/lib/queryKeys'
 import type { Category } from '@/types/settings'
 
 import { useCategories } from '../hooks/useCategories'
@@ -51,13 +51,13 @@ export function CategoriesSection() {
       }
     },
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.categories.all })
+      invalidateDomains(qc, ['categories'])
       toast.success(`Added ${SUGGESTED_DEFAULTS.length} suggested categories`)
     },
     onError: (err: { detail?: string }) => {
       // Even on partial failure the categories endpoint will have created some
       // rows — refetch so the user sees the actual state.
-      void qc.invalidateQueries({ queryKey: qk.categories.all })
+      invalidateDomains(qc, ['categories'])
       toast.error(err.detail ?? 'Could not add all suggested categories')
     },
   })

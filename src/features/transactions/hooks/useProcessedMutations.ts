@@ -7,7 +7,7 @@ import {
   processTransaction,
 } from '@/lib/api/transactions'
 import type { PeriodMode } from '@/lib/period'
-import { qk } from '@/lib/queryKeys'
+import { invalidateDomains, qk } from '@/lib/queryKeys'
 import type { PersonShareIn } from '@/types/transaction'
 
 export function useProcessedMutations(year: number, month: number, mode: PeriodMode) {
@@ -19,6 +19,8 @@ export function useProcessedMutations(year: number, month: number, mode: PeriodM
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: qk.transactions.processed(year, month) })
       void qc.invalidateQueries({ queryKey: qk.transactions.raw(year, month, mode) })
+      // Dashboard summary, YTD, and split ledger all aggregate processed txns.
+      invalidateDomains(qc, ['dashboard'])
       toast.success('Transaction deleted')
     },
     onError: () => toast.error('Failed to delete'),
@@ -50,6 +52,9 @@ export function useProcessedMutations(year: number, month: number, mode: PeriodM
       void qc.invalidateQueries({ queryKey: qk.transactions.raw(year, month, mode) })
       void qc.invalidateQueries({ queryKey: qk.transactions.processed(year, month) })
       void qc.invalidateQueries({ queryKey: qk.transactions.pendingManual() })
+      // A new processed txn changes category totals on the dashboard, and
+      // save_mapping=true also creates a new mapping rule.
+      invalidateDomains(qc, ['dashboard', 'categoryMappings'])
       toast.success('Categorized')
     },
     onError: (err: { detail: string }) => toast.error(err.detail ?? 'Failed to categorize'),
@@ -60,6 +65,8 @@ export function useProcessedMutations(year: number, month: number, mode: PeriodM
       editProcessedTransaction(procId, { category_id: categoryId }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: qk.transactions.processed(year, month) })
+      // Reassigns spend from one category bucket to another on the dashboard.
+      invalidateDomains(qc, ['dashboard'])
       toast.success('Category updated')
     },
     onError: () => toast.error('Failed to update category'),

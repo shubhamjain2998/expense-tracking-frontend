@@ -1,14 +1,16 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/Button'
 import { useToastContext } from '@/hooks/useToastContext'
 import { createRawTransaction } from '@/lib/api/transactions'
+import { invalidateDomains } from '@/lib/queryKeys'
 
 export function ManualEntryPanel() {
   const navigate = useNavigate()
   const toast = useToastContext()
+  const qc = useQueryClient()
 
   const [manualDate, setManualDate] = useState('')
   const [manualDesc, setManualDesc] = useState('')
@@ -23,6 +25,7 @@ export function ManualEntryPanel() {
         amount: parseFloat(manualAmount),
       }),
     onSuccess: () => {
+      invalidateDomains(qc, ['transactions'])
       toast.success('Transaction added')
       navigate('/transactions')
     },

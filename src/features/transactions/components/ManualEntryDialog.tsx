@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { useToastContext } from '@/hooks/useToastContext'
 import { createRawTransaction } from '@/lib/api/transactions'
 import { todayIsoDate } from '@/lib/format'
-import { qk } from '@/lib/queryKeys'
+import { invalidateDomains } from '@/lib/queryKeys'
 import type { TxnType } from '@/types/transaction'
 
 interface ManualEntryDialogProps {
@@ -36,7 +36,7 @@ export function ManualEntryDialog({ onClose }: ManualEntryDialogProps) {
         txn_type: txnType,
       }),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.transactions.all })
+      invalidateDomains(qc, ['transactions'])
       toast.success('Transaction added')
       onClose()
     },

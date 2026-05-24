@@ -9,7 +9,7 @@ import {
   renameCategory,
   setCategoryIncomeFlag,
 } from '@/lib/api/categories'
-import { qk } from '@/lib/queryKeys'
+import { invalidateDomains, qk } from '@/lib/queryKeys'
 
 export function useCategories() {
   const toast = useToastContext()
@@ -24,7 +24,7 @@ export function useCategories() {
   const createMutation = useMutation({
     mutationFn: createCategory,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.categories.all })
+      invalidateDomains(qc, ['categories'])
       setNewCategoryName('')
       toast.success('Category created')
     },
@@ -37,8 +37,15 @@ export function useCategories() {
   const renameMutation = useMutation({
     mutationFn: ({ id, name }: { id: string; name: string }) => renameCategory(id, name),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.categories.all })
-      void qc.invalidateQueries({ queryKey: qk.budget.all })
+      // Renamed category text appears on transactions, budget, dashboard
+      // (group-by-category), and in saved mapping rules.
+      invalidateDomains(qc, [
+        'categories',
+        'budget',
+        'transactions',
+        'dashboard',
+        'categoryMappings',
+      ])
       toast.success('Category renamed')
       setRenamingCategoryId(null)
     },
@@ -48,8 +55,16 @@ export function useCategories() {
   const deleteMutation = useMutation({
     mutationFn: deleteCategory,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.categories.all })
-      void qc.invalidateQueries({ queryKey: qk.budget.all })
+      // Cascades: budget entries reference categories, transactions show
+      // category names, dashboard groups by category, mapping rules target a
+      // category id.
+      invalidateDomains(qc, [
+        'categories',
+        'budget',
+        'transactions',
+        'dashboard',
+        'categoryMappings',
+      ])
       toast.success('Category deleted')
       setDeleteCategoryId(null)
     },
@@ -63,7 +78,9 @@ export function useCategories() {
     mutationFn: ({ id, is_income }: { id: string; is_income: boolean }) =>
       setCategoryIncomeFlag(id, is_income),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.categories.all })
+      // Flipping income/expense reshuffles dashboard "spent" vs "income"
+      // totals across every period view.
+      invalidateDomains(qc, ['categories', 'dashboard'])
     },
     onError: (err: { detail: string }) => toast.error(err.detail),
   })

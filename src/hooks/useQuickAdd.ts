@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { createRawTransaction } from '@/lib/api/transactions'
-import { qk } from '@/lib/queryKeys'
+import { invalidateDomains } from '@/lib/queryKeys'
 import type { CreateRawTransactionPayload } from '@/types/transaction'
 
 import { useToastContext } from './useToastContext'
@@ -17,7 +17,7 @@ export function useQuickAdd({ onSuccess }: Options = {}) {
   return useMutation({
     mutationFn: (payload: CreateRawTransactionPayload) => createRawTransaction(payload),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.transactions.all })
+      invalidateDomains(qc, ['transactions'])
       toast.success('Transaction added — go to Review to categorise')
       onSuccess?.()
     },

@@ -7,7 +7,7 @@ import {
   restoreRawTransaction,
 } from '@/lib/api/transactions'
 import type { PeriodMode } from '@/lib/period'
-import { qk } from '@/lib/queryKeys'
+import { invalidateDomains, qk } from '@/lib/queryKeys'
 import type { RawTransaction } from '@/types/transaction'
 
 import type { UnifiedTxn } from '../types'
@@ -80,6 +80,8 @@ export function useRawMutations(
         .map((t) => deleteProcessedTransaction(t.processedId!)),
     ])
     await qc.invalidateQueries({ queryKey: qk.transactions.all })
+    // Bulk may include processed transactions whose deletions reshape dashboard totals.
+    invalidateDomains(qc, ['dashboard'])
     setCheckedUids(new Set())
     toast.success(`Deleted ${toDelete.length} transaction${toDelete.length > 1 ? 's' : ''}`)
   }

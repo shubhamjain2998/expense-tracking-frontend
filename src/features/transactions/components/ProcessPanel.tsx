@@ -9,7 +9,7 @@ import { createCategory } from '@/lib/api/categories'
 import { createPerson, getPersons } from '@/lib/api/persons'
 import { getTags } from '@/lib/api/tags'
 import { editProcessedTransaction, processTransaction } from '@/lib/api/transactions'
-import { qk } from '@/lib/queryKeys'
+import { invalidateDomains, qk } from '@/lib/queryKeys'
 import type { Category } from '@/types/settings'
 import type { PersonShareIn, RawTransaction, TxnType } from '@/types/transaction'
 
@@ -56,13 +56,13 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
 
   async function handleCreatePerson(name: string) {
     const p = await createPerson(name)
-    void qc.invalidateQueries({ queryKey: qk.persons.all })
+    invalidateDomains(qc, ['persons'])
     return p
   }
 
   async function handleCreateCategory(label: string): Promise<string> {
     const c = await createCategory(label)
-    void qc.invalidateQueries({ queryKey: qk.categories.all })
+    invalidateDomains(qc, ['categories'])
     return c.id
   }
 
@@ -92,7 +92,9 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
           /* ignore */
         }
       }
-      void qc.invalidateQueries({ queryKey: qk.transactions.all })
+      // A new processed txn shows up in dashboard category totals; with
+      // save_mapping=true the backend also persists a new mapping rule.
+      invalidateDomains(qc, ['transactions', 'dashboard', 'categoryMappings'])
       toast.success('Transaction processed')
       onProcessed()
     },

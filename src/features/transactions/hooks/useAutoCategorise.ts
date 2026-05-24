@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { useToastContext } from '@/hooks/useToastContext'
 import { autoCategorise, editProcessedTransaction } from '@/lib/api/transactions'
-import { qk } from '@/lib/queryKeys'
+import { invalidateDomains } from '@/lib/queryKeys'
 import type { ProcessedTransactionItem } from '@/types/transaction'
 
 export function useAutoCategorise() {
@@ -76,7 +76,7 @@ export function useAutoCategorise() {
         }
       }
 
-      void qc.invalidateQueries({ queryKey: qk.transactions.all })
+      invalidateDomains(qc, ['transactions', 'dashboard'])
     },
     onError: (err: { detail: string }) => toast.error(err.detail),
   })

@@ -12,7 +12,7 @@ import {
   deleteAllProcessedTransactions,
   deleteAllRawTransactions,
 } from '@/lib/api/admin'
-import { qk } from '@/lib/queryKeys'
+import { clearAllQueries, invalidateDomains } from '@/lib/queryKeys'
 
 interface DangerAction {
   icon: string
@@ -21,7 +21,7 @@ interface DangerAction {
   confirmMessage: string
   confirmLabel: string
   mutationFn: () => Promise<void>
-  onInvalidate?: (qc: ReturnType<typeof useQueryClient>) => void
+  onInvalidate: (qc: ReturnType<typeof useQueryClient>) => void
 }
 
 const dangerActions: Record<string, DangerAction> = {
@@ -33,7 +33,7 @@ const dangerActions: Record<string, DangerAction> = {
       'This will permanently delete all raw (unprocessed) transactions. Any pending review items will be lost.',
     confirmLabel: 'Delete raw transactions',
     mutationFn: deleteAllRawTransactions,
-    onInvalidate: (qc) => void qc.invalidateQueries({ queryKey: qk.transactions.all }),
+    onInvalidate: (qc) => invalidateDomains(qc, ['transactions']),
   },
   processed: {
     icon: 'receipt_long',
@@ -43,10 +43,7 @@ const dangerActions: Record<string, DangerAction> = {
       'This will permanently delete all processed transactions and their category assignments. Your spending history will be wiped.',
     confirmLabel: 'Delete processed transactions',
     mutationFn: deleteAllProcessedTransactions,
-    onInvalidate: (qc) => {
-      void qc.invalidateQueries({ queryKey: qk.transactions.all })
-      void qc.invalidateQueries({ queryKey: qk.dashboard.all })
-    },
+    onInvalidate: (qc) => invalidateDomains(qc, ['transactions', 'dashboard']),
   },
   mappings: {
     icon: 'rule',
@@ -56,7 +53,7 @@ const dangerActions: Record<string, DangerAction> = {
       'This will permanently delete all category mapping rules. Auto-categorisation will stop working until new rules are created.',
     confirmLabel: 'Delete all mappings',
     mutationFn: clearAllMappings,
-    onInvalidate: (qc) => void qc.invalidateQueries({ queryKey: qk.categoryMappings.all }),
+    onInvalidate: (qc) => invalidateDomains(qc, ['categoryMappings']),
   },
   budget: {
     icon: 'savings',
@@ -66,7 +63,9 @@ const dangerActions: Record<string, DangerAction> = {
       'This will permanently delete all budget plans and allocations across every year.',
     confirmLabel: 'Delete all budgets',
     mutationFn: deleteAllBudget,
-    onInvalidate: (qc) => void qc.invalidateQueries({ queryKey: qk.budget.all }),
+    // Budget page derives "spent" totals from dashboard summaries, so dashboard
+    // must be refreshed alongside the budget cache.
+    onInvalidate: (qc) => invalidateDomains(qc, ['budget', 'dashboard']),
   },
   persons: {
     icon: 'group',
@@ -76,7 +75,9 @@ const dangerActions: Record<string, DangerAction> = {
       'This will permanently delete all persons. Split transaction assignments will be removed.',
     confirmLabel: 'Delete all persons',
     mutationFn: deleteAllPersons,
-    onInvalidate: (qc) => void qc.invalidateQueries({ queryKey: qk.persons.all }),
+    // Persons appear in transaction shares and the dashboard split ledger;
+    // both caches need a refresh when the person list is wiped.
+    onInvalidate: (qc) => invalidateDomains(qc, ['persons', 'transactions', 'dashboard']),
   },
   all: {
     icon: 'delete_forever',
@@ -86,6 +87,9 @@ const dangerActions: Record<string, DangerAction> = {
       'This will permanently erase ALL data in your workspace: every transaction, budget plan, category mapping, and person. Your entire financial history will be gone. This cannot be recovered.',
     confirmLabel: 'Yes, delete everything',
     mutationFn: deleteAllData,
+    // Hard wipe of cache prevents the next page mount from flashing stale
+    // rows before the refetch resolves.
+    onInvalidate: clearAllQueries,
   },
 }
 
@@ -102,11 +106,7 @@ export function DangerZoneSection() {
     },
     onSuccess: () => {
       const action = pendingDangerKey ? dangerActions[pendingDangerKey] : null
-      if (action?.onInvalidate) {
-        action.onInvalidate(qc)
-      } else {
-        void qc.invalidateQueries()
-      }
+      action?.onInvalidate(qc)
       toast.success(`${action?.title ?? 'Data'} deleted`)
       setPendingDangerKey(null)
     },

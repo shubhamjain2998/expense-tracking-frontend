@@ -11,7 +11,7 @@ import {
 } from '@/lib/api/budget'
 import { monthLongLabel } from '@/lib/period'
 import type { PeriodMode } from '@/lib/period'
-import { qk } from '@/lib/queryKeys'
+import { invalidateDomains, qk } from '@/lib/queryKeys'
 
 import { monthlyToAnnual } from '../lib/budgetMath'
 
@@ -32,8 +32,7 @@ export function useBudgetMutations({
     mutationFn: ({ id, monthlyAmount }: { id: string; monthlyAmount: number }) =>
       updateBudgetEntry(id, { allocated_amount: monthlyToAnnual(monthlyAmount) }),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.budget.all })
-      void qc.invalidateQueries({ queryKey: qk.dashboard.all })
+      invalidateDomains(qc, ['budget', 'dashboard'])
       toast.success('Annual budget updated')
     },
     onError: (err: { detail: string }) => toast.error(err.detail),
@@ -72,8 +71,7 @@ export function useBudgetMutations({
   const deleteMutation = useMutation({
     mutationFn: deleteBudgetEntry,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.budget.all })
-      void qc.invalidateQueries({ queryKey: qk.dashboard.all })
+      invalidateDomains(qc, ['budget', 'dashboard'])
       toast.success('Budget entry deleted')
       setDeleteId(null)
     },
@@ -92,8 +90,7 @@ export function useBudgetMutations({
         ],
       }),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.budget.all })
-      void qc.invalidateQueries({ queryKey: qk.dashboard.all })
+      invalidateDomains(qc, ['budget', 'dashboard'])
       toast.success('Budget entry created')
     },
     onError: (err: { detail: string }) => toast.error(err.detail),
