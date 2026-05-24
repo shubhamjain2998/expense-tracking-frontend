@@ -24,3 +24,5 @@ export const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN?.trim() || null
 export const SENTRY_ENVIRONMENT =
   import.meta.env.VITE_SENTRY_ENV?.trim() || (IS_PROD ? 'production' : 'development')
 export const APP_VERSION = import.meta.env.VITE_APP_VERSION?.trim() || 'dev'
+
+export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || ''

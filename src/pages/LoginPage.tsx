@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 
+import { GoogleSignInButton } from '../components/auth/GoogleSignInButton'
 import { Button } from '../components/ui/Button'
 import { useAuth } from '../contexts/AuthContext'
-import { login as loginApi } from '../lib/api'
+import { googleSignIn, login as loginApi } from '../lib/api'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -34,6 +35,25 @@ export function LoginPage() {
       setLoading(false)
     }
   }
+
+  const handleGoogleCredential = useCallback(
+    async (credential: string) => {
+      setError('')
+      setLoading(true)
+      try {
+        const { access_token, email: googleEmail } = await googleSignIn(credential)
+        login(access_token, googleEmail)
+        const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname
+        navigate(from ?? '/dashboard', { replace: true })
+      } catch (err: unknown) {
+        const e = err as { detail?: string }
+        setError(e.detail ?? 'Google sign-in failed')
+      } finally {
+        setLoading(false)
+      }
+    },
+    [login, navigate, location.state]
+  )
 
   return (
     <div
@@ -79,7 +99,25 @@ export function LoginPage() {
             Sign in to your account.
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-5 space-y-3.5">
+          <div className="mt-5">
+            <GoogleSignInButton
+              text="signin_with"
+              onCredential={handleGoogleCredential}
+              onError={setError}
+              disabled={loading}
+            />
+          </div>
+
+          <div
+            className="my-4 flex items-center gap-3 text-[11px] tracking-wider uppercase"
+            style={{ color: 'var(--ink-3)' }}
+          >
+            <span className="h-px flex-1" style={{ background: 'var(--border)' }} />
+            or
+            <span className="h-px flex-1" style={{ background: 'var(--border)' }} />
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-3.5">
             <div>
               <label className="eyebrow mb-1 block">Email</label>
               <input
