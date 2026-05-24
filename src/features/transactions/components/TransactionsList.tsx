@@ -47,16 +47,6 @@ interface TransactionsListProps {
   selectedTxn: UnifiedTxn | null | undefined
 }
 
-const sidePanelStyle: React.CSSProperties = {
-  width: 360,
-  borderLeft: '1px solid var(--line)',
-  position: 'sticky',
-  top: 24,
-  alignSelf: 'flex-start',
-  maxHeight: 'calc(100vh - 80px)',
-  overflowY: 'auto',
-}
-
 export function TransactionsList({
   sorted,
   filtered,
@@ -117,13 +107,13 @@ export function TransactionsList({
           <div className="min-w-0 flex-1 overflow-x-auto">
             <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse' }}>
               <colgroup>
-                <col style={{ width: 36 }} />
-                <col style={{ width: 32 }} />
+                <col className="txn-col-check" style={{ width: 36 }} />
+                <col className="txn-col-drag" style={{ width: 32 }} />
                 <col style={{ width: 78 }} />
                 <col />
                 <col style={{ width: 160 }} />
-                <col style={{ width: 100 }} />
-                <col style={{ width: 54 }} />
+                <col className="txn-col-tags" style={{ width: 100 }} />
+                <col className="txn-col-split" style={{ width: 54 }} />
                 <col style={{ width: 114 }} />
                 <col style={{ width: 38 }} />
               </colgroup>
@@ -256,27 +246,41 @@ export function TransactionsList({
           </div>
 
           {showProcessPanel && selectedTxn?.rawOriginal && (
-            <div className="shrink-0" style={sidePanelStyle}>
-              <ProcessPanel
-                key={selectedTxn.rawId}
-                txn={selectedTxn.rawOriginal}
-                categories={categories}
-                onClose={() => setSelectedUid(null)}
-                onProcessed={() => setSelectedUid(null)}
+            <>
+              <div
+                className="txn-side-panel-backdrop"
+                onClick={() => setSelectedUid(null)}
+                aria-hidden
               />
-            </div>
+              <div className="txn-side-panel">
+                <ProcessPanel
+                  key={selectedTxn.rawId}
+                  txn={selectedTxn.rawOriginal}
+                  categories={categories}
+                  onClose={() => setSelectedUid(null)}
+                  onProcessed={() => setSelectedUid(null)}
+                />
+              </div>
+            </>
           )}
 
           {showEditPanel && editingTxn && (
-            <div className="shrink-0" style={sidePanelStyle}>
-              <EditPanel
-                key={editingTxn.id}
-                txn={editingTxn}
-                categories={categories}
-                onClose={() => setEditingTxn(null)}
-                onSaved={() => setEditingTxn(null)}
+            <>
+              <div
+                className="txn-side-panel-backdrop"
+                onClick={() => setEditingTxn(null)}
+                aria-hidden
               />
-            </div>
+              <div className="txn-side-panel">
+                <EditPanel
+                  key={editingTxn.id}
+                  txn={editingTxn}
+                  categories={categories}
+                  onClose={() => setEditingTxn(null)}
+                  onSaved={() => setEditingTxn(null)}
+                />
+              </div>
+            </>
           )}
         </div>
       )}

@@ -13,7 +13,7 @@ const TABS: { id: UploadMode; label: string; icon: string }[] = [
 
 export function UploadTabs({ mode, onSwitch }: UploadTabsProps) {
   return (
-    <div className="flex gap-1.5">
+    <div className="flex flex-wrap gap-1.5">
       {TABS.map((tab) => {
         const isOn = mode === tab.id
         return (

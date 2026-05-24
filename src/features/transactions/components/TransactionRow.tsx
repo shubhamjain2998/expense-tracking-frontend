@@ -85,6 +85,7 @@ export function TransactionRow({
     >
       {/* Checkbox */}
       <td
+        className="txn-col-check"
         style={{ padding: '0 0 0 10px' }}
         onClick={(e) => {
           e.stopPropagation()
@@ -103,6 +104,7 @@ export function TransactionRow({
 
       {/* Drag handle */}
       <td
+        className="txn-col-drag"
         style={{ padding: '0 0 0 6px', cursor: isDeleted ? 'default' : 'grab' }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -257,7 +259,7 @@ export function TransactionRow({
       </td>
 
       {/* Tags */}
-      <td style={{ padding: '11px 12px' }}>
+      <td className="txn-col-tags" style={{ padding: '11px 12px' }}>
         {txn.tags.length > 0 ? (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
             {txn.tags.map((tag) => (
@@ -277,6 +279,7 @@ export function TransactionRow({
 
       {/* Split */}
       <td
+        className="txn-col-split"
         style={{ padding: '11px 12px', textAlign: 'center' }}
         onClick={(e) => e.stopPropagation()}
       >

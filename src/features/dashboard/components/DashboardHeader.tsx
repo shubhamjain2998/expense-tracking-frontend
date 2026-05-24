@@ -62,12 +62,10 @@ export function DashboardHeader({
           {isLoading ? (
             <Skeleton className="h-10 w-72" />
           ) : (
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+            <div className="flex flex-wrap items-baseline gap-2 md:gap-2.5">
               <h1
-                className="num"
+                className="num text-[32px] font-semibold md:text-[40px]"
                 style={{
-                  fontSize: 40,
-                  fontWeight: 600,
                   color: 'var(--ink)',
                   letterSpacing: '-0.03em',
                   lineHeight: 1,
@@ -78,10 +76,9 @@ export function DashboardHeader({
               </h1>
               {totalBudget > 0 && (
                 <span
+                  className="text-[18px] font-light md:text-[22px]"
                   style={{
-                    fontSize: 22,
                     color: 'var(--ink-3)',
-                    fontWeight: 300,
                     letterSpacing: '-0.01em',
                   }}
                 >
@@ -152,11 +149,16 @@ export function DashboardHeader({
             onYearChange={onYearChange}
             onMonthChange={onMonthChange}
           />
-          <Link to="/upload" className="btn primary" style={{ gap: 5 }}>
+          <Link
+            to="/upload"
+            className="btn primary"
+            style={{ gap: 5 }}
+            aria-label="Upload statement"
+          >
             <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
               upload
             </span>
-            Upload
+            <span className="desktop-only">Upload</span>
           </Link>
         </div>
       </div>

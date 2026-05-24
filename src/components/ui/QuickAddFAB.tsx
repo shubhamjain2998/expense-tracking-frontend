@@ -49,12 +49,12 @@ export function QuickAddFAB() {
           setDate(todayStr)
           setOpen(true)
         }}
-        className="fixed right-6 bottom-6 z-40 flex items-center justify-center"
+        className="fixed right-4 bottom-4 z-40 flex items-center justify-center md:right-6 md:bottom-6"
         aria-label="Quick add transaction"
         title="Quick add transaction (Alt+N)"
         style={{
-          height: 44,
-          width: 44,
+          height: 48,
+          width: 48,
           borderRadius: 999,
           background: 'var(--ink)',
           color: 'var(--bg)',

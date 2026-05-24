@@ -46,7 +46,7 @@ export function FilterBar({
       style={{ paddingBottom: 10, borderBottom: '1px solid var(--line)' }}
     >
       {/* Search */}
-      <div className="relative" style={{ width: 210 }}>
+      <div className="relative w-full md:w-[210px]">
         <span
           className="material-symbols-outlined pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2"
           style={{ fontSize: 14, color: 'var(--ink-4)' }}
@@ -63,13 +63,12 @@ export function FilterBar({
         />
       </div>
 
-      {/* Status tabs */}
+      {/* Status tabs — horizontal scroll on mobile so all five fit */}
       <div
-        className="flex items-center"
+        className="flex max-w-full items-center overflow-x-auto"
         style={{
           border: '1px solid var(--line-strong)',
           borderRadius: 'var(--radius)',
-          overflow: 'hidden',
         }}
       >
         {(['all', 'pending', 'income', 'processed', 'split'] as StatusFilter[]).map((f, i, arr) => (
@@ -190,9 +189,9 @@ export function FilterBar({
         Auto-categorise
       </button>
 
-      {/* Shortcuts hint */}
+      {/* Shortcuts hint — desktop only since mobile has no keyboard */}
       <span
-        className="flex items-center gap-1 text-[11px]"
+        className="hidden items-center gap-1 text-[11px] md:inline-flex"
         style={{ color: 'var(--ink-4)', userSelect: 'none' }}
       >
         <span className="material-symbols-outlined" style={{ fontSize: 12 }}>

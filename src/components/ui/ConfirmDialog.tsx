@@ -27,7 +27,7 @@ export function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center p-10 backdrop-blur-[8px]"
+      className="fixed inset-0 z-50 grid place-items-center p-4 backdrop-blur-[8px] md:p-10"
       style={{
         background: 'color-mix(in oklch, var(--bg) 60%, transparent)',
         animation: 'fade-up .15s ease',
@@ -35,18 +35,18 @@ export function ConfirmDialog({
     >
       <div className="absolute inset-0" onClick={onCancel} />
       <div
-        className="relative z-10 flex w-full max-w-md flex-col bg-[var(--surface)] border border-[var(--line)] rounded-[var(--radius-lg)] shadow-[var(--shadow-pop)] max-h-[90vh]"
+        className="relative z-10 flex max-h-[90vh] w-full max-w-md flex-col rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-pop)]"
         style={{ animation: 'pop .18s ease' }}
       >
-        <div className="pt-[18px] px-5 pb-3 border-b border-[var(--line)]">
-          <h2 className="text-[15px] font-semibold text-[var(--ink)] tracking-[-0.01em]">
+        <div className="border-b border-[var(--line)] px-5 pt-[18px] pb-3">
+          <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--ink)]">
             {title}
           </h2>
         </div>
-        <div className="overflow-auto py-[18px] px-5">
-          <p className="text-[13px] text-[var(--ink-2)] leading-[1.55]">{message}</p>
+        <div className="overflow-auto px-5 py-[18px]">
+          <p className="text-[13px] leading-[1.55] text-[var(--ink-2)]">{message}</p>
         </div>
-        <div className="flex justify-end gap-2 py-3 px-5 border-t border-[var(--line)]">
+        <div className="flex justify-end gap-2 border-t border-[var(--line)] px-5 py-3">
           <Button variant="tertiary" size="sm" onClick={onCancel} disabled={loading}>
             {cancelLabel}
           </Button>

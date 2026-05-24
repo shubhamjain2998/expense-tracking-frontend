@@ -14,7 +14,12 @@ const NAV = [
   { to: '/settings', icon: 'settings', label: 'Settings' },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  mobileOpen?: boolean
+  onNavigate?: () => void
+}
+
+export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
   const { email, logout } = useAuth()
   const navigate = useNavigate()
   const initials = getInitials(email)
@@ -63,21 +68,7 @@ export function Sidebar() {
   const { spent, totalBudget, owedToYou, pendingCount } = useSidebarStats()
 
   return (
-    <aside
-      style={{
-        width: 200,
-        minWidth: 200,
-        height: '100vh',
-        borderRight: '1px solid var(--line)',
-        background: 'var(--bg)',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'sticky',
-        top: 0,
-        overflow: 'hidden',
-        flexShrink: 0,
-      }}
-    >
+    <aside className="app-sidebar" data-mobile-open={mobileOpen ? 'true' : 'false'}>
       {/* Profile / Brand */}
       <div style={{ position: 'relative', borderBottom: '1px solid var(--line)' }}>
         <button
@@ -357,6 +348,7 @@ export function Sidebar() {
             key={to}
             to={to}
             end={to === '/dashboard'}
+            onClick={onNavigate}
             style={({ isActive }) => ({
               display: 'flex',
               alignItems: 'center',

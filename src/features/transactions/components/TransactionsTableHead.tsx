@@ -11,12 +11,17 @@ interface TransactionsTableHeadProps {
   setCheckedUids: Dispatch<SetStateAction<Set<string>>>
 }
 
-const columns: { label: string; col: SortCol; align: 'left' | 'center' | 'right' }[] = [
+const columns: {
+  label: string
+  col: SortCol
+  align: 'left' | 'center' | 'right'
+  className?: string
+}[] = [
   { label: 'Date', col: 'date', align: 'left' },
   { label: 'Merchant', col: 'merchant', align: 'left' },
   { label: 'Category', col: 'category', align: 'left' },
-  { label: 'Tags', col: 'tags', align: 'left' },
-  { label: 'Split', col: 'split', align: 'center' },
+  { label: 'Tags', col: 'tags', align: 'left', className: 'txn-col-tags' },
+  { label: 'Split', col: 'split', align: 'center', className: 'txn-col-split' },
   { label: 'Amount', col: 'amount', align: 'right' },
 ]
 
@@ -42,7 +47,7 @@ export function TransactionsTableHead({
   return (
     <thead>
       <tr style={{ borderBottom: '1px solid var(--line)' }}>
-        <th style={{ padding: '8px 0 8px 10px', width: 36 }}>
+        <th className="txn-col-check" style={{ padding: '8px 0 8px 10px', width: 36 }}>
           {visibleFiltered.length > 0 && (
             <input
               type="checkbox"
@@ -55,12 +60,13 @@ export function TransactionsTableHead({
             />
           )}
         </th>
-        <th style={{ padding: '8px 0 8px 4px' }} />
-        {columns.map(({ label, col, align }) => {
+        <th className="txn-col-drag" style={{ padding: '8px 0 8px 4px' }} />
+        {columns.map(({ label, col, align, className }) => {
           const active = sortCol === col
           return (
             <th
               key={col}
+              className={className}
               onClick={() => onToggleSort(col)}
               aria-sort={active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
               style={{

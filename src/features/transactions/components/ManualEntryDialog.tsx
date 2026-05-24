@@ -57,14 +57,14 @@ export function ManualEntryDialog({ onClose }: ManualEntryDialogProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.35)' }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
     >
       <div
-        className="flex w-[380px] flex-col gap-4"
+        className="flex w-full max-w-[380px] flex-col gap-4"
         style={{
           background: 'var(--surface)',
           border: '1px solid var(--line)',

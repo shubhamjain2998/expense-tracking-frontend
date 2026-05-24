@@ -26,13 +26,15 @@ export function TransactionsHeader({
   onUpload,
 }: TransactionsHeaderProps) {
   return (
-    <div className="flex items-start justify-between gap-4" style={{ paddingBottom: 20 }}>
+    <div
+      className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4"
+      style={{ paddingBottom: 20 }}
+    >
       <div>
         <p className="card-eyebrow mb-1">Transactions</p>
         <h1
-          className="flex items-baseline gap-3"
+          className="flex flex-wrap items-baseline gap-2 text-[22px] md:gap-3 md:text-[26px]"
           style={{
-            fontSize: 26,
             fontWeight: 600,
             letterSpacing: '-0.025em',
             color: 'var(--ink)',
@@ -41,9 +43,8 @@ export function TransactionsHeader({
         >
           <span>{allTxnsCount} transactions</span>
           <span
-            className="num"
+            className="num text-[15px] md:text-[17px]"
             style={{
-              fontSize: 17,
               fontWeight: 500,
               color: total < 0 ? 'var(--pos)' : 'var(--ink-3)',
             }}
@@ -55,7 +56,7 @@ export function TransactionsHeader({
         </h1>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {/* Month nav */}
         <div
           className="flex items-center"
@@ -111,18 +112,28 @@ export function TransactionsHeader({
           </button>
         </div>
 
-        <button onClick={onManualEntry} className="btn" style={{ gap: 5 }}>
+        <button
+          onClick={onManualEntry}
+          className="btn"
+          style={{ gap: 5 }}
+          aria-label="Manual entry"
+        >
           <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
             add
           </span>
-          Manual entry
+          <span className="desktop-only">Manual entry</span>
         </button>
 
-        <button onClick={onUpload} className="btn primary" style={{ gap: 5 }}>
+        <button
+          onClick={onUpload}
+          className="btn primary"
+          style={{ gap: 5 }}
+          aria-label="Upload statement"
+        >
           <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
             upload
           </span>
-          Upload
+          <span className="desktop-only">Upload</span>
         </button>
       </div>
     </div>

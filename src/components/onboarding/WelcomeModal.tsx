@@ -82,7 +82,7 @@ export function WelcomeModal({ onGetStarted, onSkip }: WelcomeModalProps) {
   // fixed-positioned descendants, mis-centering the modal).
   return createPortal(
     <div
-      className="fixed inset-0 z-50 grid place-items-center p-10 backdrop-blur-[8px]"
+      className="fixed inset-0 z-50 grid place-items-center p-4 backdrop-blur-[8px] md:p-10"
       style={{
         background: 'color-mix(in oklch, var(--bg) 60%, transparent)',
         animation: 'fade-up .15s ease',

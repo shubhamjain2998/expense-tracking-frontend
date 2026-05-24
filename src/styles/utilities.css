@@ -94,6 +94,21 @@
   }
 }
 
+/* Opacity-only route transition. Avoids `transform`, which would create a
+   containing block for fixed-positioned descendants (mobile side panels,
+   overlays) and pin them inside the route wrapper instead of the viewport. */
+@keyframes fade-in-only {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.route-fade {
+  animation: fade-in-only 0.18s ease;
+}
+
 /* Respect reduced motion. */
 @media (prefers-reduced-motion: reduce) {
   *,
