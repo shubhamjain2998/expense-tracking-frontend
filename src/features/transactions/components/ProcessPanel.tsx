@@ -11,11 +11,25 @@ import { getTags } from '@/lib/api/tags'
 import { editProcessedTransaction, processTransaction } from '@/lib/api/transactions'
 import { qk } from '@/lib/queryKeys'
 import type { Category } from '@/types/settings'
-import type { PersonShareIn, RawTransaction } from '@/types/transaction'
+import type { PersonShareIn, RawTransaction, TxnType } from '@/types/transaction'
 
-import { isIncome } from '../lib/txnFormat'
+import { isCreditAmount } from '../lib/txnFormat'
 
 import { NewTagChip } from './NewTagChip'
+
+// Best guess for what the backend's classify_txn_type would pick — used as
+// the default so the segmented control matches what would happen if the
+// user didn't touch it. Never defaults to 'income' (classifier never does).
+function defaultTxnTypeFor(amount: string | number): TxnType {
+  return isCreditAmount(amount) ? 'refund' : 'expense'
+}
+
+const TXN_TYPE_OPTIONS: { value: TxnType; label: string; color: string }[] = [
+  { value: 'expense', label: 'Expense', color: 'var(--ink)' },
+  { value: 'income', label: 'Income', color: 'var(--pos)' },
+  { value: 'refund', label: 'Refund', color: 'var(--pos)' },
+  { value: 'transfer', label: 'Transfer', color: 'var(--ink-3)' },
+]
 
 interface ProcessPanelProps {
   txn: RawTransaction
@@ -35,6 +49,7 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
   const [notes, setNotes] = useState('')
   const [categoryError, setCategoryError] = useState('')
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
+  const [txnType, setTxnType] = useState<TxnType>(defaultTxnTypeFor(txn.amount))
 
   const personsQuery = useQuery({ queryKey: qk.persons.all, queryFn: getPersons })
   const tagsQuery = useQuery({ queryKey: qk.tags.all, queryFn: getTags })
@@ -109,12 +124,15 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
       shares,
       notes: notes.trim() || null,
       tag_ids: selectedTagIds.length ? selectedTagIds : undefined,
+      txn_type: txnType,
     })
   }
 
   const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }))
   const totalAmount = Math.abs(Number(amount) || Number(txn.amount))
-  const txnIsIncome = isIncome(txn.amount)
+  // Tint affordances ('this is incoming money') when the user has marked it
+  // income or refund — both behave the same way visually.
+  const isIncoming = txnType === 'income' || txnType === 'refund'
 
   return (
     <div className="flex h-full flex-col">
@@ -136,35 +154,42 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
       </div>
 
       <div className="flex flex-col gap-4 overflow-y-auto" style={{ padding: 16 }}>
-        {txnIsIncome && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 7,
-              padding: '7px 11px',
-              borderRadius: 'var(--radius)',
-              background: 'var(--pos-soft)',
-              border: '1px solid color-mix(in oklch, var(--pos) 25%, transparent)',
-              fontSize: 12,
-              fontWeight: 500,
-              color: 'var(--pos)',
-            }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
-              south_america
-            </span>
-            Income transaction — money received
+        <div>
+          <p className="eyebrow mb-1.5">Type</p>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {TXN_TYPE_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setTxnType(opt.value)}
+                style={{
+                  flex: 1,
+                  padding: '5px 0',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: 11.5,
+                  fontWeight: 500,
+                  border: '1px solid ' + (txnType === opt.value ? opt.color : 'var(--line)'),
+                  background:
+                    txnType === opt.value
+                      ? `color-mix(in oklch, ${opt.color} 12%, var(--surface))`
+                      : 'var(--surface-2)',
+                  color: txnType === opt.value ? opt.color : 'var(--ink-3)',
+                  cursor: 'pointer',
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
-        )}
+        </div>
         <div
           style={{
-            background: txnIsIncome
+            background: isIncoming
               ? 'color-mix(in oklch, var(--pos-soft) 60%, var(--surface-2))'
               : 'var(--surface-2)',
             border:
               '1px solid ' +
-              (txnIsIncome ? 'color-mix(in oklch, var(--pos) 20%, transparent)' : 'var(--line)'),
+              (isIncoming ? 'color-mix(in oklch, var(--pos) 20%, transparent)' : 'var(--line)'),
             borderRadius: 'var(--radius)',
             padding: 14,
           }}
@@ -182,7 +207,7 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
               fontWeight: 600,
               letterSpacing: '-0.02em',
               height: 38,
-              color: txnIsIncome ? 'var(--pos)' : 'var(--ink)',
+              color: isIncoming ? 'var(--pos)' : 'var(--ink)',
             }}
             min={0.01}
             max={Number.MAX_SAFE_INTEGER}

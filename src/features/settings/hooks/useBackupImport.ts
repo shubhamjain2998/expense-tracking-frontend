@@ -47,7 +47,13 @@ function computeSummary(parsedPayload: ParsedBackupPayload): ParsedSummary {
     }
     const amtStr = typeof t.amount === 'string' ? t.amount : String(t.amount ?? '')
     const amt = Number(amtStr)
-    if (!Number.isNaN(amt)) {
+    // Prefer txn_type when the backup carries it; fall back to sign-based
+    // bucketing only for older payloads or hand-authored spreadsheet imports
+    // that don't include the field.
+    const type = (t as { txn_type?: unknown }).txn_type
+    if (type === 'income') incomeCount++
+    else if (type === 'expense' || type === 'refund' || type === 'transfer') expenseCount++
+    else if (!Number.isNaN(amt)) {
       if (amt < 0) incomeCount++
       else if (amt > 0) expenseCount++
     }

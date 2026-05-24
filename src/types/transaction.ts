@@ -97,6 +97,9 @@ export interface ProcessTransactionPayload {
   shares: PersonShareIn[]
   notes?: string | null
   tag_ids?: string[]
+  /** Optional user pick. Wins over the raw row's stored type which wins over
+   *  the backend's classify_txn_type heuristic. */
+  txn_type?: TxnType
 }
 
 export interface EditProcessedPayload {

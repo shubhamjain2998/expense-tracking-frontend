@@ -2,7 +2,7 @@ import { formatShortDate } from '@/lib/format'
 import type { ProcessedTransactionItem } from '@/types/transaction'
 
 import { categoryColor } from '../lib/categoryColor'
-import { formatAmount } from '../lib/txnFormat'
+import { formatAmount, isCreditAmount } from '../lib/txnFormat'
 import type { UnifiedTxn } from '../types'
 
 import { TxnContextMenu } from './TxnContextMenu'
@@ -52,7 +52,11 @@ export function TransactionRow({
 }: TransactionRowProps) {
   const isDeleted = txn.kind === 'deleted'
   const catColor = txn.categoryId ? categoryColor(txn.categoryId) : 'var(--warn)'
-  const { display: amtDisplay, income: txnIncome } = formatAmount(txn.effectiveAmount)
+  const { display: amtDisplay } = formatAmount(txn.effectiveAmount, txn.txnType)
+  // For pending rows the backend hasn't classified yet, so we can only show a
+  // sign-based hint — flagged as a *credit* (money in), never as confirmed
+  // income, since classify_txn_type would map this to refund or transfer.
+  const isPendingCredit = txn.kind === 'pending' && isCreditAmount(txn.effectiveAmount)
 
   return (
     <tr
@@ -177,10 +181,10 @@ export function TransactionRow({
               gap: 5,
               padding: '3px 8px',
               borderRadius: 'var(--radius-sm)',
-              background: txnIncome ? 'var(--pos-soft)' : 'var(--warn-soft)',
+              background: isPendingCredit ? 'var(--pos-soft)' : 'var(--warn-soft)',
               fontSize: 12,
               fontWeight: 500,
-              color: txnIncome ? 'var(--pos)' : 'var(--warn)',
+              color: isPendingCredit ? 'var(--pos)' : 'var(--warn)',
             }}
           >
             <span
@@ -188,11 +192,11 @@ export function TransactionRow({
                 width: 6,
                 height: 6,
                 borderRadius: '50%',
-                background: txnIncome ? 'var(--pos)' : 'var(--warn)',
+                background: isPendingCredit ? 'var(--pos)' : 'var(--warn)',
                 flexShrink: 0,
               }}
             />
-            {txnIncome ? 'refund?' : 'pending'}
+            {isPendingCredit ? 'credit?' : 'pending'}
           </span>
         ) : isDeleted ? (
           <span
@@ -303,7 +307,9 @@ export function TransactionRow({
         </button>
       </td>
 
-      {/* Amount */}
+      {/* Amount — color and sign derive from txn_type (single source of truth).
+          For pending rows that haven't been classified yet, fall back to a
+          credit indicator based on sign, but never assert "income". */}
       <td
         style={{
           padding: '11px 12px',
@@ -311,23 +317,21 @@ export function TransactionRow({
           fontSize: 13.5,
           fontWeight: 600,
           color:
-            txn.txnType === 'income'
+            txn.txnType === 'income' || txn.txnType === 'refund'
               ? 'var(--pos)'
-              : txn.txnType === 'refund'
-                ? 'var(--pos)'
-                : txn.txnType === 'transfer'
-                  ? 'var(--ink-3)'
-                  : txnIncome
-                    ? 'var(--pos)'
-                    : 'var(--ink)',
+              : txn.txnType === 'transfer'
+                ? 'var(--ink-3)'
+                : isPendingCredit
+                  ? 'var(--pos)'
+                  : 'var(--ink)',
           fontVariantNumeric: 'tabular-nums',
           whiteSpace: 'nowrap',
         }}
       >
-        {txn.txnType === 'refund'
-          ? '-'
-          : txn.txnType === 'income' || (txnIncome && !txn.txnType)
-            ? '+'
+        {txn.txnType === 'income' || (isPendingCredit && !txn.txnType)
+          ? '+'
+          : txn.txnType === 'refund'
+            ? '-'
             : ''}
         {amtDisplay}
       </td>

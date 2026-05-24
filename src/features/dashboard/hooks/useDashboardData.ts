@@ -24,12 +24,7 @@ import {
   computeYtdExtras,
   computeYtdLineData,
 } from '../lib/dashboardMath'
-import type {
-  CategoryStat,
-  IncomeExpenseTrendPoint,
-  YtdComputedData,
-  YtdDataPoint,
-} from '../types'
+import type { CategoryStat, IncomeExpenseTrendPoint, YtdComputedData, YtdDataPoint } from '../types'
 
 export interface DashboardDataResult {
   // Monthly summary
@@ -142,12 +137,7 @@ export function useDashboardData({
   // Returns per-category expense + income/expense totals for the 6 calendar months
   // ending at the currently selected calendar month.
   const multiMonthSummaryQuery = useQuery({
-    queryKey: qk.dashboard.multiMonthSummary(
-      calYear,
-      calMonth,
-      6,
-      selectedTagId || undefined
-    ),
+    queryKey: qk.dashboard.multiMonthSummary(calYear, calMonth, 6, selectedTagId || undefined),
     queryFn: () => getMultiMonthSummary(calYear, calMonth, 6, selectedTagId || undefined),
   })
 
@@ -204,19 +194,24 @@ export function useDashboardData({
 
   const allTransactions = useMemo(() => allTxnQuery.data ?? [], [allTxnQuery.data])
 
+  // Income = strictly txn_type === 'income'. Don't fall back to amount sign:
+  // backend's classify_txn_type maps negatives to refund/transfer, so a sign
+  // check would double-count refunds and credit-card payments as income.
+  // Matches the income_total the multi-month-summary endpoint computes.
   const totalIncome = useMemo(
     () =>
       allTransactions
-        .filter((t) => Number(t.effective_amount) < 0)
-        .reduce((s, t) => s - Number(t.effective_amount), 0),
+        .filter((t) => t.txn_type === 'income')
+        .reduce((s, t) => s + Math.abs(Number(t.effective_amount)), 0),
     [allTransactions]
   )
 
   const incomeByCategory = useMemo(() => {
     const map = new Map<string, number>()
     for (const t of allTransactions) {
-      const amt = Number(t.effective_amount)
-      if (amt < 0) map.set(t.category, (map.get(t.category) ?? 0) - amt)
+      if (t.txn_type !== 'income') continue
+      const amt = Math.abs(Number(t.effective_amount))
+      map.set(t.category, (map.get(t.category) ?? 0) + amt)
     }
     return Array.from(map.entries())
       .map(([category, total]) => ({ category, total }))
@@ -290,9 +285,7 @@ export function useDashboardData({
 
   const projectedFY = useMemo(
     () =>
-      ytdSpentTotal > 0 && dayOfYear > 0
-        ? Math.round((ytdSpentTotal / dayOfYear) * daysInYear)
-        : 0,
+      ytdSpentTotal > 0 && dayOfYear > 0 ? Math.round((ytdSpentTotal / dayOfYear) * daysInYear) : 0,
     [ytdSpentTotal, dayOfYear, daysInYear]
   )
 

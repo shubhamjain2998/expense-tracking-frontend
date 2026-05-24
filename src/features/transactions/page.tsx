@@ -17,7 +17,6 @@ import { useRawMutations } from './hooks/useRawMutations'
 import { useTransactionKeyboard } from './hooks/useTransactionKeyboard'
 import { useTransactionsData } from './hooks/useTransactionsData'
 import { buildUnified } from './lib/buildUnified'
-import { isIncome } from './lib/txnFormat'
 import type { SortCol, SortDir, StatusFilter } from './types'
 
 export function TransactionsPage() {
@@ -83,7 +82,7 @@ export function TransactionsPage() {
     if (t.kind === 'deleted' && !showDeleted) return false
     if (search && !t.description.toLowerCase().includes(search.toLowerCase())) return false
     if (statusFilter === 'pending' && t.kind !== 'pending') return false
-    if (statusFilter === 'income' && !isIncome(t.amount)) return false
+    if (statusFilter === 'income' && t.txnType !== 'income') return false
     if (statusFilter === 'processed' && t.kind !== 'processed') return false
     if (statusFilter === 'split' && t.shares.length === 0) return false
     return true
@@ -116,7 +115,7 @@ export function TransactionsPage() {
   })
 
   const pendingCount = allTxns.filter((t) => t.kind === 'pending').length
-  const incomeCount = allTxns.filter((t) => t.kind !== 'deleted' && isIncome(t.amount)).length
+  const incomeCount = allTxns.filter((t) => t.kind !== 'deleted' && t.txnType === 'income').length
   const deletedCount = allTxns.filter((t) => t.kind === 'deleted').length
   // Heading reflects the active tab/filter so the count and sum match the
   // visible table (e.g. "Processed" tab shows the processed-only total).
