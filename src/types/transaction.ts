@@ -11,6 +11,10 @@ export interface RawTransaction {
   amount: string
   status: TransactionStatus
   deleted_at?: string | null
+  // Stored when the user picks a type in Quick Add / Manual Entry. ProcessPanel
+  // reads it back so the Type selector defaults to the user's pick instead of
+  // re-running the amount-sign heuristic (which never picks 'income').
+  txn_type?: TxnType | null
 }
 
 export interface PendingManualTransaction {

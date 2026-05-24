@@ -49,7 +49,7 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
   const [notes, setNotes] = useState('')
   const [categoryError, setCategoryError] = useState('')
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
-  const [txnType, setTxnType] = useState<TxnType>(defaultTxnTypeFor(txn.amount))
+  const [txnType, setTxnType] = useState<TxnType>(txn.txn_type ?? defaultTxnTypeFor(txn.amount))
 
   const personsQuery = useQuery({ queryKey: qk.persons.all, queryFn: getPersons })
   const tagsQuery = useQuery({ queryKey: qk.tags.all, queryFn: getTags })
