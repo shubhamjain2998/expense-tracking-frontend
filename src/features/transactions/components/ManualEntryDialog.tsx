@@ -6,10 +6,18 @@ import { useToastContext } from '@/hooks/useToastContext'
 import { createRawTransaction } from '@/lib/api/transactions'
 import { todayIsoDate } from '@/lib/format'
 import { qk } from '@/lib/queryKeys'
+import type { TxnType } from '@/types/transaction'
 
 interface ManualEntryDialogProps {
   onClose: () => void
 }
+
+const TXN_TYPE_OPTIONS: { value: TxnType; label: string; color: string }[] = [
+  { value: 'expense', label: 'Expense', color: 'var(--ink)' },
+  { value: 'income', label: 'Income', color: 'var(--pos)' },
+  { value: 'refund', label: 'Refund', color: 'var(--pos)' },
+  { value: 'transfer', label: 'Transfer', color: 'var(--ink-3)' },
+]
 
 export function ManualEntryDialog({ onClose }: ManualEntryDialogProps) {
   const toast = useToastContext()
@@ -17,6 +25,7 @@ export function ManualEntryDialog({ onClose }: ManualEntryDialogProps) {
   const [date, setDate] = useState(todayIsoDate())
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
+  const [txnType, setTxnType] = useState<TxnType>('expense')
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -24,6 +33,7 @@ export function ManualEntryDialog({ onClose }: ManualEntryDialogProps) {
         txn_date: date,
         description: description.trim(),
         amount: Number(amount),
+        txn_type: txnType,
       }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: qk.transactions.all })
@@ -89,6 +99,34 @@ export function ManualEntryDialog({ onClose }: ManualEntryDialogProps) {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <div>
+            <label className="eyebrow mb-1 block">Type</label>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {TXN_TYPE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setTxnType(opt.value)}
+                  style={{
+                    flex: 1,
+                    padding: '5px 0',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: 11.5,
+                    fontWeight: 500,
+                    border: '1px solid ' + (txnType === opt.value ? opt.color : 'var(--line)'),
+                    background:
+                      txnType === opt.value
+                        ? `color-mix(in oklch, ${opt.color} 12%, var(--surface))`
+                        : 'var(--surface-2)',
+                    color: txnType === opt.value ? opt.color : 'var(--ink-3)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
             <label className="eyebrow mb-1 block">Date</label>
             <input
               type="date"
@@ -117,10 +155,8 @@ export function ManualEntryDialog({ onClose }: ManualEntryDialogProps) {
               placeholder="0.00"
               className="input num"
               step="0.01"
+              min="0.01"
             />
-            <p className="mt-1 text-[11px]" style={{ color: 'var(--ink-4)' }}>
-              Use a negative value (e.g. −1200) for income, refunds, or salary.
-            </p>
           </div>
           <Button variant="primary" className="mt-1 w-full" loading={mutation.isPending}>
             Add transaction

@@ -1,8 +1,16 @@
 import { useState } from 'react'
 
 import { useQuickAdd } from '../../hooks/useQuickAdd'
+import type { TxnType } from '../../types/transaction'
 
 import { Button } from './Button'
+
+const TXN_TYPE_OPTIONS: { value: TxnType; label: string; color: string }[] = [
+  { value: 'expense', label: 'Expense', color: 'var(--ink)' },
+  { value: 'income', label: 'Income', color: 'var(--pos)' },
+  { value: 'refund', label: 'Refund', color: 'var(--pos)' },
+  { value: 'transfer', label: 'Transfer', color: 'var(--ink-3)' },
+]
 
 export function QuickAddFAB() {
   const todayStr = () => new Date().toISOString().slice(0, 10)
@@ -11,6 +19,7 @@ export function QuickAddFAB() {
   const [date, setDate] = useState(todayStr)
   const [desc, setDesc] = useState('')
   const [amount, setAmount] = useState('')
+  const [txnType, setTxnType] = useState<TxnType>('expense')
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const mutation = useQuickAdd({
@@ -18,6 +27,7 @@ export function QuickAddFAB() {
       setDesc('')
       setAmount('')
       setDate(todayStr)
+      setTxnType('expense')
       setErrors({})
     },
   })
@@ -27,6 +37,7 @@ export function QuickAddFAB() {
     setDesc('')
     setAmount('')
     setDate(todayStr)
+    setTxnType('expense')
     setErrors({})
   }
 
@@ -39,7 +50,12 @@ export function QuickAddFAB() {
     if (!amount || isNaN(amt) || amt <= 0) errs.amount = 'Enter a valid amount'
     setErrors(errs)
     if (!Object.keys(errs).length)
-      mutation.mutate({ txn_date: `${date}T00:00:00`, description: desc.trim(), amount: amt })
+      mutation.mutate({
+        txn_date: `${date}T00:00:00`,
+        description: desc.trim(),
+        amount: amt,
+        txn_type: txnType,
+      })
   }
 
   return (
@@ -118,6 +134,35 @@ export function QuickAddFAB() {
             </div>
 
             <form onSubmit={handleSubmit} style={{ padding: 18 }} className="space-y-3.5">
+              <div>
+                <label className="eyebrow mb-1 block">Type</label>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {TXN_TYPE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setTxnType(opt.value)}
+                      style={{
+                        flex: 1,
+                        padding: '5px 0',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: 11.5,
+                        fontWeight: 500,
+                        border: '1px solid ' + (txnType === opt.value ? opt.color : 'var(--line)'),
+                        background:
+                          txnType === opt.value
+                            ? `color-mix(in oklch, ${opt.color} 12%, var(--surface))`
+                            : 'var(--surface-2)',
+                        color: txnType === opt.value ? opt.color : 'var(--ink-3)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div>
                 <label className="eyebrow mb-1 block">Date</label>
                 <input

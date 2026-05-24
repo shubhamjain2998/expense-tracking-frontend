@@ -7,12 +7,17 @@ export interface BackupShare {
   settled: boolean
 }
 
+export type BackupTxnType = 'expense' | 'income' | 'refund' | 'transfer'
+
 export interface BackupTransaction {
   txn_date: string
   description: string
   amount: string
   category: string
   notes: string | null
+  // Optional so older backups (and hand-authored spreadsheet imports) keep
+  // parsing — backend falls back to its classify_txn_type heuristic.
+  txn_type: BackupTxnType | null
   tags: string[]
   shares: BackupShare[]
 }

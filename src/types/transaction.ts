@@ -115,4 +115,8 @@ export interface CreateRawTransactionPayload {
   txn_date: string
   description: string
   amount: number
+  // Optional user-chosen type. Stored on the raw row and honored when the
+  // row is later categorized, so e.g. an "income" pick survives instead of
+  // being overwritten by the amount-sign heuristic.
+  txn_type?: TxnType
 }
