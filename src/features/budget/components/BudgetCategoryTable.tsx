@@ -120,7 +120,7 @@ export function BudgetCategoryTable({
               </>
             )}
           </tbody>
-          <tfoot>
+          <tfoot style={tableData.length === 0 ? { display: 'none' } : undefined}>
             <tr>
               <td
                 style={{

@@ -47,27 +47,35 @@ export function buildTableRows(
   })
 }
 
+export interface HeatmapInputRow {
+  categoryId: string
+  categoryName: string
+  // 0 when no budget is set — yields empty cells (percent: null) so users with
+  // no budget yet still see all categories laid out in the grid.
+  annualBudget: number
+}
+
 export function buildHeatmapRows(
-  entries: BudgetEntry[],
+  rows: HeatmapInputRow[],
   monthResults: Array<{ data?: SummaryRow[] | undefined }>,
   overrideMap: Map<string, number>,
   currentYearMonth: number
 ): HeatmapRowData[] {
-  return entries.map((entry, i) => {
-    const defaultMonthly = annualToMonthly(Number(entry.allocated_amount))
+  return rows.map((row, i) => {
+    const defaultMonthly = annualToMonthly(row.annualBudget)
 
     const cells = Array.from({ length: 12 }, (_, mi) => {
       const m = mi + 1
       if (m > currentYearMonth) {
         return { month: m, spend: null, budget: defaultMonthly, percent: null }
       }
-      const overrideKey = `${m}:${entry.category_id}`
+      const overrideKey = `${m}:${row.categoryId}`
       const budget = overrideMap.has(overrideKey)
         ? (overrideMap.get(overrideKey) ?? defaultMonthly)
         : defaultMonthly
-      const row = monthResults[mi].data?.find((s) => s.category === entry.category)
-      const spend = Number(row?.actual ?? 0)
-      const percent = budget > 0 ? Math.round((spend / budget) * 100) : 0
+      const monthRow = monthResults[mi].data?.find((s) => s.category === row.categoryName)
+      const spend = Number(monthRow?.actual ?? 0)
+      const percent = budget > 0 ? Math.round((spend / budget) * 100) : null
       return { month: m, spend, budget, percent }
     })
 
@@ -78,8 +86,8 @@ export function buildHeatmapRows(
         : null
 
     return {
-      categoryId: entry.category_id,
-      categoryName: entry.category,
+      categoryId: row.categoryId,
+      categoryName: row.categoryName,
       colorIndex: i % 8,
       cells,
       avgPercent,

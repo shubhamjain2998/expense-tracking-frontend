@@ -95,10 +95,22 @@ export function useBudgetData({
     [entries, summary, ytd, overrideMap, month]
   )
 
-  const heatmapData = useMemo(
-    () => buildHeatmapRows(entries, monthQueries, overrideMap, currentYearMonth),
-    [entries, monthQueries, overrideMap, currentYearMonth]
-  )
+  const heatmapData = useMemo(() => {
+    // With no budget entries yet, fall back to listing all expense categories
+    // with annualBudget=0 — buildHeatmapRows returns empty (null-percent) cells
+    // for them so the grid is still visible instead of a bare empty state.
+    const rows =
+      entries.length > 0
+        ? entries.map((e) => ({
+            categoryId: e.category_id,
+            categoryName: e.category,
+            annualBudget: Number(e.allocated_amount),
+          }))
+        : allCategories
+            .filter((c) => !c.is_income)
+            .map((c) => ({ categoryId: c.id, categoryName: c.name, annualBudget: 0 }))
+    return buildHeatmapRows(rows, monthQueries, overrideMap, currentYearMonth)
+  }, [entries, allCategories, monthQueries, overrideMap, currentYearMonth])
 
   const unbudgetedData = useMemo(
     () => buildUnbudgetedRows(allCategories, entries, summary, ytd),

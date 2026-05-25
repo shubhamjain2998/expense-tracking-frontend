@@ -17,18 +17,21 @@ describe('Budget inline edit flow', () => {
     localStorage.removeItem('access_token')
   })
 
-  it('shows empty-state prompt and opens Add Budget modal', async () => {
+  it('with no budget entries, lists all expense categories as unbudgeted and opens Add modal', async () => {
     server.use(http.get('http://localhost:8000/budget/:year', () => HttpResponse.json([])))
 
     const user = userEvent.setup()
     renderWithProviders(<BudgetPage />, { initialEntries: ['/budget'] })
 
-    expect(await screen.findByText(/no budget set for/i)).toBeInTheDocument()
+    // "No budget set" divider appears with all expense categories listed beneath it
+    // (Groceries + Transport from the default categories handler), so the page
+    // is usable instead of showing an empty placeholder.
+    expect(await screen.findByText(/no budget set/i)).toBeInTheDocument()
+    expect(screen.getAllByText('Groceries').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Transport').length).toBeGreaterThan(0)
 
-    // Click the empty-state CTA — covers the onAdd callback
-    await user.click(screen.getByRole('button', { name: /add first budget entry/i }))
-
-    // AddBudgetModal opens
+    // Header "+ Add budget" still works as the primary CTA
+    await user.click(screen.getByRole('button', { name: /add budget$/i }))
     expect(await screen.findByText(/add budget entries/i)).toBeInTheDocument()
   })
 

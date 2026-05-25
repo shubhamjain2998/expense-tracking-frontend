@@ -1,6 +1,5 @@
 import { useState } from 'react'
 
-import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { SkeletonTable } from '@/components/ui/Skeleton'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
@@ -12,38 +11,6 @@ import { BudgetHeader } from './components/BudgetHeader'
 import { HeatmapCard } from './components/HeatmapCard'
 import { useBudgetData } from './hooks/useBudgetData'
 import { useBudgetMutations } from './hooks/useBudgetMutations'
-
-function EmptyBudgetState({ year, onAdd }: { year: number; onAdd: () => void }) {
-  return (
-    <div
-      className="card"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '64px 24px',
-        textAlign: 'center',
-      }}
-    >
-      <span
-        className="material-symbols-outlined"
-        style={{ fontSize: 40, color: 'var(--ink-4)', marginBottom: 16 }}
-      >
-        account_balance_wallet
-      </span>
-      <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)', marginBottom: 6 }}>
-        No budget set for {year}
-      </p>
-      <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 20, maxWidth: 300 }}>
-        Define monthly allocations per category to track your spend against targets.
-      </p>
-      <Button variant="primary" size="sm" onClick={onAdd}>
-        + Add first budget entry
-      </Button>
-    </div>
-  )
-}
 
 export function BudgetPage() {
   const now = new Date()
@@ -88,16 +55,10 @@ export function BudgetPage() {
         <div className="card" style={{ padding: 24 }}>
           <SkeletonTable rows={6} />
         </div>
-      ) : data.entries.length === 0 ? (
-        <EmptyBudgetState year={year} onAdd={() => setShowAddModal(true)} />
       ) : (
         <>
           {data.heatmapData.length > 0 && (
-            <HeatmapCard
-              data={data.heatmapData}
-              selectedMonth={month}
-              onMonthClick={setMonth}
-            />
+            <HeatmapCard data={data.heatmapData} selectedMonth={month} onMonthClick={setMonth} />
           )}
 
           <BudgetCategoryTable
@@ -123,16 +84,18 @@ export function BudgetPage() {
             isSavingInline={mutations.createInlineMutation.isPending}
           />
 
-          <p style={{ fontSize: 12, color: 'var(--ink-4)', textAlign: 'center' }}>
-            Click any{' '}
-            <span
-              className="material-symbols-outlined"
-              style={{ fontSize: 11, verticalAlign: 'middle' }}
-            >
-              edit
-            </span>{' '}
-            budget amount to set a custom budget for {monthLongLabel(month, mode)}.
-          </p>
+          {data.entries.length > 0 && (
+            <p style={{ fontSize: 12, color: 'var(--ink-4)', textAlign: 'center' }}>
+              Click any{' '}
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: 11, verticalAlign: 'middle' }}
+              >
+                edit
+              </span>{' '}
+              budget amount to set a custom budget for {monthLongLabel(month, mode)}.
+            </p>
+          )}
         </>
       )}
 
@@ -153,9 +116,7 @@ export function BudgetPage() {
         confirmLabel="Delete"
         danger
         loading={mutations.deleteMutation.isPending}
-        onConfirm={() =>
-          mutations.deleteId && mutations.deleteMutation.mutate(mutations.deleteId)
-        }
+        onConfirm={() => mutations.deleteId && mutations.deleteMutation.mutate(mutations.deleteId)}
         onCancel={() => mutations.setDeleteId(null)}
       />
     </div>
