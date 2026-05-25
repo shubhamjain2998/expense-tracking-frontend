@@ -23,3 +23,7 @@ export async function deleteAllPersons(): Promise<void> {
 export async function deleteAllData(): Promise<void> {
   await client.delete('/admin/all')
 }
+
+export async function deleteAccount(): Promise<void> {
+  await client.delete('/admin/account')
+}

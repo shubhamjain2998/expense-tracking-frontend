@@ -1,11 +1,14 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { useAuth } from '@/contexts/AuthContext'
 import { useToastContext } from '@/hooks/useToastContext'
 import {
   clearAllMappings,
+  deleteAccount,
   deleteAllBudget,
   deleteAllData,
   deleteAllPersons,
@@ -22,6 +25,9 @@ interface DangerAction {
   confirmLabel: string
   mutationFn: () => Promise<void>
   onInvalidate: (qc: ReturnType<typeof useQueryClient>) => void
+  // Renders the row with red border + tinted background (same treatment as
+  // 'Everything'). Used for irreversible cross-cutting actions.
+  emphasis?: 'strong'
 }
 
 const dangerActions: Record<string, DangerAction> = {
@@ -90,12 +96,29 @@ const dangerActions: Record<string, DangerAction> = {
     // Hard wipe of cache prevents the next page mount from flashing stale
     // rows before the refetch resolves.
     onInvalidate: clearAllQueries,
+    emphasis: 'strong',
+  },
+  account: {
+    icon: 'no_accounts',
+    title: 'Account',
+    description:
+      'Delete your account and everything tied to it — categories, transactions, budgets, persons, tags.',
+    confirmMessage:
+      'This will permanently delete your account AND every piece of data associated with it. You will be signed out immediately and this email can be reused for a fresh registration. This cannot be undone.',
+    confirmLabel: 'Yes, delete my account',
+    mutationFn: deleteAccount,
+    // Cache wipe is handled implicitly by the post-success logout below, but
+    // declaring it here keeps the type happy and is a safe no-op on top.
+    onInvalidate: clearAllQueries,
+    emphasis: 'strong',
   },
 }
 
 export function DangerZoneSection() {
   const toast = useToastContext()
   const qc = useQueryClient()
+  const { logout } = useAuth()
+  const navigate = useNavigate()
   const [pendingDangerKey, setPendingDangerKey] = useState<string | null>(null)
 
   const dangerMutation = useMutation({
@@ -105,7 +128,18 @@ export function DangerZoneSection() {
       return action.mutationFn()
     },
     onSuccess: () => {
-      const action = pendingDangerKey ? dangerActions[pendingDangerKey] : null
+      const key = pendingDangerKey
+      const action = key ? dangerActions[key] : null
+      // Account deletion: the JWT is now orphaned (user row gone), so any
+      // background query would 401. Tear down auth state and bounce to login
+      // before that happens.
+      if (key === 'account') {
+        toast.success('Account deleted')
+        setPendingDangerKey(null)
+        logout()
+        navigate('/login', { replace: true })
+        return
+      }
       action?.onInvalidate(qc)
       toast.success(`${action?.title ?? 'Data'} deleted`)
       setPendingDangerKey(null)
@@ -128,42 +162,45 @@ export function DangerZoneSection() {
           </div>
         </div>
         <div className="space-y-2">
-          {Object.entries(dangerActions).map(([key, action]) => (
-            <div
-              key={key}
-              className="flex items-center gap-3"
-              style={{
-                border: key === 'all' ? '1px solid var(--neg)' : '1px solid var(--line)',
-                background: key === 'all' ? 'var(--neg-soft)' : 'var(--surface-2)',
-                borderRadius: 'var(--radius)',
-                padding: 12,
-              }}
-            >
-              <span
-                className="material-symbols-outlined shrink-0"
+          {Object.entries(dangerActions).map(([key, action]) => {
+            const strong = action.emphasis === 'strong'
+            return (
+              <div
+                key={key}
+                className="flex items-center gap-3"
                 style={{
-                  fontSize: 16,
-                  color: key === 'all' ? 'var(--neg)' : 'var(--ink-3)',
+                  border: strong ? '1px solid var(--neg)' : '1px solid var(--line)',
+                  background: strong ? 'var(--neg-soft)' : 'var(--surface-2)',
+                  borderRadius: 'var(--radius)',
+                  padding: 12,
                 }}
               >
-                {action.icon}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p
-                  className="text-[13px] font-semibold"
-                  style={{ color: key === 'all' ? 'var(--neg)' : 'var(--ink)' }}
+                <span
+                  className="material-symbols-outlined shrink-0"
+                  style={{
+                    fontSize: 16,
+                    color: strong ? 'var(--neg)' : 'var(--ink-3)',
+                  }}
                 >
-                  {action.title}
-                </p>
-                <p className="text-[11.5px]" style={{ color: 'var(--ink-3)' }}>
-                  {action.description}
-                </p>
+                  {action.icon}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p
+                    className="text-[13px] font-semibold"
+                    style={{ color: strong ? 'var(--neg)' : 'var(--ink)' }}
+                  >
+                    {action.title}
+                  </p>
+                  <p className="text-[11.5px]" style={{ color: 'var(--ink-3)' }}>
+                    {action.description}
+                  </p>
+                </div>
+                <Button variant="danger" size="sm" onClick={() => setPendingDangerKey(key)}>
+                  Delete
+                </Button>
               </div>
-              <Button variant="danger" size="sm" onClick={() => setPendingDangerKey(key)}>
-                Delete
-              </Button>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </section>
 
