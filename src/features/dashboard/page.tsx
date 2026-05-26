@@ -52,7 +52,6 @@ export function DashboardPage() {
       { replace: true }
     )
   }
-  const [selectedTagId, setSelectedTagId] = useState('')
   const [includeSettled, setIncludeSettled] = useState(false)
   const [trendMode, setTrendMode] = useState<'stacked' | 'total'>('stacked')
 
@@ -94,8 +93,7 @@ export function DashboardPage() {
     month,
     calYear,
     calMonth,
-    dayOfMonth,
-    selectedTagId,
+    selectedTagId: '',
     includeSettled,
     mode,
   })
@@ -132,9 +130,6 @@ export function DashboardPage() {
           selectorMonth={month}
           onYearChange={setYear}
           onMonthChange={setMonth}
-          selectedTagId={selectedTagId}
-          onTagChange={setSelectedTagId}
-          tags={data.tags}
           isLoading={data.summaryLoading}
           pendingCount={data.pendingItems.length}
         />
@@ -165,7 +160,7 @@ export function DashboardPage() {
       </section>
 
       <section id="sec-categories" className="space-y-4">
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-stretch">
           <CategoryDonutChart
             data={data.categoryChartData}
             totalDebit={data.totalDebit}
@@ -204,7 +199,7 @@ export function DashboardPage() {
       <section id="sec-ytd">
         <YtdSection
           yearlyTrendData={data.yearlyTrendData}
-          month={month}
+          month={data.monthsElapsedYtd}
           yearLabel={formatYearLabel(year, mode)}
           isDark={isDark}
           ytdSpentTotal={data.ytdSpentTotal}

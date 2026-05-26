@@ -1,3 +1,4 @@
+import { Icon } from '@/components/ui/Icon'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { formatCompact, formatCurrency } from '@/lib/format'
 
@@ -60,7 +61,12 @@ export function IncomeSummaryCards({
               Expenses
             </div>
             <div className="kpi-value num">{formatCurrency(totalExpenses)}</div>
-            {totalIncome > 0 && <div className="kpi-delta">{expensePct}% of income spent</div>}
+            {totalIncome > 0 && (
+              <div className="kpi-delta">
+                <Icon name="trending_down" size={11} />
+                {expensePct}% of income spent
+              </div>
+            )}
           </>
         )}
       </div>
@@ -103,7 +109,8 @@ export function IncomeSummaryCards({
               {formatCurrency(savings)}
             </div>
             {totalIncome > 0 && (
-              <div className="kpi-delta">
+              <div className={`kpi-delta ${savingsPositive ? 'pos' : savings < 0 ? 'neg' : ''}`}>
+                <Icon name={savingsPositive ? 'trending_up' : 'trending_down'} size={11} />
                 Savings rate {Math.abs(Math.round(savingsRate))}%
                 {savings < 0 && <span className="ml-1 text-[var(--neg)]">deficit</span>}
               </div>

@@ -60,8 +60,6 @@ export function YtdSection({
     highestMonth,
     lowestMonth,
     bestSavingsMonth,
-    incomeMonthlyAvg,
-    spentMonthlyAvg,
     budgetPace,
     ytdIncomeSources,
     expenseCategories,
@@ -161,16 +159,13 @@ export function YtdSection({
               label: 'INCOME',
               color: ytdIncomeTotal > 0 ? 'var(--pos)' : 'var(--ink-3)',
               value: formatCurrency(ytdIncomeTotal),
-              sub:
-                ytdIncomeTotal > 0
-                  ? `${formatCompact(incomeMonthlyAvg)}/mo avg`
-                  : 'no income tracked',
+              sub: ytdIncomeTotal > 0 ? null : 'no income tracked',
             },
             {
               label: 'SPENT',
               color: 'var(--neg)',
               value: formatCurrency(ytdSpentTotal),
-              sub: `${formatCompact(spentMonthlyAvg)}/mo avg`,
+              sub: null,
             },
             {
               label: 'SAVED',

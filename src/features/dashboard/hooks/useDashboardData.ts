@@ -11,7 +11,7 @@ import {
 import { getTags } from '@/lib/api/tags'
 import { getPendingManual, getProcessedTransactions } from '@/lib/api/transactions'
 import type { PeriodMode } from '@/lib/period'
-import { resolvePeriodMonth } from '@/lib/period'
+import { getCurrentPeriod, resolvePeriodMonth } from '@/lib/period'
 import { qk } from '@/lib/queryKeys'
 import type { SplitLedgerRow, SummaryRow, TrendDataPoint, YTDRow } from '@/types/dashboard'
 import type { Tag } from '@/types/settings'
@@ -79,7 +79,6 @@ interface Params {
   month: number
   calYear: number
   calMonth: number
-  dayOfMonth: number
   selectedTagId: string
   includeSettled: boolean
   mode: PeriodMode
@@ -90,7 +89,6 @@ export function useDashboardData({
   month,
   calYear,
   calMonth,
-  dayOfMonth,
   selectedTagId,
   includeSettled,
   mode,
@@ -262,19 +260,20 @@ export function useDashboardData({
 
   const yearlyTrendData = useMemo(() => yearlyTrendQuery.data ?? [], [yearlyTrendQuery.data])
 
-  const ytdLineData = useMemo(
-    () => computeYtdLineData(yearlyTrendData, annualBudget, month, mode),
-    [yearlyTrendData, annualBudget, month, mode]
+  // YTD position — independent of the month the user has selected in the
+  // picker. The backend's YTD endpoint returns spend-through-today within
+  // the selected FY; projections must use today's days elapsed (not the
+  // selected month's) or a single low-data month inflates the extrapolation.
+  //
+  // Cases:
+  //  • Selected FY is in the past   → dayOfYear = full FY length (complete year)
+  //  • Selected FY is current       → dayOfYear = days from FY start to today
+  //  • Selected FY is in the future → dayOfYear = 0 (no data, no projection)
+  const now = useMemo(() => new Date(), [])
+  const { year: currentFyYear, month: currentFyMonth } = useMemo(
+    () => getCurrentPeriod(mode, now),
+    [mode, now]
   )
-
-  // Days elapsed and total days in the selected period
-  const dayOfYear = useMemo(() => {
-    const completedMonths = Array.from({ length: month - 1 }, (_, i) => {
-      const { year: cy, month: cm } = resolvePeriodMonth(year, i + 1, mode)
-      return new Date(cy, cm, 0).getDate()
-    }).reduce((s, d) => s + d, 0)
-    return completedMonths + dayOfMonth
-  }, [year, month, mode, dayOfMonth])
 
   const daysInYear = useMemo(() => {
     return Array.from({ length: 12 }, (_, i) => {
@@ -283,10 +282,34 @@ export function useDashboardData({
     }).reduce((s, d) => s + d, 0)
   }, [year, mode])
 
+  const dayOfYear = useMemo(() => {
+    if (year < currentFyYear) return daysInYear
+    if (year > currentFyYear) return 0
+    // Current FY: sum completed periodMonths + today's day-of-current-month
+    const completedDays = Array.from({ length: currentFyMonth - 1 }, (_, i) => {
+      const { year: cy, month: cm } = resolvePeriodMonth(year, i + 1, mode)
+      return new Date(cy, cm, 0).getDate()
+    }).reduce((s, d) => s + d, 0)
+    return completedDays + now.getDate()
+  }, [year, mode, currentFyYear, currentFyMonth, daysInYear, now])
+
+  // Months elapsed in the selected FY *as of today*. Used by the YTD section
+  // for the "X months elapsed" label and for projectedFYIncome math.
+  const monthsElapsedYtd = useMemo(() => {
+    if (year < currentFyYear) return 12
+    if (year > currentFyYear) return 0
+    return currentFyMonth
+  }, [year, currentFyYear, currentFyMonth])
+
   const projectedFY = useMemo(
     () =>
       ytdSpentTotal > 0 && dayOfYear > 0 ? Math.round((ytdSpentTotal / dayOfYear) * daysInYear) : 0,
     [ytdSpentTotal, dayOfYear, daysInYear]
+  )
+
+  const ytdLineData = useMemo(
+    () => computeYtdLineData(yearlyTrendData, annualBudget, monthsElapsedYtd, mode),
+    [yearlyTrendData, annualBudget, monthsElapsedYtd, mode]
   )
 
   const expectedYtd = useMemo(
@@ -300,11 +323,11 @@ export function useDashboardData({
         ytdRows,
         yearlyTrendData,
         ytdSpentTotal,
-        month,
+        month: monthsElapsedYtd,
         projectedFY,
         expectedYtd,
       }),
-    [ytdRows, yearlyTrendData, ytdSpentTotal, month, projectedFY, expectedYtd]
+    [ytdRows, yearlyTrendData, ytdSpentTotal, monthsElapsedYtd, projectedFY, expectedYtd]
   )
 
   // ── Return ────────────────────────────────────────────────────────────────────────
@@ -334,6 +357,7 @@ export function useDashboardData({
     ytdLineData,
     yearlyTrendData,
     ytdComputed,
+    monthsElapsedYtd,
     summaryLoading: summaryQuery.isLoading,
     allTxnLoading: allTxnQuery.isLoading,
     ledgerLoading: ledgerQuery.isLoading,

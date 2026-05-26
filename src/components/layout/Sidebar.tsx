@@ -143,7 +143,6 @@ export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
               {email}
             </span>
           </span>
-          <Icon name="unfold_more" size={14} style={{ color: 'var(--ink-4)', flexShrink: 0 }} />
         </button>
 
         {/* Profile popover */}
@@ -331,18 +330,18 @@ export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
       </div>
 
       {/* Nav */}
-      <nav style={{ padding: '8px 8px 4px' }}>
+      <nav style={{ padding: '12px 8px 4px' }}>
         <p
           style={{
-            padding: '4px 8px 6px',
+            padding: '4px 8px 8px',
             fontSize: 10,
             fontWeight: 600,
-            letterSpacing: '0.08em',
+            letterSpacing: '0.14em',
             textTransform: 'uppercase',
             color: 'var(--ink-4)',
           }}
         >
-          WORKSPACE
+          Workspace
         </p>
         {NAV.map(({ to, icon, label }) => (
           <NavLink
@@ -428,47 +427,6 @@ export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
       </div>
 
       <div style={{ flex: 1 }} />
-
-      {/* Account footer */}
-      <div
-        style={{
-          padding: '10px 14px',
-          borderTop: '1px solid var(--line)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-        }}
-      >
-        <div
-          style={{
-            width: 24,
-            height: 24,
-            borderRadius: '50%',
-            background: 'var(--surface-3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 9,
-            fontWeight: 700,
-            color: 'var(--ink-2)',
-            flexShrink: 0,
-          }}
-        >
-          {initials}
-        </div>
-        <p
-          style={{
-            fontSize: 11.5,
-            color: 'var(--ink-3)',
-            overflow: 'hidden',
-            whiteSpace: 'nowrap',
-            textOverflow: 'ellipsis',
-            flex: 1,
-          }}
-        >
-          {email}
-        </p>
-      </div>
     </aside>
   )
 }

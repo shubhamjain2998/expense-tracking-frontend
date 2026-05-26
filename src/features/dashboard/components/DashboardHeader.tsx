@@ -5,7 +5,6 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { YearMonthSelector } from '@/components/ui/YearMonthSelector'
 import { useCountUp } from '@/hooks/useCountUp'
 import { formatCompact, formatCurrency, formatCurrencyParts } from '@/lib/format'
-import type { Tag } from '@/types/settings'
 
 interface DashboardHeaderProps {
   totalDebit: number
@@ -19,9 +18,6 @@ interface DashboardHeaderProps {
   selectorMonth: number
   onYearChange: (y: number) => void
   onMonthChange: (m: number) => void
-  selectedTagId: string
-  onTagChange: (id: string) => void
-  tags: Tag[]
   isLoading: boolean
   pendingCount: number
 }
@@ -38,16 +34,13 @@ export function DashboardHeader({
   selectorMonth,
   onYearChange,
   onMonthChange,
-  selectedTagId,
-  onTagChange,
-  tags,
   isLoading,
   pendingCount,
 }: DashboardHeaderProps) {
   const animatedTotal = useCountUp(totalDebit, { duration: 750 })
 
   return (
-    <header className="flex flex-wrap items-end justify-between gap-4">
+    <header className="flex flex-wrap items-start justify-between gap-4">
       {/* Left: spend hero + pace status */}
       <div>
         <p className="eyebrow mb-3">
@@ -57,25 +50,24 @@ export function DashboardHeader({
         {isLoading ? (
           <Skeleton className="h-16 w-80" />
         ) : (
-          <div className="flex flex-wrap items-baseline gap-3">
-            <h1 className="hero-amount-display num">
-              {(() => {
-                const p = formatCurrencyParts(animatedTotal, { fractionDigits: 2 })
-                return (
-                  <>
-                    <span className="currency">{p.symbol}</span>
-                    {p.integer}
-                    {p.decimal && <span className="decimals">{p.decimal}</span>}
-                  </>
-                )
-              })()}
-            </h1>
-            {totalBudget > 0 && (
-              <span className="num text-[18px] font-normal text-[var(--ink-3)] md:text-[22px]">
-                / {formatCurrency(totalBudget)}
-              </span>
-            )}
-          </div>
+          <h1 className="hero-amount-display num">
+            {(() => {
+              const p = formatCurrencyParts(animatedTotal, { fractionDigits: 2 })
+              return (
+                <>
+                  <span className="currency">{p.symbol}</span>
+                  {p.integer}
+                  {p.decimal && <span className="decimals">{p.decimal}</span>}
+                </>
+              )
+            })()}
+          </h1>
+        )}
+
+        {!isLoading && totalBudget > 0 && (
+          <p className="num mt-2 text-[14px] text-[var(--ink-3)]">
+            / {formatCurrency(totalBudget)} monthly budget
+          </p>
         )}
 
         {!isLoading && <div className="ink-rule" aria-hidden />}
@@ -114,39 +106,26 @@ export function DashboardHeader({
         )}
       </div>
 
-      {/* Right: tag filter (desktop) + month picker (always) + upload (desktop).
-          Upload is covered by the BottomTabBar on mobile; tag filter is rarely
-          used and crowds the layout on a 412dp viewport. */}
-      <div className="flex shrink-0 flex-wrap items-center gap-2">
-        {tags.length > 0 && (
-          <select
-            value={selectedTagId}
-            onChange={(e) => onTagChange(e.target.value)}
-            className="input hidden w-auto md:block"
-            aria-label="Filter by tag"
+      {/* Right: PERIOD eyebrow + month picker + upload (desktop).
+          Upload is covered by the BottomTabBar on mobile. */}
+      <div className="flex shrink-0 flex-col items-end gap-3">
+        <p className="eyebrow">PERIOD</p>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <YearMonthSelector
+            year={selectorYear}
+            month={selectorMonth}
+            onYearChange={onYearChange}
+            onMonthChange={onMonthChange}
+          />
+          <Link
+            to="/upload"
+            className="btn primary hidden gap-[5px] md:inline-flex"
+            aria-label="Upload statement"
           >
-            <option value="">All tags</option>
-            {tags.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-        )}
-        <YearMonthSelector
-          year={selectorYear}
-          month={selectorMonth}
-          onYearChange={onYearChange}
-          onMonthChange={onMonthChange}
-        />
-        <Link
-          to="/upload"
-          className="btn primary hidden gap-[5px] md:inline-flex"
-          aria-label="Upload statement"
-        >
-          <Icon name="upload" size={14} />
-          <span>Upload</span>
-        </Link>
+            <Icon name="upload" size={14} />
+            <span>Upload</span>
+          </Link>
+        </div>
       </div>
     </header>
   )

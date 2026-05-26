@@ -1,5 +1,7 @@
+import { Icon } from '@/components/ui/Icon'
+
 import { usePeriodMode } from '../../hooks/usePeriodMode'
-import { formatYearLabel, monthLongLabel } from '../../lib/period'
+import { formatYearLabel, monthShortLabel } from '../../lib/period'
 
 interface YearMonthSelectorProps {
   year: number
@@ -8,27 +10,12 @@ interface YearMonthSelectorProps {
   onMonthChange: (m: number) => void
 }
 
-const selectStyle: React.CSSProperties = {
-  height: 30,
-  padding: '0 26px 0 10px',
-  border: '1px solid var(--line-strong)',
-  borderRadius: 'var(--radius)',
-  background: 'var(--surface)',
-  color: 'var(--ink)',
-  fontSize: 12.5,
-  fontFamily: 'inherit',
-  fontWeight: 500,
-  outline: 'none',
-  appearance: 'none',
-  WebkitAppearance: 'none',
-  MozAppearance: 'none',
-  backgroundImage:
-    'linear-gradient(45deg, transparent 50%, var(--ink-3) 50%), linear-gradient(135deg, var(--ink-3) 50%, transparent 50%)',
-  backgroundPosition: 'calc(100% - 12px) calc(50% - 1px), calc(100% - 8px) calc(50% - 1px)',
-  backgroundSize: '4px 4px, 4px 4px',
-  backgroundRepeat: 'no-repeat',
-}
-
+/**
+ * Month is an arrow stepper (`<  May  >`), year/FY is a dropdown next to it.
+ *
+ * Stepping the month wraps the year at boundaries (Mar→Apr crosses periods).
+ * `month` is 1-12 in the active period mode (FY mode → 1=April … 12=March).
+ */
 export function YearMonthSelector({
   year,
   month,
@@ -37,28 +24,39 @@ export function YearMonthSelector({
 }: YearMonthSelectorProps) {
   const { mode } = usePeriodMode()
 
+  function step(delta: 1 | -1) {
+    const next = month + delta
+    if (next < 1) {
+      onYearChange(year - 1)
+      onMonthChange(12)
+    } else if (next > 12) {
+      onYearChange(year + 1)
+      onMonthChange(1)
+    } else {
+      onMonthChange(next)
+    }
+  }
+
+  const yearOptions = [year - 2, year - 1, year, year + 1]
+
   return (
     <div className="flex items-center gap-2">
-      <select
-        value={month}
-        onChange={(e) => onMonthChange(Number(e.target.value))}
-        aria-label="Select month"
-        style={selectStyle}
-      >
-        {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-          <option key={m} value={m}>
-            {monthLongLabel(m, mode)}
-          </option>
-        ))}
-      </select>
+      <div className="ym" role="group" aria-label="Select month">
+        <button type="button" onClick={() => step(-1)} aria-label="Previous month">
+          <Icon name="chevron_left" size={14} />
+        </button>
+        <div className="label">{monthShortLabel(month, mode)}</div>
+        <button type="button" onClick={() => step(1)} aria-label="Next month">
+          <Icon name="chevron_right" size={14} />
+        </button>
+      </div>
       <select
         value={year}
         onChange={(e) => onYearChange(Number(e.target.value))}
-        aria-label="Select year"
-        style={selectStyle}
-        className="num"
+        aria-label={mode === 'fy' ? 'Select fiscal year' : 'Select year'}
+        className="ym-year num"
       >
-        {[year - 2, year - 1, year, year + 1].map((y) => (
+        {yearOptions.map((y) => (
           <option key={y} value={y}>
             {formatYearLabel(y, mode)}
           </option>
