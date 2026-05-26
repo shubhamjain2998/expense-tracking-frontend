@@ -1,3 +1,4 @@
+import { Icon } from '@/components/ui/Icon'
 import { formatShortDate } from '@/lib/format'
 import type { ProcessedTransactionItem } from '@/types/transaction'
 
@@ -112,17 +113,7 @@ export function TransactionRow({
         style={{ padding: '0 0 0 6px', cursor: isDeleted ? 'default' : 'grab' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <span
-          className="material-symbols-outlined"
-          style={{
-            fontSize: 16,
-            color: 'var(--ink-4)',
-            display: 'block',
-            opacity: isDeleted ? 0.3 : 1,
-          }}
-        >
-          drag_indicator
-        </span>
+        <Icon name="drag_indicator" size={16} style={{ color: 'var(--ink-4)' }} />
       </td>
 
       {/* Date */}
@@ -301,9 +292,7 @@ export function TransactionRow({
           }}
           disabled={isDeleted}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-            call_split
-          </span>
+          <Icon name="call_split" size={14} />
         </button>
       </td>
 
@@ -343,9 +332,7 @@ export function TransactionRow({
         onClick={(e) => e.stopPropagation()}
       >
         <button onClick={onToggleMenu} className="btn ghost icon sm">
-          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-            more_horiz
-          </span>
+          <Icon name="more_horiz" size={14} />
         </button>
         {hasMenu && (
           <TxnContextMenu

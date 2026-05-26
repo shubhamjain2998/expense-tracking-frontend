@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 
+import { Icon } from '@/components/ui/Icon'
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress'
 import { onboardingStorage } from '@/lib/onboardingStorage'
 
@@ -103,17 +104,15 @@ export function GettingStartedChecklist({ onDismiss }: GettingStartedChecklistPr
               border: '1px solid var(--line)',
             }}
           >
-            <span
+            <Icon
               aria-hidden
-              className="material-symbols-outlined"
+              name={step.done ? 'check_circle' : 'radio_button_unchecked'}
+              size={20}
               style={{
-                fontSize: 20,
                 color: step.done ? 'var(--accent)' : 'var(--ink-4)',
                 marginTop: 1,
               }}
-            >
-              {step.done ? 'check_circle' : 'radio_button_unchecked'}
-            </span>
+            />
 
             <div className="min-w-0 flex-1">
               <p
@@ -137,9 +136,7 @@ export function GettingStartedChecklist({ onDismiss }: GettingStartedChecklistPr
                 style={{ alignSelf: 'center', gap: 4, whiteSpace: 'nowrap' }}
               >
                 {step.cta}
-                <span className="material-symbols-outlined" style={{ fontSize: 13 }} aria-hidden>
-                  arrow_forward
-                </span>
+                <Icon name="arrow_forward" size={13} />
               </Link>
             )}
           </li>

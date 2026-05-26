@@ -1,5 +1,6 @@
 import type { UseMutationResult } from '@tanstack/react-query'
 
+import { Icon } from '@/components/ui/Icon'
 import type { Category, Tag } from '@/types/settings'
 
 import type { StatusFilter } from '../types'
@@ -47,12 +48,12 @@ export function FilterBar({
     >
       {/* Search */}
       <div className="relative w-full md:w-[210px]">
-        <span
-          className="material-symbols-outlined pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2"
-          style={{ fontSize: 14, color: 'var(--ink-4)' }}
-        >
-          search
-        </span>
+        <Icon
+          name="search"
+          size={14}
+          style={{ color: 'var(--ink-4)' }}
+          className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2"
+        />
         <input
           type="text"
           value={search}
@@ -151,12 +152,11 @@ export function FilterBar({
         className="btn ghost sm"
         title="Auto-categorise pending transactions"
       >
-        <span
-          className={`material-symbols-outlined ${autoMutation.isPending ? 'animate-spin' : ''}`}
-          style={{ fontSize: 14 }}
-        >
-          {autoMutation.isPending ? 'progress_activity' : 'auto_awesome'}
-        </span>
+        <Icon
+          name={autoMutation.isPending ? 'progress_activity' : 'auto_awesome'}
+          size={14}
+          spin={autoMutation.isPending}
+        />
         Auto-categorise
       </button>
 
@@ -165,9 +165,7 @@ export function FilterBar({
         className="hidden items-center gap-1 text-[11px] md:inline-flex"
         style={{ color: 'var(--ink-4)', userSelect: 'none' }}
       >
-        <span className="material-symbols-outlined" style={{ fontSize: 12 }}>
-          keyboard
-        </span>
+        <Icon name="keyboard" size={12} />
         1–9 categorize · ↑↓ navigate
       </span>
     </div>

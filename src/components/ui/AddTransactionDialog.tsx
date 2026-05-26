@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 
+import { Icon } from '@/components/ui/Icon'
 import { NewTagChip } from '@/features/transactions/components/NewTagChip'
 import { useQuickAdd } from '@/hooks/useQuickAdd'
 import { useToastContext } from '@/hooks/useToastContext'
@@ -101,12 +102,7 @@ export function AddTransactionDialog({ onClose }: AddTransactionDialogProps) {
           style={{ padding: '14px 18px', borderBottom: '1px solid var(--line)' }}
         >
           <div className="flex items-center gap-2">
-            <span
-              className="material-symbols-outlined"
-              style={{ fontSize: 16, color: 'var(--ink-3)' }}
-            >
-              add
-            </span>
+            <Icon name="add" size={16} style={{ color: 'var(--ink-3)' }} />
             <h2
               className="text-[13.5px] font-semibold"
               style={{ color: 'var(--ink)', letterSpacing: '-0.005em' }}
@@ -115,9 +111,7 @@ export function AddTransactionDialog({ onClose }: AddTransactionDialogProps) {
             </h2>
           </div>
           <button onClick={onClose} className="btn ghost icon sm" aria-label="Close">
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-              close
-            </span>
+            <Icon name="close" size={14} />
           </button>
         </div>
 
@@ -224,14 +218,10 @@ export function AddTransactionDialog({ onClose }: AddTransactionDialogProps) {
             aria-pressed={processNow}
           >
             <span className="flex items-center gap-2">
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                bolt
-              </span>
+              <Icon name="bolt" size={14} />
               Process now
             </span>
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-              {processNow ? 'toggle_on' : 'toggle_off'}
-            </span>
+            <Icon name={processNow ? 'toggle_on' : 'toggle_off'} size={16} />
           </button>
 
           {processNow && (

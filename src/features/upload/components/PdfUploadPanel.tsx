@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/Button'
+import { Icon } from '@/components/ui/Icon'
 import { PasswordPromptDialog } from '@/components/ui/PasswordPromptDialog'
 
 import type { FileUpload } from '../types'
@@ -66,12 +67,7 @@ export function PdfUploadPanel({
           onDrop={handleDrop}
           className={`dropzone ${dragOver ? 'hot' : ''}`}
         >
-          <span
-            className="material-symbols-outlined"
-            style={{ fontSize: 32, color: 'var(--ink-3)', display: 'block', marginBottom: 12 }}
-          >
-            upload
-          </span>
+          <Icon name="upload" size={32} style={{ color: 'var(--ink-3)' }} />
           <p
             className="text-[14.5px] font-semibold"
             style={{ color: 'var(--ink)', letterSpacing: '-0.01em' }}
@@ -102,27 +98,15 @@ export function PdfUploadPanel({
             style={{ color: 'var(--ink-4)', fontSize: 11.5 }}
           >
             <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined" style={{ fontSize: 12 }}>
-                lock
-              </span>
+              <Icon name="lock" size={12} />
               Parsed in memory
             </span>
             <span className="flex items-center gap-1">
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 12, color: 'var(--ink-4)' }}
-              >
-                close
-              </span>
+              <Icon name="close" size={12} style={{ color: 'var(--ink-4)' }} />
               Not stored
             </span>
             <span className="flex items-center gap-1">
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 12, color: 'var(--ink-4)' }}
-              >
-                close
-              </span>
+              <Icon name="close" size={12} style={{ color: 'var(--ink-4)' }} />
               No bank connection
             </span>
           </div>

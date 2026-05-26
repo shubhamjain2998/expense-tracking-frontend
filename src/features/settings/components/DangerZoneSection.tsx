@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { Icon, type IconName } from '@/components/ui/Icon'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToastContext } from '@/hooks/useToastContext'
 import {
@@ -18,7 +19,7 @@ import {
 import { clearAllQueries, invalidateDomains } from '@/lib/queryKeys'
 
 interface DangerAction {
-  icon: string
+  icon: IconName
   title: string
   description: string
   confirmMessage: string
@@ -175,15 +176,12 @@ export function DangerZoneSection() {
                   padding: 12,
                 }}
               >
-                <span
-                  className="material-symbols-outlined shrink-0"
-                  style={{
-                    fontSize: 16,
-                    color: strong ? 'var(--neg)' : 'var(--ink-3)',
-                  }}
-                >
-                  {action.icon}
-                </span>
+                <Icon
+                  name={action.icon}
+                  size={16}
+                  className="shrink-0"
+                  style={{ color: strong ? 'var(--neg)' : 'var(--ink-3)' }}
+                />
                 <div className="min-w-0 flex-1">
                   <p
                     className="text-[13px] font-semibold"

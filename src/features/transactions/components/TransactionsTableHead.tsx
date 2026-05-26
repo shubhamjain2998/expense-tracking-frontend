@@ -1,5 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
 
+import { Icon } from '@/components/ui/Icon'
+
 import type { SortCol, SortDir, UnifiedTxn } from '../types'
 
 interface TransactionsTableHeadProps {
@@ -78,12 +80,11 @@ export function TransactionsTableHead({
             >
               {label}
               {active && (
-                <span
-                  className="material-symbols-outlined"
-                  style={{ fontSize: 12, marginLeft: 3, verticalAlign: 'middle' }}
-                >
-                  {sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'}
-                </span>
+                <Icon
+                  name={sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                  size={12}
+                  className="ml-[3px] inline-block align-middle"
+                />
               )}
             </th>
           )

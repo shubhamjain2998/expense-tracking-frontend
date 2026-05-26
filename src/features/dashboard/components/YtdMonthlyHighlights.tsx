@@ -1,3 +1,4 @@
+import { Icon } from '@/components/ui/Icon'
 import { formatCompact } from '@/lib/format'
 
 import type { MonthStat } from '../types'
@@ -41,13 +42,11 @@ export function YtdMonthlyHighlights({
         {highestMonth && (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+              <Icon name="trending_up" size={13} style={{ color: 'var(--neg)' }} />
               <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 13, color: 'var(--neg)' }}
+                className="num"
+                style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}
               >
-                trending_up
-              </span>
-              <span className="num" style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>
                 {monthName(highestMonth.periodMonth)} · {formatCompact(highestMonth.expense)}
               </span>
             </div>
@@ -77,20 +76,18 @@ export function YtdMonthlyHighlights({
         {lowestMonth && (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+              <Icon name="trending_down" size={13} style={{ color: 'var(--pos)' }} />
               <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 13, color: 'var(--pos)' }}
+                className="num"
+                style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}
               >
-                trending_down
-              </span>
-              <span className="num" style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>
                 {monthName(lowestMonth.periodMonth)} · {formatCompact(lowestMonth.expense)}
               </span>
             </div>
             {avgExpense > 0 && (
               <p style={{ fontSize: 11, color: 'var(--ink-4)' }}>
-                {Math.round((Math.abs(lowestMonth.expense - avgExpense) / avgExpense) * 100)}%
-                below avg
+                {Math.round((Math.abs(lowestMonth.expense - avgExpense) / avgExpense) * 100)}% below
+                avg
               </p>
             )}
           </>
@@ -113,12 +110,7 @@ export function YtdMonthlyHighlights({
         {bestSavingsMonth ? (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 13, color: 'var(--pos)' }}
-              >
-                savings
-              </span>
+              <Icon name="savings" size={13} style={{ color: 'var(--pos)' }} />
               <span
                 className="num"
                 style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--pos)' }}
@@ -138,13 +130,11 @@ export function YtdMonthlyHighlights({
         ) : lowestMonth ? (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+              <Icon name="savings" size={13} style={{ color: 'var(--pos)' }} />
               <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 13, color: 'var(--pos)' }}
+                className="num"
+                style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}
               >
-                savings
-              </span>
-              <span className="num" style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>
                 {monthName(lowestMonth.periodMonth)} · {formatCompact(lowestMonth.expense)}
               </span>
             </div>

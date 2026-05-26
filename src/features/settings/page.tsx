@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { Icon } from '@/components/ui/Icon'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 
 import { BackupImportSection } from './components/BackupImportSection'
@@ -130,15 +131,12 @@ export function SettingsPage() {
                         transition: 'background .12s ease',
                       }}
                     >
-                      <span
-                        className="material-symbols-outlined shrink-0"
-                        style={{
-                          fontSize: 18,
-                          color: selected ? 'var(--accent)' : 'var(--ink-4)',
-                        }}
-                      >
-                        {selected ? 'radio_button_checked' : 'radio_button_unchecked'}
-                      </span>
+                      <Icon
+                        name={selected ? 'radio_button_checked' : 'radio_button_unchecked'}
+                        size={18}
+                        className="shrink-0"
+                        style={{ color: selected ? 'var(--accent)' : 'var(--ink-4)' }}
+                      />
                       <div className="min-w-0 flex-1">
                         <p className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>
                           {opt.title}

@@ -1,5 +1,7 @@
 import { useLocation } from 'react-router-dom'
 
+import { Icon } from '@/components/ui/Icon'
+
 import { useThemeContext } from '../../hooks/useThemeContext'
 
 const PAGE_NAMES: Record<string, string> = {
@@ -30,7 +32,7 @@ export function TopNav({ onOpenNav }: TopNavProps) {
           className="btn ghost icon mobile-only"
           aria-label="Open menu"
         >
-          <span className="material-symbols-outlined text-[18px]">menu</span>
+          <Icon name="menu" size={18} />
         </button>
         <div className="flex min-w-0 items-center gap-1.5 text-[12.5px] text-[var(--ink-3)]">
           <span className="desktop-only">Personal Finance</span>
@@ -42,7 +44,7 @@ export function TopNav({ onOpenNav }: TopNavProps) {
       {/* Right: actions */}
       <div className="flex items-center gap-0.5">
         <button className="btn ghost gap-[5px]" aria-label="Search">
-          <span className="material-symbols-outlined text-[14px]">search</span>
+          <Icon name="search" size={14} />
           <span className="desktop-only text-[12px]">Search</span>
           <span className="kbd desktop-only">⌘K</span>
         </button>
@@ -52,9 +54,7 @@ export function TopNav({ onOpenNav }: TopNavProps) {
           aria-label={isDark ? 'Light mode' : 'Dark mode'}
           title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
         >
-          <span className="material-symbols-outlined text-[15px]">
-            {isDark ? 'light_mode' : 'dark_mode'}
-          </span>
+          <Icon name={isDark ? 'light_mode' : 'dark_mode'} size={15} />
         </button>
       </div>
     </header>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { Icon } from '@/components/ui/Icon'
 import { SkeletonTable } from '@/components/ui/Skeleton'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { getCurrentPeriod, loadPeriodMode, monthLongLabel } from '@/lib/period'
@@ -86,14 +87,8 @@ export function BudgetPage() {
 
           {data.entries.length > 0 && (
             <p style={{ fontSize: 12, color: 'var(--ink-4)', textAlign: 'center' }}>
-              Click any{' '}
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 11, verticalAlign: 'middle' }}
-              >
-                edit
-              </span>{' '}
-              budget amount to set a custom budget for {monthLongLabel(month, mode)}.
+              Click any <Icon name="edit" size={11} /> budget amount to set a custom budget for{' '}
+              {monthLongLabel(month, mode)}.
             </p>
           )}
         </>

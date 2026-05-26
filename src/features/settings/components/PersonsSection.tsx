@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { Icon } from '@/components/ui/Icon'
 import { getInitials } from '@/lib/strings'
 import type { Person } from '@/types/settings'
 
@@ -57,9 +58,7 @@ function PersonCard({
         className="btn ghost icon sm shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
         aria-label={`Delete ${person.name}`}
       >
-        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-          delete
-        </span>
+        <Icon name="delete" size={14} />
       </button>
     </div>
   )

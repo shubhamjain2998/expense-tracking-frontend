@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
+import { Icon } from '@/components/ui/Icon'
+
 import { Button } from './Button'
 
 interface PasswordPromptDialogProps {
@@ -69,13 +71,7 @@ export function PasswordPromptDialog({
       >
         <div className="border-b border-[var(--line)] px-5 pt-[18px] pb-3">
           <div className="flex items-center gap-2">
-            <span
-              className="material-symbols-outlined"
-              style={{ fontSize: 18, color: 'var(--ink-3)' }}
-              aria-hidden
-            >
-              lock
-            </span>
+            <Icon name="lock" size={18} style={{ color: 'var(--ink-3)' }} />
             <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--ink)]">
               Password-protected PDF
             </h2>

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 
+import { Icon } from '@/components/ui/Icon'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { YearMonthSelector } from '@/components/ui/YearMonthSelector'
 import { formatCompact, formatCurrency } from '@/lib/format'
@@ -128,7 +129,7 @@ export function DashboardHeader({
           onMonthChange={onMonthChange}
         />
         <Link to="/upload" className="btn primary gap-[5px]" aria-label="Upload statement">
-          <span className="material-symbols-outlined text-[14px]">upload</span>
+          <Icon name="upload" size={14} />
           <span className="desktop-only">Upload</span>
         </Link>
       </div>

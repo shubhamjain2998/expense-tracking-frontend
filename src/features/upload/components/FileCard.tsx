@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { Chip } from '@/components/ui/Chip'
+import { Icon } from '@/components/ui/Icon'
 
 import type { FileUpload } from '../types'
 
@@ -44,12 +45,12 @@ export function FileCard({ upload, onRemove, onToggleExclude }: FileCardProps) {
         }}
       >
         <div className="flex min-w-0 items-center gap-2">
-          <span
-            className="material-symbols-outlined shrink-0"
-            style={{ fontSize: 15, color: 'var(--ink-3)' }}
-          >
-            picture_as_pdf
-          </span>
+          <Icon
+            name="picture_as_pdf"
+            size={15}
+            style={{ color: 'var(--ink-3)' }}
+            className="shrink-0"
+          />
           <span
             className="truncate text-[12.5px] font-medium"
             style={{ color: 'var(--ink)' }}
@@ -61,12 +62,7 @@ export function FileCard({ upload, onRemove, onToggleExclude }: FileCardProps) {
         <div className="flex shrink-0 items-center gap-2">
           {upload.status === 'previewing' && (
             <span className="chip">
-              <span
-                className="material-symbols-outlined animate-spin"
-                style={{ fontSize: 11, marginRight: 4 }}
-              >
-                progress_activity
-              </span>
+              <Icon name="progress_activity" size={11} className="animate-spin" />
               Parsing…
             </span>
           )}
@@ -75,13 +71,7 @@ export function FileCard({ upload, onRemove, onToggleExclude }: FileCardProps) {
           {upload.status === 'done' && <Chip variant="success">Imported</Chip>}
           {upload.status === 'needs_password' && (
             <span className="chip warn" title="Password-protected PDF">
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 11, marginRight: 4 }}
-                aria-hidden
-              >
-                lock
-              </span>
+              <Icon name="lock" size={11} />
               Password required
             </span>
           )}
@@ -92,9 +82,7 @@ export function FileCard({ upload, onRemove, onToggleExclude }: FileCardProps) {
           )}
           {upload.status !== 'importing' && upload.status !== 'done' && (
             <button onClick={onRemove} className="btn ghost icon sm" aria-label="Remove file">
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                close
-              </span>
+              <Icon name="close" size={14} />
             </button>
           )}
         </div>
@@ -132,12 +120,12 @@ export function FileCard({ upload, onRemove, onToggleExclude }: FileCardProps) {
               style={{ padding: '8px 14px', borderBottom: '1px solid var(--line)' }}
             >
               <div className="relative flex-1">
-                <span
-                  className="material-symbols-outlined pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2"
-                  style={{ fontSize: 14, color: 'var(--ink-4)' }}
-                >
-                  search
-                </span>
+                <Icon
+                  name="search"
+                  size={14}
+                  style={{ color: 'var(--ink-4)' }}
+                  className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2"
+                />
                 <input
                   type="text"
                   value={searchQuery}
@@ -190,23 +178,17 @@ export function FileCard({ upload, onRemove, onToggleExclude }: FileCardProps) {
                 className="flex w-full items-center justify-between px-4 py-3 text-left"
               >
                 <div className="flex items-center gap-2">
-                  <span
-                    className="material-symbols-outlined"
-                    style={{ fontSize: 14, color: 'var(--warn)' }}
-                  >
-                    warning
-                  </span>
+                  <Icon name="warning" size={14} style={{ color: 'var(--warn)' }} />
                   <span className="text-[12.5px] font-medium" style={{ color: 'var(--ink-2)' }}>
                     {upload.preview.skipped} row{upload.preview.skipped > 1 ? 's' : ''} skipped
                     during parsing — import continues without them
                   </span>
                 </div>
-                <span
-                  className="material-symbols-outlined"
-                  style={{ fontSize: 14, color: 'var(--ink-4)' }}
-                >
-                  {skippedExpanded ? 'expand_less' : 'expand_more'}
-                </span>
+                <Icon
+                  name={skippedExpanded ? 'expand_less' : 'expand_more'}
+                  size={14}
+                  style={{ color: 'var(--ink-4)' }}
+                />
               </button>
               {skippedExpanded && (
                 <ul

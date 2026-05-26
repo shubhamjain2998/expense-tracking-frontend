@@ -1,3 +1,4 @@
+import { Icon } from '@/components/ui/Icon'
 import { formatCurrency } from '@/lib/format'
 import type { PreviewRow } from '@/types/transaction'
 
@@ -83,13 +84,9 @@ export function PreviewTable({
                           onClick={() => onToggleExclude(globalIndex)}
                           className="btn ghost icon sm"
                           aria-label={isExcluded ? 'Include transaction' : 'Exclude transaction'}
-                          title={
-                            isExcluded ? 'Restore — include in import' : 'Exclude from import'
-                          }
+                          title={isExcluded ? 'Restore — include in import' : 'Exclude from import'}
                         >
-                          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                            {isExcluded ? 'undo' : 'remove_circle'}
-                          </span>
+                          <Icon name={isExcluded ? 'undo' : 'remove_circle'} size={14} />
                         </button>
                       )}
                     </td>
