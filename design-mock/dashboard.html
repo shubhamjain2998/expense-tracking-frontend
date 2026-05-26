@@ -1,0 +1,1558 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Dashboard — Design Mockup</title>
+
+    <!-- JetBrains Mono (numbers in tables/KPIs) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <!-- General Sans (body) + Cabinet Grotesk (display/hero) — both Fontshare, free -->
+    <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+    <link
+      href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&f[]=cabinet-grotesk@500,700,800&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* ─── Design tokens ───────────────────────────────────────────────── */
+      :root {
+        /* Paper neutrals (warm cream) */
+        --bg: oklch(0.985 0.005 85);
+        --surface: oklch(0.997 0.003 85);
+        --surface-2: oklch(0.965 0.005 85);
+        --surface-3: oklch(0.94 0.006 85);
+        --line: oklch(0.91 0.007 85);
+        --line-strong: oklch(0.85 0.009 85);
+        --ink: oklch(0.2 0.01 50);
+        --ink-2: oklch(0.36 0.01 50);
+        --ink-3: oklch(0.54 0.008 50);
+        --ink-4: oklch(0.7 0.006 50);
+
+        /* Signature accent — oxblood */
+        --accent: oklch(0.42 0.16 22);
+        --accent-soft: oklch(0.94 0.035 22);
+
+        --pos: oklch(0.5 0.13 155);
+        --pos-soft: oklch(0.94 0.04 155);
+        --neg: oklch(0.55 0.16 28);
+        --neg-soft: oklch(0.95 0.04 28);
+        --warn: oklch(0.7 0.14 75);
+        --warn-soft: oklch(0.94 0.04 75);
+
+        --cat-1: oklch(0.45 0.13 270); /* indigo */
+        --cat-2: oklch(0.55 0.12 155); /* forest */
+        --cat-3: oklch(0.65 0.13 75);  /* mustard */
+        --cat-4: oklch(0.55 0.14 25);  /* terracotta */
+        --cat-5: oklch(0.5 0.1 310);   /* plum */
+
+        --radius-sm: 4px;
+        --radius: 6px;
+        --radius-lg: 10px;
+        --radius-xl: 14px;
+
+        --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.04);
+        --shadow-pop:
+          0 1px 2px oklch(0 0 0 / 0.04), 0 14px 36px oklch(0.4 0.08 25 / 0.08);
+
+        --font-display: 'Cabinet Grotesk', 'General Sans', -apple-system, system-ui, sans-serif;
+        --font-body: 'General Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+        --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+      }
+
+      html.dark {
+        --bg: oklch(0.16 0.005 60);
+        --surface: oklch(0.2 0.005 60);
+        --surface-2: oklch(0.24 0.005 60);
+        --surface-3: oklch(0.28 0.006 60);
+        --line: oklch(0.3 0.007 60);
+        --line-strong: oklch(0.38 0.008 60);
+        --ink: oklch(0.95 0.005 85);
+        --ink-2: oklch(0.82 0.005 85);
+        --ink-3: oklch(0.62 0.006 85);
+        --ink-4: oklch(0.46 0.007 85);
+
+        --accent: oklch(0.72 0.16 22);
+        --accent-soft: oklch(0.3 0.08 22);
+
+        --pos: oklch(0.72 0.14 155);
+        --pos-soft: oklch(0.3 0.06 155);
+        --neg: oklch(0.68 0.17 28);
+        --neg-soft: oklch(0.3 0.08 28);
+
+        --shadow-pop:
+          0 1px 2px oklch(0 0 0 / 0.4), 0 14px 36px oklch(0 0 0 / 0.5);
+      }
+
+      /* ─── Reset + base ──────────────────────────────────────────────── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: var(--font-body);
+        font-size: 14.5px;
+        line-height: 1.55;
+        color: var(--ink);
+        background: var(--bg);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        transition:
+          background 0.25s ease,
+          color 0.25s ease;
+      }
+      h1,
+      h2,
+      h3,
+      h4,
+      p {
+        margin: 0;
+      }
+      button {
+        font-family: inherit;
+        cursor: pointer;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      /* ─── Paper grain overlay (light mode only) ─────────────────────── */
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 200;
+        opacity: 0.05;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.15 0 0 0 0 0.12 0 0 0 0 0.08 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+        mix-blend-mode: multiply;
+      }
+      html.dark body::before {
+        display: none;
+      }
+
+      /* ─── Typography utilities ──────────────────────────────────────── */
+      .display {
+        font-family: var(--font-display);
+        font-weight: 700;
+        letter-spacing: -0.035em;
+      }
+      .num {
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: 'tnum';
+      }
+      .mono {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+      }
+      .eyebrow {
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--ink-4);
+      }
+
+      /* ─── Layout shell ──────────────────────────────────────────────── */
+      .shell {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      /* ─── Sidebar ───────────────────────────────────────────────────── */
+      .sidebar {
+        width: 220px;
+        flex-shrink: 0;
+        border-right: 1px solid var(--line);
+        background: var(--bg);
+        padding: 18px 14px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 6px 6px 14px;
+        margin-bottom: 6px;
+        border-bottom: 1px solid var(--line);
+      }
+      .brand-mark {
+        width: 26px;
+        height: 26px;
+        background: var(--ink);
+        color: var(--bg);
+        border-radius: 6px;
+        display: grid;
+        place-items: center;
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 14px;
+        letter-spacing: -0.02em;
+      }
+      .brand-name {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 15px;
+        letter-spacing: -0.025em;
+      }
+      .nav-section {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--ink-4);
+        padding: 10px 8px 6px;
+      }
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 8px;
+        border-radius: 6px;
+        color: var(--ink-3);
+        font-size: 13.5px;
+        font-weight: 400;
+        transition:
+          background 0.12s ease,
+          color 0.12s ease;
+      }
+      .nav-item:hover {
+        background: var(--surface-2);
+        color: var(--ink);
+      }
+      .nav-item.active {
+        color: var(--ink);
+        font-weight: 500;
+        background: var(--surface-2);
+      }
+      .nav-item.active::before {
+        content: '';
+        width: 3px;
+        height: 14px;
+        background: var(--accent);
+        border-radius: 2px;
+        margin-left: -11px;
+        margin-right: -2px;
+      }
+      .nav-badge {
+        margin-left: auto;
+        background: var(--accent);
+        color: oklch(0.99 0 0);
+        font-size: 10px;
+        font-weight: 600;
+        padding: 1px 6px;
+        border-radius: 999px;
+        font-family: var(--font-mono);
+      }
+      .sidebar-footer {
+        margin-top: auto;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+        font-size: 11.5px;
+        color: var(--ink-3);
+      }
+      .month-mini {
+        padding: 10px 8px;
+      }
+      .month-mini .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 3px 0;
+      }
+      .month-mini .row .lbl {
+        font-size: 11.5px;
+        color: var(--ink-3);
+      }
+      .month-mini .row .val {
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        color: var(--ink);
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* ─── Top nav (desktop) ─────────────────────────────────────────── */
+      .topnav {
+        height: 52px;
+        border-bottom: 1px solid var(--line);
+        background: var(--bg);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 32px;
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        backdrop-filter: blur(8px);
+      }
+      .topnav .crumbs {
+        font-size: 12.5px;
+        color: var(--ink-3);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .topnav .crumbs .sep {
+        opacity: 0.4;
+      }
+      .topnav .crumbs strong {
+        color: var(--ink);
+        font-weight: 500;
+      }
+      .topnav .actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      /* ─── Buttons ───────────────────────────────────────────────────── */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        height: 32px;
+        padding: 0 13px;
+        border: 1px solid var(--line-strong);
+        background: var(--surface);
+        color: var(--ink);
+        border-radius: var(--radius);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.12s ease;
+        white-space: nowrap;
+      }
+      .btn:hover {
+        background: var(--surface-2);
+      }
+      .btn.primary {
+        background: var(--ink);
+        color: var(--bg);
+        border-color: var(--ink);
+      }
+      .btn.primary:hover {
+        background: var(--ink-2);
+        border-color: var(--ink-2);
+      }
+      .btn.accent {
+        background: var(--accent);
+        color: oklch(0.99 0 0);
+        border-color: var(--accent);
+      }
+      .btn.accent:hover {
+        filter: brightness(1.08);
+      }
+      .btn.ghost {
+        border-color: transparent;
+        background: transparent;
+        color: var(--ink-2);
+      }
+      .btn.ghost:hover {
+        background: var(--surface-2);
+        color: var(--ink);
+      }
+      .btn.icon {
+        width: 32px;
+        padding: 0;
+      }
+      .kbd {
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        padding: 1px 5px;
+        border: 1px solid var(--line-strong);
+        border-bottom-width: 2px;
+        border-radius: 4px;
+        color: var(--ink-3);
+        background: var(--surface);
+      }
+
+      /* ─── Main column ───────────────────────────────────────────────── */
+      .main {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .content {
+        padding: 36px 48px 60px;
+        max-width: 1280px;
+        margin: 0 auto;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 36px;
+      }
+
+      /* ─── Page hero ─────────────────────────────────────────────────── */
+      .hero {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 32px;
+        padding-bottom: 8px;
+      }
+      .hero-amount {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: clamp(56px, 7.2vw, 88px);
+        line-height: 0.98;
+        letter-spacing: -0.04em;
+        color: var(--ink);
+        font-variant-numeric: tabular-nums;
+        display: inline-block;
+        position: relative;
+      }
+      .hero-amount .currency {
+        font-size: 0.55em;
+        font-weight: 500;
+        color: var(--ink-3);
+        margin-right: 0.1em;
+        vertical-align: 0.14em;
+        letter-spacing: 0;
+      }
+      .hero-amount .decimals {
+        font-size: 0.42em;
+        color: var(--ink-3);
+        font-weight: 500;
+        margin-left: 0.06em;
+        vertical-align: 0.28em;
+        letter-spacing: -0.02em;
+      }
+      .hero-budget {
+        font-family: var(--font-body);
+        font-weight: 400;
+        font-size: 18px;
+        letter-spacing: -0.005em;
+        color: var(--ink-3);
+        font-variant-numeric: tabular-nums;
+        margin-top: 14px;
+      }
+      .hero-meta {
+        margin-top: 18px;
+        font-size: 13.5px;
+        color: var(--ink-3);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .hero-meta .dot {
+        width: 3px;
+        height: 3px;
+        background: var(--ink-4);
+        border-radius: 50%;
+      }
+      .hero-meta .pos {
+        color: var(--pos);
+        font-weight: 500;
+      }
+      .hero-meta .neg {
+        color: var(--neg);
+        font-weight: 500;
+      }
+      .hero-meta a {
+        color: var(--accent);
+        font-weight: 500;
+        border-bottom: 1px solid color-mix(in oklch, var(--accent) 30%, transparent);
+        padding-bottom: 1px;
+      }
+      .hero-meta a:hover {
+        border-bottom-color: var(--accent);
+      }
+      .hero-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 12px;
+      }
+      .hero-eyebrow {
+        text-align: right;
+        margin-bottom: 4px;
+      }
+      .hero-controls {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      /* ─── Year/month selector ──────────────────────────────────────── */
+      .ym {
+        display: inline-flex;
+        align-items: center;
+        height: 32px;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius);
+        background: var(--surface);
+        overflow: hidden;
+      }
+      .ym button {
+        height: 100%;
+        width: 30px;
+        background: transparent;
+        border: none;
+        color: var(--ink-3);
+        display: grid;
+        place-items: center;
+        transition: background 0.1s ease;
+      }
+      .ym button:hover {
+        background: var(--surface-2);
+        color: var(--ink);
+      }
+      .ym .label {
+        padding: 0 14px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ink);
+        font-feature-settings: 'tnum';
+        font-variant-numeric: tabular-nums;
+        border-left: 1px solid var(--line);
+        border-right: 1px solid var(--line);
+        height: 100%;
+        display: grid;
+        place-items: center;
+      }
+
+      /* ─── KPI strip ─────────────────────────────────────────────────── */
+      .kpi-strip {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-xl);
+        background: var(--surface);
+        overflow: hidden;
+      }
+      .kpi {
+        padding: 22px 24px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        border-right: 1px solid var(--line);
+        position: relative;
+      }
+      .kpi:last-child {
+        border-right: none;
+      }
+      .kpi-label {
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--ink-4);
+      }
+      .kpi-value {
+        font-family: var(--font-display);
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        color: var(--ink);
+        line-height: 1.05;
+        margin-top: 6px;
+        font-variant-numeric: tabular-nums;
+      }
+      .kpi-value.pos {
+        color: var(--pos);
+      }
+      .kpi-value.neg {
+        color: var(--ink);
+      }
+      .kpi-delta {
+        font-size: 12px;
+        color: var(--ink-3);
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .kpi-delta .arrow {
+        width: 12px;
+        height: 12px;
+        display: inline-grid;
+        place-items: center;
+      }
+      .kpi-delta.pos {
+        color: var(--pos);
+      }
+      .kpi-delta.neg {
+        color: var(--neg);
+      }
+
+      /* ─── Section header ────────────────────────────────────────────── */
+      .section-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        margin-bottom: 14px;
+        gap: 16px;
+      }
+      .section-head .title {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 20px;
+        letter-spacing: -0.025em;
+        color: var(--ink);
+      }
+      .section-head .sub {
+        font-size: 12.5px;
+        color: var(--ink-3);
+        margin-top: 3px;
+      }
+      .section-head .right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* ─── Card primitives ──────────────────────────────────────────── */
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        padding: 22px 24px;
+      }
+      .card.elevated {
+        box-shadow: var(--shadow-pop);
+        border-color: transparent;
+      }
+      .card.subtle {
+        background: var(--surface-2);
+        border-color: transparent;
+      }
+      .card.flush {
+        padding: 0;
+      }
+      .card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+      .card-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink);
+        letter-spacing: -0.005em;
+      }
+      .card-sub {
+        font-size: 11.5px;
+        color: var(--ink-3);
+        margin-top: 3px;
+      }
+
+      /* ─── Budget pace bars ─────────────────────────────────────────── */
+      .pace-list {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+      .pace-row {
+        display: grid;
+        grid-template-columns: 140px 1fr 110px;
+        gap: 18px;
+        align-items: center;
+      }
+      .pace-cat {
+        font-size: 13px;
+        color: var(--ink);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .pace-cat .swatch {
+        width: 6px;
+        height: 14px;
+        border-radius: 2px;
+        flex-shrink: 0;
+      }
+      .pace-bar {
+        position: relative;
+        height: 6px;
+        background: var(--surface-3);
+        border-radius: 999px;
+        overflow: visible;
+      }
+      .pace-fill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        background: var(--ink);
+        border-radius: 999px;
+        transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .pace-fill.over {
+        background: var(--neg);
+      }
+      .pace-fill.warn {
+        background: var(--warn);
+      }
+      .pace-fill.pos {
+        background: var(--pos);
+      }
+      .pace-marker {
+        position: absolute;
+        top: -3px;
+        bottom: -3px;
+        width: 1.5px;
+        background: var(--ink);
+        opacity: 0.4;
+      }
+      .pace-marker::after {
+        content: 'pace';
+        position: absolute;
+        top: -16px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 9px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--ink-4);
+        font-weight: 600;
+      }
+      .pace-amount {
+        text-align: right;
+        font-family: var(--font-mono);
+        font-size: 12.5px;
+        font-variant-numeric: tabular-nums;
+        color: var(--ink-2);
+      }
+      .pace-amount .of {
+        color: var(--ink-4);
+      }
+
+      /* ─── Two-column row ───────────────────────────────────────────── */
+      .two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+
+      /* ─── Donut chart ──────────────────────────────────────────────── */
+      .donut-wrap {
+        display: flex;
+        align-items: center;
+        gap: 28px;
+      }
+      .donut {
+        position: relative;
+        width: 180px;
+        height: 180px;
+        flex-shrink: 0;
+      }
+      .donut svg {
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+      }
+      .donut circle {
+        fill: none;
+        stroke-width: 18;
+      }
+      .donut .donut-center {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+      .donut-center .lbl {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--ink-4);
+        margin-bottom: 4px;
+      }
+      .donut-center .val {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 24px;
+        letter-spacing: -0.025em;
+        color: var(--ink);
+        font-variant-numeric: tabular-nums;
+        line-height: 1;
+      }
+      .legend {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 11px;
+      }
+      .legend-row {
+        display: grid;
+        grid-template-columns: 8px 1fr auto auto;
+        gap: 10px;
+        align-items: center;
+        font-size: 13px;
+      }
+      .legend-swatch {
+        width: 8px;
+        height: 8px;
+        border-radius: 2px;
+      }
+      .legend-name {
+        color: var(--ink-2);
+      }
+      .legend-pct {
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        color: var(--ink-3);
+        font-variant-numeric: tabular-nums;
+        min-width: 32px;
+        text-align: right;
+      }
+      .legend-amt {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--ink);
+        font-variant-numeric: tabular-nums;
+        min-width: 64px;
+        text-align: right;
+      }
+
+      /* ─── Bar chart (six-month trend) ─────────────────────────────── */
+      .bars {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 14px;
+        height: 200px;
+        align-items: end;
+        padding-top: 10px;
+        position: relative;
+      }
+      .bars::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 28px;
+        height: 1px;
+        background: var(--line);
+      }
+      .bar-col {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: flex-end;
+        gap: 6px;
+        height: 100%;
+      }
+      .bar {
+        background: var(--surface-3);
+        border-radius: 3px 3px 0 0;
+        transition: background 0.2s ease;
+        min-height: 4px;
+      }
+      .bar-col.current .bar {
+        background: var(--ink);
+      }
+      .bar-col:hover .bar {
+        background: var(--accent);
+      }
+      .bar-label {
+        font-size: 10.5px;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--ink-4);
+        text-align: center;
+        margin-top: 4px;
+        height: 16px;
+      }
+      .bar-col.current .bar-label {
+        color: var(--ink);
+      }
+      .bar-value {
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        color: var(--ink-3);
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* ─── Needs review list ────────────────────────────────────────── */
+      .review-list {
+        display: flex;
+        flex-direction: column;
+      }
+      .review-row {
+        display: grid;
+        grid-template-columns: 56px 1fr auto auto;
+        gap: 14px;
+        padding: 14px 24px;
+        align-items: center;
+        border-bottom: 1px solid var(--line);
+        transition: background 0.1s ease;
+      }
+      .review-row:last-child {
+        border-bottom: none;
+      }
+      .review-row:hover {
+        background: var(--surface-2);
+      }
+      .review-date {
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        color: var(--ink-3);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .review-merchant {
+        font-size: 14px;
+        color: var(--ink);
+        font-weight: 500;
+      }
+      .review-suggest {
+        font-size: 11.5px;
+        color: var(--ink-3);
+        margin-top: 2px;
+      }
+      .review-suggest strong {
+        color: var(--accent);
+        font-weight: 500;
+      }
+      .review-amount {
+        font-family: var(--font-mono);
+        font-size: 14px;
+        color: var(--ink);
+        font-variant-numeric: tabular-nums;
+        font-weight: 500;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        height: 24px;
+        padding: 0 9px;
+        border-radius: 999px;
+        font-size: 11.5px;
+        font-weight: 500;
+        background: var(--surface-2);
+        color: var(--ink-2);
+        border: 1px solid var(--line);
+      }
+      .chip.accent {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border-color: transparent;
+      }
+
+      /* ─── Theme toggle ─────────────────────────────────────────────── */
+      .theme-toggle {
+        width: 32px;
+        height: 32px;
+        display: grid;
+        place-items: center;
+        border-radius: 6px;
+        background: transparent;
+        border: none;
+        color: var(--ink-2);
+        transition: background 0.1s ease;
+      }
+      .theme-toggle:hover {
+        background: var(--surface-2);
+        color: var(--ink);
+      }
+
+      /* ─── Choreographed page-load animation ────────────────────────── */
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .anim {
+        animation: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+      .anim-1 {
+        animation-delay: 0.05s;
+      }
+      .anim-2 {
+        animation-delay: 0.14s;
+      }
+      .anim-3 {
+        animation-delay: 0.23s;
+      }
+      .anim-4 {
+        animation-delay: 0.32s;
+      }
+      .anim-5 {
+        animation-delay: 0.41s;
+      }
+
+      /* Hero amount underline draws in after the number reveals */
+      .hero-rule {
+        margin-top: 14px;
+        width: 64px;
+        height: 2px;
+        background: var(--ink);
+        transform-origin: left;
+        animation: draw 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
+      }
+      @keyframes draw {
+        from {
+          transform: scaleX(0);
+        }
+        to {
+          transform: scaleX(1);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .anim,
+        .hero-rule {
+          animation: none;
+        }
+      }
+
+      /* SVG icons inherit current color */
+      svg.lucide {
+        stroke: currentColor;
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <!-- ─── Sidebar ─────────────────────────────────────────────── -->
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">S</div>
+          <div>
+            <div class="brand-name">Shubham</div>
+            <div style="font-size: 10.5px; color: var(--ink-4); margin-top: 1px">
+              jains1801@gmail.com
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-section">Workspace</div>
+        <a class="nav-item active" href="#">
+          <svg class="lucide" width="15" height="15" viewBox="0 0 24 24"><path d="M3 12 12 3l9 9"/><path d="M5 10v10a1 1 0 0 0 1 1h3v-6h6v6h3a1 1 0 0 0 1-1V10"/></svg>
+          <span>Dashboard</span>
+        </a>
+        <a class="nav-item" href="#">
+          <svg class="lucide" width="15" height="15" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14l-3-2-3 2-3-2-3 2-3-2-3 2V6a2 2 0 0 1 2-2h2"/><path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h4"/></svg>
+          <span>Transactions</span>
+          <span class="nav-badge">3</span>
+        </a>
+        <a class="nav-item" href="#">
+          <svg class="lucide" width="15" height="15" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span>Upload</span>
+        </a>
+        <a class="nav-item" href="#">
+          <svg class="lucide" width="15" height="15" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/><path d="M16 11h2"/><path d="M2 9V5a2 2 0 0 1 2-2h12"/></svg>
+          <span>Budget</span>
+        </a>
+        <a class="nav-item" href="#">
+          <svg class="lucide" width="15" height="15" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+          <span>Settings</span>
+        </a>
+
+        <div class="month-mini" style="margin-top: 18px">
+          <div class="nav-section" style="padding: 0 0 8px">This month</div>
+          <div class="row">
+            <span class="lbl">Spent</span>
+            <span class="val">₹24,180</span>
+          </div>
+          <div class="row">
+            <span class="lbl">Budget</span>
+            <span class="val" style="color: var(--ink-3)">₹60,000</span>
+          </div>
+          <div class="row">
+            <span class="lbl">Owed to you</span>
+            <span class="val" style="color: var(--pos)">₹4,250</span>
+          </div>
+        </div>
+
+        <div class="sidebar-footer">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <div
+              style="
+                width: 22px;
+                height: 22px;
+                border-radius: 50%;
+                background: var(--surface-3);
+                color: var(--ink-2);
+                font-size: 9px;
+                font-weight: 700;
+                display: grid;
+                place-items: center;
+              "
+            >
+              SJ
+            </div>
+            <span style="font-size: 11.5px; color: var(--ink-3)">jains1801@gmail.com</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ─── Main ────────────────────────────────────────────────── -->
+      <main class="main">
+        <header class="topnav">
+          <div class="crumbs">
+            <span>Personal Finance</span>
+            <span class="sep">›</span>
+            <strong>Dashboard</strong>
+          </div>
+          <div class="actions">
+            <button class="btn ghost" aria-label="Search">
+              <svg class="lucide" width="14" height="14" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              <span>Search</span>
+              <span class="kbd">⌘K</span>
+            </button>
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+              <svg class="lucide" width="15" height="15" viewBox="0 0 24 24" id="iconSun"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+              <svg class="lucide" width="15" height="15" viewBox="0 0 24 24" id="iconMoon" style="display: none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            </button>
+          </div>
+        </header>
+
+        <div class="content">
+          <!-- ─── Hero ──────────────────────────────────────────── -->
+          <section class="hero anim anim-1">
+            <div>
+              <div class="eyebrow">Overview · March 2026</div>
+              <div style="margin-top: 14px">
+                <span class="hero-amount">
+                  <span class="currency">₹</span>24,180<span class="decimals">.00</span>
+                </span>
+              </div>
+              <div class="hero-budget num">/ ₹60,000 monthly budget</div>
+              <div class="hero-rule"></div>
+              <div class="hero-meta">
+                <span>Day 14 of 31</span>
+                <span class="dot"></span>
+                <span class="pos">₹2,916 under pace</span>
+                <span class="dot"></span>
+                <a href="#">3 pending categorization</a>
+              </div>
+            </div>
+
+            <div class="hero-right">
+              <div class="hero-eyebrow eyebrow">Period</div>
+              <div class="hero-controls">
+                <div class="ym">
+                  <button aria-label="Previous month">
+                    <svg class="lucide" width="14" height="14" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+                  </button>
+                  <div class="label num">Mar 2026</div>
+                  <button aria-label="Next month">
+                    <svg class="lucide" width="14" height="14" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                  </button>
+                </div>
+                <button class="btn accent">
+                  <svg class="lucide" width="14" height="14" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <span>Upload</span>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- ─── KPI strip ─────────────────────────────────────── -->
+          <section class="kpi-strip anim anim-2">
+            <div class="kpi">
+              <div class="kpi-label">Income</div>
+              <div class="kpi-value pos num">+₹85,000</div>
+              <div class="kpi-delta pos">
+                <svg class="lucide" width="11" height="11" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" transform="rotate(180 12 12)"/></svg>
+                <span>+12% vs Feb</span>
+              </div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">Expenses</div>
+              <div class="kpi-value neg num">₹24,180</div>
+              <div class="kpi-delta">
+                <svg class="lucide" width="11" height="11" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                <span>−4% vs Feb</span>
+              </div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">Net</div>
+              <div class="kpi-value pos num">+₹60,820</div>
+              <div class="kpi-delta pos">
+                <svg class="lucide" width="11" height="11" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" transform="rotate(180 12 12)"/></svg>
+                <span>+21% vs Feb</span>
+              </div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-label">Owed to you</div>
+              <div class="kpi-value num">₹4,250</div>
+              <div class="kpi-delta">
+                <svg class="lucide" width="11" height="11" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                <span>Across 3 people</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- ─── Budget pace ───────────────────────────────────── -->
+          <section class="anim anim-3">
+            <div class="section-head">
+              <div>
+                <div class="title">Budget pace</div>
+                <div class="sub">Where you're tracking against monthly limits, by day 14</div>
+              </div>
+              <div class="right">
+                <button class="btn ghost">View all</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="pace-list">
+                <!-- Groceries -->
+                <div class="pace-row">
+                  <div class="pace-cat">
+                    <span class="swatch" style="background: var(--cat-2)"></span>
+                    Groceries
+                  </div>
+                  <div class="pace-bar">
+                    <div class="pace-fill warn" style="width: 68%"></div>
+                    <div class="pace-marker" style="left: 45%"></div>
+                  </div>
+                  <div class="pace-amount">
+                    ₹6,800 <span class="of">/ ₹10,000</span>
+                  </div>
+                </div>
+                <!-- Dining -->
+                <div class="pace-row">
+                  <div class="pace-cat">
+                    <span class="swatch" style="background: var(--cat-4)"></span>
+                    Dining
+                  </div>
+                  <div class="pace-bar">
+                    <div class="pace-fill over" style="width: 100%"></div>
+                    <div class="pace-marker" style="left: 45%"></div>
+                  </div>
+                  <div class="pace-amount" style="color: var(--neg)">
+                    ₹4,200 <span class="of" style="color: var(--ink-4)">/ ₹4,000</span>
+                  </div>
+                </div>
+                <!-- Transport -->
+                <div class="pace-row">
+                  <div class="pace-cat">
+                    <span class="swatch" style="background: var(--cat-1)"></span>
+                    Transport
+                  </div>
+                  <div class="pace-bar">
+                    <div class="pace-fill pos" style="width: 42%"></div>
+                    <div class="pace-marker" style="left: 45%"></div>
+                  </div>
+                  <div class="pace-amount">
+                    ₹2,100 <span class="of">/ ₹5,000</span>
+                  </div>
+                </div>
+                <!-- Subscriptions -->
+                <div class="pace-row">
+                  <div class="pace-cat">
+                    <span class="swatch" style="background: var(--cat-5)"></span>
+                    Subscriptions
+                  </div>
+                  <div class="pace-bar">
+                    <div class="pace-fill" style="width: 65%"></div>
+                    <div class="pace-marker" style="left: 45%"></div>
+                  </div>
+                  <div class="pace-amount">
+                    ₹980 <span class="of">/ ₹1,500</span>
+                  </div>
+                </div>
+                <!-- Utilities -->
+                <div class="pace-row">
+                  <div class="pace-cat">
+                    <span class="swatch" style="background: var(--cat-3)"></span>
+                    Utilities
+                  </div>
+                  <div class="pace-bar">
+                    <div class="pace-fill" style="width: 88%"></div>
+                    <div class="pace-marker" style="left: 45%"></div>
+                  </div>
+                  <div class="pace-amount">
+                    ₹3,500 <span class="of">/ ₹4,000</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ─── Two-column: Categories + Trend ─────────────────── -->
+          <section class="anim anim-4">
+            <div class="two-col">
+              <!-- Categories donut -->
+              <div>
+                <div class="section-head">
+                  <div>
+                    <div class="title">By category</div>
+                    <div class="sub">Where March 2026 went</div>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="donut-wrap">
+                    <div class="donut">
+                      <svg viewBox="0 0 100 100">
+                        <!-- Gray track -->
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="40"
+                          stroke="color-mix(in oklch, var(--ink) 4%, transparent)"
+                        />
+                        <!-- Groceries 32% — circumference ~251.3, length = 80.4 -->
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="40"
+                          stroke="var(--cat-2)"
+                          stroke-dasharray="80.4 251.3"
+                          stroke-dashoffset="0"
+                        />
+                        <!-- Dining 22% (55.3), starts at -80.4 -->
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="40"
+                          stroke="var(--cat-4)"
+                          stroke-dasharray="55.3 251.3"
+                          stroke-dashoffset="-80.4"
+                        />
+                        <!-- Transport 18% (45.2), starts at -(80.4+55.3) = -135.7 -->
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="40"
+                          stroke="var(--cat-1)"
+                          stroke-dasharray="45.2 251.3"
+                          stroke-dashoffset="-135.7"
+                        />
+                        <!-- Bills 16% (40.2), starts at -180.9 -->
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="40"
+                          stroke="var(--cat-3)"
+                          stroke-dasharray="40.2 251.3"
+                          stroke-dashoffset="-180.9"
+                        />
+                        <!-- Other 12% (30.2), starts at -221.1 -->
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="40"
+                          stroke="var(--cat-5)"
+                          stroke-dasharray="30.2 251.3"
+                          stroke-dashoffset="-221.1"
+                        />
+                      </svg>
+                      <div class="donut-center">
+                        <div class="lbl">Total</div>
+                        <div class="val">₹24,180</div>
+                      </div>
+                    </div>
+                    <div class="legend">
+                      <div class="legend-row">
+                        <span class="legend-swatch" style="background: var(--cat-2)"></span>
+                        <span class="legend-name">Groceries</span>
+                        <span class="legend-pct">32%</span>
+                        <span class="legend-amt">₹7,738</span>
+                      </div>
+                      <div class="legend-row">
+                        <span class="legend-swatch" style="background: var(--cat-4)"></span>
+                        <span class="legend-name">Dining</span>
+                        <span class="legend-pct">22%</span>
+                        <span class="legend-amt">₹5,320</span>
+                      </div>
+                      <div class="legend-row">
+                        <span class="legend-swatch" style="background: var(--cat-1)"></span>
+                        <span class="legend-name">Transport</span>
+                        <span class="legend-pct">18%</span>
+                        <span class="legend-amt">₹4,352</span>
+                      </div>
+                      <div class="legend-row">
+                        <span class="legend-swatch" style="background: var(--cat-3)"></span>
+                        <span class="legend-name">Bills &amp; utilities</span>
+                        <span class="legend-pct">16%</span>
+                        <span class="legend-amt">₹3,869</span>
+                      </div>
+                      <div class="legend-row">
+                        <span class="legend-swatch" style="background: var(--cat-5)"></span>
+                        <span class="legend-name">Other</span>
+                        <span class="legend-pct">12%</span>
+                        <span class="legend-amt">₹2,901</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Six-month trend -->
+              <div>
+                <div class="section-head">
+                  <div>
+                    <div class="title">Six-month trend</div>
+                    <div class="sub">Total spend, Oct 2025 — Mar 2026</div>
+                  </div>
+                  <div class="right">
+                    <div style="display: inline-flex; gap: 2px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 2px">
+                      <button class="btn ghost" style="height: 24px; padding: 0 10px; font-size: 11.5px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm)">Total</button>
+                      <button class="btn ghost" style="height: 24px; padding: 0 10px; font-size: 11.5px">Stacked</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="bars">
+                    <div class="bar-col">
+                      <div class="bar-value">₹31.2K</div>
+                      <div class="bar" style="height: 70%"></div>
+                      <div class="bar-label">Oct</div>
+                    </div>
+                    <div class="bar-col">
+                      <div class="bar-value">₹28.5K</div>
+                      <div class="bar" style="height: 62%"></div>
+                      <div class="bar-label">Nov</div>
+                    </div>
+                    <div class="bar-col">
+                      <div class="bar-value">₹42.8K</div>
+                      <div class="bar" style="height: 96%"></div>
+                      <div class="bar-label">Dec</div>
+                    </div>
+                    <div class="bar-col">
+                      <div class="bar-value">₹26.1K</div>
+                      <div class="bar" style="height: 55%"></div>
+                      <div class="bar-label">Jan</div>
+                    </div>
+                    <div class="bar-col">
+                      <div class="bar-value">₹25.2K</div>
+                      <div class="bar" style="height: 52%"></div>
+                      <div class="bar-label">Feb</div>
+                    </div>
+                    <div class="bar-col current">
+                      <div class="bar-value">₹24.2K</div>
+                      <div class="bar" style="height: 48%"></div>
+                      <div class="bar-label">Mar</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ─── Needs review ──────────────────────────────────── -->
+          <section class="anim anim-5">
+            <div class="section-head">
+              <div>
+                <div class="title">Needs review</div>
+                <div class="sub">3 transactions waiting on a category</div>
+              </div>
+              <div class="right">
+                <button class="btn">
+                  <svg class="lucide" width="13" height="13" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 22v-6h6"/><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 2v6h-6"/></svg>
+                  <span>Auto-categorize</span>
+                </button>
+                <button class="btn ghost">Open transactions</button>
+              </div>
+            </div>
+            <div class="card flush">
+              <div class="review-list">
+                <div class="review-row">
+                  <div class="review-date">14 Mar</div>
+                  <div>
+                    <div class="review-merchant">Blue Tokai Coffee Roasters</div>
+                    <div class="review-suggest">
+                      Suggestion: <strong>Dining</strong> · last 4 matches
+                    </div>
+                  </div>
+                  <span class="chip accent">Pending</span>
+                  <div class="review-amount">−₹420.00</div>
+                </div>
+                <div class="review-row">
+                  <div class="review-date">13 Mar</div>
+                  <div>
+                    <div class="review-merchant">Indane Gas Refill</div>
+                    <div class="review-suggest">
+                      Suggestion: <strong>Bills &amp; utilities</strong> · last 6 matches
+                    </div>
+                  </div>
+                  <span class="chip accent">Pending</span>
+                  <div class="review-amount">−₹1,150.00</div>
+                </div>
+                <div class="review-row">
+                  <div class="review-date">12 Mar</div>
+                  <div>
+                    <div class="review-merchant">Ola Cabs Pvt Ltd</div>
+                    <div class="review-suggest">
+                      Suggestion: <strong>Transport</strong> · last 11 matches
+                    </div>
+                  </div>
+                  <span class="chip accent">Pending</span>
+                  <div class="review-amount">−₹312.40</div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      // Theme toggle
+      const root = document.documentElement
+      const stored = localStorage.getItem('pf-mock-theme')
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      if (stored === 'dark' || (!stored && prefersDark)) root.classList.add('dark')
+      const updateIcons = () => {
+        const dark = root.classList.contains('dark')
+        document.getElementById('iconSun').style.display = dark ? 'none' : 'block'
+        document.getElementById('iconMoon').style.display = dark ? 'block' : 'none'
+      }
+      updateIcons()
+      document.getElementById('themeToggle').addEventListener('click', () => {
+        root.classList.toggle('dark')
+        localStorage.setItem('pf-mock-theme', root.classList.contains('dark') ? 'dark' : 'light')
+        updateIcons()
+      })
+
+      // Count-up animation on the hero amount (respects prefers-reduced-motion)
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      if (!reduced) {
+        const target = 24180
+        const el = document.querySelector('.hero-amount')
+        const currency = el.querySelector('.currency').outerHTML
+        const decimals = el.querySelector('.decimals').outerHTML
+        const duration = 900
+        const start = performance.now()
+        function step(now) {
+          const t = Math.min(1, (now - start) / duration)
+          const eased = 1 - Math.pow(1 - t, 3)
+          const value = Math.round(target * eased)
+          const formatted = value.toLocaleString('en-IN')
+          el.innerHTML = currency + formatted + decimals
+          if (t < 1) requestAnimationFrame(step)
+        }
+        requestAnimationFrame(step)
+      }
+    </script>
+  </body>
+</html>

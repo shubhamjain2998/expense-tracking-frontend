@@ -7,9 +7,18 @@
 }
 
 .mono {
-  font-family: var(--mono);
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum';
+}
+
+/* Display type — Cabinet Grotesk. Use for hero amounts, KPI values, section titles.
+   Add `.num` for tabular numerals when displaying currency. */
+.display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1;
 }
 
 /* Amount helpers — never color expenses red */
@@ -608,4 +617,184 @@ select:disabled,
   background: var(--ink-4);
   background-clip: padding-box;
   border: 2px solid transparent;
+}
+
+/* ─── Card variants ───────────────────────────────────────────────── */
+.card.hero {
+  padding: 28px 24px;
+}
+.card.subtle {
+  background: var(--surface-2);
+  border-color: transparent;
+}
+.card.elevated {
+  box-shadow: var(--shadow-pop);
+  border-color: transparent;
+}
+
+/* ─── KPI primitive ──────────────────────────────────────────────────
+   The "label + value + delta" pattern used in DashboardHeader, IncomeSummaryCards,
+   and a few sidebar contexts. Use as a strip with `.kpi-strip` wrapping multiple. */
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(var(--kpi-cols, 4), 1fr);
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  overflow: hidden;
+}
+.kpi {
+  padding: 22px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-right: 1px solid var(--line);
+  position: relative;
+}
+.kpi:last-child {
+  border-right: none;
+}
+.kpi-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+.kpi-value {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  line-height: 1.05;
+  margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-value.pos {
+  color: var(--pos);
+}
+.kpi-delta {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.kpi-delta.pos {
+  color: var(--pos);
+}
+.kpi-delta.neg {
+  color: var(--neg);
+}
+
+/* ─── List primitive (mobile-friendly card list, also great for needs-review etc.) ── */
+.list {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.list-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px;
+  border-bottom: 1px solid var(--line);
+  min-height: 56px;
+}
+.list-row:last-child {
+  border-bottom: none;
+}
+.list-row:active {
+  background: var(--surface-2);
+}
+.list-row .l-main {
+  flex: 1;
+  min-width: 0;
+}
+.list-row .l-title {
+  font-size: 14px;
+  color: var(--ink);
+  font-weight: 500;
+}
+.list-row .l-sub {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+.list-row .l-amount {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Segmented control — tabs variant (underline only) ─────────────
+   For top-level filters that should feel like tabs (e.g. Transactions
+   All/Pending/Income/Processed). Use as <div class="seg tabs">…</div>. */
+.seg.tabs {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  padding: 0;
+  gap: 0;
+}
+.seg.tabs button {
+  height: 34px;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  padding: 0 14px;
+  margin-bottom: -1px;
+}
+.seg.tabs button.on {
+  background: transparent;
+  border-bottom-color: var(--ink);
+  box-shadow: none;
+  color: var(--ink);
+}
+
+/* ─── Chip sizes ──────────────────────────────────────────────────── */
+.chip.md {
+  height: 28px;
+  padding: 0 12px;
+  font-size: 12.5px;
+}
+.chip.lg {
+  height: 34px;
+  padding: 0 14px;
+  font-size: 13.5px;
+  gap: 8px;
+}
+
+/* ─── Eyebrow refinement — bumped letter-spacing for editorial feel ── */
+.eyebrow {
+  letter-spacing: 0.14em;
+}
+
+/* ─── Decorative ink rule under hero amounts ─────────────────────────
+   Optional accent: place after a `.display`-sized number to anchor it. */
+.ink-rule {
+  margin-top: 14px;
+  width: 64px;
+  height: 2px;
+  background: var(--ink);
+  transform-origin: left;
+  animation: ink-draw 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both;
+}
+@keyframes ink-draw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ink-rule {
+    animation: none;
+  }
 }
