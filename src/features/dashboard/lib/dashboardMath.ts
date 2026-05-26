@@ -146,12 +146,20 @@ export function computeYtdExtras(params: {
 }): YtdComputedData {
   const { ytdRows, yearlyTrendData, ytdSpentTotal, month, projectedFY, expectedYtd } = params
 
+  // Per-category income breakdown — the backend YTD endpoint stores income
+  // categories as negative actual_ytd. (Some deployments don't return income
+  // categories at all here; the breakdown list will be empty in that case
+  // but ytdIncomeTotal below still resolves from yearlyTrendData.)
   const ytdIncomeSources = ytdRows
     .filter((r) => r.actual_ytd < 0)
     .map((r) => ({ category: r.category, total: Math.abs(r.actual_ytd) }))
     .sort((a, b) => b.total - a.total)
 
-  const ytdIncomeTotal = ytdIncomeSources.reduce((s, r) => s + r.total, 0)
+  // Authoritative YTD income total: sum the multi-month summary's
+  // income_amount per period. This matches the per-month dashboard's
+  // totalIncome (which strictly uses txn_type === 'income') and stays
+  // correct even when ytdRows doesn't surface income categories.
+  const ytdIncomeTotal = yearlyTrendData.reduce((s, d) => s + Number(d.income_amount ?? 0), 0)
   const ytdSaved = ytdIncomeTotal - ytdSpentTotal
   const savingsRate = ytdIncomeTotal > 0 ? Math.round((ytdSaved / ytdIncomeTotal) * 100) : null
 
