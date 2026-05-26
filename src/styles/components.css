@@ -789,7 +789,9 @@ select:disabled,
 
 /* ─── Segmented control — tabs variant (underline only) ─────────────
    For top-level filters that should feel like tabs (e.g. Transactions
-   All/Pending/Income/Processed). Use as <div class="seg tabs">…</div>. */
+   All/Pending/Income/Processed). Use as <div class="seg tabs">…</div>.
+   Hides the horizontal scrollbar — when the tab strip overflows (mobile),
+   users still swipe through; the bar itself shouldn't render under the tabs. */
 .seg.tabs {
   background: transparent;
   border: none;
@@ -797,6 +799,10 @@ select:disabled,
   border-radius: 0;
   padding: 0;
   gap: 0;
+  scrollbar-width: none;
+}
+.seg.tabs::-webkit-scrollbar {
+  display: none;
 }
 .seg.tabs button {
   height: 34px;
