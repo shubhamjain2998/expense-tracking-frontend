@@ -959,24 +959,26 @@ select:disabled,
   font-family: var(--font-mono);
 }
 
-/* ─── Dashboard depth ─────────────────────────────────────────────────
-   Lift every card and the KPI strip off the page background so the
-   surface reads as paper-on-paper, not "white box on white." Hover
-   adds a small bloom for chart/list cards so the user feels the
-   interactive affordance without animation noise. */
-.dashboard-page .card,
-.dashboard-page .kpi-strip {
+/* ─── Card depth (global) ─────────────────────────────────────────────
+   Lift every card off the page background so the surface reads as
+   paper-on-paper, not "box on box". Hover adds a small bloom so the
+   user feels the affordance without animation noise. Applies app-wide
+   — Dashboard, Transactions, Budget, Settings, Upload, Auth. Variants
+   `.card.elevated` and `.card.subtle` keep their own shadows because
+   their rules come later in this file and win on specificity-equal. */
+.card,
+.kpi-strip {
   box-shadow: var(--shadow-card);
   transition:
     box-shadow 0.24s cubic-bezier(0.16, 1, 0.3, 1),
     transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.dashboard-page .card:hover {
+.card:hover {
   box-shadow: var(--shadow-card-hover);
 }
 @media (prefers-reduced-motion: reduce) {
-  .dashboard-page .card,
-  .dashboard-page .kpi-strip {
+  .card,
+  .kpi-strip {
     transition: none;
   }
 }
