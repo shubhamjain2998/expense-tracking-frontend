@@ -52,7 +52,6 @@ export function YtdSection({
     ytdIncomeTotal,
     ytdSaved,
     savingsRate,
-    projectedFYIncome,
     projectedFYSavings,
     projectedFYSavingsRate,
     totalExpenseCount,
@@ -160,9 +159,12 @@ export function YtdSection({
           [
             {
               label: 'INCOME',
-              color: 'var(--pos)',
-              value: ytdIncomeTotal > 0 ? formatCurrency(ytdIncomeTotal) : '—',
-              sub: ytdIncomeTotal > 0 ? `${formatCompact(incomeMonthlyAvg)}/mo avg` : null,
+              color: ytdIncomeTotal > 0 ? 'var(--pos)' : 'var(--ink-3)',
+              value: formatCurrency(ytdIncomeTotal),
+              sub:
+                ytdIncomeTotal > 0
+                  ? `${formatCompact(incomeMonthlyAvg)}/mo avg`
+                  : 'no income tracked',
             },
             {
               label: 'SPENT',
@@ -172,10 +174,14 @@ export function YtdSection({
             },
             {
               label: 'SAVED',
-              color: ytdSaved >= 0 ? 'var(--pos)' : 'var(--neg)',
-              value:
-                ytdIncomeTotal > 0 ? `${ytdSaved >= 0 ? '+' : ''}${formatCurrency(ytdSaved)}` : '—',
-              sub: savingsRate !== null ? `${savingsRate}% rate` : null,
+              color: ytdSaved > 0 ? 'var(--pos)' : ytdSaved < 0 ? 'var(--neg)' : 'var(--ink-3)',
+              value: `${ytdSaved > 0 ? '+' : ''}${formatCurrency(ytdSaved)}`,
+              sub:
+                savingsRate !== null
+                  ? `${savingsRate}% rate`
+                  : ytdSaved < 0
+                    ? 'spending without income'
+                    : null,
             },
             {
               label: 'PROJECTED FY SPEND',
@@ -190,12 +196,17 @@ export function YtdSection({
                   ? 'var(--pos)'
                   : projectedFYSavings < 0
                     ? 'var(--neg)'
-                    : 'var(--ink)',
+                    : 'var(--ink-3)',
               value:
-                projectedFYIncome > 0
+                projectedFY > 0
                   ? `${projectedFYSavings >= 0 ? '+' : ''}${formatCurrency(projectedFYSavings)}`
                   : '—',
-              sub: projectedFYSavingsRate !== null ? `${projectedFYSavingsRate}% of income` : null,
+              sub:
+                projectedFYSavingsRate !== null
+                  ? `${projectedFYSavingsRate}% of income`
+                  : projectedFY > 0
+                    ? 'no income tracked'
+                    : null,
             },
           ] as { label: string; color: string; value: string; sub: string | null }[]
         ).map(({ label, color, value, sub }, i, arr) => (
