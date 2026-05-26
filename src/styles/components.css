@@ -1159,6 +1159,7 @@ select:disabled,
 }
 .kpi-grid-legacy > div {
   border-right: 1px solid var(--line);
+  min-width: 0;
 }
 .kpi-grid-legacy > div:last-child {
   border-right: none;
@@ -1190,6 +1191,12 @@ select:disabled,
    bottom split. Stacks vertically below 768px. */
 .two-col-body {
   display: grid !important;
+}
+/* Grid items default to min-width: auto, which forces tracks to grow to
+   accommodate long content (bank statement strings overflow). Force grid
+   children to allow shrinking so descendant truncation actually engages. */
+.two-col-body > * {
+  min-width: 0;
 }
 @media (max-width: 767px) {
   .two-col-body {
