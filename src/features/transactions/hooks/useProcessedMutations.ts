@@ -17,10 +17,13 @@ export function useProcessedMutations(year: number, month: number, mode: PeriodM
   const deleteProcMutation = useMutation({
     mutationFn: deleteProcessedTransaction,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.transactions.processed(year, month) })
-      void qc.invalidateQueries({ queryKey: qk.transactions.raw(year, month, mode) })
-      // Dashboard summary, YTD, and split ledger all aggregate processed txns.
-      invalidateDomains(qc, ['dashboard'])
+      // Broad invalidation: the active processed query is keyed with
+      // (year, month, categoryFilter, tagFilter, mode); a narrower key with
+      // undefined slots won't prefix-match because React Query compares
+      // element-wise. Also covers pendingManual (deletion now also soft-
+      // deletes the raw, so the dashboard count needs to refresh) and
+      // dashboard aggregates.
+      invalidateDomains(qc, ['transactions', 'dashboard'])
       toast.success('Transaction deleted')
     },
     onError: () => toast.error('Failed to delete'),
