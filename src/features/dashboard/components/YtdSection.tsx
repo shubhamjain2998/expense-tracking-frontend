@@ -69,6 +69,17 @@ export function YtdSection({
 
   const expenseMonths = monthlyStats.filter((m) => m.expense > 0)
 
+  // Y-axis cap for the cumulative chart: enough headroom to show the budget
+  // line and the projected end-of-year value without leaving a huge empty
+  // gap above. 12% padding above the higher of the two.
+  const projectedFinal = ytdLineData.length > 0 ? (ytdLineData[11]?.projected ?? 0) : 0
+  const chartYMax = Math.max(annualBudget, projectedFinal, ytdSpentTotal) * 1.12 || 'auto'
+
+  // "today" vertical marker: only relevant when we're mid-year. Past FY (12)
+  // and future FY (0) skip the marker — the chart already tells the story.
+  const todayMonthLabel =
+    month > 0 && month < 12 && ytdLineData[month - 1] ? ytdLineData[month - 1].month : undefined
+
   if (isLoading) return <Skeleton className="h-96 w-full" />
 
   return (
@@ -242,7 +253,8 @@ export function YtdSection({
         ))}
       </div>
 
-      {/* ── Cumulative line chart ── */}
+      {/* ── Cumulative spend chart — simpler, intuitive: actual to-date,
+           projected forecast, single annual-budget reference line. ── */}
       <div style={{ padding: '14px 20px 8px', borderBottom: '1px solid var(--line)' }}>
         <div
           style={{
@@ -258,25 +270,24 @@ export function YtdSection({
             style={{
               fontSize: 10,
               fontWeight: 600,
-              letterSpacing: '0.08em',
+              letterSpacing: '0.14em',
               textTransform: 'uppercase',
               color: 'var(--ink-4)',
             }}
           >
-            Cumulative spend{hasBudget ? ' vs budget' : ''}
+            Cumulative spend
           </p>
           <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
             {(
               [
-                { label: 'actual', stroke: 'var(--accent)', dash: undefined },
-                ...(hasBudget ? [{ label: 'expected', stroke: tickColor, dash: '5 5' }] : []),
+                { label: 'Spent so far', stroke: 'var(--accent)', dash: undefined },
                 {
-                  label: 'projected',
-                  stroke: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
+                  label: 'Projected',
+                  stroke: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)',
                   dash: '3 4',
                 },
                 ...(hasBudget
-                  ? [{ label: 'annual budget', stroke: 'var(--neg)', dash: '5 3' }]
+                  ? [{ label: 'Annual budget', stroke: 'var(--neg)', dash: '5 3' }]
                   : []),
               ] as { label: string; stroke: string; dash?: string }[]
             ).map(({ label, stroke, dash }) => (
@@ -287,14 +298,14 @@ export function YtdSection({
                   alignItems: 'center',
                   gap: 5,
                   fontSize: 10.5,
-                  color: 'var(--ink-4)',
+                  color: 'var(--ink-3)',
                 }}
               >
-                <svg width="20" height="10" style={{ flexShrink: 0 }}>
+                <svg width="22" height="10" style={{ flexShrink: 0 }}>
                   <line
                     x1="0"
                     y1="5"
-                    x2="20"
+                    x2="22"
                     y2="5"
                     stroke={stroke}
                     strokeWidth="1.5"
@@ -307,35 +318,59 @@ export function YtdSection({
           </div>
         </div>
 
-        <ResponsiveContainer width="100%" height={180}>
-          <LineChart data={ytdLineData} margin={{ top: 10, right: 8, left: 8, bottom: 0 }}>
-            <CartesianGrid vertical={false} stroke={gridStroke} strokeDasharray="4 4" />
+        <ResponsiveContainer width="100%" height={200}>
+          <LineChart data={ytdLineData} margin={{ top: 14, right: 12, left: 8, bottom: 0 }}>
+            <CartesianGrid vertical={false} stroke={gridStroke} strokeDasharray="3 4" />
             <XAxis
               dataKey="month"
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 11, fill: tickColor }}
+              padding={{ left: 6, right: 6 }}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 10, fill: tickColor }}
               tickFormatter={formatCompact}
-              domain={[0, 'dataMax + 5000']}
+              domain={[0, chartYMax]}
               width={50}
             />
             <Tooltip
+              cursor={{ stroke: tickColor, strokeDasharray: '3 4', strokeOpacity: 0.5 }}
               contentStyle={TOOLTIP_STYLE}
-              formatter={(v) => (v ? formatCurrency(Number(v)) : '')}
+              labelFormatter={(label) => `Through ${label}`}
+              formatter={(v, name) => {
+                if (v === null || v === undefined) return ['', '']
+                const niceName =
+                  name === 'actual' ? 'Spent' : name === 'projected' ? 'On pace for' : String(name)
+                return [formatCurrency(Number(v)), niceName]
+              }}
             />
+            {/* Today vertical marker */}
+            {todayMonthLabel && (
+              <ReferenceLine
+                x={todayMonthLabel}
+                stroke={tickColor}
+                strokeOpacity={0.4}
+                strokeDasharray="2 4"
+                label={{
+                  value: 'today',
+                  position: 'top',
+                  fontSize: 9.5,
+                  fill: tickColor,
+                  letterSpacing: '0.08em',
+                }}
+              />
+            )}
             {hasBudget && (
               <ReferenceLine
                 y={annualBudget}
                 stroke="var(--neg)"
                 strokeDasharray="5 3"
-                strokeOpacity={0.5}
+                strokeOpacity={0.55}
                 label={{
-                  value: `Annual budget · ${formatCompact(annualBudget)}`,
+                  value: `Budget · ${formatCompact(annualBudget)}`,
                   position: 'insideTopRight',
                   fontSize: 10,
                   fill: 'var(--neg)',
@@ -343,25 +378,15 @@ export function YtdSection({
                 }}
               />
             )}
-            {hasBudget && (
-              <Line
-                type="monotone"
-                dataKey="expected"
-                stroke={tickColor}
-                strokeWidth={1.5}
-                strokeDasharray="5 5"
-                dot={false}
-                connectNulls
-              />
-            )}
             <Line
               type="monotone"
               dataKey="projected"
-              stroke={isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)'}
+              stroke={isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)'}
               strokeWidth={1.5}
               strokeDasharray="3 4"
               dot={false}
               connectNulls
+              isAnimationActive={false}
             />
             <Line
               type="monotone"
