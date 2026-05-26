@@ -25,7 +25,7 @@ export function BottomTabBar({ onOpenMore }: BottomTabBarProps) {
           key={t.key}
           to={t.to}
           end={t.to === '/dashboard'}
-          className={({ isActive }) => `tab-item${isActive ? 'on' : ''}`}
+          className={({ isActive }) => (isActive ? 'tab-item on' : 'tab-item')}
         >
           <span className="tab-icon-wrap">
             <Icon name={t.icon} size={20} strokeWidth={1.7} />
