@@ -55,7 +55,7 @@ export function SectionPillBar({ sections }: SectionPillBarProps) {
             key={s.id}
             type="button"
             onClick={() => jumpTo(s.id)}
-            className={`section-pill${active === s.id ? 'on' : ''}`}
+            className={active === s.id ? 'section-pill on' : 'section-pill'}
           >
             {s.label}
           </button>

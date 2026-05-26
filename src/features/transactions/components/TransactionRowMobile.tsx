@@ -55,7 +55,7 @@ export function TransactionRowMobile({ txn, isSelected, onTap }: TransactionRowM
     <button
       type="button"
       onClick={isDeleted ? undefined : onTap}
-      className={`list-row w-full text-left${isSelected ? 'on' : ''}`}
+      className={isSelected ? 'list-row on w-full text-left' : 'list-row w-full text-left'}
       style={{
         background: isSelected ? 'var(--accent-soft)' : undefined,
         opacity: isDeleted ? 0.55 : 1,
