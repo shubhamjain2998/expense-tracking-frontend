@@ -950,6 +950,24 @@ select:disabled,
   gap: 6px;
   min-width: 0;
 }
+/* Brand link (left side of TopNav, desktop only). Links to /dashboard.
+   Subtle color so the current page name reads as the active state. */
+.topnav-home {
+  color: var(--ink-3);
+  text-decoration: none;
+  transition: color 0.12s ease;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  border-radius: var(--radius-sm);
+}
+.topnav-home:hover {
+  color: var(--ink);
+  background: var(--surface-2);
+}
+.topnav-home:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
 
 /* ─── Floating action button ───────────────────────────────────────
    Sits bottom-right on desktop. On mobile it lifts above the bottom tab
