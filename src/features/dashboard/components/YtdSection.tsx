@@ -151,10 +151,9 @@ export function YtdSection({
 
       {/* ── 5 KPI stat cards ── */}
       <div
+        className="kpi-grid-legacy"
         style={{
-          display: 'grid',
           gridTemplateColumns: 'repeat(5, 1fr)',
-          borderBottom: '1px solid var(--line)',
         }}
       >
         {(
@@ -196,8 +195,7 @@ export function YtdSection({
                 projectedFYIncome > 0
                   ? `${projectedFYSavings >= 0 ? '+' : ''}${formatCurrency(projectedFYSavings)}`
                   : '—',
-              sub:
-                projectedFYSavingsRate !== null ? `${projectedFYSavingsRate}% of income` : null,
+              sub: projectedFYSavingsRate !== null ? `${projectedFYSavingsRate}% of income` : null,
             },
           ] as { label: string; color: string; value: string; sub: string | null }[]
         ).map(({ label, color, value, sub }, i, arr) => (

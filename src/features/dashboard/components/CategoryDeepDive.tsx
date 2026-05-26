@@ -175,11 +175,9 @@ export function CategoryDeepDive({
         <>
           {/* KPI strip */}
           <div
+            className="kpi-grid-legacy"
             style={{
-              display: 'grid',
               gridTemplateColumns: `repeat(${allocated > 0 ? 4 : 3}, 1fr)`,
-              borderTop: '1px solid var(--line)',
-              borderBottom: '1px solid var(--line)',
               marginBottom: 24,
             }}
           >
@@ -302,8 +300,8 @@ export function CategoryDeepDive({
 
           {/* Two-column body */}
           <div
+            className="two-col-body"
             style={{
-              display: 'grid',
               gridTemplateColumns: '1fr 1.7fr',
               gap: 32,
               alignItems: 'start',
@@ -323,17 +321,18 @@ export function CategoryDeepDive({
                         justifyContent: 'space-between',
                         alignItems: 'baseline',
                         marginBottom: 5,
+                        gap: 10,
+                        minWidth: 0,
                       }}
                     >
                       <span
+                        className="merchant-line"
                         style={{
                           fontSize: 13,
                           color: 'var(--ink)',
                           fontWeight: 500,
-                          overflow: 'hidden',
-                          whiteSpace: 'nowrap',
-                          textOverflow: 'ellipsis',
-                          maxWidth: '75%',
+                          flex: 1,
+                          minWidth: 0,
                         }}
                       >
                         {m.name}
@@ -402,12 +401,12 @@ export function CategoryDeepDive({
                         {t.txn_date.split('T')[0].slice(5).replace('-', '/')}
                       </span>
                       <span
+                        className="merchant-line"
                         style={{
                           fontSize: 13,
                           color: 'var(--ink)',
-                          overflow: 'hidden',
-                          whiteSpace: 'nowrap',
-                          textOverflow: 'ellipsis',
+                          flex: 1,
+                          minWidth: 0,
                         }}
                       >
                         {t.description}
