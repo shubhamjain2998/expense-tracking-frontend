@@ -13,6 +13,7 @@ import type { SortCol, SortDir, UnifiedTxn } from '../types'
 import { EditPanel } from './EditPanel'
 import { ProcessPanel } from './ProcessPanel'
 import { TransactionRow } from './TransactionRow'
+import { TransactionRowMobile } from './TransactionRowMobile'
 import { TransactionsTableHead } from './TransactionsTableHead'
 import { TxnSidePanel } from './TxnSidePanel'
 
@@ -105,7 +106,42 @@ export function TransactionsList({
       ) : (
         <div className="flex min-h-0">
           <div className="min-w-0 flex-1 overflow-x-auto">
-            <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse' }}>
+            {/* Mobile card list — replaces the table below 767px */}
+            <div className="txn-list-mobile list mt-2 md:hidden">
+              {sorted.length === 0 ? (
+                <div className="px-4 py-10 text-center text-[12.5px] text-[var(--ink-3)]">
+                  No transactions match your filters.
+                </div>
+              ) : (
+                sorted.map((txn) => {
+                  const isSelected = selectedUid === txn.uid
+                  const isDeleted = txn.kind === 'deleted'
+                  return (
+                    <TransactionRowMobile
+                      key={`m-${txn.uid}`}
+                      txn={txn}
+                      isSelected={isSelected}
+                      onTap={() => {
+                        if (isDeleted) return
+                        if (txn.kind === 'pending') {
+                          setSelectedUid(isSelected ? null : txn.uid)
+                          setEditingTxn(null)
+                        } else if (txn.processedOriginal) {
+                          setEditingTxn(
+                            editingTxn?.id === txn.processedId ? null : txn.processedOriginal
+                          )
+                          setSelectedUid(txn.uid)
+                        }
+                      }}
+                    />
+                  )
+                })
+              )}
+            </div>
+            <table
+              className="txn-table hidden md:table"
+              style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse' }}
+            >
               <colgroup>
                 <col className="txn-col-check" style={{ width: 36 }} />
                 <col className="txn-col-drag" style={{ width: 32 }} />
