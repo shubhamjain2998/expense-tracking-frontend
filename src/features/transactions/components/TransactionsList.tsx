@@ -138,10 +138,7 @@ export function TransactionsList({
                 })
               )}
             </div>
-            <table
-              className="txn-table hidden md:table"
-              style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse' }}
-            >
+            <table className="tbl txn-table hidden md:table" style={{ tableLayout: 'fixed' }}>
               <colgroup>
                 <col className="txn-col-check" style={{ width: 36 }} />
                 <col className="txn-col-drag" style={{ width: 32 }} />

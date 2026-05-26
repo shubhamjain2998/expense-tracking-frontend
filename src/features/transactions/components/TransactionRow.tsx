@@ -68,25 +68,13 @@ export function TransactionRow({
       }}
       onDragEnd={onDragEnd}
       onClick={onRowClick}
+      className={isSelected ? 'row sel' : 'row'}
       style={{
-        borderBottom: '1px solid var(--line)',
-        background: isSelected ? 'var(--accent-soft)' : 'transparent',
         opacity: isDragging || isDeleted ? 0.4 : 1,
         cursor: isDeleted ? 'default' : 'pointer',
-        transition: 'background 0.08s',
       }}
-      onMouseEnter={(e) => {
-        onMouseEnter()
-        if (!isSelected && !isDeleted)
-          (e.currentTarget as HTMLElement).style.background = 'var(--surface-2)'
-      }}
-      onMouseLeave={(e) => {
-        onMouseLeave()
-        if (!isSelected)
-          (e.currentTarget as HTMLElement).style.background = isSelected
-            ? 'var(--accent-soft)'
-            : 'transparent'
-      }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       {/* Checkbox */}
       <td
