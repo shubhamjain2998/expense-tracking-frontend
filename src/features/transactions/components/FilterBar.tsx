@@ -63,45 +63,21 @@ export function FilterBar({
         />
       </div>
 
-      {/* Status tabs — horizontal scroll on mobile so all five fit */}
-      <div
-        className="flex max-w-full items-center overflow-x-auto"
-        style={{
-          border: '1px solid var(--line-strong)',
-          borderRadius: 'var(--radius)',
-        }}
-      >
-        {(['all', 'pending', 'income', 'processed', 'split'] as StatusFilter[]).map((f, i, arr) => (
+      {/* Status tabs — underline-style, horizontal scroll on mobile */}
+      <div className="seg tabs max-w-full overflow-x-auto">
+        {(['all', 'pending', 'income', 'processed', 'split'] as StatusFilter[]).map((f) => (
           <button
             key={f}
             onClick={() => onStatusFilter(f)}
-            className="flex items-center gap-1.5"
-            style={{
-              height: 30,
-              padding: '0 11px',
-              fontSize: 12.5,
-              fontWeight: 500,
-              background: statusFilter === f ? 'var(--ink)' : 'transparent',
-              color: statusFilter === f ? 'var(--bg)' : 'var(--ink-3)',
-              border: 'none',
-              cursor: 'pointer',
-              borderRight: i < arr.length - 1 ? '1px solid var(--line)' : 'none',
-              transition: 'background 0.1s, color 0.1s',
-              textTransform: 'capitalize',
-            }}
+            className={`capitalize ${statusFilter === f ? 'on' : ''}`}
           >
             {f}
             {f === 'pending' && pendingCount > 0 && (
               <span
+                className="ml-1.5 rounded-[4px] px-1.5 text-[10px] leading-[1.4] font-bold"
                 style={{
-                  background:
-                    statusFilter === 'pending' ? 'rgba(255,255,255,0.18)' : 'var(--warn-soft)',
-                  color: statusFilter === 'pending' ? 'inherit' : 'var(--warn)',
-                  borderRadius: 4,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  padding: '1px 5px',
-                  lineHeight: 1.4,
+                  background: 'var(--warn-soft)',
+                  color: 'var(--warn)',
                 }}
               >
                 {pendingCount}
@@ -109,15 +85,10 @@ export function FilterBar({
             )}
             {f === 'income' && incomeCount > 0 && (
               <span
+                className="ml-1.5 rounded-[4px] px-1.5 text-[10px] leading-[1.4] font-bold"
                 style={{
-                  background:
-                    statusFilter === 'income' ? 'rgba(255,255,255,0.18)' : 'var(--pos-soft)',
-                  color: statusFilter === 'income' ? 'inherit' : 'var(--pos)',
-                  borderRadius: 4,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  padding: '1px 5px',
-                  lineHeight: 1.4,
+                  background: 'var(--pos-soft)',
+                  color: 'var(--pos)',
                 }}
               >
                 {incomeCount}

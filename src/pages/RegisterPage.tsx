@@ -94,14 +94,9 @@ export function RegisterPage() {
         </div>
 
         <div className="card">
-          <p className="card-eyebrow">Get started</p>
-          <h1
-            className="text-[22px] font-semibold"
-            style={{ color: 'var(--ink)', letterSpacing: '-0.02em' }}
-          >
-            Create account
-          </h1>
-          <p className="mt-1 text-[13px]" style={{ color: 'var(--ink-3)' }}>
+          <p className="eyebrow">Get started</p>
+          <h1 className="display mt-2 text-[28px] text-[var(--ink)]">Create account</h1>
+          <p className="mt-2 text-[13px] text-[var(--ink-3)]">
             Start tracking your expenses today.
           </p>
 

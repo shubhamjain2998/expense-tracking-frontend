@@ -26,28 +26,14 @@ export function TransactionsHeader({
   onUpload,
 }: TransactionsHeaderProps) {
   return (
-    <div
-      className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4"
-      style={{ paddingBottom: 20 }}
-    >
+    <div className="flex flex-col gap-3 pb-5 md:flex-row md:items-end md:justify-between md:gap-4">
       <div>
-        <p className="card-eyebrow mb-1">Transactions</p>
-        <h1
-          className="flex flex-wrap items-baseline gap-2 text-[22px] md:gap-3 md:text-[26px]"
-          style={{
-            fontWeight: 600,
-            letterSpacing: '-0.025em',
-            color: 'var(--ink)',
-            lineHeight: 1.15,
-          }}
-        >
+        <p className="eyebrow mb-2">Transactions</p>
+        <h1 className="display num flex flex-wrap items-baseline gap-3 text-[28px] text-[var(--ink)] md:text-[36px]">
           <span>{allTxnsCount} transactions</span>
           <span
-            className="num text-[15px] md:text-[17px]"
-            style={{
-              fontWeight: 500,
-              color: total < 0 ? 'var(--pos)' : 'var(--ink-3)',
-            }}
+            className="text-[16px] font-medium md:text-[18px]"
+            style={{ color: total < 0 ? 'var(--pos)' : 'var(--ink-3)' }}
             title={total < 0 ? 'Net income this month' : 'Net spend this month'}
           >
             {total < 0 ? '+' : ''}
@@ -58,81 +44,29 @@ export function TransactionsHeader({
 
       <div className="flex flex-wrap items-center gap-2">
         {/* Month nav */}
-        <div
-          className="flex items-center"
-          style={{
-            border: '1px solid var(--line-strong)',
-            borderRadius: 'var(--radius)',
-            overflow: 'hidden',
-          }}
-        >
+        <div className="ym-nav">
           <button
             onClick={onPrevMonth}
-            className="btn ghost"
-            style={{
-              borderRadius: 0,
-              height: 30,
-              width: 30,
-              padding: 0,
-              borderRight: '1px solid var(--line)',
-            }}
+            className="btn ghost ym-nav-btn"
+            aria-label="Previous month"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-              chevron_left
-            </span>
+            <span className="material-symbols-outlined text-[16px]">chevron_left</span>
           </button>
-          <span
-            className="num"
-            style={{
-              padding: '0 14px',
-              fontSize: 12.5,
-              fontWeight: 600,
-              color: 'var(--ink)',
-              minWidth: 80,
-              textAlign: 'center',
-              letterSpacing: '-0.01em',
-            }}
-          >
+          <span className="ym-nav-label num">
             {monthLongLabel(month, mode).slice(0, 3)} {formatYearLabel(year, mode)}
           </span>
-          <button
-            onClick={onNextMonth}
-            className="btn ghost"
-            style={{
-              borderRadius: 0,
-              height: 30,
-              width: 30,
-              padding: 0,
-              borderLeft: '1px solid var(--line)',
-            }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-              chevron_right
-            </span>
+          <button onClick={onNextMonth} className="btn ghost ym-nav-btn" aria-label="Next month">
+            <span className="material-symbols-outlined text-[16px]">chevron_right</span>
           </button>
         </div>
 
-        <button
-          onClick={onManualEntry}
-          className="btn"
-          style={{ gap: 5 }}
-          aria-label="Manual entry"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-            add
-          </span>
+        <button onClick={onManualEntry} className="btn gap-[5px]" aria-label="Manual entry">
+          <span className="material-symbols-outlined text-[14px]">add</span>
           <span className="desktop-only">Manual entry</span>
         </button>
 
-        <button
-          onClick={onUpload}
-          className="btn primary"
-          style={{ gap: 5 }}
-          aria-label="Upload statement"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-            upload
-          </span>
+        <button onClick={onUpload} className="btn primary gap-[5px]" aria-label="Upload statement">
+          <span className="material-symbols-outlined text-[14px]">upload</span>
           <span className="desktop-only">Upload</span>
         </button>
       </div>

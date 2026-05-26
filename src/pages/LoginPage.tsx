@@ -88,16 +88,9 @@ export function LoginPage() {
         </div>
 
         <div className="card">
-          <p className="card-eyebrow">Sign in</p>
-          <h1
-            className="text-[22px] font-semibold"
-            style={{ color: 'var(--ink)', letterSpacing: '-0.02em' }}
-          >
-            Welcome back
-          </h1>
-          <p className="mt-1 text-[13px]" style={{ color: 'var(--ink-3)' }}>
-            Sign in to your account.
-          </p>
+          <p className="eyebrow">Sign in</p>
+          <h1 className="display mt-2 text-[28px] text-[var(--ink)]">Welcome back</h1>
+          <p className="mt-2 text-[13px] text-[var(--ink-3)]">Sign in to your account.</p>
 
           <div className="mt-5">
             <GoogleSignInButton

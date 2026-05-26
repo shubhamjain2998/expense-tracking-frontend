@@ -43,124 +43,94 @@ export function DashboardHeader({
   pendingCount,
 }: DashboardHeaderProps) {
   return (
-    <header>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-end',
-          justifyContent: 'space-between',
-          gap: 16,
-          flexWrap: 'wrap',
-        }}
-      >
-        {/* Left: spend total + pace status line */}
-        <div>
-          <p className="eyebrow" style={{ marginBottom: 6 }}>
-            {`OVERVIEW · ${currentMonthLabel.toUpperCase()} ${displayYear}`}
-          </p>
+    <header className="flex flex-wrap items-end justify-between gap-4">
+      {/* Left: spend hero + pace status */}
+      <div>
+        <p className="eyebrow mb-3">
+          {`OVERVIEW · ${currentMonthLabel.toUpperCase()} ${displayYear}`}
+        </p>
 
-          {isLoading ? (
-            <Skeleton className="h-10 w-72" />
-          ) : (
-            <div className="flex flex-wrap items-baseline gap-2 md:gap-2.5">
-              <h1
-                className="num text-[32px] font-semibold md:text-[40px]"
-                style={{
-                  color: 'var(--ink)',
-                  letterSpacing: '-0.03em',
-                  lineHeight: 1,
-                  margin: 0,
-                }}
-              >
-                {formatCurrency(totalDebit)}
-              </h1>
-              {totalBudget > 0 && (
-                <span
-                  className="text-[18px] font-light md:text-[22px]"
-                  style={{
-                    color: 'var(--ink-3)',
-                    letterSpacing: '-0.01em',
-                  }}
-                >
-                  / {formatCurrency(totalBudget)}
-                </span>
-              )}
-            </div>
-          )}
-
-          {!isLoading && (
-            <p style={{ marginTop: 8, fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.4 }}>
-              Day {dayOfMonth} of {daysInMonth}
-              {overPaceAmount > 0 && totalBudget > 0 && (
-                <>
-                  {' '}
-                  ·{' '}
-                  <span style={{ color: 'var(--neg)', fontWeight: 500 }}>
-                    {formatCompact(overPaceAmount)} over pace
-                  </span>
-                </>
-              )}
-              {overPaceAmount < 0 && totalBudget > 0 && (
-                <>
-                  {' '}
-                  ·{' '}
-                  <span style={{ color: 'var(--pos)', fontWeight: 500 }}>
-                    {formatCompact(Math.abs(overPaceAmount))} under pace
-                  </span>
-                </>
-              )}
-              {pendingCount > 0 && (
-                <>
-                  {' '}
-                  ·{' '}
-                  <Link
-                    to="/transactions"
-                    style={{ color: 'var(--accent)', fontWeight: 500, textDecoration: 'none' }}
-                  >
-                    {pendingCount} pending categorization
-                  </Link>
-                </>
-              )}
-            </p>
-          )}
-        </div>
-
-        {/* Right: tag filter, month picker, upload shortcut */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          {tags.length > 0 && (
-            <select
-              value={selectedTagId}
-              onChange={(e) => onTagChange(e.target.value)}
-              className="input"
-              style={{ width: 'auto' }}
-              aria-label="Filter by tag"
+        {isLoading ? (
+          <Skeleton className="h-16 w-80" />
+        ) : (
+          <div className="flex flex-wrap items-baseline gap-3">
+            <h1
+              className="display num text-[var(--ink)]"
+              style={{ fontSize: 'clamp(48px, 7vw, 80px)', margin: 0 }}
             >
-              <option value="">All tags</option>
-              {tags.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          )}
-          <YearMonthSelector
-            year={selectorYear}
-            month={selectorMonth}
-            onYearChange={onYearChange}
-            onMonthChange={onMonthChange}
-          />
-          <Link
-            to="/upload"
-            className="btn primary"
-            style={{ gap: 5 }}
-            aria-label="Upload statement"
+              {formatCurrency(totalDebit)}
+            </h1>
+            {totalBudget > 0 && (
+              <span className="num text-[18px] font-normal text-[var(--ink-3)] md:text-[22px]">
+                / {formatCurrency(totalBudget)}
+              </span>
+            )}
+          </div>
+        )}
+
+        {!isLoading && <div className="ink-rule" aria-hidden />}
+
+        {!isLoading && (
+          <p className="mt-3 text-[13px] leading-[1.4] text-[var(--ink-3)]">
+            Day {dayOfMonth} of {daysInMonth}
+            {overPaceAmount > 0 && totalBudget > 0 && (
+              <>
+                {' · '}
+                <span className="font-medium text-[var(--neg)]">
+                  {formatCompact(overPaceAmount)} over pace
+                </span>
+              </>
+            )}
+            {overPaceAmount < 0 && totalBudget > 0 && (
+              <>
+                {' · '}
+                <span className="font-medium text-[var(--pos)]">
+                  {formatCompact(Math.abs(overPaceAmount))} under pace
+                </span>
+              </>
+            )}
+            {pendingCount > 0 && (
+              <>
+                {' · '}
+                <Link
+                  to="/transactions"
+                  className="border-b border-[color-mix(in_oklch,var(--accent)_30%,transparent)] pb-px font-medium text-[var(--accent)] no-underline hover:border-[var(--accent)]"
+                >
+                  {pendingCount} pending categorization
+                </Link>
+              </>
+            )}
+          </p>
+        )}
+      </div>
+
+      {/* Right: tag filter + month picker + upload */}
+      <div className="flex shrink-0 items-center gap-2">
+        {tags.length > 0 && (
+          <select
+            value={selectedTagId}
+            onChange={(e) => onTagChange(e.target.value)}
+            className="input w-auto"
+            aria-label="Filter by tag"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-              upload
-            </span>
-            <span className="desktop-only">Upload</span>
-          </Link>
-        </div>
+            <option value="">All tags</option>
+            {tags.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        )}
+        <YearMonthSelector
+          year={selectorYear}
+          month={selectorMonth}
+          onYearChange={onYearChange}
+          onMonthChange={onMonthChange}
+        />
+        <Link to="/upload" className="btn primary gap-[5px]" aria-label="Upload statement">
+          <span className="material-symbols-outlined text-[14px]">upload</span>
+          <span className="desktop-only">Upload</span>
+        </Link>
       </div>
     </header>
   )
