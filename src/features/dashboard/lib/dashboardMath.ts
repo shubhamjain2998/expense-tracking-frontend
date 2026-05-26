@@ -157,7 +157,9 @@ export function computeYtdExtras(params: {
 
   const projectedFYIncome =
     month > 0 && ytdIncomeTotal > 0 ? Math.round((ytdIncomeTotal / month) * 12) : 0
-  const projectedFYSavings = projectedFYIncome > 0 ? projectedFYIncome - projectedFY : 0
+  // Project savings even when income hasn't been recorded — the projected
+  // spend alone is a meaningful "deficit if income stays at zero" signal.
+  const projectedFYSavings = projectedFYIncome - projectedFY
   const projectedFYSavingsRate =
     projectedFYIncome > 0 ? Math.round((projectedFYSavings / projectedFYIncome) * 100) : null
 
