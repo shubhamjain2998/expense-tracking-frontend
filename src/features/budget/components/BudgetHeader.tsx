@@ -27,81 +27,71 @@ export function BudgetHeader({
   onAddClick: () => void
 }) {
   return (
-    <header className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+    <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div>
-        <p className="card-eyebrow">Budget · {formatYearLabel(year, mode)}</p>
-        <h1
-          className="text-[22px] font-semibold"
-          style={{ color: 'var(--ink)', letterSpacing: '-0.02em' }}
-        >
-          Annual allocation
-        </h1>
-        {!isLoading && hasEntries && (
-          <p className="mt-1 text-[13px]" style={{ color: 'var(--ink-3)' }}>
-            <span className="num">{formatCurrency(totalYTDSpent)}</span> spent YTD ·{' '}
-            <span className="num">{formatCurrency(totalAnnual)}</span> annual budget
-            {paceStatus !== null && (
-              <>
-                {' '}
-                ·{' '}
-                <span
-                  style={{
-                    fontWeight: 500,
-                    color:
-                      paceStatus === 'under'
-                        ? 'var(--pos)'
-                        : paceStatus === 'over'
-                          ? 'var(--neg)'
-                          : 'var(--ink-3)',
-                  }}
-                >
-                  {paceStatus === 'under'
-                    ? 'under pace'
-                    : paceStatus === 'over'
-                      ? 'over pace'
-                      : 'on pace'}
-                </span>
-              </>
-            )}
-          </p>
+        <p className="eyebrow mb-2">Budget · {formatYearLabel(year, mode)}</p>
+        {!isLoading && hasEntries ? (
+          <>
+            <h1
+              className="display num text-[var(--ink)]"
+              style={{ fontSize: 'clamp(40px, 5.5vw, 64px)' }}
+            >
+              {formatCurrency(totalYTDSpent)}
+            </h1>
+            <p className="mt-3 text-[13px] text-[var(--ink-3)]">
+              of <span className="num">{formatCurrency(totalAnnual)}</span> annual budget
+              {paceStatus !== null && (
+                <>
+                  {' · '}
+                  <span
+                    className="font-medium"
+                    style={{
+                      color:
+                        paceStatus === 'under'
+                          ? 'var(--pos)'
+                          : paceStatus === 'over'
+                            ? 'var(--neg)'
+                            : 'var(--ink-3)',
+                    }}
+                  >
+                    {paceStatus === 'under'
+                      ? 'under pace'
+                      : paceStatus === 'over'
+                        ? 'over pace'
+                        : 'on pace'}
+                  </span>
+                </>
+              )}
+            </p>
+          </>
+        ) : (
+          <h1
+            className="display text-[var(--ink)]"
+            style={{ fontSize: 'clamp(32px, 4.5vw, 48px)' }}
+          >
+            Annual allocation
+          </h1>
         )}
       </div>
 
       <div className="flex flex-shrink-0 items-center gap-3">
-        <div
-          className="flex items-center gap-1"
-          style={{
-            background: 'var(--surface-2)',
-            border: '1px solid var(--line)',
-            borderRadius: 'var(--radius)',
-            padding: '3px 6px',
-          }}
-        >
+        <div className="ym-nav">
           <button
             onClick={() => onNavigateMonth(-1)}
-            className="btn ghost icon sm"
+            className="btn ghost ym-nav-btn"
             aria-label="Previous month"
-            style={{ padding: '2px 4px' }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-              chevron_left
-            </span>
+            <span className="material-symbols-outlined text-[14px]">chevron_left</span>
           </button>
-          <span
-            className="num text-[12px] font-semibold"
-            style={{ color: 'var(--ink)', minWidth: 100, textAlign: 'center' }}
-          >
+          <span className="ym-nav-label num" style={{ minWidth: 110 }}>
             {monthLongLabel(month, mode)} {formatYearLabel(year, mode)}
           </span>
           <button
             onClick={() => onNavigateMonth(1)}
-            className="btn ghost icon sm"
+            className="btn ghost ym-nav-btn"
             aria-label="Next month"
-            style={{ padding: '2px 4px' }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-              chevron_right
-            </span>
+            <span className="material-symbols-outlined text-[14px]">chevron_right</span>
           </button>
         </div>
 
