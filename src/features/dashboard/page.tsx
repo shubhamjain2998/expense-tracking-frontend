@@ -53,7 +53,7 @@ export function DashboardPage() {
     )
   }
   const [includeSettled, setIncludeSettled] = useState(false)
-  const [trendMode, setTrendMode] = useState<'stacked' | 'total' | 'line'>('total')
+  const [trendMode, setTrendMode] = useState<'stacked' | 'total'>('stacked')
 
   // ── Onboarding (welcome modal + Getting Started checklist) ─────────────────
   // Initial state is derived from localStorage to avoid the modal/checklist
@@ -103,10 +103,11 @@ export function DashboardPage() {
   // ── Render ──────────────────────────────────────────────────────────────────────────────────
   const sections = [
     { id: 'sec-overview', label: 'Overview' },
+    { id: 'sec-ytd', label: 'YTD' },
+    { id: 'sec-trend', label: 'Trend' },
     { id: 'sec-budget', label: 'Budget' },
     { id: 'sec-categories', label: 'Categories' },
-    { id: 'sec-trend', label: 'Trend' },
-    { id: 'sec-ytd', label: 'YTD' },
+    { id: 'sec-deepdive', label: 'Deep dive' },
     { id: 'sec-splits', label: 'Splits' },
   ]
 
@@ -140,60 +141,6 @@ export function DashboardPage() {
           incomeByCategory={data.incomeByCategory}
           isLoading={data.allTxnLoading}
         />
-
-        <IncomeFlowAndTrend
-          totalIncome={data.totalIncome}
-          totalExpenses={data.totalDebit}
-          incomeTrendData={data.incomeTrendData}
-          isLoading={data.allTxnLoading || data.incomeQueriesLoading}
-          isDark={isDark}
-        />
-      </section>
-
-      <section id="sec-budget">
-        <BudgetPaceBars
-          budgetRows={data.budgetRows}
-          paceAt={paceAt}
-          dayOfMonth={dayOfMonth}
-          isLoading={data.summaryLoading}
-        />
-      </section>
-
-      <section id="sec-categories" className="space-y-4">
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-stretch">
-          <CategoryDonutChart
-            data={data.categoryChartData}
-            totalDebit={data.totalDebit}
-            currentMonthLabel={currentMonthLabel ?? ''}
-            year={calYear}
-            isLoading={data.summaryLoading}
-          />
-          <CategoryTransactionStats
-            categoryStats={data.categoryStats}
-            isLoading={data.allTxnLoading}
-          />
-        </div>
-
-        <CategoryDeepDive
-          allTransactions={data.allTransactions}
-          summaryRows={data.summaryRows}
-          daysInMonth={daysInMonth}
-          currentMonthLabel={currentMonthLabel ?? ''}
-          year={calYear}
-          isLoading={data.allTxnLoading}
-          isDark={isDark}
-        />
-      </section>
-
-      <section id="sec-trend">
-        <SixMonthTrend
-          stackedTrendData={data.stackedTrendData}
-          stackCategories={data.stackCategories}
-          trendMode={trendMode}
-          onTrendModeChange={setTrendMode}
-          isLoading={data.trendQueriesLoading}
-          isDark={isDark}
-        />
       </section>
 
       <section id="sec-ytd">
@@ -208,6 +155,61 @@ export function DashboardPage() {
           ytdLineData={data.ytdLineData}
           ytdComputed={data.ytdComputed}
           isLoading={data.ytdLoading || data.yearlyTrendLoading}
+        />
+      </section>
+
+      <section id="sec-trend" className="space-y-4">
+        <IncomeFlowAndTrend
+          totalIncome={data.totalIncome}
+          totalExpenses={data.totalDebit}
+          incomeTrendData={data.incomeTrendData}
+          isLoading={data.allTxnLoading || data.incomeQueriesLoading}
+          isDark={isDark}
+        />
+        <SixMonthTrend
+          stackedTrendData={data.stackedTrendData}
+          stackCategories={data.stackCategories}
+          trendMode={trendMode}
+          onTrendModeChange={setTrendMode}
+          isLoading={data.trendQueriesLoading}
+          isDark={isDark}
+        />
+      </section>
+
+      <section id="sec-budget">
+        <BudgetPaceBars
+          budgetRows={data.budgetRows}
+          paceAt={paceAt}
+          dayOfMonth={dayOfMonth}
+          isLoading={data.summaryLoading}
+        />
+      </section>
+
+      <section id="sec-categories">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-stretch">
+          <CategoryDonutChart
+            data={data.categoryChartData}
+            totalDebit={data.totalDebit}
+            currentMonthLabel={currentMonthLabel ?? ''}
+            year={calYear}
+            isLoading={data.summaryLoading}
+          />
+          <CategoryTransactionStats
+            categoryStats={data.categoryStats}
+            isLoading={data.allTxnLoading}
+          />
+        </div>
+      </section>
+
+      <section id="sec-deepdive">
+        <CategoryDeepDive
+          allTransactions={data.allTransactions}
+          summaryRows={data.summaryRows}
+          daysInMonth={daysInMonth}
+          currentMonthLabel={currentMonthLabel ?? ''}
+          year={calYear}
+          isLoading={data.allTxnLoading}
+          isDark={isDark}
         />
       </section>
 

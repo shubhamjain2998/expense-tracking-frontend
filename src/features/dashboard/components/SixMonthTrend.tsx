@@ -3,8 +3,6 @@ import {
   BarChart,
   CartesianGrid,
   LabelList,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -16,7 +14,7 @@ import { formatCompact, formatCurrency } from '@/lib/format'
 
 import { PIE_COLORS, TOOLTIP_STYLE } from '../lib/chartTheme'
 
-type TrendMode = 'total' | 'stacked' | 'line'
+export type TrendMode = 'stacked' | 'total'
 
 interface SixMonthTrendProps {
   stackedTrendData: Record<string, number | string>[]
@@ -25,6 +23,11 @@ interface SixMonthTrendProps {
   onTrendModeChange: (mode: TrendMode) => void
   isLoading: boolean
   isDark: boolean
+}
+
+const SUBTITLES: Record<TrendMode, string> = {
+  stacked: 'Monthly spend by category',
+  total: 'Total spend per month',
 }
 
 export function SixMonthTrend({
@@ -46,27 +49,21 @@ export function SixMonthTrend({
       <div className="section-head">
         <div>
           <div className="title">Six-month trend</div>
-          <div className="sub">Monthly spend by category</div>
+          <div className="sub">{SUBTITLES[trendMode]}</div>
         </div>
         <div className="right">
           <div className="seg">
-            <button
-              className={trendMode === 'total' ? 'on' : ''}
-              onClick={() => onTrendModeChange('total')}
-            >
-              Total
-            </button>
-            <button
-              className={trendMode === 'line' ? 'on' : ''}
-              onClick={() => onTrendModeChange('line')}
-            >
-              Line
-            </button>
             <button
               className={trendMode === 'stacked' ? 'on' : ''}
               onClick={() => onTrendModeChange('stacked')}
             >
               Stacked
+            </button>
+            <button
+              className={trendMode === 'total' ? 'on' : ''}
+              onClick={() => onTrendModeChange('total')}
+            >
+              Total
             </button>
           </div>
         </div>
@@ -75,39 +72,6 @@ export function SixMonthTrend({
       <section className="card">
         {isLoading ? (
           <Skeleton className="h-56 w-full" />
-        ) : trendMode === 'line' ? (
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={stackedTrendData} margin={{ top: 24, right: 16, left: 8, bottom: 0 }}>
-              <CartesianGrid vertical={false} stroke={gridStroke} strokeDasharray="4 4" />
-              <XAxis
-                dataKey="month"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 11, fill: tickColor }}
-                padding={{ left: 8, right: 8 }}
-              />
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 10, fill: tickColor }}
-                tickFormatter={formatCompact}
-                width={50}
-              />
-              <Tooltip
-                cursor={{ stroke: tickColor, strokeDasharray: '3 4', strokeOpacity: 0.5 }}
-                contentStyle={TOOLTIP_STYLE}
-                formatter={(v, name) => [formatCurrency(Number(v)), labelFor(String(name))]}
-              />
-              <Line
-                type="monotone"
-                dataKey="_total"
-                stroke="var(--accent)"
-                strokeWidth={2.5}
-                dot={{ r: 4, strokeWidth: 2, fill: 'var(--surface)', stroke: 'var(--accent)' }}
-                activeDot={{ r: 6 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
         ) : (
           <ResponsiveContainer width="100%" height={220}>
             <BarChart
