@@ -1196,6 +1196,16 @@ select:disabled,
     grid-template-columns: 1fr !important;
     gap: 24px !important;
   }
+  /* Children may have an inline border-right (intra-column divider) that
+     reads as a stray edge once stacked. Reset it and convert to a bottom
+     divider between rows instead. */
+  .two-col-body > div {
+    border-right: none !important;
+  }
+  .two-col-body > div:not(:last-child) {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 20px;
+  }
 }
 
 /* ─── Budget pace list (BudgetPaceBars) — stack the row on mobile so
