@@ -21,105 +21,77 @@ export function CategoryDonutChart({
   year,
   isLoading,
 }: CategoryDonutChartProps) {
+  const total = data.reduce((s, d) => s + d.value, 0) || totalDebit
+
   return (
-    <section className="card">
-      <div className="card-head">
+    <div className="flex h-full flex-col">
+      <div className="section-head">
         <div>
-          <p className="card-title">
-            Category spending · {currentMonthLabel} {year}
-          </p>
-          <p className="card-sub">Share of this month's spend after splits</p>
+          <div className="title">By category</div>
+          <div className="sub">
+            Where {currentMonthLabel} {year} went
+          </div>
         </div>
-        <span className="num" style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>
-          {formatCompact(totalDebit)}
-        </span>
       </div>
 
-      {isLoading ? (
-        <Skeleton className="h-52 w-full" />
-      ) : data.length === 0 ? (
-        <EmptyState icon="donut_large" title="No spending data" />
-      ) : (
-        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-          {/* Donut */}
-          <div style={{ flex: '0 0 180px', height: 180 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={data}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={80}
-                  paddingAngle={2}
-                >
-                  {data.map((_, i) => (
-                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={TOOLTIP_STYLE}
-                  formatter={(v) => [formatCurrency(Number(v))]}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Inline legend — cap at 7 items to avoid overflow */}
-          <div
-            style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 5,
-              overflow: 'hidden',
-            }}
-          >
-            {data.slice(0, 7).map((d, i) => (
-              <div
-                key={d.name}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 8,
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
-                  <span
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: 2,
-                      background: PIE_COLORS[i % PIE_COLORS.length],
-                      flexShrink: 0,
-                    }}
-                  />
-                  <span
-                    style={{
-                      fontSize: 12,
-                      color: 'var(--ink)',
-                      overflow: 'hidden',
-                      whiteSpace: 'nowrap',
-                      textOverflow: 'ellipsis',
-                    }}
+      <section className="card flex-1">
+        {isLoading ? (
+          <Skeleton className="h-52 w-full" />
+        ) : data.length === 0 ? (
+          <EmptyState icon="donut_large" title="No spending data" />
+        ) : (
+          <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Donut + center overlay */}
+            <div style={{ flex: '0 0 180px', position: 'relative', width: 180, height: 180 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={data}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={56}
+                    outerRadius={82}
+                    paddingAngle={2}
+                    stroke="none"
                   >
-                    {d.name}
-                  </span>
-                </div>
-                <span
-                  className="num"
-                  style={{ fontSize: 12, color: 'var(--ink-2)', flexShrink: 0 }}
-                >
-                  {formatCompact(d.value)}
-                </span>
+                    {data.map((_, i) => (
+                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={TOOLTIP_STYLE}
+                    formatter={(v) => [formatCurrency(Number(v))]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="donut-center">
+                <div className="lbl">Total</div>
+                <div className="val">{formatCompact(total)}</div>
               </div>
-            ))}
+            </div>
+
+            {/* 4-col legend: swatch | name | pct | amount */}
+            <div className="donut-legend">
+              {data.slice(0, 7).map((d, i) => {
+                const pct = total > 0 ? Math.round((d.value / total) * 100) : 0
+                return (
+                  <div key={d.name} className="legend-row">
+                    <span
+                      className="legend-swatch"
+                      style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
+                    />
+                    <span className="legend-name">{d.name}</span>
+                    <span className="legend-pct">{pct}%</span>
+                    <span className="legend-amt">{formatCompact(d.value)}</span>
+                  </div>
+                )
+              })}
+            </div>
           </div>
-        </div>
-      )}
-    </section>
+        )}
+      </section>
+    </div>
   )
 }
