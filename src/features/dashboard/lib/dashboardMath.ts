@@ -88,52 +88,62 @@ export function computeIncomeTrendData(
   })
 }
 
+/**
+ * Build the YTD cumulative-spend series for the chart.
+ *
+ * Returns 12 points (one per period month). `actual` is filled through
+ * `monthsElapsed` only; `projected` is filled from `monthsElapsed` to the
+ * end of the year via simple linear extrapolation from the YTD spend rate.
+ * The projected segment overlaps the last actual point by one position so
+ * the two lines connect visually.
+ *
+ * `expected` (linear budget pace) is no longer surfaced — the UI uses the
+ * budget-pace KPI chip and a single budget reference line instead.
+ */
 export function computeYtdLineData(
   yearlyTrendData: TrendDataPoint[],
   annualBudget: number,
-  month: number,
+  monthsElapsed: number,
   mode: PeriodMode
 ): YtdDataPoint[] {
-  const byMonth = new Map<number, number>()
+  const byPeriodMonth = new Map<number, number>()
   for (const dp of yearlyTrendData) {
-    // dp.month is always a calendar month (1=Jan … 12=Dec) per the backend contract.
-    // Convert to period month so the 1-12 loop below aligns correctly in FY mode
-    // (where loop index 1 = April, 2 = May, …).
+    // dp.month is always a calendar month (1=Jan … 12=Dec). Convert to period
+    // month so loop index 1 = April in FY mode, 1 = January in calendar mode.
     const pm = mode === 'fy' ? ((dp.month - 4 + 12) % 12) + 1 : dp.month
-    byMonth.set(pm, Number(dp.actual_amount))
+    byPeriodMonth.set(pm, Number(dp.actual_amount))
   }
-  const fyIndex = month
 
-  return Array.from({ length: 12 }, (_, i) => i + 1).reduce<{
-    points: YtdDataPoint[]
-    cumulative: number
-  }>(
-    (acc, m, i) => {
-      const amt = byMonth.get(m)
-      const hasData = amt !== undefined
-      const cumulative = hasData ? acc.cumulative + (amt as number) : acc.cumulative
-      const expected = annualBudget > 0 ? Math.round(((i + 1) / 12) * annualBudget) : null
-      const projected =
-        i >= fyIndex - 1 && cumulative > 0
-          ? Math.round(
-              cumulative + Math.max(0, i - fyIndex + 1) * (cumulative / Math.max(1, fyIndex))
-            )
-          : null
-      return {
-        cumulative,
-        points: [
-          ...acc.points,
-          {
-            month: monthShortLabel(m, mode).charAt(0),
-            actual: hasData ? cumulative : null,
-            expected,
-            projected,
-          },
-        ],
-      }
-    },
-    { points: [], cumulative: 0 }
-  ).points
+  let cumulativeAtElapsed = 0
+  for (let pm = 1; pm <= monthsElapsed; pm++) {
+    cumulativeAtElapsed += byPeriodMonth.get(pm) ?? 0
+  }
+  const avgMonthly = monthsElapsed > 0 ? cumulativeAtElapsed / monthsElapsed : 0
+
+  let cumulative = 0
+  return Array.from({ length: 12 }, (_, i) => {
+    const pm = i + 1
+    const isElapsed = pm <= monthsElapsed
+
+    if (isElapsed) {
+      cumulative += byPeriodMonth.get(pm) ?? 0
+    }
+
+    const actual = isElapsed ? cumulative : null
+    const expected = annualBudget > 0 ? Math.round((annualBudget * pm) / 12) : null
+    // Projected segment starts at the last actual point so the lines connect.
+    const projected =
+      monthsElapsed > 0 && pm >= monthsElapsed
+        ? Math.round(cumulativeAtElapsed + (pm - monthsElapsed) * avgMonthly)
+        : null
+
+    return {
+      month: monthShortLabel(pm, mode),
+      actual,
+      expected,
+      projected,
+    }
+  })
 }
 
 export function computeYtdExtras(params: {
