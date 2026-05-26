@@ -23,6 +23,38 @@
   line-height: 1;
 }
 
+/* Hero currency amount — renders ₹ as a small superscript and the decimal
+   fraction as a smaller superscript-style fragment, so the big number reads
+   as one composed numeral instead of "huge ₹ + huge 0". Pair with
+   <span class="currency"> and <span class="decimals">. */
+.hero-amount-display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(48px, 7vw, 80px);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  display: inline-block;
+  margin: 0;
+}
+.hero-amount-display .currency {
+  font-size: 0.55em;
+  font-weight: 500;
+  color: var(--ink-3);
+  margin-right: 0.1em;
+  vertical-align: 0.14em;
+  letter-spacing: 0;
+}
+.hero-amount-display .decimals {
+  font-size: 0.42em;
+  color: var(--ink-3);
+  font-weight: 500;
+  margin-left: 0.06em;
+  vertical-align: 0.28em;
+  letter-spacing: -0.02em;
+}
+
 /* Amount helpers — never color expenses red */
 .n-pos {
   color: var(--pos);
@@ -875,6 +907,83 @@ select:disabled,
   .dashboard-page section[id^='sec-'] {
     scroll-margin-top: 56px;
   }
+}
+
+/* ─── Sidebar nav item — replaces the inline styles in Sidebar.tsx
+   for the nav links specifically. Active state gets a 3px accent bar
+   on the left edge (the mock pattern). */
+.side-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  color: var(--ink-3);
+  font-size: 13px;
+  font-weight: 400;
+  text-decoration: none;
+  margin-bottom: 1px;
+  position: relative;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+.side-nav-item:hover {
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+.side-nav-item.active {
+  background: var(--surface-2);
+  color: var(--ink);
+  font-weight: 500;
+}
+.side-nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: var(--accent);
+}
+.side-nav-badge {
+  background: var(--accent);
+  color: oklch(0.99 0 0);
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  line-height: 1.4;
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+}
+
+/* ─── Dashboard-scoped section title polish ──────────────────────────
+   Dashboard cards have editorial section heads. Bump .card-title to the
+   display font on dashboard ONLY — Settings cards keep their compact
+   label-style titles. Card sub-line widens slightly for breathing room. */
+.dashboard-page .card-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  line-height: 1.15;
+}
+.dashboard-page .card-sub {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  margin-top: 4px;
+}
+.dashboard-page .card-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+/* Tighten the hero block — pace status line sits closer to the ink-rule. */
+.dashboard-page .ink-rule {
+  margin-top: 18px;
+  width: 72px;
 }
 
 /* ─── Section pill bar (mobile in-page nav) ─────────────────────── */

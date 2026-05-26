@@ -4,7 +4,7 @@ import { Icon } from '@/components/ui/Icon'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { YearMonthSelector } from '@/components/ui/YearMonthSelector'
 import { useCountUp } from '@/hooks/useCountUp'
-import { formatCompact, formatCurrency } from '@/lib/format'
+import { formatCompact, formatCurrency, formatCurrencyParts } from '@/lib/format'
 import type { Tag } from '@/types/settings'
 
 interface DashboardHeaderProps {
@@ -58,11 +58,17 @@ export function DashboardHeader({
           <Skeleton className="h-16 w-80" />
         ) : (
           <div className="flex flex-wrap items-baseline gap-3">
-            <h1
-              className="display num text-[var(--ink)]"
-              style={{ fontSize: 'clamp(48px, 7vw, 80px)', margin: 0 }}
-            >
-              {formatCurrency(animatedTotal)}
+            <h1 className="hero-amount-display num">
+              {(() => {
+                const p = formatCurrencyParts(animatedTotal, { fractionDigits: 2 })
+                return (
+                  <>
+                    <span className="currency">{p.symbol}</span>
+                    {p.integer}
+                    {p.decimal && <span className="decimals">{p.decimal}</span>}
+                  </>
+                )
+              })()}
             </h1>
             {totalBudget > 0 && (
               <span className="num text-[18px] font-normal text-[var(--ink-3)] md:text-[22px]">

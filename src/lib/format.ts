@@ -27,6 +27,43 @@ export function formatCurrency(n: number, opts: FormatCurrencyOptions = {}): str
   return f.format(n)
 }
 
+export interface CurrencyParts {
+  /** "₹" or "-₹" for negative values */
+  symbol: string
+  /** Integer part with en-IN grouping ("24,180") */
+  integer: string
+  /** Decimal part incl. the dot (".00"), or null when fractionDigits=0 */
+  decimal: string | null
+}
+
+/**
+ * Split a formatted currency into symbol / integer / decimal parts so the hero
+ * amount can render ₹ as a superscript and .00 as a subscript-style fragment.
+ *
+ * Uses Intl.NumberFormat.formatToParts for locale-correct grouping.
+ */
+export function formatCurrencyParts(n: number, opts: FormatCurrencyOptions = {}): CurrencyParts {
+  const fractionDigits = opts.fractionDigits ?? 0
+  const formatter = new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: fractionDigits,
+    minimumFractionDigits: fractionDigits,
+  })
+  const parts = formatter.formatToParts(n)
+  let symbol = ''
+  let integer = ''
+  let decimal = ''
+  let minus = ''
+  for (const p of parts) {
+    if (p.type === 'currency') symbol = p.value
+    else if (p.type === 'integer' || p.type === 'group') integer += p.value
+    else if (p.type === 'decimal' || p.type === 'fraction') decimal += p.value
+    else if (p.type === 'minusSign') minus = p.value
+  }
+  return { symbol: minus + symbol, integer, decimal: decimal || null }
+}
+
 /** Compact rupee notation for tight spaces: ₹1.2L, ₹45k, ₹500. */
 export function formatCompact(n: number): string {
   if (Math.abs(n) >= 100000) return `₹${(n / 100000).toFixed(1)}L`
