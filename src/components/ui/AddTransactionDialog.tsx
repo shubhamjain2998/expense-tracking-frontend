@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
 
-import { useQuickAdd } from '../../hooks/useQuickAdd'
-import { todayIsoDate } from '../../lib/format'
-import type { TxnType } from '../../types/transaction'
+import { NewTagChip } from '@/features/transactions/components/NewTagChip'
+import { useQuickAdd } from '@/hooks/useQuickAdd'
+import { useToastContext } from '@/hooks/useToastContext'
+import { todayIsoDate } from '@/lib/format'
+import type { TxnType } from '@/types/transaction'
 
 import { Button } from './Button'
+import { SearchableSelect } from './SearchableSelect'
 
 const TXN_TYPE_OPTIONS: { value: TxnType; label: string; color: string }[] = [
   { value: 'expense', label: 'Expense', color: 'var(--ink)' },
@@ -18,13 +21,17 @@ interface AddTransactionDialogProps {
 }
 
 export function AddTransactionDialog({ onClose }: AddTransactionDialogProps) {
+  const toast = useToastContext()
   const [date, setDate] = useState(todayIsoDate)
   const [desc, setDesc] = useState('')
   const [amount, setAmount] = useState('')
   const [txnType, setTxnType] = useState<TxnType>('expense')
+  const [processNow, setProcessNow] = useState(true)
+  const [categoryId, setCategoryId] = useState('')
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const mutation = useQuickAdd({ onSuccess: onClose })
+  const { mutation, categories, tags, createCategoryInline } = useQuickAdd({ onSuccess: onClose })
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -41,15 +48,28 @@ export function AddTransactionDialog({ onClose }: AddTransactionDialogProps) {
     if (!desc.trim()) errs.desc = 'Required'
     const amt = parseFloat(amount)
     if (!amount || isNaN(amt) || amt <= 0) errs.amount = 'Enter a valid amount'
+    if (processNow && !categoryId) errs.category = 'Select a category to process'
     setErrors(errs)
-    if (!Object.keys(errs).length)
-      mutation.mutate({
+    if (Object.keys(errs).length) return
+    mutation.mutate({
+      raw: {
         txn_date: `${date}T00:00:00`,
         description: desc.trim(),
         amount: amt,
         txn_type: txnType,
-      })
+      },
+      ...(processNow
+        ? {
+            process: {
+              category_id: categoryId,
+              tag_ids: selectedTagIds,
+            },
+          }
+        : {}),
+    })
   }
+
+  const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }))
 
   return (
     <div
@@ -66,13 +86,14 @@ export function AddTransactionDialog({ onClose }: AddTransactionDialogProps) {
     >
       <div className="absolute inset-0" onClick={onClose} />
       <div
-        className="relative z-10 w-full max-w-sm"
+        className="relative z-10 flex w-full max-w-sm flex-col"
         style={{
           background: 'var(--surface)',
           border: '1px solid var(--line)',
           borderRadius: 'var(--radius-lg)',
           boxShadow: 'var(--shadow-pop)',
           animation: 'pop .18s ease',
+          maxHeight: 'calc(100vh - 48px)',
         }}
       >
         <div
@@ -100,7 +121,11 @@ export function AddTransactionDialog({ onClose }: AddTransactionDialogProps) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ padding: 18 }} className="space-y-3.5">
+        <form
+          onSubmit={handleSubmit}
+          style={{ padding: 18, overflowY: 'auto' }}
+          className="space-y-3.5"
+        >
           <div>
             <label className="eyebrow mb-1 block">Type</label>
             <div style={{ display: 'flex', gap: 6 }}>
@@ -183,8 +208,77 @@ export function AddTransactionDialog({ onClose }: AddTransactionDialogProps) {
             )}
           </div>
 
+          <button
+            type="button"
+            onClick={() => setProcessNow((v) => !v)}
+            className="flex w-full items-center justify-between"
+            style={{
+              background: processNow ? 'var(--accent-soft)' : 'var(--surface-2)',
+              color: processNow ? 'var(--accent)' : 'var(--ink-2)',
+              border: '1px solid ' + (processNow ? 'transparent' : 'var(--line)'),
+              borderRadius: 'var(--radius)',
+              padding: '8px 12px',
+              fontSize: 12.5,
+              fontWeight: 500,
+            }}
+            aria-pressed={processNow}
+          >
+            <span className="flex items-center gap-2">
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                bolt
+              </span>
+              Process now
+            </span>
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+              {processNow ? 'toggle_on' : 'toggle_off'}
+            </span>
+          </button>
+
+          {processNow && (
+            <>
+              <SearchableSelect
+                label="Category"
+                options={categoryOptions}
+                value={categoryId}
+                onChange={(v) => {
+                  setCategoryId(v)
+                  if (v) setErrors((e) => ({ ...e, category: '' }))
+                }}
+                error={errors.category}
+                allowCreate
+                onCreateOption={createCategoryInline}
+                onCreateError={(msg) => toast.error(msg)}
+              />
+
+              <div>
+                <p className="eyebrow mb-1.5">Tags (optional)</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {tags.map((tag) => {
+                    const active = selectedTagIds.includes(tag.id)
+                    return (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() =>
+                          setSelectedTagIds((ids) =>
+                            active ? ids.filter((id) => id !== tag.id) : [...ids, tag.id]
+                          )
+                        }
+                        className={active ? 'chip accent' : 'chip'}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        {tag.name}
+                      </button>
+                    )
+                  })}
+                  <NewTagChip onCreated={(id) => setSelectedTagIds((ids) => [...ids, id])} />
+                </div>
+              </div>
+            </>
+          )}
+
           <Button variant="primary" type="submit" loading={mutation.isPending} className="w-full">
-            Add transaction
+            {processNow ? 'Add & process' : 'Add transaction'}
           </Button>
         </form>
       </div>
