@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { Icon } from '@/components/ui/Icon'
 import { SkeletonTable } from '@/components/ui/Skeleton'
 import { useToastContext } from '@/hooks/useToastContext'
 import { createCategory } from '@/lib/api/categories'
@@ -84,13 +85,7 @@ export function CategoriesSection() {
               borderRadius: 'var(--radius)',
             }}
           >
-            <span
-              className="material-symbols-outlined"
-              style={{ fontSize: 22, color: 'var(--ink-4)' }}
-              aria-hidden
-            >
-              category
-            </span>
+            <Icon name="category" size={22} style={{ color: 'var(--ink-4)' }} />
             <div>
               <p
                 className="text-[13px] font-semibold"
@@ -155,18 +150,14 @@ export function CategoriesSection() {
                       className="btn ghost icon sm"
                       aria-label="Confirm rename"
                     >
-                      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                        check
-                      </span>
+                      <Icon name="check" size={14} />
                     </button>
                     <button
                       onClick={() => setRenamingCategoryId(null)}
                       className="btn ghost icon sm"
                       aria-label="Cancel rename"
                     >
-                      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                        close
-                      </span>
+                      <Icon name="close" size={14} />
                     </button>
                   </div>
                 ) : (
@@ -208,15 +199,11 @@ export function CategoriesSection() {
                           cat.is_income ? 'Mark as expense category' : 'Mark as income category'
                         }
                       >
-                        <span
-                          className="material-symbols-outlined"
-                          style={{
-                            fontSize: 14,
-                            color: cat.is_income ? 'var(--pos)' : undefined,
-                          }}
-                        >
-                          {cat.is_income ? 'trending_up' : 'trending_down'}
-                        </span>
+                        <Icon
+                          name={cat.is_income ? 'trending_up' : 'trending_down'}
+                          size={14}
+                          style={cat.is_income ? { color: 'var(--pos)' } : undefined}
+                        />
                       </button>
                       <button
                         onClick={() => {
@@ -226,18 +213,14 @@ export function CategoriesSection() {
                         className="btn ghost icon sm"
                         aria-label={`Rename ${cat.name}`}
                       >
-                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                          edit
-                        </span>
+                        <Icon name="edit" size={14} />
                       </button>
                       <button
                         onClick={() => setDeleteCategoryId(cat.id)}
                         className="btn ghost icon sm"
                         aria-label={`Delete ${cat.name}`}
                       >
-                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                          delete
-                        </span>
+                        <Icon name="delete" size={14} />
                       </button>
                     </div>
                   </>

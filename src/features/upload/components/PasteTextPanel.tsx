@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
+import { Icon } from '@/components/ui/Icon'
 import type { PreviewResponse } from '@/types/transaction'
 
 import { PreviewTable } from './PreviewTable'
@@ -125,12 +126,12 @@ export function PasteTextPanel({
 
       <div className="flex flex-col gap-2 sm:flex-row">
         <div className="relative flex-1">
-          <span
-            className="material-symbols-outlined pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2"
-            style={{ fontSize: 14, color: 'var(--ink-4)' }}
-          >
-            search
-          </span>
+          <Icon
+            name="search"
+            size={14}
+            style={{ color: 'var(--ink-4)' }}
+            className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2"
+          />
           <input
             type="text"
             value={searchQuery}
@@ -185,29 +186,20 @@ export function PasteTextPanel({
             className="flex w-full items-center justify-between px-4 py-3 text-left"
           >
             <div className="flex items-center gap-2">
-              <span
-                className="material-symbols-outlined"
-                style={{ fontSize: 14, color: 'var(--warn)' }}
-              >
-                warning
-              </span>
+              <Icon name="warning" size={14} style={{ color: 'var(--warn)' }} />
               <span className="text-[12.5px] font-medium" style={{ color: 'var(--ink-2)' }}>
                 {preview.skipped_rows.length} row
                 {preview.skipped_rows.length > 1 ? 's' : ''} skipped during parsing
               </span>
             </div>
-            <span
-              className="material-symbols-outlined"
-              style={{ fontSize: 14, color: 'var(--ink-4)' }}
-            >
-              {skippedExpanded ? 'expand_less' : 'expand_more'}
-            </span>
+            <Icon
+              name={skippedExpanded ? 'expand_less' : 'expand_more'}
+              size={14}
+              style={{ color: 'var(--ink-4)' }}
+            />
           </button>
           {skippedExpanded && (
-            <ul
-              className="space-y-1 px-4 pt-2 pb-3"
-              style={{ borderTop: '1px solid var(--line)' }}
-            >
+            <ul className="space-y-1 px-4 pt-2 pb-3" style={{ borderTop: '1px solid var(--line)' }}>
               {preview.skipped_rows.map((row, i) => (
                 <li key={i} className="mono truncate text-[11px]" style={{ color: 'var(--ink-3)' }}>
                   {row}

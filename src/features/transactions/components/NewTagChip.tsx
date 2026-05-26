@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 
+import { Icon } from '@/components/ui/Icon'
 import { useToastContext } from '@/hooks/useToastContext'
 import { createTag } from '@/lib/api/tags'
 import { qk } from '@/lib/queryKeys'
@@ -96,12 +97,7 @@ export function NewTagChip({ onCreated }: NewTagChipProps) {
             flexShrink: 0,
           }}
         >
-          <span
-            className="material-symbols-outlined"
-            style={{ fontSize: 13, color: 'var(--surface)' }}
-          >
-            check
-          </span>
+          <Icon name="check" size={13} style={{ color: 'var(--surface)' }} />
         </button>
       </div>
     )
@@ -114,9 +110,7 @@ export function NewTagChip({ onCreated }: NewTagChipProps) {
       onClick={() => setEditing(true)}
       style={{ cursor: 'pointer', gap: 3, color: 'var(--ink-3)' }}
     >
-      <span className="material-symbols-outlined" style={{ fontSize: 12 }}>
-        add
-      </span>
+      <Icon name="add" size={12} />
       New tag
     </button>
   )

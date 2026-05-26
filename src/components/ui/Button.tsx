@@ -1,5 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 
+import { Icon } from '@/components/ui/Icon'
+
 type Variant = 'primary' | 'secondary' | 'tertiary' | 'danger'
 type Size = 'sm' | 'md' | 'lg'
 
@@ -38,11 +40,7 @@ export function Button({
       disabled={disabled || loading}
       className={`${variantClass[variant]} ${sizeClass[size]} ${className}`.trim()}
     >
-      {loading && (
-        <span className="material-symbols-outlined animate-spin text-[14px]">
-          progress_activity
-        </span>
-      )}
+      {loading && <Icon name="progress_activity" size={14} className="animate-spin" />}
       {children}
     </button>
   )

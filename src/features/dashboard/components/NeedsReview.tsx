@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 
 import { EmptyState } from '@/components/ui/EmptyState'
+import { Icon } from '@/components/ui/Icon'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { formatCompact } from '@/lib/format'
 import type { PendingManualTransaction } from '@/types/transaction'
@@ -21,9 +22,7 @@ export function NeedsReview({ pendingItems, isLoading }: NeedsReviewProps) {
         {pendingItems.length > 0 && (
           <Link to="/transactions" className="btn sm" style={{ gap: 4 }}>
             Review all
-            <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
-              arrow_forward
-            </span>
+            <Icon name="arrow_forward" size={13} />
           </Link>
         )}
       </div>

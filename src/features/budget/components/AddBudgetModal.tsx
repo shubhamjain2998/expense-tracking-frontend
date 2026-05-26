@@ -3,6 +3,7 @@ import { useState } from 'react'
 
 import { AmountInput } from '@/components/ui/AmountInput'
 import { Button } from '@/components/ui/Button'
+import { Icon } from '@/components/ui/Icon'
 import { SearchableSelect } from '@/components/ui/SearchableSelect'
 import { useToastContext } from '@/hooks/useToastContext'
 import { createBudget } from '@/lib/api/budget'
@@ -103,9 +104,7 @@ export function AddBudgetModal({
             aria-label="Close"
             style={{ marginLeft: 12 }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-              close
-            </span>
+            <Icon name="close" size={16} />
           </button>
         </div>
 

@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, useLayoutEffect, useId } from 'react'
 
+import { Icon } from '@/components/ui/Icon'
+
 export interface SelectOption {
   value: string
   label: string
@@ -100,7 +102,6 @@ export function SearchableSelect({
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
     // refs keep the closure fresh; no deps needed
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function select(option: SelectOption) {
@@ -161,9 +162,11 @@ export function SearchableSelect({
         </label>
       )}
       <div className="relative">
-        <span className="material-symbols-outlined pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[14px] text-[var(--ink-4)]">
-          search
-        </span>
+        <Icon
+          name="search"
+          size={14}
+          className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[var(--ink-4)]"
+        />
         <input
           id={id}
           type="text"
@@ -234,19 +237,18 @@ export function SearchableSelect({
             transition: 'background .1s ease, border-color .1s ease',
           }}
         >
-          <span
-            className={`material-symbols-outlined ${creating ? 'animate-spin' : ''}`}
-            style={{
-              fontSize: 16,
-              color: createChecked ? 'var(--accent)' : 'var(--ink-4)',
-            }}
-          >
-            {creating
-              ? 'progress_activity'
-              : createChecked
-                ? 'check_box'
-                : 'check_box_outline_blank'}
-          </span>
+          <Icon
+            name={
+              creating
+                ? 'progress_activity'
+                : createChecked
+                  ? 'check_box'
+                  : 'check_box_outline_blank'
+            }
+            size={16}
+            spin={creating}
+            style={{ color: createChecked ? 'var(--accent)' : 'var(--ink-4)' }}
+          />
           <div className="min-w-0">
             <span className="eyebrow block">{creating ? 'Creating…' : 'Create new category'}</span>
             <p

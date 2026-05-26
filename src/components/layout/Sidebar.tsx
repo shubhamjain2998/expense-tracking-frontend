@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 
+import { Icon, type IconName } from '@/components/ui/Icon'
+
 import { useAuth } from '../../contexts/AuthContext'
 import { useSidebarStats } from '../../hooks/useSidebarStats'
 import { formatCompact } from '../../lib/format'
 import { getInitials } from '../../lib/strings'
 
-const NAV = [
+const NAV: { to: string; icon: IconName; label: string }[] = [
   { to: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
   { to: '/transactions', icon: 'receipt_long', label: 'Transactions' },
   { to: '/upload', icon: 'upload', label: 'Upload' },
@@ -126,12 +128,7 @@ export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
           >
             {displayName || 'Personal Finance'}
           </span>
-          <span
-            className="material-symbols-outlined"
-            style={{ fontSize: 14, color: 'var(--ink-4)', flexShrink: 0 }}
-          >
-            unfold_more
-          </span>
+          <Icon name="unfold_more" size={14} style={{ color: 'var(--ink-4)' }} />
         </button>
 
         {/* Profile popover */}
@@ -243,9 +240,7 @@ export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
                     style={{ color: 'var(--accent)', flexShrink: 0 }}
                     aria-label="Save name"
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
-                      check
-                    </span>
+                    <Icon name="check" size={13} />
                   </button>
                   <button
                     onClick={() => setEditingName(false)}
@@ -253,9 +248,7 @@ export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
                     style={{ flexShrink: 0 }}
                     aria-label="Cancel"
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
-                      close
-                    </span>
+                    <Icon name="close" size={13} />
                   </button>
                 </div>
               ) : (
@@ -288,12 +281,7 @@ export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
                   >
                     {displayName}
                   </span>
-                  <span
-                    className="material-symbols-outlined"
-                    style={{ fontSize: 12, color: 'var(--ink-4)', flexShrink: 0 }}
-                  >
-                    edit
-                  </span>
+                  <Icon name="edit" size={12} style={{ color: 'var(--ink-4)' }} />
                 </button>
               )}
             </div>
@@ -319,9 +307,7 @@ export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
                 onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-2)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                  logout
-                </span>
+                <Icon name="logout" size={14} />
                 Sign out
               </button>
             </div>
@@ -364,9 +350,7 @@ export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
               transition: 'background .1s, color .1s',
             })}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
-              {icon}
-            </span>
+            <Icon name={icon} size={15} />
             <span style={{ flex: 1, lineHeight: 1.3 }}>{label}</span>
             {label === 'Transactions' && pendingCount > 0 && (
               <span

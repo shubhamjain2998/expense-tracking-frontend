@@ -1,6 +1,8 @@
+import { Icon, type IconName } from '@/components/ui/Icon'
+
 import type { Toast as ToastType, ToastVariant } from '../../hooks/useToast'
 
-const variantIcons: Record<ToastVariant, string> = {
+const variantIcons: Record<ToastVariant, IconName> = {
   success: 'check_circle',
   error: 'error',
   warning: 'warning',
@@ -22,12 +24,12 @@ interface ToastItemProps {
 function ToastItem({ toast, onDismiss }: ToastItemProps) {
   return (
     <div className="animate-toast-in flex max-w-[380px] min-w-[280px] items-start gap-2.5 rounded-[8px] bg-[var(--ink)] px-3 py-2.5 text-[var(--bg)] shadow-[var(--shadow-pop)]">
-      <span
-        className="material-symbols-outlined mt-0.5 shrink-0 text-[16px]"
+      <Icon
+        name={variantIcons[toast.variant]}
+        size={16}
+        className="mt-0.5 shrink-0"
         style={{ color: variantAccent[toast.variant] }}
-      >
-        {variantIcons[toast.variant]}
-      </span>
+      />
       <p className="flex-1 text-[12.5px] leading-snug font-medium">{toast.message}</p>
       {toast.action && (
         <button
@@ -46,7 +48,7 @@ function ToastItem({ toast, onDismiss }: ToastItemProps) {
         className="ml-1 shrink-0 text-[var(--ink-4)] opacity-70"
         aria-label="Dismiss"
       >
-        <span className="material-symbols-outlined text-[14px]">close</span>
+        <Icon name="close" size={14} />
       </button>
     </div>
   )

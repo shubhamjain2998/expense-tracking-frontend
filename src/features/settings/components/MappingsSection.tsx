@@ -1,4 +1,5 @@
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { Icon } from '@/components/ui/Icon'
 import { SkeletonTable } from '@/components/ui/Skeleton'
 
 import { useCategoryMappings } from '../hooks/useCategoryMappings'
@@ -65,9 +66,7 @@ export function MappingsSection() {
                         className="btn ghost icon sm opacity-0 transition-opacity group-hover:opacity-100"
                         aria-label={`Delete mapping for ${mapping.description_pattern}`}
                       >
-                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                          delete
-                        </span>
+                        <Icon name="delete" size={14} />
                       </button>
                     </td>
                   </tr>

@@ -1,3 +1,4 @@
+import { Icon } from '@/components/ui/Icon'
 import { formatCurrency } from '@/lib/format'
 import { formatYearLabel, monthLongLabel } from '@/lib/period'
 import type { PeriodMode } from '@/lib/period'
@@ -50,23 +51,23 @@ export function TransactionsHeader({
             className="btn ghost ym-nav-btn"
             aria-label="Previous month"
           >
-            <span className="material-symbols-outlined text-[16px]">chevron_left</span>
+            <Icon name="chevron_left" size={16} />
           </button>
           <span className="ym-nav-label num">
             {monthLongLabel(month, mode).slice(0, 3)} {formatYearLabel(year, mode)}
           </span>
           <button onClick={onNextMonth} className="btn ghost ym-nav-btn" aria-label="Next month">
-            <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+            <Icon name="chevron_right" size={16} />
           </button>
         </div>
 
         <button onClick={onManualEntry} className="btn gap-[5px]" aria-label="Manual entry">
-          <span className="material-symbols-outlined text-[14px]">add</span>
+          <Icon name="add" size={14} />
           <span className="desktop-only">Manual entry</span>
         </button>
 
         <button onClick={onUpload} className="btn primary gap-[5px]" aria-label="Upload statement">
-          <span className="material-symbols-outlined text-[14px]">upload</span>
+          <Icon name="upload" size={14} />
           <span className="desktop-only">Upload</span>
         </button>
       </div>

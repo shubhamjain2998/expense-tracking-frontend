@@ -1,5 +1,7 @@
 import { useState } from 'react'
 
+import { Icon } from '@/components/ui/Icon'
+
 import { AddTransactionDialog } from './AddTransactionDialog'
 
 export function QuickAddFAB() {
@@ -23,9 +25,7 @@ export function QuickAddFAB() {
           transition: 'transform .12s ease',
         }}
       >
-        <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
-          add
-        </span>
+        <Icon name="add" size={20} />
       </button>
 
       {open && <AddTransactionDialog onClose={() => setOpen(false)} />}

@@ -1,3 +1,4 @@
+import { Icon } from '@/components/ui/Icon'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { formatCurrency } from '@/lib/format'
 import type { SplitLedgerRow } from '@/types/dashboard'
@@ -9,7 +10,12 @@ interface SplitLedgerProps {
   isLoading: boolean
 }
 
-export function SplitLedger({ ledger, includeSettled, onToggleSettled, isLoading }: SplitLedgerProps) {
+export function SplitLedger({
+  ledger,
+  includeSettled,
+  onToggleSettled,
+  isLoading,
+}: SplitLedgerProps) {
   return (
     <section className="card">
       <div className="card-head">
@@ -23,9 +29,7 @@ export function SplitLedger({ ledger, includeSettled, onToggleSettled, isLoading
           style={{ cursor: 'pointer' }}
           title={includeSettled ? 'Showing all (incl. settled)' : 'Hiding settled'}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 12 }}>
-            {includeSettled ? 'toggle_on' : 'toggle_off'}
-          </span>
+          <Icon name={includeSettled ? 'toggle_on' : 'toggle_off'} size={12} />
           Settled
         </button>
       </div>

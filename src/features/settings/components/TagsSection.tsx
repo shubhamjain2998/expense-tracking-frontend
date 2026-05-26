@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { Icon } from '@/components/ui/Icon'
 import { SkeletonTable } from '@/components/ui/Skeleton'
 import type { Tag } from '@/types/settings'
 
@@ -43,9 +44,7 @@ export function TagsSection() {
                   style={{ color: 'var(--ink-4)' }}
                   aria-label={`Delete ${tag.name}`}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
-                    close
-                  </span>
+                  <Icon name="close" size={13} />
                 </button>
               </div>
             ))}

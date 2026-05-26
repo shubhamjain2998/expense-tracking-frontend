@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import { Button } from '../ui/Button'
+import { Icon, type IconName } from '../ui/Icon'
 
 interface WelcomeModalProps {
   onGetStarted: () => void
@@ -9,7 +10,7 @@ interface WelcomeModalProps {
 }
 
 interface PlaybookStep {
-  icon: string
+  icon: IconName
   title: string
   why: string
   todo: string
@@ -103,13 +104,7 @@ export function WelcomeModal({ onGetStarted, onSkip }: WelcomeModalProps) {
               id="welcome-modal-title"
               className="mt-1 flex items-center gap-2 text-[18px] font-semibold tracking-[-0.01em] text-[var(--ink)]"
             >
-              <span
-                className="material-symbols-outlined text-[var(--accent)]"
-                style={{ fontSize: 22 }}
-                aria-hidden
-              >
-                {step.icon}
-              </span>
+              <Icon name={step.icon} size={22} aria-hidden className="text-[var(--accent)]" />
               {step.title}
             </h2>
           </div>

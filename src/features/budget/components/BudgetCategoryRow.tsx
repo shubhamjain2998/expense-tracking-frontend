@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 
 import { AmountInput } from '@/components/ui/AmountInput'
+import { Icon } from '@/components/ui/Icon'
 import { formatCurrency } from '@/lib/format'
 
 import { CAT_COLORS } from '../lib/heatColor'
@@ -109,12 +110,12 @@ export function BudgetCategoryRow({
               }}
             >
               <span className="num">{formatCurrency(row.monthlyBudget)}</span>
-              <span
-                className="material-symbols-outlined opacity-0 transition-opacity group-hover:opacity-100"
-                style={{ fontSize: 12, color: 'var(--ink-4)' }}
-              >
-                edit
-              </span>
+              <Icon
+                name="edit"
+                size={12}
+                style={{ color: 'var(--ink-4)' }}
+                className="opacity-0 transition-opacity group-hover:opacity-100"
+              />
             </button>
             {row.hasOverride && (
               <button
@@ -131,9 +132,7 @@ export function BudgetCategoryRow({
                   alignItems: 'center',
                 }}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 12 }}>
-                  restart_alt
-                </span>
+                <Icon name="restart_alt" size={12} />
               </button>
             )}
           </span>
@@ -196,9 +195,7 @@ export function BudgetCategoryRow({
           className="btn ghost icon sm opacity-0 transition-opacity group-hover:opacity-100"
           aria-label={`Delete budget for ${row.categoryName}`}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-            delete
-          </span>
+          <Icon name="delete" size={14} />
         </button>
       </td>
     </tr>

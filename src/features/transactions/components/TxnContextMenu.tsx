@@ -1,3 +1,5 @@
+import { Icon, type IconName } from '@/components/ui/Icon'
+
 import type { UnifiedTxn } from '../types'
 
 interface TxnContextMenuProps {
@@ -27,7 +29,7 @@ function MenuItem({
   color,
   onClick,
 }: {
-  icon: string
+  icon: IconName
   label: string
   color?: string
   onClick: () => void
@@ -39,9 +41,7 @@ function MenuItem({
       onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = 'var(--surface-2)')}
       onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = 'none')}
     >
-      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-        {icon}
-      </span>
+      <Icon name={icon} size={14} />
       {label}
     </button>
   )
@@ -78,7 +78,7 @@ export function TxnContextMenu({
         <MenuItem icon="edit" label="Edit" onClick={onEdit} />
       )}
       {isDeleted ? (
-        <MenuItem icon="restore" label="Restore" color="var(--accent)" onClick={onRestore} />
+        <MenuItem icon="undo" label="Restore" color="var(--accent)" onClick={onRestore} />
       ) : (
         <MenuItem icon="delete" label="Delete" color="var(--neg)" onClick={onDelete} />
       )}

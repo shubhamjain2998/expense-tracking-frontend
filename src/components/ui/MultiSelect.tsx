@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 
+import { Icon } from '@/components/ui/Icon'
+
 import { getInitials } from '../../lib/strings'
 import type { Person } from '../../types/settings'
 
@@ -88,8 +90,8 @@ export function MultiSelect({
       {selected.length > 0 && (
         <div className="mb-2 flex flex-wrap gap-1.5">
           {selected.map((p) => (
-            <div key={p.id} className="chip pr-1 h-6">
-              <span className="flex shrink-0 items-center justify-center w-4 h-4 rounded-full bg-[var(--surface-3)] text-[var(--ink-2)] text-[9px] font-semibold">
+            <div key={p.id} className="chip h-6 pr-1">
+              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[var(--surface-3)] text-[9px] font-semibold text-[var(--ink-2)]">
                 {getInitials(p.name)}
               </span>
               <span className="text-[var(--ink)]">{p.name}</span>
@@ -99,9 +101,7 @@ export function MultiSelect({
                 className="ml-0.5 inline-flex items-center text-[var(--ink-4)]"
                 aria-label={`Remove ${p.name}`}
               >
-                <span className="material-symbols-outlined text-[13px]">
-                  close
-                </span>
+                <Icon name="close" size={13} />
               </button>
             </div>
           ))}
@@ -110,9 +110,11 @@ export function MultiSelect({
 
       {/* Search input */}
       <div className="relative">
-        <span className="material-symbols-outlined pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[14px] text-[var(--ink-4)]">
-          person_search
-        </span>
+        <Icon
+          name="person_search"
+          size={14}
+          className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[var(--ink-4)]"
+        />
         <input
           ref={inputRef}
           type="text"
@@ -130,16 +132,14 @@ export function MultiSelect({
 
       {/* Dropdown for existing persons */}
       {open && filtered.length > 0 && (
-        <ul className="relative z-30 mt-1 max-h-40 w-full overflow-y-auto bg-[var(--surface)] border border-[var(--line)] rounded-[var(--radius-lg)] shadow-[var(--shadow-pop)] p-1">
+        <ul className="relative z-30 mt-1 max-h-40 w-full overflow-y-auto rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface)] p-1 shadow-[var(--shadow-pop)]">
           {filtered.map((p) => (
             <li
               key={p.id}
               onMouseDown={() => add(p.id)}
-              className="flex cursor-pointer items-center gap-2 py-[7px] px-2.5 text-[12.5px] text-[var(--ink-2)] rounded-[var(--radius-sm)] hover:bg-[var(--surface-2)]"
+              className="flex cursor-pointer items-center gap-2 rounded-[var(--radius-sm)] px-2.5 py-[7px] text-[12.5px] text-[var(--ink-2)] hover:bg-[var(--surface-2)]"
             >
-              <span className="material-symbols-outlined text-[14px] text-[var(--ink-4)]">
-                person
-              </span>
+              <Icon name="person" size={14} className="text-[var(--ink-4)]" />
               {p.name}
             </li>
           ))}
@@ -150,23 +150,22 @@ export function MultiSelect({
       {isNew && (
         <div
           onMouseDown={handleCreate}
-          className="mt-2 flex cursor-pointer items-center gap-2.5 select-none py-2 px-2.5 border border-[var(--line-strong)] rounded-[var(--radius)] bg-[var(--surface)] text-[var(--ink-2)] [transition:background_.1s_ease,border-color_.1s_ease]"
+          className="mt-2 flex cursor-pointer items-center gap-2.5 rounded-[var(--radius)] border border-[var(--line-strong)] bg-[var(--surface)] px-2.5 py-2 text-[var(--ink-2)] select-none [transition:background_.1s_ease,border-color_.1s_ease]"
           style={{ opacity: creating ? 0.6 : 1 }}
         >
-          <span className={`material-symbols-outlined text-[16px] text-[var(--ink-4)] ${creating ? 'animate-spin' : ''}`}>
-            {creating ? 'progress_activity' : 'person_add'}
-          </span>
+          <Icon
+            name={creating ? 'progress_activity' : 'person_add'}
+            size={16}
+            spin={creating}
+            className="text-[var(--ink-4)]"
+          />
           <div className="min-w-0">
             <span className="eyebrow block">Create new person</span>
             <p className="truncate text-[12.5px] font-medium text-[var(--ink)]">
               &ldquo;{trimmed}&rdquo;
             </p>
           </div>
-          {creating && (
-            <span className="ml-auto text-[11px] text-[var(--ink-3)]">
-              Creating…
-            </span>
-          )}
+          {creating && <span className="ml-auto text-[11px] text-[var(--ink-3)]">Creating…</span>}
         </div>
       )}
     </div>

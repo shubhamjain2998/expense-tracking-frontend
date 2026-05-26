@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/Button'
+import { Icon } from '@/components/ui/Icon'
 import { useIgnoreRules } from '@/hooks/useIgnoreRules'
 import { addIgnoreRule, removeIgnoreRule } from '@/lib/ignoreRules'
 
@@ -57,9 +58,7 @@ export function IgnoreRulesSection() {
                 style={{ color: 'var(--ink-4)' }}
                 aria-label={`Remove rule ${keyword}`}
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
-                  close
-                </span>
+                <Icon name="close" size={13} />
               </button>
             </div>
           ))}

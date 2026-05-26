@@ -1,3 +1,5 @@
+import { Icon, type IconName } from '@/components/ui/Icon'
+
 import type { UploadMode } from '../types'
 
 interface UploadTabsProps {
@@ -5,7 +7,7 @@ interface UploadTabsProps {
   onSwitch: (mode: UploadMode) => void
 }
 
-const TABS: { id: UploadMode; label: string; icon: string }[] = [
+const TABS: { id: UploadMode; label: string; icon: IconName }[] = [
   { id: 'pdf', label: 'PDF statement', icon: 'picture_as_pdf' },
   { id: 'paste', label: 'Paste text', icon: 'content_paste' },
   { id: 'manual', label: 'Manual entry', icon: 'add' },
@@ -35,9 +37,7 @@ export function UploadTabs({ mode, onSwitch }: UploadTabsProps) {
               transition: 'all 0.12s ease',
             }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 13, color: 'inherit' }}>
-              {tab.icon}
-            </span>
+            <Icon name={tab.icon} size={13} />
             {tab.label}
           </button>
         )

@@ -3,6 +3,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import { Link } from 'react-router-dom'
 
 import { EmptyState } from '@/components/ui/EmptyState'
+import { Icon } from '@/components/ui/Icon'
 import { SkeletonTable } from '@/components/ui/Skeleton'
 import type { Category } from '@/types/settings'
 import type { ProcessedTransactionItem } from '@/types/transaction'
@@ -95,9 +96,7 @@ export function TransactionsList({
           />
           <div className="mt-1 flex justify-center">
             <Link to="/upload" className="btn primary sm" style={{ gap: 4 }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 14 }} aria-hidden>
-                upload
-              </span>
+              <Icon name="upload" size={14} />
               Upload a statement
             </Link>
           </div>

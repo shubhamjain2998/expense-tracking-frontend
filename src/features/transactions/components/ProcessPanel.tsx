@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/Button'
+import { Icon } from '@/components/ui/Icon'
 import { PersonShareBuilder } from '@/components/ui/PersonShareBuilder'
 import { SearchableSelect } from '@/components/ui/SearchableSelect'
 import { useToastContext } from '@/hooks/useToastContext'
@@ -149,9 +150,7 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
           Process transaction
         </span>
         <button onClick={onClose} className="btn ghost icon sm">
-          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-            close
-          </span>
+          <Icon name="close" size={14} />
         </button>
       </div>
 
@@ -253,14 +252,10 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
           }}
         >
           <span className="flex items-center gap-2">
-            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-              rule
-            </span>
+            <Icon name="rule" size={14} />
             Save as rule
           </span>
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-            {saveMapping ? 'toggle_on' : 'toggle_off'}
-          </span>
+          <Icon name={saveMapping ? 'toggle_on' : 'toggle_off'} size={16} />
         </button>
 
         {personsQuery.data && (

@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/Button'
+import { Icon } from '@/components/ui/Icon'
 import { formatCurrency } from '@/lib/format'
 import { formatYearLabel, monthLongLabel } from '@/lib/period'
 import type { PeriodMode } from '@/lib/period'
@@ -81,7 +82,7 @@ export function BudgetHeader({
             className="btn ghost ym-nav-btn"
             aria-label="Previous month"
           >
-            <span className="material-symbols-outlined text-[14px]">chevron_left</span>
+            <Icon name="chevron_left" size={14} />
           </button>
           <span className="ym-nav-label num" style={{ minWidth: 110 }}>
             {monthLongLabel(month, mode)} {formatYearLabel(year, mode)}
@@ -91,7 +92,7 @@ export function BudgetHeader({
             className="btn ghost ym-nav-btn"
             aria-label="Next month"
           >
-            <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+            <Icon name="chevron_right" size={14} />
           </button>
         </div>
 
