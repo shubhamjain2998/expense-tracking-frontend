@@ -30,31 +30,37 @@ describe('Process transaction flow', () => {
     const user = userEvent.setup()
     renderWithProviders(<TransactionsPage />, { initialEntries: ['/transactions'] })
 
+    // Phase 4.6 renders both the desktop table and a mobile card list in
+    // JSDOM (CSS media queries don't fire). Scope description queries to the
+    // desktop table to keep the assertions unambiguous.
+    await screen.findByRole('table')
+    const table = () => within(screen.getByRole('table'))
+
     // Both transactions appear initially
-    expect(await screen.findByText('Supermarket')).toBeInTheDocument()
-    expect(screen.getByText('Electricity Bill')).toBeInTheDocument()
+    expect(table().getByText('Supermarket')).toBeInTheDocument()
+    expect(table().getByText('Electricity Bill')).toBeInTheDocument()
 
     // Search filters to only "Supermarket"
     const searchInput = screen.getByPlaceholderText(/search merchant/i)
     await user.type(searchInput, 'Supermarket')
 
-    expect(screen.getByText('Supermarket')).toBeInTheDocument()
-    expect(screen.queryByText('Electricity Bill')).not.toBeInTheDocument()
+    expect(table().getByText('Supermarket')).toBeInTheDocument()
+    expect(table().queryByText('Electricity Bill')).not.toBeInTheDocument()
 
     // Clear search to see all again
     await user.clear(searchInput)
-    expect(await screen.findByText('Electricity Bill')).toBeInTheDocument()
+    await waitFor(() => expect(table().getByText('Electricity Bill')).toBeInTheDocument())
 
     // Click "pending" status filter — covers statusFilter branch in the filter fn
     await user.click(screen.getByRole('button', { name: /pending/i }))
-    expect(screen.getByText('Supermarket')).toBeInTheDocument()
+    expect(table().getByText('Supermarket')).toBeInTheDocument()
 
     // Click "all" to reset
     await user.click(screen.getByRole('button', { name: /^all$/i }))
 
     // Navigate to previous month (covers prevMonth / nextMonth)
-    await user.click(screen.getByRole('button', { name: 'chevron_left' }))
-    await user.click(screen.getByRole('button', { name: 'chevron_right' }))
+    await user.click(screen.getByRole('button', { name: /previous month/i }))
+    await user.click(screen.getByRole('button', { name: /next month/i }))
 
     // Click "Date" column header to toggle sort (covers toggleSort)
     await user.click(screen.getByRole('columnheader', { name: /date/i }))
@@ -94,8 +100,10 @@ describe('Process transaction flow', () => {
     const user = userEvent.setup()
     renderWithProviders(<TransactionsPage />, { initialEntries: ['/transactions'] })
 
-    // Wait for the transaction row to appear
-    const txnCell = await screen.findByText('Supermarket')
+    // Wait for the transaction row in the desktop table (mobile cards also
+    // render in JSDOM; scope to avoid the duplicate-match throw).
+    const table = within(await screen.findByRole('table'))
+    const txnCell = await table.findByText('Supermarket')
     await user.click(txnCell)
 
     // ProcessPanel should now be visible

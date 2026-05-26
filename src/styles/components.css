@@ -959,6 +959,46 @@ select:disabled,
   font-family: var(--font-mono);
 }
 
+/* ─── Dashboard depth ─────────────────────────────────────────────────
+   Lift every card and the KPI strip off the page background so the
+   surface reads as paper-on-paper, not "white box on white." Hover
+   adds a small bloom for chart/list cards so the user feels the
+   interactive affordance without animation noise. */
+.dashboard-page .card,
+.dashboard-page .kpi-strip {
+  box-shadow: var(--shadow-card);
+  transition:
+    box-shadow 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dashboard-page .card:hover {
+  box-shadow: var(--shadow-card-hover);
+}
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-page .card,
+  .dashboard-page .kpi-strip {
+    transition: none;
+  }
+}
+
+/* Hairline accent under section titles — anchors the editorial title
+   without competing with the card itself. */
+.section-head .title {
+  position: relative;
+  padding-bottom: 4px;
+}
+.section-head .title::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 28px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+  opacity: 0.85;
+}
+
 /* ─── Dashboard-scoped section title polish ──────────────────────────
    Dashboard cards have editorial section heads. Bump .card-title to the
    display font on dashboard ONLY — Settings cards keep their compact
