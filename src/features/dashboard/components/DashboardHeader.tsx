@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Icon } from '@/components/ui/Icon'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { YearMonthSelector } from '@/components/ui/YearMonthSelector'
+import { useCountUp } from '@/hooks/useCountUp'
 import { formatCompact, formatCurrency } from '@/lib/format'
 import type { Tag } from '@/types/settings'
 
@@ -43,6 +44,8 @@ export function DashboardHeader({
   isLoading,
   pendingCount,
 }: DashboardHeaderProps) {
+  const animatedTotal = useCountUp(totalDebit, { duration: 750 })
+
   return (
     <header className="flex flex-wrap items-end justify-between gap-4">
       {/* Left: spend hero + pace status */}
@@ -59,7 +62,7 @@ export function DashboardHeader({
               className="display num text-[var(--ink)]"
               style={{ fontSize: 'clamp(48px, 7vw, 80px)', margin: 0 }}
             >
-              {formatCurrency(totalDebit)}
+              {formatCurrency(animatedTotal)}
             </h1>
             {totalBudget > 0 && (
               <span className="num text-[18px] font-normal text-[var(--ink-3)] md:text-[22px]">

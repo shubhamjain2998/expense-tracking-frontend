@@ -378,11 +378,11 @@ textarea.input-field {
 .tbl th {
   font-size: 10.5px;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   color: var(--ink-4);
   font-weight: 600;
   text-align: left;
-  padding: 8px 10px;
+  padding: 10px 10px;
   border-bottom: 1px solid var(--line);
   background: var(--surface);
   white-space: nowrap;
@@ -397,17 +397,38 @@ textarea.input-field {
 .tbl tr:last-child td {
   border-bottom: none;
 }
+/* Zebra striping — extremely subtle, only visible on rows where the
+   background hasn't been overridden by hover/selection. */
+.tbl tbody tr:nth-child(even) td {
+  background: color-mix(in oklch, var(--ink) 1.6%, transparent);
+}
 .tbl tr.row {
   cursor: pointer;
+  position: relative;
 }
-.tbl tr.row:hover td {
-  background: var(--surface-2);
+/* Hover affordance: replace the row-bg with a left-edge dot. Quieter,
+   keeps the row itself stable so the eye isn't pulled all over the table. */
+.tbl tr.row:hover td:first-child::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  transform: translateY(-50%);
 }
 .tbl tr.row.sel td {
-  background: var(--accent-soft);
+  background: var(--accent-soft) !important;
 }
 .tbl tr.row.sel td:first-child {
   box-shadow: inset 2px 0 0 var(--accent);
+}
+/* Lifted-selection: a faint bottom edge on the selected row reads as
+   "raised" against the zebra striping below it. */
+.tbl tr.row.sel td:last-child {
+  box-shadow: inset 0 -1px 0 var(--accent);
 }
 .tbl td.num,
 .tbl th.num {
