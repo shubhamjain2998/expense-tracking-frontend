@@ -108,13 +108,15 @@ export function DashboardHeader({
         )}
       </div>
 
-      {/* Right: tag filter + month picker + upload */}
-      <div className="flex shrink-0 items-center gap-2">
+      {/* Right: tag filter (desktop) + month picker (always) + upload (desktop).
+          Upload is covered by the BottomTabBar on mobile; tag filter is rarely
+          used and crowds the layout on a 412dp viewport. */}
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
         {tags.length > 0 && (
           <select
             value={selectedTagId}
             onChange={(e) => onTagChange(e.target.value)}
-            className="input w-auto"
+            className="input hidden w-auto md:block"
             aria-label="Filter by tag"
           >
             <option value="">All tags</option>
@@ -131,9 +133,13 @@ export function DashboardHeader({
           onYearChange={onYearChange}
           onMonthChange={onMonthChange}
         />
-        <Link to="/upload" className="btn primary gap-[5px]" aria-label="Upload statement">
+        <Link
+          to="/upload"
+          className="btn primary hidden gap-[5px] md:inline-flex"
+          aria-label="Upload statement"
+        >
           <Icon name="upload" size={14} />
-          <span className="desktop-only">Upload</span>
+          <span>Upload</span>
         </Link>
       </div>
     </header>

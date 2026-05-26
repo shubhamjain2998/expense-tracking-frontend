@@ -13,11 +13,13 @@
 }
 
 /* Display type — Cabinet Grotesk. Use for hero amounts, KPI values, section titles.
-   Add `.num` for tabular numerals when displaying currency. */
+   Add `.num` for tabular numerals when displaying currency. Default weight is
+   600 so the typeface reads "calm confident" rather than "heavy" at large
+   sizes; bump to 700 explicitly when a page hero needs more weight. */
 .display {
   font-family: var(--font-display);
-  font-weight: 700;
-  letter-spacing: -0.035em;
+  font-weight: 600;
+  letter-spacing: -0.03em;
   line-height: 1;
 }
 
@@ -699,13 +701,31 @@ select:disabled,
 }
 .kpi-value {
   font-family: var(--font-display);
-  font-size: 30px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
   color: var(--ink);
-  line-height: 1.05;
+  line-height: 1.1;
   margin-top: 6px;
   font-variant-numeric: tabular-nums;
+}
+/* Stack the KPI strip on narrow viewports — 3 columns at 120px each
+   wraps amounts to two lines on Pixel 9. */
+@media (max-width: 640px) {
+  .kpi-strip {
+    grid-template-columns: 1fr !important;
+  }
+  .kpi {
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    padding: 18px 20px;
+  }
+  .kpi:last-child {
+    border-bottom: none;
+  }
+  .kpi-value {
+    font-size: 26px;
+  }
 }
 .kpi-value.pos {
   color: var(--pos);
@@ -862,6 +882,11 @@ select:disabled,
   border-bottom: 1px solid var(--line);
   margin: -20px -16px 20px;
 }
+@media (min-width: 768px) {
+  .section-pill-bar {
+    display: none;
+  }
+}
 .section-pill-track {
   display: flex;
   gap: 4px;
@@ -967,8 +992,8 @@ select:disabled,
 }
 
 /* ─── Bottom tab bar — mobile primary navigation ───────────────────
-   Hidden by default (desktop uses the Sidebar). Becomes visible at
-   ≤767px via the `md:hidden` Tailwind class on the JSX wrapper. */
+   Display flow: visible <768px, hidden ≥768px. Explicit media query
+   beats Tailwind utility specificity. */
 .bottom-tab-bar {
   position: fixed;
   bottom: 0;
@@ -982,6 +1007,11 @@ select:disabled,
   -webkit-backdrop-filter: saturate(180%) blur(14px);
   border-top: 1px solid var(--line);
   padding-bottom: env(safe-area-inset-bottom);
+}
+@media (min-width: 768px) {
+  .bottom-tab-bar {
+    display: none;
+  }
 }
 .bottom-tab-bar .tab-item {
   flex: 1;

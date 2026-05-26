@@ -119,7 +119,7 @@ export function DashboardPage() {
       )}
       {showChecklist && <GettingStartedChecklist onDismiss={() => setShowChecklist(false)} />}
       <SectionPillBar sections={sections} />
-      <section id="sec-overview">
+      <section id="sec-overview" className="space-y-4">
         <DashboardHeader
           totalDebit={data.totalDebit}
           totalBudget={data.totalBudget}
