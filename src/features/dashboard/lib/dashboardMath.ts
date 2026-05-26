@@ -156,10 +156,10 @@ export function computeYtdExtras(params: {
 }): YtdComputedData {
   const { ytdRows, yearlyTrendData, ytdSpentTotal, month, projectedFY, expectedYtd } = params
 
-  // Per-category income breakdown — the backend YTD endpoint stores income
-  // categories as negative actual_ytd. (Some deployments don't return income
-  // categories at all here; the breakdown list will be empty in that case
-  // but ytdIncomeTotal below still resolves from yearlyTrendData.)
+  // Per-category income breakdown — backend YTD endpoint returns income
+  // categories with negative actual_ytd (income's effective_amount is stored
+  // negative). ytdIncomeTotal below stays the authoritative source for the
+  // KPI total and is derived from yearlyTrendData regardless.
   const ytdIncomeSources = ytdRows
     .filter((r) => r.actual_ytd < 0)
     .map((r) => ({ category: r.category, total: Math.abs(r.actual_ytd) }))

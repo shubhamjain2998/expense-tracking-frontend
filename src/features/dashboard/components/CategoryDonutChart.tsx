@@ -14,6 +14,9 @@ interface CategoryDonutChartProps {
   isLoading: boolean
 }
 
+const CATEGORY_CAP = 10
+const OTHER_COLOR = 'var(--ink-4)'
+
 export function CategoryDonutChart({
   data,
   totalDebit,
@@ -22,6 +25,22 @@ export function CategoryDonutChart({
   isLoading,
 }: CategoryDonutChartProps) {
   const total = data.reduce((s, d) => s + d.value, 0) || totalDebit
+
+  // Consolidate the long tail into a single "Other" slice so the donut and
+  // legend agree on what's visible. Donut keeps top N as separate slices.
+  const displayData =
+    data.length > CATEGORY_CAP
+      ? [
+          ...data.slice(0, CATEGORY_CAP),
+          {
+            name: 'Other',
+            value: data.slice(CATEGORY_CAP).reduce((s, d) => s + d.value, 0),
+          },
+        ]
+      : data
+
+  const colorAt = (i: number, name: string) =>
+    name === 'Other' ? OTHER_COLOR : PIE_COLORS[i % PIE_COLORS.length]
 
   return (
     <div className="flex h-full flex-col">
@@ -46,7 +65,7 @@ export function CategoryDonutChart({
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={data}
+                    data={displayData}
                     dataKey="value"
                     nameKey="name"
                     cx="50%"
@@ -56,8 +75,8 @@ export function CategoryDonutChart({
                     paddingAngle={2}
                     stroke="none"
                   >
-                    {data.map((_, i) => (
-                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                    {displayData.map((d, i) => (
+                      <Cell key={d.name} fill={colorAt(i, d.name)} />
                     ))}
                   </Pie>
                   <Tooltip
@@ -74,15 +93,20 @@ export function CategoryDonutChart({
 
             {/* 4-col legend: swatch | name | pct | amount */}
             <div className="donut-legend">
-              {data.slice(0, 7).map((d, i) => {
+              {displayData.map((d, i) => {
                 const pct = total > 0 ? Math.round((d.value / total) * 100) : 0
+                const isOther = d.name === 'Other'
+                const tailCount = data.length - CATEGORY_CAP
                 return (
                   <div key={d.name} className="legend-row">
+                    <span className="legend-swatch" style={{ background: colorAt(i, d.name) }} />
                     <span
-                      className="legend-swatch"
-                      style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
-                    />
-                    <span className="legend-name">{d.name}</span>
+                      className="legend-name"
+                      style={isOther ? { color: 'var(--ink-3)', fontStyle: 'italic' } : undefined}
+                      title={isOther ? `${tailCount} more categories` : undefined}
+                    >
+                      {isOther ? `Other (${tailCount})` : d.name}
+                    </span>
                     <span className="legend-pct">{pct}%</span>
                     <span className="legend-amt">{formatCompact(d.value)}</span>
                   </div>

@@ -1,8 +1,12 @@
+import { useState } from 'react'
 import {
   Bar,
   BarChart,
   CartesianGrid,
   LabelList,
+  Line,
+  LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -23,6 +27,19 @@ interface IncomeFlowAndTrendProps {
   isDark: boolean
 }
 
+type TrendView = 'lines' | 'bars'
+
+const LINE_KEYS: { key: 'income' | 'expense' | 'savings'; label: string; color: string }[] = [
+  { key: 'income', label: 'Income', color: 'var(--pos)' },
+  { key: 'expense', label: 'Expense', color: 'var(--neg)' },
+  { key: 'savings', label: 'Savings', color: 'var(--accent)' },
+]
+
+const SUBTITLES: Record<TrendView, string> = {
+  lines: 'Income, expense, and savings',
+  bars: 'Income vs expenses',
+}
+
 export function IncomeFlowAndTrend({
   totalIncome,
   totalExpenses,
@@ -30,11 +47,19 @@ export function IncomeFlowAndTrend({
   isLoading,
   isDark,
 }: IncomeFlowAndTrendProps) {
+  const [view, setView] = useState<TrendView>('lines')
   const savings = totalIncome - totalExpenses
   const expensePct = totalIncome > 0 ? Math.min((totalExpenses / totalIncome) * 100, 100) : 0
   const savingsPct = Math.max(100 - expensePct, 0)
   const tickColor = isDark ? '#9A9A9A' : '#6A6A6B'
   const gridStroke = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
+
+  const labelFor = (name: string) => {
+    const line = LINE_KEYS.find((l) => l.key === name)
+    return line ? line.label : name
+  }
+
+  const hasNegativeSavings = view === 'lines' && incomeTrendData.some((p) => p.savings < 0)
 
   return (
     <section className="card">
@@ -130,7 +155,7 @@ export function IncomeFlowAndTrend({
 
       <div style={{ borderTop: '1px solid var(--line)', marginBottom: 20 }} />
 
-      {/* 6-MONTH INCOME / EXPENSE TREND */}
+      {/* 6-MONTH TREND */}
       <div>
         <div
           style={{
@@ -138,40 +163,67 @@ export function IncomeFlowAndTrend({
             justifyContent: 'space-between',
             alignItems: 'center',
             marginBottom: 14,
+            gap: 12,
           }}
         >
           <div>
             <p className="card-title">6-month trend</p>
-            <p className="card-sub">Income vs expenses</p>
+            <p className="card-sub">{SUBTITLES[view]}</p>
           </div>
-          <div style={{ display: 'flex', gap: 16, fontSize: 11, color: tickColor, flexShrink: 0 }}>
-            {(
-              [
-                { label: 'Income', color: 'var(--pos)' },
-                { label: 'Expense', color: 'var(--neg)' },
-                { label: 'Savings', color: tickColor },
-              ] as { label: string; color: string }[]
-            ).map(({ label, color }) => (
-              <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span
-                  style={{
-                    width: 12,
-                    height: 2,
-                    borderRadius: 1,
-                    background: color,
-                    display: 'inline-block',
-                  }}
-                />
-                {label}
-              </span>
-            ))}
+          <div className="seg" style={{ flexShrink: 0 }}>
+            <button className={view === 'lines' ? 'on' : ''} onClick={() => setView('lines')}>
+              Lines
+            </button>
+            <button className={view === 'bars' ? 'on' : ''} onClick={() => setView('bars')}>
+              Bars
+            </button>
           </div>
         </div>
 
         {isLoading ? (
           <Skeleton className="h-48 w-full" />
+        ) : view === 'lines' ? (
+          <ResponsiveContainer width="100%" height={210}>
+            <LineChart data={incomeTrendData} margin={{ top: 22, right: 16, left: 8, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={gridStroke} strokeDasharray="4 4" />
+              <XAxis
+                dataKey="month"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 11, fill: tickColor }}
+                padding={{ left: 8, right: 8 }}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 10, fill: tickColor }}
+                tickFormatter={formatCompact}
+                width={50}
+              />
+              {hasNegativeSavings && (
+                <ReferenceLine y={0} stroke={tickColor} strokeOpacity={0.4} strokeDasharray="2 4" />
+              )}
+              <Tooltip
+                cursor={{ stroke: tickColor, strokeDasharray: '3 4', strokeOpacity: 0.5 }}
+                contentStyle={TOOLTIP_STYLE}
+                formatter={(v, name) => [formatCurrency(Number(v)), labelFor(String(name))]}
+              />
+              {LINE_KEYS.map(({ key, color }) => (
+                <Line
+                  key={key}
+                  type="monotone"
+                  dataKey={key}
+                  stroke={color}
+                  strokeWidth={key === 'savings' ? 2 : 2.5}
+                  strokeDasharray={key === 'savings' ? '5 4' : undefined}
+                  dot={{ r: 3.5, strokeWidth: 2, fill: 'var(--surface)', stroke: color }}
+                  activeDot={{ r: 5.5 }}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
         ) : (
-          <ResponsiveContainer width="100%" height={200}>
+          <ResponsiveContainer width="100%" height={210}>
             <BarChart
               data={incomeTrendData}
               barGap={3}
@@ -195,13 +247,7 @@ export function IncomeFlowAndTrend({
               <Tooltip
                 cursor={false}
                 contentStyle={TOOLTIP_STYLE}
-                formatter={(v: unknown, name: unknown) => {
-                  const val = Number(v)
-                  const key = String(name)
-                  const label =
-                    key === 'income' ? 'Income' : key === 'expense' ? 'Expense' : 'Savings'
-                  return [formatCurrency(val), label]
-                }}
+                formatter={(v, name) => [formatCurrency(Number(v)), labelFor(String(name))]}
               />
               <Bar dataKey="income" name="income" fill="var(--pos)" radius={[3, 3, 0, 0]}>
                 <LabelList
@@ -219,6 +265,57 @@ export function IncomeFlowAndTrend({
             </BarChart>
           </ResponsiveContainer>
         )}
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 18px', marginTop: 12 }}>
+          {LINE_KEYS.map(({ key, label, color }) => {
+            // In bars mode, savings appears as a label above each pair, not as a series.
+            if (view === 'bars' && key === 'savings') {
+              return (
+                <span
+                  key={key}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontSize: 11,
+                    color: tickColor,
+                  }}
+                >
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: tickColor }}>
+                    +₹
+                  </span>
+                  Savings (per bar)
+                </span>
+              )
+            }
+            return (
+              <span
+                key={key}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontSize: 11,
+                  color: tickColor,
+                }}
+              >
+                <span
+                  style={{
+                    width: view === 'lines' ? 14 : 10,
+                    height: view === 'lines' ? 2 : 10,
+                    borderRadius: view === 'lines' ? 1 : 2,
+                    flexShrink: 0,
+                    background:
+                      view === 'lines' && key === 'savings'
+                        ? `repeating-linear-gradient(90deg, ${color} 0 5px, transparent 5px 9px)`
+                        : color,
+                  }}
+                />
+                {label}
+              </span>
+            )
+          })}
+        </div>
       </div>
     </section>
   )
