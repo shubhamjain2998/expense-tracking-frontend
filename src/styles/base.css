@@ -28,6 +28,15 @@ body {
   transition:
     background-color 0.25s ease,
     color 0.25s ease;
+  /* Safe-area: respect the gesture-handle inset on Pixel/iOS so fixed
+     elements (FAB, BottomTabBar) don't collide with system UI. */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (max-width: 767px) {
+  body {
+    font-size: 15px;
+  }
 }
 
 #root {

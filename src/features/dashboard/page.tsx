@@ -17,6 +17,7 @@ import { DashboardHeader } from './components/DashboardHeader'
 import { IncomeFlowAndTrend } from './components/IncomeFlowAndTrend'
 import { IncomeSummaryCards } from './components/IncomeSummaryCards'
 import { NeedsReview } from './components/NeedsReview'
+import { SectionPillBar } from './components/SectionPillBar'
 import { SixMonthTrend } from './components/SixMonthTrend'
 import { SplitLedger } from './components/SplitLedger'
 import { YtdSection } from './components/YtdSection'
@@ -102,119 +103,141 @@ export function DashboardPage() {
   const overPaceAmount = data.totalDebit - data.totalBudget * paceAt
 
   // ── Render ──────────────────────────────────────────────────────────────────────────────────
+  const sections = [
+    { id: 'sec-overview', label: 'Overview' },
+    { id: 'sec-budget', label: 'Budget' },
+    { id: 'sec-categories', label: 'Categories' },
+    { id: 'sec-trend', label: 'Trend' },
+    { id: 'sec-ytd', label: 'YTD' },
+    { id: 'sec-splits', label: 'Splits' },
+  ]
+
   return (
-    <div className="space-y-4">
+    <div className="dashboard-page space-y-4">
       {welcomeOpen && (
         <WelcomeModal onGetStarted={handleWelcomeGetStarted} onSkip={handleWelcomeSkip} />
       )}
       {showChecklist && <GettingStartedChecklist onDismiss={() => setShowChecklist(false)} />}
-      <DashboardHeader
-        totalDebit={data.totalDebit}
-        totalBudget={data.totalBudget}
-        overPaceAmount={overPaceAmount}
-        dayOfMonth={dayOfMonth}
-        daysInMonth={daysInMonth}
-        currentMonthLabel={currentMonthLabel ?? ''}
-        displayYear={calYear}
-        selectorYear={year}
-        selectorMonth={month}
-        onYearChange={setYear}
-        onMonthChange={setMonth}
-        selectedTagId={selectedTagId}
-        onTagChange={setSelectedTagId}
-        tags={data.tags}
-        isLoading={data.summaryLoading}
-        pendingCount={data.pendingItems.length}
-      />
-
-      <IncomeSummaryCards
-        totalIncome={data.totalIncome}
-        totalExpenses={data.totalDebit}
-        incomeByCategory={data.incomeByCategory}
-        isLoading={data.allTxnLoading}
-      />
-
-      <IncomeFlowAndTrend
-        totalIncome={data.totalIncome}
-        totalExpenses={data.totalDebit}
-        incomeTrendData={data.incomeTrendData}
-        isLoading={data.allTxnLoading || data.incomeQueriesLoading}
-        isDark={isDark}
-      />
-
-      <BudgetPaceBars
-        budgetRows={data.budgetRows}
-        paceAt={paceAt}
-        dayOfMonth={dayOfMonth}
-        isLoading={data.summaryLoading}
-      />
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <CategoryDonutChart
-          data={data.categoryChartData}
+      <SectionPillBar sections={sections} />
+      <section id="sec-overview">
+        <DashboardHeader
           totalDebit={data.totalDebit}
+          totalBudget={data.totalBudget}
+          overPaceAmount={overPaceAmount}
+          dayOfMonth={dayOfMonth}
+          daysInMonth={daysInMonth}
           currentMonthLabel={currentMonthLabel ?? ''}
-          year={calYear}
+          displayYear={calYear}
+          selectorYear={year}
+          selectorMonth={month}
+          onYearChange={setYear}
+          onMonthChange={setMonth}
+          selectedTagId={selectedTagId}
+          onTagChange={setSelectedTagId}
+          tags={data.tags}
           isLoading={data.summaryLoading}
+          pendingCount={data.pendingItems.length}
         />
-        <CategoryTransactionStats
-          categoryStats={data.categoryStats}
+
+        <IncomeSummaryCards
+          totalIncome={data.totalIncome}
+          totalExpenses={data.totalDebit}
+          incomeByCategory={data.incomeByCategory}
           isLoading={data.allTxnLoading}
         />
-      </div>
 
-      <CategoryDeepDive
-        allTransactions={data.allTransactions}
-        summaryRows={data.summaryRows}
-        daysInMonth={daysInMonth}
-        currentMonthLabel={currentMonthLabel ?? ''}
-        year={calYear}
-        isLoading={data.allTxnLoading}
-        isDark={isDark}
-      />
-
-      <SixMonthTrend
-        stackedTrendData={data.stackedTrendData}
-        stackCategories={data.stackCategories}
-        trendMode={trendMode}
-        onTrendModeChange={setTrendMode}
-        isLoading={data.trendQueriesLoading}
-        isDark={isDark}
-      />
-
-      <YtdSection
-        yearlyTrendData={data.yearlyTrendData}
-        month={month}
-        yearLabel={formatYearLabel(year, mode)}
-        isDark={isDark}
-        ytdSpentTotal={data.ytdSpentTotal}
-        annualBudget={data.annualBudget}
-        projectedFY={data.projectedFY}
-        ytdLineData={data.ytdLineData}
-        ytdComputed={data.ytdComputed}
-        isLoading={data.ytdLoading || data.yearlyTrendLoading}
-      />
-
-      <SplitLedger
-        ledger={data.ledger}
-        includeSettled={includeSettled}
-        onToggleSettled={() => setIncludeSettled((v) => !v)}
-        isLoading={data.ledgerLoading}
-      />
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <DailySpendCalendar
-          dailySpend={data.dailySpend}
-          year={calYear}
-          daysInMonth={daysInMonth}
-          firstDayOfMonth={firstDayOfMonth}
-          totalCells={totalCells}
-          currentMonthLabel={currentMonthLabel ?? ''}
-          isCurrentMonth={isCurrentMonth}
+        <IncomeFlowAndTrend
+          totalIncome={data.totalIncome}
+          totalExpenses={data.totalDebit}
+          incomeTrendData={data.incomeTrendData}
+          isLoading={data.allTxnLoading || data.incomeQueriesLoading}
           isDark={isDark}
         />
-        <NeedsReview pendingItems={data.pendingItems} isLoading={data.pendingLoading} />
-      </div>
+      </section>
+
+      <section id="sec-budget">
+        <BudgetPaceBars
+          budgetRows={data.budgetRows}
+          paceAt={paceAt}
+          dayOfMonth={dayOfMonth}
+          isLoading={data.summaryLoading}
+        />
+      </section>
+
+      <section id="sec-categories" className="space-y-4">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <CategoryDonutChart
+            data={data.categoryChartData}
+            totalDebit={data.totalDebit}
+            currentMonthLabel={currentMonthLabel ?? ''}
+            year={calYear}
+            isLoading={data.summaryLoading}
+          />
+          <CategoryTransactionStats
+            categoryStats={data.categoryStats}
+            isLoading={data.allTxnLoading}
+          />
+        </div>
+
+        <CategoryDeepDive
+          allTransactions={data.allTransactions}
+          summaryRows={data.summaryRows}
+          daysInMonth={daysInMonth}
+          currentMonthLabel={currentMonthLabel ?? ''}
+          year={calYear}
+          isLoading={data.allTxnLoading}
+          isDark={isDark}
+        />
+      </section>
+
+      <section id="sec-trend">
+        <SixMonthTrend
+          stackedTrendData={data.stackedTrendData}
+          stackCategories={data.stackCategories}
+          trendMode={trendMode}
+          onTrendModeChange={setTrendMode}
+          isLoading={data.trendQueriesLoading}
+          isDark={isDark}
+        />
+      </section>
+
+      <section id="sec-ytd">
+        <YtdSection
+          yearlyTrendData={data.yearlyTrendData}
+          month={month}
+          yearLabel={formatYearLabel(year, mode)}
+          isDark={isDark}
+          ytdSpentTotal={data.ytdSpentTotal}
+          annualBudget={data.annualBudget}
+          projectedFY={data.projectedFY}
+          ytdLineData={data.ytdLineData}
+          ytdComputed={data.ytdComputed}
+          isLoading={data.ytdLoading || data.yearlyTrendLoading}
+        />
+      </section>
+
+      <section id="sec-splits" className="space-y-4">
+        <SplitLedger
+          ledger={data.ledger}
+          includeSettled={includeSettled}
+          onToggleSettled={() => setIncludeSettled((v) => !v)}
+          isLoading={data.ledgerLoading}
+        />
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <DailySpendCalendar
+            dailySpend={data.dailySpend}
+            year={calYear}
+            daysInMonth={daysInMonth}
+            firstDayOfMonth={firstDayOfMonth}
+            totalCells={totalCells}
+            currentMonthLabel={currentMonthLabel ?? ''}
+            isCurrentMonth={isCurrentMonth}
+            isDark={isDark}
+          />
+          <NeedsReview pendingItems={data.pendingItems} isLoading={data.pendingLoading} />
+        </div>
+      </section>
     </div>
   )
 }
