@@ -13,32 +13,27 @@ const PAGE_NAMES: Record<string, string> = {
 }
 
 interface TopNavProps {
+  /** Opens the side drawer. Kept for desktop sidebar; on mobile the
+   *  BottomTabBar's "More" button uses this same callback. */
   onOpenNav?: () => void
 }
 
-export function TopNav({ onOpenNav }: TopNavProps) {
+export function TopNav({ onOpenNav: _onOpenNav }: TopNavProps) {
   const location = useLocation()
   const { isDark, toggleTheme } = useThemeContext()
 
   const pageName = PAGE_NAMES[location.pathname] ?? 'Page'
 
   return (
-    <header className="flex h-11 shrink-0 items-center justify-between border-b border-[var(--line)] bg-[var(--bg)] px-3 md:px-7">
-      {/* Left: hamburger (mobile only) + breadcrumb */}
+    <header className="topnav">
+      {/* Desktop: breadcrumb. Mobile: large page title. */}
       <div className="flex min-w-0 items-center gap-2">
-        <button
-          type="button"
-          onClick={onOpenNav}
-          className="btn ghost icon mobile-only"
-          aria-label="Open menu"
-        >
-          <Icon name="menu" size={18} />
-        </button>
-        <div className="flex min-w-0 items-center gap-1.5 text-[12.5px] text-[var(--ink-3)]">
-          <span className="desktop-only">Personal Finance</span>
-          <span className="desktop-only text-[15px] leading-none opacity-40">›</span>
+        <div className="topnav-crumbs desktop-only text-[12.5px] text-[var(--ink-3)]">
+          <span>Personal Finance</span>
+          <span className="text-[15px] leading-none opacity-40">›</span>
           <span className="truncate font-medium text-[var(--ink)]">{pageName}</span>
         </div>
+        <h1 className="display mobile-only truncate text-[17px] text-[var(--ink)]">{pageName}</h1>
       </div>
 
       {/* Right: actions */}
@@ -50,7 +45,7 @@ export function TopNav({ onOpenNav }: TopNavProps) {
         </button>
         <button
           onClick={toggleTheme}
-          className="btn ghost icon"
+          className="btn ghost icon desktop-only"
           aria-label={isDark ? 'Light mode' : 'Dark mode'}
           title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
         >

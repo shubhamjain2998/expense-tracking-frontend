@@ -14,6 +14,7 @@ import { EditPanel } from './EditPanel'
 import { ProcessPanel } from './ProcessPanel'
 import { TransactionRow } from './TransactionRow'
 import { TransactionsTableHead } from './TransactionsTableHead'
+import { TxnSidePanel } from './TxnSidePanel'
 
 interface TransactionsListProps {
   sorted: UnifiedTxn[]
@@ -245,41 +246,27 @@ export function TransactionsList({
           </div>
 
           {showProcessPanel && selectedTxn?.rawOriginal && (
-            <>
-              <div
-                className="txn-side-panel-backdrop"
-                onClick={() => setSelectedUid(null)}
-                aria-hidden
+            <TxnSidePanel onDismiss={() => setSelectedUid(null)}>
+              <ProcessPanel
+                key={selectedTxn.rawId}
+                txn={selectedTxn.rawOriginal}
+                categories={categories}
+                onClose={() => setSelectedUid(null)}
+                onProcessed={() => setSelectedUid(null)}
               />
-              <div className="txn-side-panel">
-                <ProcessPanel
-                  key={selectedTxn.rawId}
-                  txn={selectedTxn.rawOriginal}
-                  categories={categories}
-                  onClose={() => setSelectedUid(null)}
-                  onProcessed={() => setSelectedUid(null)}
-                />
-              </div>
-            </>
+            </TxnSidePanel>
           )}
 
           {showEditPanel && editingTxn && (
-            <>
-              <div
-                className="txn-side-panel-backdrop"
-                onClick={() => setEditingTxn(null)}
-                aria-hidden
+            <TxnSidePanel onDismiss={() => setEditingTxn(null)}>
+              <EditPanel
+                key={editingTxn.id}
+                txn={editingTxn}
+                categories={categories}
+                onClose={() => setEditingTxn(null)}
+                onSaved={() => setEditingTxn(null)}
               />
-              <div className="txn-side-panel">
-                <EditPanel
-                  key={editingTxn.id}
-                  txn={editingTxn}
-                  categories={categories}
-                  onClose={() => setEditingTxn(null)}
-                  onSaved={() => setEditingTxn(null)}
-                />
-              </div>
-            </>
+            </TxnSidePanel>
           )}
         </div>
       )}

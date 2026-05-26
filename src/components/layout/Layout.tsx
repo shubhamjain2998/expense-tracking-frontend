@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 
 import { QuickAddFAB } from '../ui/QuickAddFAB'
 
+import { BottomTabBar } from './BottomTabBar'
 import { Sidebar } from './Sidebar'
 import { TopNav } from './TopNav'
 
@@ -30,7 +31,7 @@ export function Layout() {
   }, [mobileNavOpen])
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[var(--bg)]">
+    <div className="has-bottom-tabs flex h-screen overflow-hidden bg-[var(--bg)]">
       {mobileNavOpen && (
         <div className="app-sidebar-backdrop" onClick={() => setMobileNavOpen(false)} aria-hidden />
       )}
@@ -46,6 +47,7 @@ export function Layout() {
         </main>
       </div>
       <QuickAddFAB />
+      <BottomTabBar onOpenMore={() => setMobileNavOpen(true)} />
     </div>
   )
 }
