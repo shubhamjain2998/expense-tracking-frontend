@@ -62,6 +62,9 @@ export interface DashboardDataResult {
   ytdLineData: YtdDataPoint[]
   yearlyTrendData: TrendDataPoint[]
   ytdComputed: YtdComputedData
+  /** Months elapsed in the selected FY *as of today* — drives YTD labels
+   *  and projection math (not the picker's selected month). */
+  monthsElapsedYtd: number
 
   // Per-query loading flags
   summaryLoading: boolean
