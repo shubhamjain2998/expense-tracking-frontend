@@ -26,14 +26,15 @@ export function TopNav({ onOpenNav: _onOpenNav }: TopNavProps) {
 
   return (
     <header className="topnav">
-      {/* Desktop: breadcrumb. Mobile: large page title. */}
+      {/* Desktop: breadcrumb. Mobile: large page title. Mutually exclusive
+          via Tailwind responsive utilities — beats .desktop-only specificity. */}
       <div className="flex min-w-0 items-center gap-2">
-        <div className="topnav-crumbs desktop-only text-[12.5px] text-[var(--ink-3)]">
+        <div className="hidden items-center gap-1.5 text-[12.5px] text-[var(--ink-3)] md:flex">
           <span>Personal Finance</span>
           <span className="text-[15px] leading-none opacity-40">›</span>
           <span className="truncate font-medium text-[var(--ink)]">{pageName}</span>
         </div>
-        <h1 className="display mobile-only truncate text-[17px] text-[var(--ink)]">{pageName}</h1>
+        <h1 className="display truncate text-[17px] text-[var(--ink)] md:hidden">{pageName}</h1>
       </div>
 
       {/* Right: actions */}
