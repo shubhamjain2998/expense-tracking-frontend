@@ -20,10 +20,9 @@ export function YtdMonthlyHighlights({
 }: YtdMonthlyHighlightsProps) {
   return (
     <div
+      className="kpi-grid-legacy"
       style={{
-        display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
-        borderBottom: '1px solid var(--line)',
       }}
     >
       <div style={{ padding: '12px 20px', borderRight: '1px solid var(--line)' }}>

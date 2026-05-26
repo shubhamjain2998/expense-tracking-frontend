@@ -21,7 +21,7 @@ export function YtdIncomeBreakdown({
   const hasBudget = annualBudget > 0
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+    <div className="two-col-body" style={{ gridTemplateColumns: '1fr 1fr' }}>
       {/* Income sources YTD */}
       <div style={{ padding: '16px 20px', borderRight: '1px solid var(--line)' }}>
         <p
@@ -41,8 +41,7 @@ export function YtdIncomeBreakdown({
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {ytdIncomeSources.map((src, i) => {
-              const pct =
-                ytdIncomeTotal > 0 ? Math.round((src.total / ytdIncomeTotal) * 100) : 0
+              const pct = ytdIncomeTotal > 0 ? Math.round((src.total / ytdIncomeTotal) * 100) : 0
               return (
                 <div key={src.category}>
                   <div

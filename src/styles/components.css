@@ -1149,6 +1149,99 @@ select:disabled,
   }
 }
 
+/* ─── Legacy KPI grid — for Dashboard cards still using inline-style
+   grids (CategoryDeepDive, YtdSection). Tag the wrapper with this class
+   and they stack to 2-col under 768px, 1-col under 480px. */
+.kpi-grid-legacy {
+  display: grid !important;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.kpi-grid-legacy > div {
+  border-right: 1px solid var(--line);
+}
+.kpi-grid-legacy > div:last-child {
+  border-right: none;
+}
+@media (max-width: 767px) {
+  .kpi-grid-legacy {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .kpi-grid-legacy > div {
+    border-bottom: 1px solid var(--line);
+  }
+  .kpi-grid-legacy > div:nth-child(2n) {
+    border-right: none;
+  }
+}
+@media (max-width: 480px) {
+  .kpi-grid-legacy {
+    grid-template-columns: 1fr !important;
+  }
+  .kpi-grid-legacy > div {
+    border-right: none !important;
+  }
+  .kpi-grid-legacy > div:last-child {
+    border-bottom: none;
+  }
+}
+
+/* ─── Two-column body wrapper — used by CategoryDeepDive, YtdSection
+   bottom split. Stacks vertically below 768px. */
+.two-col-body {
+  display: grid !important;
+}
+@media (max-width: 767px) {
+  .two-col-body {
+    grid-template-columns: 1fr !important;
+    gap: 24px !important;
+  }
+}
+
+/* ─── Budget pace list (BudgetPaceBars) — stack the row on mobile so
+   the progress bar gets full width, status chip drops to the label row,
+   and the "% vs pace" secondary metric hides. */
+.budget-pace-row {
+  display: grid;
+  grid-template-columns: 190px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 8px 0;
+}
+@media (max-width: 767px) {
+  .budget-pace-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'label amount'
+      'bar bar';
+    gap: 6px 12px;
+    padding: 12px 0;
+  }
+  .budget-pace-row .pace-label {
+    grid-area: label;
+    width: auto !important;
+    min-width: 0;
+  }
+  .budget-pace-row .pace-bar {
+    grid-area: bar;
+  }
+  .budget-pace-row .pace-amounts {
+    grid-area: amount;
+  }
+  .budget-pace-row .pace-vs {
+    display: none;
+  }
+}
+
+/* ─── Long merchant strings — truncate aggressively on mobile.
+   Class applied at TopMerchants list items inside CategoryDeepDive. */
+.merchant-line {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
 /* ─── Decorative ink rule under hero amounts ─────────────────────────
    Optional accent: place after a `.display`-sized number to anchor it. */
 .ink-rule {

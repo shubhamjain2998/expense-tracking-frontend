@@ -91,16 +91,14 @@ export function BudgetPaceBars({ budgetRows, paceAt, dayOfMonth, isLoading }: Bu
             return (
               <div
                 key={row.category}
+                className="budget-pace-row"
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 14,
-                  padding: '8px 0',
                   borderBottom: idx < budgetRows.length - 1 ? '1px solid var(--line)' : 'none',
                 }}
               >
                 {/* Label: color dot, category name, status chip */}
                 <div
+                  className="pace-label"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -143,6 +141,7 @@ export function BudgetPaceBars({ budgetRows, paceAt, dayOfMonth, isLoading }: Bu
 
                 {/* Progress bar with pace marker tick */}
                 <div
+                  className="pace-bar"
                   style={{
                     flex: 1,
                     position: 'relative',
@@ -181,14 +180,16 @@ export function BudgetPaceBars({ budgetRows, paceAt, dayOfMonth, isLoading }: Bu
                 </div>
 
                 {/* Amounts and pace delta */}
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexShrink: 0 }}>
+                <div
+                  className="pace-amounts"
+                  style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexShrink: 0 }}
+                >
                   <span
                     className="num"
                     style={{
                       fontSize: 12.5,
                       color: 'var(--ink)',
                       fontWeight: 500,
-                      minWidth: 140,
                       textAlign: 'right',
                     }}
                   >
@@ -197,7 +198,7 @@ export function BudgetPaceBars({ budgetRows, paceAt, dayOfMonth, isLoading }: Bu
                   </span>
                   {pctVsPace !== null && (
                     <span
-                      className="num"
+                      className="num pace-vs"
                       style={{
                         fontSize: 11,
                         fontWeight: 500,
