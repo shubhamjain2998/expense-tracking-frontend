@@ -3,6 +3,8 @@ import {
   BarChart,
   CartesianGrid,
   LabelList,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -14,11 +16,13 @@ import { formatCompact, formatCurrency } from '@/lib/format'
 
 import { PIE_COLORS, TOOLTIP_STYLE } from '../lib/chartTheme'
 
+type TrendMode = 'total' | 'stacked' | 'line'
+
 interface SixMonthTrendProps {
   stackedTrendData: Record<string, number | string>[]
   stackCategories: string[]
-  trendMode: 'stacked' | 'total'
-  onTrendModeChange: (mode: 'stacked' | 'total') => void
+  trendMode: TrendMode
+  onTrendModeChange: (mode: TrendMode) => void
   isLoading: boolean
   isDark: boolean
 }
@@ -33,6 +37,9 @@ export function SixMonthTrend({
 }: SixMonthTrendProps) {
   const gridStroke = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
   const tickColor = isDark ? '#9A9A9A' : '#6A6A6B'
+
+  // Tooltip name lookup — keeps `_total` out of the user-facing label.
+  const labelFor = (name: string) => (name === '_total' ? 'Total' : name)
 
   return (
     <div>
@@ -50,6 +57,12 @@ export function SixMonthTrend({
               Total
             </button>
             <button
+              className={trendMode === 'line' ? 'on' : ''}
+              onClick={() => onTrendModeChange('line')}
+            >
+              Line
+            </button>
+            <button
               className={trendMode === 'stacked' ? 'on' : ''}
               onClick={() => onTrendModeChange('stacked')}
             >
@@ -62,12 +75,45 @@ export function SixMonthTrend({
       <section className="card">
         {isLoading ? (
           <Skeleton className="h-56 w-full" />
+        ) : trendMode === 'line' ? (
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={stackedTrendData} margin={{ top: 24, right: 16, left: 8, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={gridStroke} strokeDasharray="4 4" />
+              <XAxis
+                dataKey="month"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 11, fill: tickColor }}
+                padding={{ left: 8, right: 8 }}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 10, fill: tickColor }}
+                tickFormatter={formatCompact}
+                width={50}
+              />
+              <Tooltip
+                cursor={{ stroke: tickColor, strokeDasharray: '3 4', strokeOpacity: 0.5 }}
+                contentStyle={TOOLTIP_STYLE}
+                formatter={(v, name) => [formatCurrency(Number(v)), labelFor(String(name))]}
+              />
+              <Line
+                type="monotone"
+                dataKey="_total"
+                stroke="var(--accent)"
+                strokeWidth={2.5}
+                dot={{ r: 4, strokeWidth: 2, fill: 'var(--surface)', stroke: 'var(--accent)' }}
+                activeDot={{ r: 6 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
         ) : (
           <ResponsiveContainer width="100%" height={220}>
             <BarChart
               data={stackedTrendData}
-              barSize={38}
-              margin={{ top: 16, right: 8, left: 8, bottom: 0 }}
+              barSize={trendMode === 'total' ? 32 : 38}
+              margin={{ top: 24, right: 8, left: 8, bottom: 0 }}
             >
               <CartesianGrid vertical={false} stroke={gridStroke} strokeDasharray="4 4" />
               <XAxis
@@ -84,9 +130,9 @@ export function SixMonthTrend({
                 width={50}
               />
               <Tooltip
-                cursor={false}
+                cursor={{ fill: gridStroke }}
                 contentStyle={TOOLTIP_STYLE}
-                formatter={(v) => (v ? formatCurrency(Number(v)) : '')}
+                formatter={(v, name) => [formatCurrency(Number(v)), labelFor(String(name))]}
               />
 
               {trendMode === 'stacked' ? (
@@ -101,16 +147,17 @@ export function SixMonthTrend({
                   />
                 ))
               ) : (
-                <Bar
-                  dataKey="_total"
-                  fill={isDark ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.7)'}
-                  radius={[3, 3, 0, 0]}
-                >
+                <Bar dataKey="_total" fill="var(--accent)" radius={[4, 4, 0, 0]}>
                   <LabelList
                     dataKey="_total"
                     position="top"
                     formatter={(v: unknown) => formatCompact(Number(v))}
-                    style={{ fontSize: 10, fill: tickColor, fontWeight: 600 }}
+                    style={{
+                      fontSize: 10.5,
+                      fill: 'var(--ink-2)',
+                      fontWeight: 600,
+                      fontFamily: 'var(--font-mono)',
+                    }}
                   />
                 </Bar>
               )}

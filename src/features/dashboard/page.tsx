@@ -53,7 +53,7 @@ export function DashboardPage() {
     )
   }
   const [includeSettled, setIncludeSettled] = useState(false)
-  const [trendMode, setTrendMode] = useState<'stacked' | 'total'>('stacked')
+  const [trendMode, setTrendMode] = useState<'stacked' | 'total' | 'line'>('total')
 
   // ── Onboarding (welcome modal + Getting Started checklist) ─────────────────
   // Initial state is derived from localStorage to avoid the modal/checklist

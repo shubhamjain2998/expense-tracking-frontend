@@ -38,6 +38,12 @@
   --radius-xl: 14px;
 
   --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.04);
+  --shadow-card:
+    0 1px 0 oklch(0 0 0 / 0.02), 0 2px 4px oklch(0 0 0 / 0.04),
+    0 10px 24px oklch(0.4 0.08 25 / 0.05);
+  --shadow-card-hover:
+    0 1px 0 oklch(0 0 0 / 0.03), 0 4px 8px oklch(0 0 0 / 0.06),
+    0 18px 40px oklch(0.4 0.08 25 / 0.09);
   --shadow-pop: 0 1px 2px oklch(0 0 0 / 0.04), 0 14px 36px oklch(0.4 0.08 25 / 0.08);
 
   /* Type stack — Cabinet Grotesk for hero, General Sans for body, JetBrains Mono for numbers */
@@ -120,6 +126,10 @@ html.dark {
   --warn-soft: oklch(0.3 0.08 75);
 
   --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.3);
+  --shadow-card:
+    0 1px 0 oklch(0 0 0 / 0.18), 0 2px 4px oklch(0 0 0 / 0.28), 0 10px 24px oklch(0 0 0 / 0.32);
+  --shadow-card-hover:
+    0 1px 0 oklch(0 0 0 / 0.25), 0 4px 8px oklch(0 0 0 / 0.36), 0 18px 40px oklch(0 0 0 / 0.45);
   --shadow-pop: 0 1px 2px oklch(0 0 0 / 0.4), 0 14px 36px oklch(0 0 0 / 0.5);
 }
 
