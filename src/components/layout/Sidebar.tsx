@@ -98,8 +98,8 @@ export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
           {/* Avatar */}
           <span
             style={{
-              width: 26,
-              height: 26,
+              width: 30,
+              height: 30,
               background: 'var(--ink)',
               color: 'var(--bg)',
               borderRadius: 6,
@@ -107,28 +107,43 @@ export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
               alignItems: 'center',
               justifyContent: 'center',
               fontWeight: 700,
-              fontSize: 11,
+              fontSize: 12,
               letterSpacing: '-0.02em',
               flexShrink: 0,
             }}
           >
             {initials}
           </span>
-          <span
-            style={{
-              fontWeight: 600,
-              fontSize: 14,
-              color: 'var(--ink)',
-              letterSpacing: '-0.01em',
-              flex: 1,
-              overflow: 'hidden',
-              whiteSpace: 'nowrap',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            {displayName || 'Personal Finance'}
+          <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+            <span
+              style={{
+                fontWeight: 600,
+                fontSize: 14,
+                color: 'var(--ink)',
+                letterSpacing: '-0.01em',
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                textOverflow: 'ellipsis',
+                lineHeight: 1.2,
+              }}
+            >
+              {displayName || 'Personal Finance'}
+            </span>
+            <span
+              style={{
+                fontSize: 10.5,
+                color: 'var(--ink-4)',
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                textOverflow: 'ellipsis',
+                marginTop: 1,
+                lineHeight: 1.2,
+              }}
+            >
+              {email}
+            </span>
           </span>
-          <Icon name="unfold_more" size={14} style={{ color: 'var(--ink-4)' }} />
+          <Icon name="unfold_more" size={14} style={{ color: 'var(--ink-4)', flexShrink: 0 }} />
         </button>
 
         {/* Profile popover */}
@@ -335,103 +350,82 @@ export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
             to={to}
             end={to === '/dashboard'}
             onClick={onNavigate}
-            style={({ isActive }) => ({
-              display: 'flex',
-              alignItems: 'center',
-              gap: 7,
-              padding: '5px 8px',
-              borderRadius: 6,
-              color: isActive ? 'var(--ink)' : 'var(--ink-3)',
-              background: isActive ? 'var(--surface-2)' : 'transparent',
-              fontSize: 13,
-              fontWeight: isActive ? 500 : 400,
-              textDecoration: 'none',
-              marginBottom: 1,
-              transition: 'background .1s, color .1s',
-            })}
+            className={({ isActive }) => (isActive ? 'side-nav-item active' : 'side-nav-item')}
           >
             <Icon name={icon} size={15} />
             <span style={{ flex: 1, lineHeight: 1.3 }}>{label}</span>
             {label === 'Transactions' && pendingCount > 0 && (
-              <span
-                style={{
-                  background: 'var(--accent)',
-                  color: '#fff',
-                  borderRadius: 999,
-                  fontSize: 10,
-                  fontWeight: 600,
-                  padding: '1px 5px',
-                  lineHeight: '14px',
-                  flexShrink: 0,
-                }}
-              >
-                {pendingCount}
-              </span>
+              <span className="side-nav-badge num">{pendingCount}</span>
             )}
           </NavLink>
         ))}
       </nav>
 
       {/* This month */}
-      {totalBudget > 0 && (
-        <div
+      <div
+        style={{
+          marginTop: 8,
+          padding: '12px 14px',
+          borderTop: '1px solid var(--line)',
+        }}
+      >
+        <p
           style={{
-            marginTop: 8,
-            padding: '12px 14px',
-            borderTop: '1px solid var(--line)',
+            fontSize: 10,
+            fontWeight: 600,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-4)',
+            marginBottom: 8,
           }}
         >
-          <p
-            style={{
-              fontSize: 10,
-              fontWeight: 600,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              color: 'var(--ink-4)',
-              marginBottom: 8,
-            }}
-          >
-            THIS MONTH
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            {(
-              [
-                { label: 'Spent', value: formatCompact(spent), color: 'var(--ink)', weight: 600 },
-                {
-                  label: 'Budget',
-                  value: formatCompact(totalBudget),
-                  color: 'var(--ink-2)',
-                  weight: 400,
-                },
-                ...(owedToYou > 0
-                  ? [
-                      {
-                        label: 'Owed to you',
-                        value: formatCompact(owedToYou),
-                        color: 'var(--pos)',
-                        weight: 600,
-                      },
-                    ]
-                  : []),
-              ] as { label: string; value: string; color: string; weight: number }[]
-            ).map(({ label, value, color, weight }) => (
-              <div
-                key={label}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'baseline',
-                }}
-              >
-                <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{label}</span>
-                <span className="num" style={{ fontSize: 12, fontWeight: weight, color }}>
-                  {value}
-                </span>
-              </div>
-            ))}
-          </div>
+          This month
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          {(
+            [
+              { label: 'Spent', value: formatCompact(spent), color: 'var(--ink)', weight: 600 },
+              totalBudget > 0
+                ? {
+                    label: 'Budget',
+                    value: formatCompact(totalBudget),
+                    color: 'var(--ink-3)',
+                    weight: 400,
+                  }
+                : {
+                    label: 'Budget',
+                    value: 'not set',
+                    color: 'var(--ink-4)',
+                    weight: 400,
+                  },
+              ...(owedToYou > 0
+                ? [
+                    {
+                      label: 'Owed to you',
+                      value: formatCompact(owedToYou),
+                      color: 'var(--pos)',
+                      weight: 600,
+                    },
+                  ]
+                : []),
+            ] as { label: string; value: string; color: string; weight: number }[]
+          ).map(({ label, value, color, weight }) => (
+            <div
+              key={label}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'baseline',
+              }}
+            >
+              <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{label}</span>
+              <span className="num" style={{ fontSize: 12, fontWeight: weight, color }}>
+                {value}
+              </span>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
 
       <div style={{ flex: 1 }} />
 
