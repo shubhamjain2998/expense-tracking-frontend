@@ -24,7 +24,7 @@
   "dependencies": {
     "@emnapi/core": "^1.10.0",
     "@emnapi/runtime": "^1.10.0",
-    "@sentry/react": "^10.53.1",
+    "@sentry/react": "^10.54.0",
     "@tanstack/react-query": "^5.100.6",
     "@tanstack/react-query-devtools": "^5.100.6",
     "axios": "^1.15.2",
