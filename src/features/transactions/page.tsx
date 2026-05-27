@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { AddTransactionDialog } from '@/components/ui/AddTransactionDialog'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
+import { useToastContext } from '@/hooks/useToastContext'
 import { getCurrentPeriod, loadPeriodMode } from '@/lib/period'
 import type { ProcessedTransactionItem } from '@/types/transaction'
 
@@ -46,7 +47,7 @@ export function TransactionsPage() {
   const [editingTxn, setEditingTxn] = useState<ProcessedTransactionItem | null>(null)
   const [showManualEntry, setShowManualEntry] = useState(false)
   const [dragOverCatId, setDragOverCatId] = useState<string | null>(null)
-  const [draggingUid, setDraggingUid] = useState<string | null>(null)
+  const [draggingUids, setDraggingUids] = useState<Set<string>>(new Set())
   const [openMenuUid, setOpenMenuUid] = useState<string | null>(null)
   const [checkedUids, setCheckedUids] = useState<Set<string>>(new Set())
   const [hoveredRowUid, setHoveredRowUid] = useState<string | null>(null)
@@ -54,6 +55,7 @@ export function TransactionsPage() {
   const [sortDir, setSortDir] = useState<SortDir>('desc')
 
   const navigate = useNavigate()
+  const toast = useToastContext()
   const { rawQuery, processedQuery, categoriesQuery, tagsQuery } = useTransactionsData(
     year,
     month,
@@ -179,29 +181,104 @@ export function TransactionsPage() {
     }
   }
 
-  function handleDragStart(uid: string) {
-    setDraggingUid(uid)
+  function handleDragStart(uid: string, e: React.DragEvent) {
+    // If the dragged row is part of a multi-select, drag all checked rows.
+    // Otherwise drag just the row the user grabbed — preserves the
+    // single-row workflow when no checkboxes are involved.
+    const uids =
+      checkedUids.has(uid) && checkedUids.size > 1 ? new Set(checkedUids) : new Set([uid])
+    setDraggingUids(uids)
     setOpenMenuUid(null)
+
+    if (uids.size > 1) {
+      const ghost = document.createElement('div')
+      ghost.style.cssText = [
+        'position:absolute',
+        'top:-9999px',
+        'left:-9999px',
+        'display:inline-flex',
+        'align-items:center',
+        'gap:8px',
+        'padding:8px 14px',
+        'background:var(--accent)',
+        'color:white',
+        'border-radius:var(--radius)',
+        'font-size:13px',
+        'font-weight:600',
+        'box-shadow:0 4px 12px rgba(0,0,0,0.18)',
+        'font-family:var(--font-sans)',
+      ].join(';')
+      ghost.textContent = `${uids.size} transactions`
+      document.body.appendChild(ghost)
+      e.dataTransfer.setDragImage(ghost, 12, 12)
+      // Defer removal so the browser has time to snapshot the element.
+      setTimeout(() => ghost.remove(), 0)
+    }
   }
   function handleDragEnd() {
-    setDraggingUid(null)
+    setDraggingUids(new Set())
     setDragOverCatId(null)
   }
-  function handleDropOnCategory(categoryId: string) {
-    if (!draggingUid) return
-    const txn = allTxns.find((t) => t.uid === draggingUid)
-    if (!txn) return
-    if (txn.kind === 'pending' && txn.rawId)
-      quickCategorizeMutation.mutate({
-        rawId: txn.rawId,
-        categoryId,
-        ...findBaseContext(txn.description),
+  async function handleDropOnCategory(categoryId: string) {
+    if (draggingUids.size === 0) return
+    const uids = Array.from(draggingUids)
+    const isMulti = uids.length > 1
+
+    // Single-drop fast path keeps the prior toast/UX exactly the same.
+    if (!isMulti) {
+      const txn = allTxns.find((t) => t.uid === uids[0])
+      if (!txn) {
+        setDraggingUids(new Set())
+        setDragOverCatId(null)
+        return
+      }
+      if (txn.kind === 'pending' && txn.rawId)
+        quickCategorizeMutation.mutate({
+          rawId: txn.rawId,
+          categoryId,
+          ...findBaseContext(txn.description),
+        })
+      else if (txn.kind === 'processed' && txn.processedId)
+        changeCategoryMutation.mutate({ procId: txn.processedId, categoryId })
+      if (txn.kind === 'pending') setSelectedUid(null)
+      setDraggingUids(new Set())
+      setDragOverCatId(null)
+      return
+    }
+
+    // Multi-drop: dispatch in parallel, suppress per-row toasts, show one summary.
+    const tasks = uids
+      .map((uid) => allTxns.find((t) => t.uid === uid))
+      .filter((txn): txn is NonNullable<typeof txn> => !!txn)
+      .map((txn) => {
+        if (txn.kind === 'pending' && txn.rawId)
+          return quickCategorizeMutation.mutateAsync({
+            rawId: txn.rawId,
+            categoryId,
+            silent: true,
+            ...findBaseContext(txn.description),
+          })
+        if (txn.kind === 'processed' && txn.processedId)
+          return changeCategoryMutation.mutateAsync({
+            procId: txn.processedId,
+            categoryId,
+            silent: true,
+          })
+        return Promise.resolve()
       })
-    else if (txn.kind === 'processed' && txn.processedId)
-      changeCategoryMutation.mutate({ procId: txn.processedId, categoryId })
-    if (txn.kind === 'pending') setSelectedUid(null)
-    setDraggingUid(null)
+
+    setDraggingUids(new Set())
     setDragOverCatId(null)
+    setSelectedUid(null)
+
+    const results = await Promise.allSettled(tasks)
+    const succeeded = results.filter((r) => r.status === 'fulfilled').length
+    const failed = results.length - succeeded
+    if (succeeded > 0)
+      toast.success(`Categorized ${succeeded} transaction${succeeded === 1 ? '' : 's'}`)
+    if (failed > 0)
+      toast.error(`Failed to categorize ${failed} transaction${failed === 1 ? '' : 's'}`)
+    if (succeeded > 0) setCheckedUids(new Set())
   }
 
   useTransactionKeyboard({
@@ -269,13 +346,29 @@ export function TransactionsPage() {
           onDropOnCategory={handleDropOnCategory}
         />
       )}
-      {checkedUids.size > 0 && (
-        <BulkActionsBar
-          count={checkedUids.size}
-          onDelete={() => void handleBulkDelete(filtered, checkedUids, setCheckedUids)}
-          onClear={() => setCheckedUids(new Set())}
-        />
-      )}
+      {checkedUids.size > 0 &&
+        (() => {
+          // Only PENDING rows can be auto-categorised. Filter the selection
+          // down to their raw IDs so the backend's selective endpoint gets
+          // exactly the rows the user expects.
+          const pendingRawIds = filtered
+            .filter((t) => t.kind === 'pending' && t.rawId && checkedUids.has(t.uid))
+            .map((t) => t.rawId as string)
+          return (
+            <BulkActionsBar
+              count={checkedUids.size}
+              pendingCount={pendingRawIds.length}
+              autoCategoriseLoading={autoMutation.isPending}
+              onAutoCategorise={() =>
+                autoMutation.mutate(pendingRawIds, {
+                  onSettled: () => setCheckedUids(new Set()),
+                })
+              }
+              onDelete={() => void handleBulkDelete(filtered, checkedUids, setCheckedUids)}
+              onClear={() => setCheckedUids(new Set())}
+            />
+          )
+        })()}
       <TransactionsList
         sorted={sorted}
         filtered={filtered}
@@ -299,7 +392,7 @@ export function TransactionsPage() {
         setHoveredRowUid={setHoveredRowUid}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
-        draggingUid={draggingUid}
+        draggingUids={draggingUids}
         categories={categories}
         deleteRawMutation={deleteRawMutation}
         restoreRawMutation={restoreRawMutation}

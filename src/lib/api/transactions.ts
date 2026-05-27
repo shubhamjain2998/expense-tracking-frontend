@@ -44,8 +44,11 @@ export async function restoreRawTransaction(id: string): Promise<void> {
   await client.patch(`/transactions/raw/${id}/restore`)
 }
 
-export async function autoCategorise(): Promise<AutoCategoriseResponse> {
-  const { data } = await client.post<AutoCategoriseResponse>('/transactions/auto-categorise')
+export async function autoCategorise(rawTxnIds?: string[]): Promise<AutoCategoriseResponse> {
+  // Omit the body entirely when categorising everything — preserves the
+  // existing endpoint behaviour for callers that don't pass an id list.
+  const body = rawTxnIds ? { raw_txn_ids: rawTxnIds } : undefined
+  const { data } = await client.post<AutoCategoriseResponse>('/transactions/auto-categorise', body)
   return data
 }
 

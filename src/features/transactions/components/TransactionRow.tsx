@@ -313,23 +313,39 @@ export function TransactionRow({
         {amtDisplay}
       </td>
 
-      {/* Context menu */}
+      {/* Context menu (or direct Restore button on deleted rows — the menu
+          is overkill for a single action and gets clipped by the narrow
+          last-column width). */}
       <td
         data-menu-uid={txn.uid}
         style={{ padding: '0 6px 0 0', textAlign: 'right', position: 'relative' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <button onClick={onToggleMenu} className="btn ghost icon sm">
-          <Icon name="more_horiz" size={14} />
-        </button>
-        {hasMenu && (
-          <TxnContextMenu
-            txn={txn}
-            onProcess={onProcess}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onRestore={onRestore}
-          />
+        {isDeleted ? (
+          <button
+            onClick={onRestore}
+            className="btn ghost icon sm"
+            title="Restore"
+            aria-label="Restore"
+            style={{ color: 'var(--accent)' }}
+          >
+            <Icon name="undo" size={14} />
+          </button>
+        ) : (
+          <>
+            <button onClick={onToggleMenu} className="btn ghost icon sm">
+              <Icon name="more_horiz" size={14} />
+            </button>
+            {hasMenu && (
+              <TxnContextMenu
+                txn={txn}
+                onProcess={onProcess}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onRestore={onRestore}
+              />
+            )}
+          </>
         )}
       </td>
     </tr>

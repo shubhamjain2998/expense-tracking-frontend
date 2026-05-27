@@ -42,6 +42,7 @@ export function useProcessedMutations(year: number, month: number, mode: PeriodM
       shares?: PersonShareIn[]
       notes?: string | null
       tag_ids?: string[]
+      silent?: boolean
     }) =>
       processTransaction({
         raw_txn_id: rawId,
@@ -51,28 +52,38 @@ export function useProcessedMutations(year: number, month: number, mode: PeriodM
         notes,
         tag_ids,
       }),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       void qc.invalidateQueries({ queryKey: qk.transactions.raw(year, month, mode) })
       void qc.invalidateQueries({ queryKey: qk.transactions.processed(year, month) })
       void qc.invalidateQueries({ queryKey: qk.transactions.pendingManual() })
       // A new processed txn changes category totals on the dashboard, and
       // save_mapping=true also creates a new mapping rule.
       invalidateDomains(qc, ['dashboard', 'categoryMappings'])
-      toast.success('Categorized')
+      if (!variables.silent) toast.success('Categorized')
     },
-    onError: (err: { detail: string }) => toast.error(err.detail ?? 'Failed to categorize'),
+    onError: (err: { detail: string }, variables) => {
+      if (!variables.silent) toast.error(err.detail ?? 'Failed to categorize')
+    },
   })
 
   const changeCategoryMutation = useMutation({
-    mutationFn: ({ procId, categoryId }: { procId: string; categoryId: string }) =>
-      editProcessedTransaction(procId, { category_id: categoryId }),
-    onSuccess: () => {
+    mutationFn: ({
+      procId,
+      categoryId,
+    }: {
+      procId: string
+      categoryId: string
+      silent?: boolean
+    }) => editProcessedTransaction(procId, { category_id: categoryId }),
+    onSuccess: (_data, variables) => {
       void qc.invalidateQueries({ queryKey: qk.transactions.processed(year, month) })
       // Reassigns spend from one category bucket to another on the dashboard.
       invalidateDomains(qc, ['dashboard'])
-      toast.success('Category updated')
+      if (!variables.silent) toast.success('Category updated')
     },
-    onError: () => toast.error('Failed to update category'),
+    onError: (_err, variables) => {
+      if (!variables.silent) toast.error('Failed to update category')
+    },
   })
 
   return { deleteProcMutation, quickCategorizeMutation, changeCategoryMutation }
