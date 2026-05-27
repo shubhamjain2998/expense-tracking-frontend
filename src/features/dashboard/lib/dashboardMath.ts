@@ -3,13 +3,7 @@ import { monthShortLabel } from '@/lib/period'
 import type { TrendDataPoint, YTDRow } from '@/types/dashboard'
 import type { ProcessedTransactionItem } from '@/types/transaction'
 
-import type {
-  CategoryStat,
-  IncomeExpenseTrendPoint,
-  MonthStat,
-  YtdComputedData,
-  YtdDataPoint,
-} from '../types'
+import type { CategoryStat, MonthStat, YtdComputedData, YtdDataPoint } from '../types'
 
 export function computeCategoryStats(txns: ProcessedTransactionItem[]): CategoryStat[] {
   const map = new Map<string, { total: number; count: number }>()
@@ -70,22 +64,6 @@ export function computeStackedTrend(
     return obj
   })
   return { stackedTrendData: data, stackCategories: Array.from(catSet) }
-}
-
-export function computeIncomeTrendData(
-  incomeQueriesData: (ProcessedTransactionItem[] | undefined)[],
-  last6Months: Last6Month[]
-): IncomeExpenseTrendPoint[] {
-  return last6Months.map((m, i) => {
-    const txns = incomeQueriesData[i] ?? []
-    const income = txns
-      .filter((t) => Number(t.effective_amount) < 0)
-      .reduce((s, t) => s - Number(t.effective_amount), 0)
-    const expense = txns
-      .filter((t) => Number(t.effective_amount) > 0)
-      .reduce((s, t) => s + Number(t.effective_amount), 0)
-    return { month: m.label, income, expense, savings: income - expense }
-  })
 }
 
 /**
