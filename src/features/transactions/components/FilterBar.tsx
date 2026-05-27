@@ -20,8 +20,13 @@ interface FilterBarProps {
   onTagFilter: (v: string) => void
   hasActiveFilters: boolean
   onClearFilters: () => void
-  // FilterBar only calls mutate() and reads isPending — decouple from data shape.
-  autoMutation: Pick<UseMutationResult<unknown, { detail: string }, void>, 'mutate' | 'isPending'>
+  // FilterBar only calls mutate() (no args — sweeps all pending) and reads
+  // isPending. Variables type matches `useAutoCategorise`'s optional rawTxnIds,
+  // so the unparameterised call here resolves to "categorise everything".
+  autoMutation: Pick<
+    UseMutationResult<unknown, { detail: string }, string[] | undefined>,
+    'mutate' | 'isPending'
+  >
 }
 
 export function FilterBar({
@@ -147,7 +152,7 @@ export function FilterBar({
 
       {/* Auto-categorise */}
       <button
-        onClick={() => autoMutation.mutate()}
+        onClick={() => autoMutation.mutate(undefined)}
         disabled={autoMutation.isPending}
         className="btn ghost sm"
         title="Auto-categorise pending transactions"
