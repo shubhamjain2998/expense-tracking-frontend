@@ -10,7 +10,7 @@ export function useAutoCategorise() {
   const toast = useToastContext()
 
   const autoMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (rawTxnIds?: string[]) => {
       // Snapshot all currently cached processed transactions before the API call
       const beforeEntries = qc.getQueriesData<ProcessedTransactionItem[]>({
         queryKey: ['transactions', 'processed'],
@@ -18,7 +18,7 @@ export function useAutoCategorise() {
       const beforeIds = new Set(beforeEntries.flatMap(([, data]) => (data ?? []).map((p) => p.id)))
       const beforeData = beforeEntries.flatMap(([, data]) => data ?? [])
 
-      const result = await autoCategorise()
+      const result = await autoCategorise(rawTxnIds)
       return { result, beforeIds, beforeData }
     },
     onSuccess: async ({ result, beforeIds, beforeData }) => {

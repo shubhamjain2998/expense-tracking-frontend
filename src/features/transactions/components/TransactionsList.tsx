@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Icon } from '@/components/ui/Icon'
 import { SkeletonTable } from '@/components/ui/Skeleton'
+import { formatCurrency } from '@/lib/format'
 import type { Category } from '@/types/settings'
 import type { ProcessedTransactionItem } from '@/types/transaction'
 
@@ -38,8 +39,8 @@ interface TransactionsListProps {
   setOpenMenuUid: (uid: string | null) => void
   hoveredRowUid: string | null
   setHoveredRowUid: (uid: string | null) => void
-  draggingUid: string | null
-  onDragStart: (uid: string) => void
+  draggingUids: Set<string>
+  onDragStart: (uid: string, e: React.DragEvent) => void
   onDragEnd: () => void
   categories: Category[]
   deleteRawMutation: UseMutationResult<void, Error, string>
@@ -71,7 +72,7 @@ export function TransactionsList({
   setOpenMenuUid,
   hoveredRowUid,
   setHoveredRowUid,
-  draggingUid,
+  draggingUids,
   onDragStart,
   onDragEnd,
   categories,
@@ -84,6 +85,31 @@ export function TransactionsList({
 }: TransactionsListProps) {
   const visibleFiltered = filtered.filter((t) => t.kind !== 'deleted')
   const allNonDeleted = allTxns.filter((t) => t.kind !== 'deleted')
+
+  // Totals row reflects exactly what the user is looking at: when checkboxes
+  // are used we honor that explicit selection (and ignore the rest), otherwise
+  // we sum the post-filter / post-search rows. Sign convention is sourced
+  // from `txn_type` — not the raw amount sign — because this codebase stores
+  // income with mixed signs in `effective_amount` and only `txn_type` is
+  // authoritative (see txnFormat.ts: isIncome).
+  const checkedVisible = visibleFiltered.filter((t) => checkedUids.has(t.uid))
+  const totalsSource = checkedVisible.length > 0 ? checkedVisible : visibleFiltered
+  const moneyIn = (t: (typeof totalsSource)[number]) =>
+    t.txnType === 'income' ||
+    t.txnType === 'refund' ||
+    (t.kind === 'pending' && Number(t.effectiveAmount) < 0)
+  const incomeTotal = totalsSource
+    .filter(moneyIn)
+    .reduce((s, t) => s + Math.abs(Number(t.effectiveAmount)), 0)
+  const expenseTotal = totalsSource
+    .filter((t) => !moneyIn(t))
+    .reduce((s, t) => s + Math.abs(Number(t.effectiveAmount)), 0)
+  const netTotal = expenseTotal - incomeTotal
+  const totalsLabel =
+    checkedVisible.length > 0
+      ? `${checkedVisible.length} selected`
+      : `${visibleFiltered.length} transaction${visibleFiltered.length === 1 ? '' : 's'}`
+  const hasMixed = incomeTotal > 0 && expenseTotal > 0
 
   return (
     <div className="card card-flush mt-4" style={{ overflow: 'clip' }}>
@@ -137,6 +163,36 @@ export function TransactionsList({
                   )
                 })
               )}
+              {sorted.length > 0 && (
+                <div
+                  className="md:hidden"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                    padding: '12px 14px',
+                    marginTop: 4,
+                    background: 'var(--surface-2)',
+                    borderTop: '1px solid var(--line)',
+                  }}
+                >
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)' }}>
+                    {totalsLabel}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: netTotal < 0 ? 'var(--pos)' : 'var(--ink)',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    {netTotal < 0 ? '+' : ''}
+                    {formatCurrency(Math.abs(netTotal), { fractionDigits: 2 })}
+                  </span>
+                </div>
+              )}
             </div>
             <table className="tbl txn-table hidden md:table" style={{ tableLayout: 'fixed' }}>
               <colgroup>
@@ -182,7 +238,7 @@ export function TransactionsList({
                         key={txn.uid}
                         txn={txn}
                         isSelected={isSelected}
-                        isDragging={draggingUid === txn.uid}
+                        isDragging={draggingUids.has(txn.uid)}
                         hasMenu={openMenuUid === txn.uid}
                         isChecked={checkedUids.has(txn.uid)}
                         isHovered={hoveredRowUid === txn.uid}
@@ -231,7 +287,7 @@ export function TransactionsList({
                         }}
                         onDragStart={(e) => {
                           e.dataTransfer.effectAllowed = 'move'
-                          onDragStart(txn.uid)
+                          onDragStart(txn.uid, e)
                         }}
                         onDragEnd={onDragEnd}
                         onMouseEnter={() => setHoveredRowUid(txn.uid)}
@@ -243,6 +299,61 @@ export function TransactionsList({
                   })
                 )}
               </tbody>
+              {sorted.length > 0 && (
+                <tfoot>
+                  <tr
+                    style={{
+                      background: 'var(--surface-2)',
+                      borderTop: '1px solid var(--line)',
+                    }}
+                  >
+                    <td colSpan={3} />
+                    <td
+                      colSpan={4}
+                      style={{
+                        padding: '12px 12px',
+                        fontSize: 12.5,
+                        color: 'var(--ink-2)',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <span style={{ fontWeight: 600 }}>{totalsLabel}</span>
+                      {hasMixed && (
+                        <>
+                          <span
+                            style={{ marginLeft: 12, fontSize: 11.5, color: 'var(--pos)' }}
+                            title="Income in view"
+                          >
+                            +{formatCurrency(incomeTotal, { fractionDigits: 0 })}
+                          </span>
+                          <span
+                            style={{ marginLeft: 8, fontSize: 11.5, color: 'var(--ink-3)' }}
+                            title="Expenses in view"
+                          >
+                            −{formatCurrency(expenseTotal, { fractionDigits: 0 })}
+                          </span>
+                        </>
+                      )}
+                    </td>
+                    <td
+                      style={{
+                        padding: '12px 12px',
+                        textAlign: 'right',
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: netTotal < 0 ? 'var(--pos)' : 'var(--ink)',
+                        fontVariantNumeric: 'tabular-nums',
+                        whiteSpace: 'nowrap',
+                      }}
+                      title={netTotal < 0 ? 'Net income' : 'Net spend'}
+                    >
+                      {netTotal < 0 ? '+' : ''}
+                      {formatCurrency(Math.abs(netTotal), { fractionDigits: 2 })}
+                    </td>
+                    <td />
+                  </tr>
+                </tfoot>
+              )}
             </table>
             <div
               style={{
