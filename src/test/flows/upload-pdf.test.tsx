@@ -24,29 +24,32 @@ describe('PDF upload flow', () => {
     localStorage.removeItem('access_token')
   })
 
-  it('switches to paste-text tab, parses text, and imports', async () => {
+  it('switches to bulk-paste tab, validates JSON, and imports', async () => {
     const user = userEvent.setup()
     renderWithProviders(<UploadRoutes />, { initialEntries: ['/upload'] })
 
     await screen.findByRole('heading', { name: /import transactions/i })
 
-    // Switch to the "Paste text" tab
-    await user.click(screen.getByRole('button', { name: /paste text/i }))
+    // Switch to the "Bulk paste" tab
+    await user.click(screen.getByRole('button', { name: /bulk paste/i }))
 
-    // Textarea appears
-    const textarea = screen.getByLabelText('Paste bank statement text')
-    await user.type(textarea, '2026-05-01\tCoffee Shop\t-50.00')
+    // Paste an LLM-shaped JSON payload into the textarea — pasting (not
+    // typing key-by-key) keeps the parse memo from running for every keystroke.
+    const textarea = screen.getByLabelText(/llm json output/i)
+    const payload = JSON.stringify({
+      schema_version: 1,
+      rows: [{ txn_date: '2026-05-01', description: 'Coffee Shop', amount: -50 }],
+    })
+    await user.click(textarea)
+    await user.paste(payload)
 
-    // Parse & preview
-    await user.click(screen.getByRole('button', { name: /parse/i }))
-
-    // Preview row from handler fixture
+    // Preview row renders once validation + dedupe pipeline settles
     expect(await screen.findByText('Coffee Shop')).toBeInTheDocument()
 
     // Import
-    await user.click(screen.getByRole('button', { name: /import/i }))
+    await user.click(await screen.findByRole('button', { name: /import 1 transactions/i }))
 
-    // Success toast
+    // Success toast — matches the PDF flow's wording, "N transactions imported, 0 skipped"
     expect(await screen.findByText(/1 transactions imported/i)).toBeInTheDocument()
   })
 

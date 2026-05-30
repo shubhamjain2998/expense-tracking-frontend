@@ -1,11 +1,6 @@
 import { http, HttpResponse } from 'msw'
 
-import {
-  makeBudgetEntry,
-  makeCategory,
-  makeImportResponse,
-  makePreviewResponse,
-} from './factories'
+import { makeBudgetEntry, makeCategory, makeImportResponse, makePreviewResponse } from './factories'
 
 const BASE = 'http://localhost:8000'
 
@@ -55,8 +50,7 @@ export const handlers = [
   // Uploads
   http.post(`${BASE}/uploads/preview`, () => HttpResponse.json(makePreviewResponse())),
   http.post(`${BASE}/uploads/statement`, () => HttpResponse.json(makeImportResponse())),
-  http.post(`${BASE}/uploads/preview-text`, () => HttpResponse.json(makePreviewResponse())),
-  http.post(`${BASE}/uploads/text-import`, () => HttpResponse.json(makeImportResponse())),
+  http.post(`${BASE}/uploads/json-import`, () => HttpResponse.json(makeImportResponse())),
 
   // Dashboard
   http.get(`${BASE}/dashboard/summary`, () => HttpResponse.json([])),
@@ -67,11 +61,11 @@ export const handlers = [
   // Budget
   http.get(`${BASE}/budget/:year/monthly-overrides`, () => HttpResponse.json([])),
   http.get(`${BASE}/budget/:year`, () =>
-    HttpResponse.json([makeBudgetEntry({ id: 'budget-entry-1', category_id: 'cat-1', category: 'Groceries' })])
+    HttpResponse.json([
+      makeBudgetEntry({ id: 'budget-entry-1', category_id: 'cat-1', category: 'Groceries' }),
+    ])
   ),
-  http.post(`${BASE}/budget`, () =>
-    HttpResponse.json([makeBudgetEntry()])
-  ),
+  http.post(`${BASE}/budget`, () => HttpResponse.json([makeBudgetEntry()])),
   http.put(`${BASE}/budget/:id`, () =>
     HttpResponse.json(makeBudgetEntry({ allocated_amount: '1800.00' }))
   ),
