@@ -9,7 +9,7 @@ interface UploadTabsProps {
 
 const TABS: { id: UploadMode; label: string; icon: IconName }[] = [
   { id: 'pdf', label: 'PDF statement', icon: 'picture_as_pdf' },
-  { id: 'paste', label: 'Paste text', icon: 'content_paste' },
+  { id: 'bulk-paste', label: 'Bulk paste', icon: 'content_paste' },
   { id: 'manual', label: 'Manual entry', icon: 'add' },
 ]
 

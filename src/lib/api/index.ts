@@ -21,12 +21,7 @@ export {
   updateBudgetEntry,
 } from './budget'
 
-export {
-  importStatement,
-  importStatementText,
-  previewStatement,
-  previewStatementText,
-} from './uploads'
+export { importStatement, previewStatement } from './uploads'
 
 export {
   autoCategorise,

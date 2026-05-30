@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import { Chip } from '@/components/ui/Chip'
 import { Icon } from '@/components/ui/Icon'
 
+import { isLikelyTransactionLine } from '../lib/isLikelyTransactionLine'
 import type { FileUpload } from '../types'
 
 import { PreviewTable } from './PreviewTable'
@@ -11,9 +12,12 @@ export interface FileCardProps {
   upload: FileUpload
   onRemove: () => void
   onToggleExclude: (index: number) => void
+  /** Jump to the Bulk paste tab — surfaced when this file failed to parse,
+   *  giving users an unblocked path for unsupported-bank PDFs. */
+  onTryBulkPaste?: () => void
 }
 
-export function FileCard({ upload, onRemove, onToggleExclude }: FileCardProps) {
+export function FileCard({ upload, onRemove, onToggleExclude, onTryBulkPaste }: FileCardProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [dateFilter, setDateFilter] = useState('')
   const [skippedExpanded, setSkippedExpanded] = useState(false)
@@ -33,6 +37,15 @@ export function FileCard({ upload, onRemove, onToggleExclude }: FileCardProps) {
 
   const readyCount = (upload.preview?.would_insert ?? 0) - upload.excludedIndices.size
   const isActive = upload.status === 'ready' || upload.status === 'done'
+
+  // The parser's skipped_rows list catches every line it couldn't classify,
+  // including legitimate non-transaction noise (card headers, reward tables,
+  // GST blocks, totals). Surface only the lines that *look* like they could
+  // have been transactions — counting noise causes false-alarm banners.
+  const candidateMisses = useMemo(
+    () => upload.preview?.skipped_rows.filter(isLikelyTransactionLine) ?? [],
+    [upload.preview?.skipped_rows]
+  )
 
   return (
     <div className="card card-flush overflow-hidden">
@@ -88,19 +101,46 @@ export function FileCard({ upload, onRemove, onToggleExclude }: FileCardProps) {
         </div>
       </div>
 
+      {/* Fallback CTA when parsing fails — users whose bank isn't supported
+          can still get unblocked by screenshotting the PDF and bulk-pasting. */}
+      {upload.status === 'error' && onTryBulkPaste && (
+        <div
+          className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+          style={{
+            padding: '10px 14px',
+            borderTop: '1px solid var(--line)',
+            background: 'var(--warn-soft)',
+          }}
+        >
+          <p className="text-[12px]" style={{ color: 'var(--ink-2)' }}>
+            Bank not supported yet? Open the PDF, screenshot the transaction pages, and paste them
+            into Bulk paste — works with any layout.
+          </p>
+          <button
+            onClick={onTryBulkPaste}
+            className="btn sm shrink-0"
+            type="button"
+            aria-label="Switch to Bulk paste tab"
+          >
+            <Icon name="content_paste" size={12} />
+            Try Bulk paste
+          </button>
+        </div>
+      )}
+
       {/* Preview table */}
       {isActive && upload.preview && (
         <>
           {/* Info chips */}
-          {(upload.preview.skipped > 0 ||
+          {(candidateMisses.length > 0 ||
             upload.excludedIndices.size > 0 ||
             upload.dupeIndices.size > 0) && (
             <div
               className="flex flex-wrap items-center gap-2"
               style={{ padding: '8px 14px', borderBottom: '1px solid var(--line)' }}
             >
-              {upload.preview.skipped > 0 && (
-                <Chip variant="warning">{upload.preview.skipped} skipped</Chip>
+              {candidateMisses.length > 0 && (
+                <Chip variant="warning">{candidateMisses.length} possibly missed</Chip>
               )}
               {upload.excludedIndices.size > 0 && (
                 <Chip variant="warning">{upload.excludedIndices.size} excluded</Chip>
@@ -171,19 +211,45 @@ export function FileCard({ upload, onRemove, onToggleExclude }: FileCardProps) {
             onToggleExclude={upload.status === 'ready' ? onToggleExclude : undefined}
           />
 
-          {upload.preview.skipped > 0 && (
-            <div style={{ borderTop: '1px solid var(--line)' }}>
+          {candidateMisses.length > 0 && (
+            <div style={{ borderTop: '1px solid var(--line)', background: 'var(--warn-soft)' }}>
+              <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex items-start gap-2">
+                  <Icon
+                    name="warning"
+                    size={14}
+                    style={{ color: 'var(--warn)', marginTop: 2, flexShrink: 0 }}
+                  />
+                  <div className="text-[12px]" style={{ color: 'var(--ink-2)' }}>
+                    <span className="font-medium">
+                      {candidateMisses.length} line{candidateMisses.length > 1 ? 's' : ''} look like
+                      transactions but couldn't be parsed.
+                    </span>{' '}
+                    Import will continue without them — to capture the missed transactions,
+                    screenshot the affected pages and use Bulk paste.
+                  </div>
+                </div>
+                {onTryBulkPaste && (
+                  <button
+                    onClick={onTryBulkPaste}
+                    className="btn sm shrink-0"
+                    type="button"
+                    aria-label="Switch to Bulk paste tab"
+                  >
+                    <Icon name="content_paste" size={12} />
+                    Add via Bulk paste
+                  </button>
+                )}
+              </div>
               <button
                 onClick={() => setSkippedExpanded((v) => !v)}
-                className="flex w-full items-center justify-between px-4 py-3 text-left"
+                className="flex w-full items-center justify-between px-4 py-2 text-left"
+                style={{ borderTop: '1px solid var(--line)' }}
               >
-                <div className="flex items-center gap-2">
-                  <Icon name="warning" size={14} style={{ color: 'var(--warn)' }} />
-                  <span className="text-[12.5px] font-medium" style={{ color: 'var(--ink-2)' }}>
-                    {upload.preview.skipped} row{upload.preview.skipped > 1 ? 's' : ''} skipped
-                    during parsing — import continues without them
-                  </span>
-                </div>
+                <span className="text-[11.5px]" style={{ color: 'var(--ink-3)' }}>
+                  {skippedExpanded ? 'Hide' : 'Show'} the {candidateMisses.length} unparsed line
+                  {candidateMisses.length > 1 ? 's' : ''}
+                </span>
                 <Icon
                   name={skippedExpanded ? 'expand_less' : 'expand_more'}
                   size={14}
@@ -195,7 +261,7 @@ export function FileCard({ upload, onRemove, onToggleExclude }: FileCardProps) {
                   className="space-y-1 px-4 pt-2 pb-3"
                   style={{ borderTop: '1px solid var(--line)' }}
                 >
-                  {upload.preview.skipped_rows.map((row, i) => (
+                  {candidateMisses.map((row, i) => (
                     <li
                       key={i}
                       className="mono truncate text-[11px]"

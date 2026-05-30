@@ -25,12 +25,17 @@ export async function importStatement(file: File, password?: string): Promise<Im
   return data
 }
 
-export async function previewStatementText(text: string): Promise<PreviewResponse> {
-  const { data } = await client.post<PreviewResponse>('/uploads/preview-text', { text })
-  return data
+export interface JsonImportRow {
+  txn_date: string
+  description: string
+  amount: number
 }
 
-export async function importStatementText(text: string): Promise<ImportResponse> {
-  const { data } = await client.post<ImportResponse>('/uploads/text-import', { text })
+/** Bulk-import already-parsed rows from a bulk-paste flow. Server-side this
+ *  uses the same insertion path as `/uploads/statement` and `/uploads/text-import`
+ *  — signed amounts, clean_description, UploadedFile audit row, content-hash
+ *  409 on re-paste. */
+export async function importJsonRows(rows: JsonImportRow[]): Promise<ImportResponse> {
+  const { data } = await client.post<ImportResponse>('/uploads/json-import', { rows })
   return data
 }
