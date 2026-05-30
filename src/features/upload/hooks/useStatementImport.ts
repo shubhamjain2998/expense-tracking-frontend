@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 
 import { deleteRawTransaction, getRawTransactions } from '@/lib/api/transactions'
-import { importStatement, importStatementText } from '@/lib/api/uploads'
+import { importStatement } from '@/lib/api/uploads'
 import { invalidateDomains } from '@/lib/queryKeys'
 import type { ImportResponse, PreviewRow } from '@/types/transaction'
 
@@ -47,12 +47,5 @@ export function useStatementImport() {
     return data
   }
 
-  async function importText(text: string, excludedRows: PreviewRow[]): Promise<ImportResponse> {
-    const data = await importStatementText(text)
-    await deleteExcluded(excludedRows)
-    invalidateDomains(qc, ['transactions'])
-    return data
-  }
-
-  return { importFile, importText }
+  return { importFile }
 }

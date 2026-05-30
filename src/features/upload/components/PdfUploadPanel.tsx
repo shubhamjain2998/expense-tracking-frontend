@@ -21,6 +21,9 @@ interface PdfUploadPanelProps {
   importAllPdfs: () => void
   submitPassword: (uploadId: string, password: string) => void
   cancelPasswordPrompt: (uploadId: string) => void
+  /** Jump to the Bulk paste tab. Surfaced on per-file errors so users whose
+   *  bank isn't supported by the parser have a visible fallback. */
+  onTryBulkPaste?: () => void
 }
 
 export function PdfUploadPanel({
@@ -36,6 +39,7 @@ export function PdfUploadPanel({
   importAllPdfs,
   submitPassword,
   cancelPasswordPrompt,
+  onTryBulkPaste,
 }: PdfUploadPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = useState(false)
@@ -67,7 +71,7 @@ export function PdfUploadPanel({
           onDrop={handleDrop}
           className={`dropzone ${dragOver ? 'hot' : ''}`}
         >
-          <Icon name="upload" size={32} style={{ color: 'var(--ink-3)' }} />
+          <Icon name="upload" size={32} className="mx-auto" style={{ color: 'var(--ink-3)' }} />
           <p
             className="text-[14.5px] font-semibold"
             style={{ color: 'var(--ink)', letterSpacing: '-0.01em' }}
@@ -153,6 +157,7 @@ export function PdfUploadPanel({
               upload={upload}
               onRemove={() => removeUpload(upload.id)}
               onToggleExclude={(i) => toggleExcludeInUpload(upload.id, i)}
+              onTryBulkPaste={onTryBulkPaste}
             />
           ))}
         </>
