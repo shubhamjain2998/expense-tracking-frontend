@@ -1,8 +1,27 @@
+import type { PeriodMode } from '../period'
+
 import { client } from './client'
 
 export interface TokenResponse {
   access_token: string
   token_type: string
+}
+
+export interface MeResponse {
+  id: string
+  email: string
+  /** Null means the user has not yet picked between calendar and FY mode. */
+  period_mode: PeriodMode | null
+}
+
+export async function getMe(): Promise<MeResponse> {
+  const { data } = await client.get<MeResponse>('/auth/me')
+  return data
+}
+
+export async function updatePeriodModePref(mode: PeriodMode): Promise<MeResponse> {
+  const { data } = await client.patch<MeResponse>('/auth/me/preferences', { period_mode: mode })
+  return data
 }
 
 export async function register(email: string, password: string): Promise<TokenResponse> {

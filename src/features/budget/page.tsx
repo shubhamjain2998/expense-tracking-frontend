@@ -10,12 +10,13 @@ import { AddBudgetModal } from './components/AddBudgetModal'
 import { BudgetCategoryTable } from './components/BudgetCategoryTable'
 import { BudgetHeader } from './components/BudgetHeader'
 import { HeatmapCard } from './components/HeatmapCard'
+import { PeriodModePromptCard } from './components/PeriodModePromptCard'
 import { useBudgetData } from './hooks/useBudgetData'
 import { useBudgetMutations } from './hooks/useBudgetMutations'
 
 export function BudgetPage() {
   const now = new Date()
-  const { mode } = usePeriodMode()
+  const { mode, isExplicitlySet, isLoadingPreference } = usePeriodMode()
   const initial = getCurrentPeriod(loadPeriodMode(), now)
   const [year, setYear] = useState(initial.year)
   const [month, setMonth] = useState(initial.month)
@@ -23,6 +24,26 @@ export function BudgetPage() {
 
   const data = useBudgetData({ year, month, mode })
   const mutations = useBudgetMutations({ year, month, mode })
+
+  // Brand-new users land here with no budget AND no period choice yet. Block
+  // the budgeting UI until they pick — the choice changes what "year" the
+  // budget rows are bucketed against, so it has to come first.
+  if (!data.isLoading && !isLoadingPreference && !isExplicitlySet && data.entries.length === 0) {
+    return (
+      <div className="space-y-5">
+        <header>
+          <p className="card-eyebrow">Budget</p>
+          <h1
+            className="text-[22px] font-semibold"
+            style={{ color: 'var(--ink)', letterSpacing: '-0.02em' }}
+          >
+            Set up your budget
+          </h1>
+        </header>
+        <PeriodModePromptCard />
+      </div>
+    )
+  }
 
   function navigateMonth(dir: -1 | 1) {
     const next = month + dir

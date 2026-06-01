@@ -8,8 +8,8 @@
 export type { ApiError } from './client'
 export { setUnauthorizedHandler } from './client'
 
-export type { TokenResponse, GoogleSignInResult } from './auth'
-export { login, register, googleSignIn } from './auth'
+export type { TokenResponse, GoogleSignInResult, MeResponse } from './auth'
+export { login, register, googleSignIn, getMe, updatePeriodModePref } from './auth'
 
 export {
   createBudget,
