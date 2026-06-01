@@ -85,6 +85,7 @@ interface Params {
   selectedTagId: string
   includeSettled: boolean
   mode: PeriodMode
+  trendWindow: number
 }
 
 export function useDashboardData({
@@ -95,6 +96,7 @@ export function useDashboardData({
   selectedTagId,
   includeSettled,
   mode,
+  trendWindow,
 }: Params): DashboardDataResult {
   // ── Queries ──────────────────────────────────────────────────────────────────────
 
@@ -136,13 +138,27 @@ export function useDashboardData({
 
   // Single batch call replaces 6×summary + 6×transactions/processed (finding 1.3).
   // Returns per-category expense + income/expense totals for the 6 calendar months
-  // ending at the currently selected calendar month.
+  // ending at the currently selected calendar month. Always 6 — used by the
+  // stacked category trend which is intentionally fixed-width.
   const multiMonthSummaryQuery = useQuery({
     queryKey: qk.dashboard.multiMonthSummary(calYear, calMonth, 6, selectedTagId || undefined),
     queryFn: () => getMultiMonthSummary(calYear, calMonth, 6, selectedTagId || undefined),
   })
 
-  // The 6 calendar months ending at (and including) the selected month
+  // Separate query for the income/expense trend — window is user-controlled (3/6/12/24).
+  // When trendWindow===6 the query key matches multiMonthSummaryQuery's key exactly, so
+  // React Query deduplicates the request and reuses the cached result for free.
+  const incomeWindowQuery = useQuery({
+    queryKey: qk.dashboard.multiMonthSummary(
+      calYear,
+      calMonth,
+      trendWindow,
+      selectedTagId || undefined
+    ),
+    queryFn: () => getMultiMonthSummary(calYear, calMonth, trendWindow, selectedTagId || undefined),
+  })
+
+  // The 6 calendar months ending at (and including) the selected month (for stacked trend)
   const last6Months = useMemo(() => {
     return Array.from({ length: 6 }, (_, i) => {
       const d = new Date(calYear, calMonth - 1 - i, 1)
@@ -153,6 +169,18 @@ export function useDashboardData({
       }
     }).reverse()
   }, [calYear, calMonth])
+
+  // The N calendar months for the income/expense trend window
+  const trendMonths = useMemo(() => {
+    return Array.from({ length: trendWindow }, (_, i) => {
+      const d = new Date(calYear, calMonth - 1 - i, 1)
+      return {
+        year: d.getFullYear(),
+        month: d.getMonth() + 1,
+        label: d.toLocaleString('en-US', { month: 'short' }),
+      }
+    }).reverse()
+  }, [calYear, calMonth, trendWindow])
 
   // ── Derived: monthly summary ─────────────────────────────────────────────────────────
 
@@ -219,17 +247,16 @@ export function useDashboardData({
       .sort((a, b) => b.total - a.total)
   }, [allTransactions])
 
-  // Derive 6-month income/expense trend from the batch endpoint instead of
-  // fetching 6×transactions/processed (finding 1.3).
+  // Income/expense trend — driven by the user-selected window (3/6/12/24 months).
   const incomeTrendData = useMemo((): IncomeExpenseTrendPoint[] => {
-    const items = multiMonthSummaryQuery.data ?? []
-    return last6Months.map((m) => {
+    const items = incomeWindowQuery.data ?? []
+    return trendMonths.map((m) => {
       const item = items.find((d) => d.year === m.year && d.month === m.month)
       const income = item ? Number(item.income_total) : 0
       const expense = item ? Number(item.expense_total) : 0
       return { month: m.label, income, expense, savings: income - expense }
     })
-  }, [multiMonthSummaryQuery.data, last6Months])
+  }, [incomeWindowQuery.data, trendMonths])
 
   // ── Derived: transaction stats + daily spend ─────────────────────────────────
 
@@ -368,6 +395,6 @@ export function useDashboardData({
     pendingLoading: pendingQuery.isLoading,
     yearlyTrendLoading: yearlyTrendQuery.isLoading,
     trendQueriesLoading: multiMonthSummaryQuery.isLoading,
-    incomeQueriesLoading: multiMonthSummaryQuery.isLoading,
+    incomeQueriesLoading: incomeWindowQuery.isLoading,
   }
 }

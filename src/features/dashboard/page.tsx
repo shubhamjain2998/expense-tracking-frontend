@@ -54,6 +54,7 @@ export function DashboardPage() {
   }
   const [includeSettled, setIncludeSettled] = useState(false)
   const [trendMode, setTrendMode] = useState<'stacked' | 'total'>('stacked')
+  const [trendWindow, setTrendWindow] = useState(6)
 
   // ── Onboarding (welcome modal + Getting Started checklist) ─────────────────
   // Initial state is derived from localStorage to avoid the modal/checklist
@@ -96,6 +97,7 @@ export function DashboardPage() {
     selectedTagId: '',
     includeSettled,
     mode,
+    trendWindow,
   })
 
   const overPaceAmount = data.totalDebit - data.totalBudget * paceAt
@@ -163,6 +165,8 @@ export function DashboardPage() {
           totalIncome={data.totalIncome}
           totalExpenses={data.totalDebit}
           incomeTrendData={data.incomeTrendData}
+          trendWindow={trendWindow}
+          onTrendWindowChange={setTrendWindow}
           isLoading={data.allTxnLoading || data.incomeQueriesLoading}
           isDark={isDark}
         />
