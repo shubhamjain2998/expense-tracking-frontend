@@ -16,6 +16,7 @@ import type { PeriodMode } from './period'
 export const qk = {
   auth: {
     all: ['auth'] as const,
+    me: ['auth', 'me'] as const,
   },
   persons: {
     all: ['persons'] as const,
