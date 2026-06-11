@@ -48,7 +48,7 @@ export function SixMonthTrend({
     <div>
       <div className="section-head">
         <div>
-          <div className="title">Six-month trend</div>
+          <div className="title">Spend by category</div>
           <div className="sub">{SUBTITLES[trendMode]}</div>
         </div>
         <div className="right">
