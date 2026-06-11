@@ -17,10 +17,16 @@ export async function previewStatement(file: File, password?: string): Promise<P
   return data
 }
 
-export async function importStatement(file: File, password?: string): Promise<ImportResponse> {
+export async function importStatement(
+  file: File,
+  password?: string,
+  excludedIndices?: number[]
+): Promise<ImportResponse> {
   const form = new FormData()
   form.append('file', file)
   if (password) form.append('password', password)
+  if (excludedIndices && excludedIndices.length > 0)
+    form.append('exclude_indices', excludedIndices.join(','))
   const { data } = await client.post<ImportResponse>('/uploads/statement', form, MULTIPART)
   return data
 }

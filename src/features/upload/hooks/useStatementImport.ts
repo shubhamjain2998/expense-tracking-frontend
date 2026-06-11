@@ -1,46 +1,21 @@
 import { useQueryClient } from '@tanstack/react-query'
 
-import { deleteRawTransaction, getRawTransactions } from '@/lib/api/transactions'
 import { importStatement } from '@/lib/api/uploads'
 import { invalidateDomains } from '@/lib/queryKeys'
-import type { ImportResponse, PreviewRow } from '@/types/transaction'
-
-import { rowSig } from '../lib/rowSig'
-
-async function deleteExcluded(excludedRows: PreviewRow[]): Promise<void> {
-  if (excludedRows.length === 0) return
-  const excludedSigs = new Set(excludedRows.map((r) => rowSig(r.txn_date, r.description, r.amount)))
-  const monthMap = new Map<string, { year: number; month: number }>()
-  excludedRows.forEach((r) => {
-    const d = new Date(r.txn_date)
-    const key = `${d.getFullYear()}-${d.getMonth() + 1}`
-    monthMap.set(key, { year: d.getFullYear(), month: d.getMonth() + 1 })
-  })
-  const allRaw = (
-    await Promise.all(
-      [...monthMap.values()].map(({ year, month }) => getRawTransactions(year, month))
-    )
-  ).flat()
-  await Promise.allSettled(
-    allRaw
-      .filter(
-        (r) =>
-          r.status !== 'deleted' && excludedSigs.has(rowSig(r.txn_date, r.description, r.amount))
-      )
-      .map((r) => deleteRawTransaction(r.id))
-  )
-}
+import type { ImportResponse } from '@/types/transaction'
 
 export function useStatementImport() {
   const qc = useQueryClient()
 
   async function importFile(
     file: File,
-    excludedRows: PreviewRow[],
+    excludedIndices: number[],
     password?: string
   ): Promise<ImportResponse> {
-    const data = await importStatement(file, password)
-    await deleteExcluded(excludedRows)
+    // Exclusions are sent with the request so the backend never inserts them —
+    // the old pattern of import-all then delete-each is replaced by a single
+    // atomic POST, eliminating the partial-failure window.
+    const data = await importStatement(file, password, excludedIndices)
     // New raw rows land in the transactions list and feed the sidebar's
     // pending-manual count — both depend on the transactions cache.
     invalidateDomains(qc, ['transactions'])

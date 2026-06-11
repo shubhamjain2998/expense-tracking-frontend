@@ -1,10 +1,56 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
+import { vi } from 'vitest'
 
 import { UploadPage } from '@/pages/UploadPage'
 
 import { renderWithProviders } from '../renderWithProviders'
+
+// Stub out the upload API module so FormData/File serialization in jsdom does
+// not hang the XHR request (a known jsdom + axios limitation). MSW handlers
+// already cover the network contract in other integration tests; these flow
+// tests focus on component behaviour.
+vi.mock('@/lib/api/uploads', () => ({
+  PDF_PASSWORD_REQUIRED: 'pdf_password_required',
+  PDF_PASSWORD_INCORRECT: 'pdf_password_incorrect',
+  previewStatement: vi.fn().mockResolvedValue({
+    rows: [{ txn_date: '2026-05-01', description: 'Coffee Shop', amount: '-50.00' }],
+    would_insert: 1,
+    skipped: 0,
+    skipped_rows: [],
+  }),
+  importStatement: vi.fn().mockResolvedValue({
+    inserted: 1,
+    skipped: 0,
+    skipped_rows: [],
+    rows: [
+      {
+        id: 'test-1',
+        txn_date: '2026-05-01',
+        description: 'Coffee Shop',
+        amount: '-50.00',
+        status: 'pending',
+      },
+    ],
+    warnings: [],
+  }),
+  importJsonRows: vi.fn().mockResolvedValue({
+    inserted: 1,
+    skipped: 0,
+    skipped_rows: [],
+    rows: [
+      {
+        id: 'test-1',
+        txn_date: '2026-05-01',
+        description: 'Coffee Shop',
+        amount: '-50.00',
+        status: 'pending',
+      },
+    ],
+    warnings: [],
+  }),
+}))
 
 function UploadRoutes() {
   return (
@@ -22,6 +68,7 @@ describe('PDF upload flow', () => {
 
   afterEach(() => {
     localStorage.removeItem('access_token')
+    vi.clearAllMocks()
   })
 
   it('switches to bulk-paste tab, validates JSON, and imports', async () => {
