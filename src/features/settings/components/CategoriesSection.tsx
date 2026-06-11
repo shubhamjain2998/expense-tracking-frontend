@@ -264,7 +264,7 @@ export function CategoriesSection() {
       <ConfirmDialog
         isOpen={deleteCategoryId !== null}
         title="Delete category"
-        message="This category will be removed from any budget entries and transactions. Continue?"
+        message="This category can only be deleted if it has no transactions, budget entries, or auto-categorisation rules referencing it. If any exist, the delete will be blocked and you will see an error."
         confirmLabel="Delete"
         danger
         loading={deleteMutation.isPending}
