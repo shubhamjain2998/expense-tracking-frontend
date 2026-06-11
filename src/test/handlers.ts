@@ -12,6 +12,9 @@ export const handlers = [
   http.post(`${BASE}/auth/register`, () =>
     HttpResponse.json({ access_token: 'test-token', token_type: 'bearer' })
   ),
+  http.get(`${BASE}/auth/me`, () =>
+    HttpResponse.json({ id: 'user-1', email: 'test@example.com', period_mode: 'calendar' })
+  ),
 
   // Reference data
   http.get(`${BASE}/categories`, () =>
