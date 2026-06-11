@@ -240,16 +240,9 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
         <button
           type="button"
           onClick={() => setSaveMapping((v) => !v)}
-          className="flex w-full items-center justify-between"
-          style={{
-            background: saveMapping ? 'var(--accent-soft)' : 'var(--surface-2)',
-            color: saveMapping ? 'var(--accent)' : 'var(--ink-2)',
-            border: '1px solid ' + (saveMapping ? 'transparent' : 'var(--line)'),
-            borderRadius: 'var(--radius)',
-            padding: '8px 12px',
-            fontSize: 12.5,
-            fontWeight: 500,
-          }}
+          className={`flex w-full items-center justify-between ${saveMapping ? 'chip accent' : 'chip'}`}
+          style={{ cursor: 'pointer', padding: '8px 12px', fontSize: 12.5 }}
+          title="Auto-categorise future transactions from this merchant"
         >
           <span className="flex items-center gap-2">
             <Icon name="rule" size={14} />
