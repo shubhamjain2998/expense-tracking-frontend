@@ -6,6 +6,7 @@ import { WelcomeModal } from '@/components/onboarding/WelcomeModal'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { useThemeContext } from '@/hooks/useThemeContext'
 import { onboardingStorage } from '@/lib/onboardingStorage'
+import { pendingTransactionsUrl } from '@/lib/pendingNav'
 import { formatYearLabel, getCurrentPeriod, loadPeriodMode, resolvePeriodMonth } from '@/lib/period'
 
 import { BudgetPaceBars } from './components/BudgetPaceBars'
@@ -135,6 +136,7 @@ export function DashboardPage() {
           onMonthChange={setMonth}
           isLoading={data.summaryLoading}
           pendingCount={data.pendingItems.length}
+          pendingUrl={pendingTransactionsUrl(data.pendingItems)}
         />
 
         <IncomeSummaryCards
