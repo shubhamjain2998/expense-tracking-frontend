@@ -14,6 +14,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [touched, setTouched] = useState({ email: false, password: false })
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -118,8 +119,9 @@ export function LoginPage() {
                 name="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
                 placeholder="you@example.com"
-                className="input"
+                className={`input ${touched.email && !email ? 'is-invalid' : ''}`}
                 autoComplete="email"
                 required
                 autoFocus
@@ -132,8 +134,9 @@ export function LoginPage() {
                 name="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
                 placeholder="••••••••"
-                className="input"
+                className={`input ${touched.password && !password ? 'is-invalid' : ''}`}
                 autoComplete="current-password"
                 required
               />

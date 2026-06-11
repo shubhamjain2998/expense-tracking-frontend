@@ -223,6 +223,14 @@
   .input::placeholder {
     color: var(--ink-4);
   }
+  /* Only show invalid styling after user interaction, not on initial load. */
+  .input:user-invalid {
+    border-color: var(--neg);
+  }
+  /* Fallback for browsers without :user-invalid support using class-based validation. */
+  .input.is-invalid {
+    border-color: var(--neg);
+  }
 }
 
 .textarea {

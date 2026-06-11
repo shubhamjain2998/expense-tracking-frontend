@@ -14,6 +14,7 @@ export function RegisterPage() {
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [touched, setTouched] = useState({ email: false, password: false, confirm: false })
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -126,8 +127,9 @@ export function RegisterPage() {
                 name="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onBlur={() => setTouched((prev) => ({ ...prev, email: true }))}
                 placeholder="you@example.com"
-                className="input"
+                className={`input ${touched.email && !email ? 'is-invalid' : ''}`}
                 autoComplete="email"
                 required
                 autoFocus
@@ -140,8 +142,9 @@ export function RegisterPage() {
                 name="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
                 placeholder="••••••••"
-                className="input"
+                className={`input ${touched.password && !password ? 'is-invalid' : ''}`}
                 autoComplete="new-password"
                 minLength={8}
                 required
@@ -159,8 +162,9 @@ export function RegisterPage() {
                 name="confirm"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
+                onBlur={() => setTouched((prev) => ({ ...prev, confirm: true }))}
                 placeholder="••••••••"
-                className="input"
+                className={`input ${touched.confirm && !confirm ? 'is-invalid' : ''}`}
                 autoComplete="new-password"
                 required
               />
