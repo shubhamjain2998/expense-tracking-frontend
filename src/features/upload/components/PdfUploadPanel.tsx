@@ -14,6 +14,8 @@ interface PdfUploadPanelProps {
   isImportingAll: boolean
   readyUploads: FileUpload[]
   totalReadyTxns: number
+  /** Number of duplicate rows that are currently excluded across all ready uploads. */
+  totalDupeSkipped: number
   hasPreviewing: boolean
   addPdfFiles: (files: File[]) => void
   removeUpload: (id: string) => void
@@ -32,6 +34,7 @@ export function PdfUploadPanel({
   isImportingAll,
   readyUploads,
   totalReadyTxns,
+  totalDupeSkipped,
   hasPreviewing,
   addPdfFiles,
   removeUpload,
@@ -125,7 +128,7 @@ export function PdfUploadPanel({
       {uploads.length > 0 && (
         <>
           {readyUploads.length > 0 && (
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4">
               <p className="text-[12.5px]" style={{ color: 'var(--ink-3)' }}>
                 {readyUploads.length} file{readyUploads.length > 1 ? 's' : ''} ready
                 {totalReadyTxns > 0 && (
@@ -133,9 +136,17 @@ export function PdfUploadPanel({
                     {' '}
                     ·{' '}
                     <span className="num font-medium" style={{ color: 'var(--ink)' }}>
-                      {totalReadyTxns}
-                    </span>{' '}
-                    transactions
+                      {totalReadyTxns} new
+                    </span>
+                  </>
+                )}
+                {totalDupeSkipped > 0 && (
+                  <>
+                    {' '}
+                    ·{' '}
+                    <span className="num" style={{ color: 'var(--warn)' }}>
+                      {totalDupeSkipped} duplicate{totalDupeSkipped > 1 ? 's' : ''} skipped
+                    </span>
                   </>
                 )}
               </p>
@@ -144,9 +155,11 @@ export function PdfUploadPanel({
                 size="sm"
                 onClick={() => void importAllPdfs()}
                 loading={isImportingAll}
-                disabled={hasPreviewing}
+                disabled={hasPreviewing || totalReadyTxns === 0}
               >
-                Import {totalReadyTxns > 0 ? totalReadyTxns : ''} transactions
+                {totalReadyTxns > 0
+                  ? `Import ${totalReadyTxns} new${totalDupeSkipped > 0 ? ` · ${totalDupeSkipped} skipped` : ''}`
+                  : 'Nothing to import'}
               </Button>
             </div>
           )}
