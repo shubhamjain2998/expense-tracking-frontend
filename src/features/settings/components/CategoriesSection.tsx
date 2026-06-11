@@ -163,8 +163,9 @@ export function CategoriesSection() {
                 ) : (
                   <>
                     <span
-                      className="flex-1 text-[13px] font-medium"
+                      className="min-w-0 flex-1 truncate text-[13px] font-medium"
                       style={{ color: 'var(--ink)' }}
+                      title={cat.name}
                     >
                       {cat.name}
                     </span>

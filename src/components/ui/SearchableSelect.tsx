@@ -192,6 +192,7 @@ export function SearchableSelect({
           autoComplete="off"
           aria-expanded={open}
           aria-autocomplete="list"
+          maxLength={allowCreate ? 64 : undefined}
         />
       </div>
       {error && <p className="mt-1 text-[11px] text-[var(--neg)]">{error}</p>}

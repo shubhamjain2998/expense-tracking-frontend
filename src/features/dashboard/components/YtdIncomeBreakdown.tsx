@@ -52,7 +52,7 @@ export function YtdIncomeBreakdown({
                       marginBottom: 5,
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, overflow: 'hidden' }}>
                       <span
                         style={{
                           width: 8,
@@ -62,7 +62,17 @@ export function YtdIncomeBreakdown({
                           flexShrink: 0,
                         }}
                       />
-                      <span style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 500 }}>
+                      <span
+                        style={{
+                          fontSize: 13,
+                          color: 'var(--ink)',
+                          fontWeight: 500,
+                          overflow: 'hidden',
+                          whiteSpace: 'nowrap',
+                          textOverflow: 'ellipsis',
+                        }}
+                        title={src.category}
+                      >
                         {src.category}
                       </span>
                     </div>
@@ -140,7 +150,7 @@ export function YtdIncomeBreakdown({
                       marginBottom: 4,
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, overflow: 'hidden' }}>
                       <span
                         style={{
                           width: 8,
@@ -150,7 +160,18 @@ export function YtdIncomeBreakdown({
                           flexShrink: 0,
                         }}
                       />
-                      <span style={{ fontSize: 12.5, color: 'var(--ink)' }}>{row.category}</span>
+                      <span
+                        style={{
+                          fontSize: 12.5,
+                          color: 'var(--ink)',
+                          overflow: 'hidden',
+                          whiteSpace: 'nowrap',
+                          textOverflow: 'ellipsis',
+                        }}
+                        title={row.category}
+                      >
+                        {row.category}
+                      </span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span className="num" style={{ fontSize: 11.5, color: 'var(--ink-3)' }}>
