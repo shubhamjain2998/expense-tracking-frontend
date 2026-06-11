@@ -25,12 +25,17 @@ export function UnbudgetedCategoryRow({
     queueMicrotask(() => inputRef.current?.focus())
   }
 
-  function handleSave() {
+  function handleConfirm() {
     const amount = Number(editValue)
     if (amount > 0) {
       onSetBudget(row.categoryId, amount)
     }
     setEditing(false)
+  }
+
+  function handleCancel() {
+    setEditing(false)
+    setEditValue('')
   }
 
   return (
@@ -67,50 +72,56 @@ export function UnbudgetedCategoryRow({
       {/* Monthly Budget — set budget inline */}
       <td className="num">
         {editing ? (
-          <AmountInput
-            ref={inputRef}
-            value={editValue}
-            onChange={setEditValue}
-            onBlur={handleSave}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleSave()
-              if (e.key === 'Escape') setEditing(false)
-            }}
-            className="input num"
-            style={{ width: 110, textAlign: 'right' }}
-            placeholder="e.g. 5,000"
-            disabled={isSaving}
-            aria-label={`Set monthly budget for ${row.categoryName}`}
-          />
+          <div className="flex items-center gap-1.5" style={{ justifyContent: 'flex-end' }}>
+            <AmountInput
+              ref={inputRef}
+              value={editValue}
+              onChange={setEditValue}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleConfirm()
+                if (e.key === 'Escape') handleCancel()
+              }}
+              className="input num"
+              style={{ width: 90, textAlign: 'right' }}
+              placeholder="e.g. 5,000"
+              disabled={isSaving}
+              aria-label={`Set monthly budget for ${row.categoryName}`}
+            />
+            <button
+              onClick={handleConfirm}
+              disabled={isSaving || !editValue || Number(editValue) <= 0}
+              className="btn primary sm"
+              aria-label={`Confirm monthly budget for ${row.categoryName}`}
+            >
+              ✓
+            </button>
+            <button
+              onClick={handleCancel}
+              disabled={isSaving}
+              className="btn ghost sm"
+              aria-label="Cancel"
+            >
+              ✕
+            </button>
+          </div>
         ) : (
-          <button
-            onClick={startEdit}
-            title="Click to set monthly budget"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              padding: 0,
-              color: 'var(--ink-4)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              marginLeft: 'auto',
-            }}
-          >
-            <span style={{ fontSize: 12 }}>—</span>
-            <span
-              className="opacity-0 transition-opacity group-hover:opacity-100"
+          <div className="flex items-center gap-2" style={{ justifyContent: 'flex-end' }}>
+            <span style={{ fontSize: 12, color: 'var(--ink-4)' }}>—</span>
+            <button
+              onClick={startEdit}
+              title="Click to set monthly budget"
+              className="btn ghost sm opacity-0 transition-opacity group-hover:opacity-100"
               style={{
                 fontSize: 11,
                 fontWeight: 500,
                 color: 'var(--accent)',
                 whiteSpace: 'nowrap',
               }}
+              aria-label={`Set budget for ${row.categoryName}`}
             >
-              + Set
-            </span>
-          </button>
+              + Set budget
+            </button>
+          </div>
         )}
       </td>
 
