@@ -35,7 +35,14 @@ export function FileCard({ upload, onRemove, onToggleExclude, onTryBulkPaste }: 
     })
     .sort((a, b) => b.row.txn_date.localeCompare(a.row.txn_date))
 
-  const readyCount = (upload.preview?.would_insert ?? 0) - upload.excludedIndices.size
+  // Count rows that will actually be imported: total parsed minus excluded.
+  const readyCount = (upload.preview?.rows.length ?? 0) - upload.excludedIndices.size
+  // Duplicates that are currently excluded (excluded ∩ dupeIndices).
+  const dupeSkippedCount = [...upload.excludedIndices].filter((i) =>
+    upload.dupeIndices.has(i)
+  ).length
+  // Non-dupe manually excluded rows.
+  const manuallyExcludedCount = upload.excludedIndices.size - dupeSkippedCount
   const isActive = upload.status === 'ready' || upload.status === 'done'
 
   // The parser's skipped_rows list catches every line it couldn't classify,
@@ -79,7 +86,9 @@ export function FileCard({ upload, onRemove, onToggleExclude, onTryBulkPaste }: 
               Parsing…
             </span>
           )}
-          {upload.status === 'ready' && <Chip variant="success">{readyCount} ready</Chip>}
+          {upload.status === 'ready' && (
+            <Chip variant="success">{readyCount} to import</Chip>
+          )}
           {upload.status === 'importing' && <span className="chip">Importing…</span>}
           {upload.status === 'done' && <Chip variant="success">Imported</Chip>}
           {upload.status === 'needs_password' && (
@@ -133,8 +142,8 @@ export function FileCard({ upload, onRemove, onToggleExclude, onTryBulkPaste }: 
         <>
           {/* Info chips */}
           {(candidateMisses.length > 0 ||
-            upload.excludedIndices.size > 0 ||
-            upload.dupeIndices.size > 0) && (
+            manuallyExcludedCount > 0 ||
+            dupeSkippedCount > 0) && (
             <div
               className="flex flex-wrap items-center gap-2"
               style={{ padding: '8px 14px', borderBottom: '1px solid var(--line)' }}
@@ -142,13 +151,16 @@ export function FileCard({ upload, onRemove, onToggleExclude, onTryBulkPaste }: 
               {candidateMisses.length > 0 && (
                 <Chip variant="warning">{candidateMisses.length} possibly missed</Chip>
               )}
-              {upload.excludedIndices.size > 0 && (
-                <Chip variant="warning">{upload.excludedIndices.size} excluded</Chip>
+              {manuallyExcludedCount > 0 && (
+                <Chip variant="warning">{manuallyExcludedCount} excluded</Chip>
               )}
-              {upload.dupeIndices.size > 0 && (
-                <Chip variant="warning">
-                  {upload.dupeIndices.size} duplicate{upload.dupeIndices.size > 1 ? 's' : ''}
-                </Chip>
+              {dupeSkippedCount > 0 && (
+                <span
+                  className="chip warn"
+                  title="Duplicates are skipped by default — click the restore button on a row to include it anyway"
+                >
+                  {dupeSkippedCount} duplicate{dupeSkippedCount > 1 ? 's' : ''} will be skipped
+                </span>
               )}
             </div>
           )}

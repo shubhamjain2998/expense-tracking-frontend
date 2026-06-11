@@ -154,6 +154,9 @@ export function useFileQueue() {
     let totalInserted = 0
     let totalSkipped = 0
     let errorCount = 0
+    // Collect the most-recent transaction date across all successful imports so
+    // we can navigate the user straight to that month instead of the current one.
+    let latestTxnDate: string | null = null
 
     await Promise.allSettled(
       readyUploads.map(async (upload) => {
@@ -161,6 +164,20 @@ export function useFileQueue() {
           const excludedRows = upload.preview
             ? upload.preview.rows.filter((_, i) => upload.excludedIndices.has(i))
             : []
+          // Track the most recent date among the rows that will actually be imported
+          // so we can navigate there after import.
+          if (upload.preview) {
+            const importedRows = upload.preview.rows.filter(
+              (_, i) => !upload.excludedIndices.has(i)
+            )
+            const maxDate = importedRows.reduce<string | null>((best, r) => {
+              const d = r.txn_date.slice(0, 10)
+              return best === null || d > best ? d : best
+            }, null)
+            if (maxDate && (latestTxnDate === null || maxDate > latestTxnDate)) {
+              latestTxnDate = maxDate
+            }
+          }
           const data = await importFile(upload.file, excludedRows, upload.password)
           totalInserted += data.inserted
           totalSkipped += data.skipped
@@ -200,7 +217,17 @@ export function useFileQueue() {
       toast.error(`${errorCount} file${errorCount > 1 ? 's' : ''} failed to import`)
     if (totalInserted > 0 || totalSkipped > 0)
       toast.success(`${totalInserted} transactions imported, ${totalSkipped} skipped`)
-    if (totalInserted > 0) navigate('/transactions')
+
+    if (totalInserted > 0) {
+      // Navigate to the month of the most recent imported transaction so the
+      // user lands on the view that contains what they just imported.
+      if (latestTxnDate) {
+        const d = new Date(latestTxnDate)
+        navigate(`/transactions?year=${d.getFullYear()}&month=${d.getMonth() + 1}`)
+      } else {
+        navigate('/transactions')
+      }
+    }
   }
 
   function clearAll() {
@@ -209,8 +236,16 @@ export function useFileQueue() {
   }
 
   const readyUploads = uploads.filter((u) => u.status === 'ready')
+  // Count only rows that will actually be imported (total rows minus excluded).
   const totalReadyTxns = readyUploads.reduce(
-    (sum, u) => sum + (u.preview?.would_insert ?? 0) - u.excludedIndices.size,
+    (sum, u) => sum + (u.preview?.rows.length ?? 0) - u.excludedIndices.size,
+    0
+  )
+  // Count how many of those excluded rows are duplicates (across all ready uploads).
+  const totalDupeSkipped = readyUploads.reduce(
+    (sum, u) =>
+      sum +
+      [...u.excludedIndices].filter((i) => u.dupeIndices.has(i)).length,
     0
   )
   const hasPreviewing = uploads.some((u) => u.status === 'previewing')
@@ -221,6 +256,7 @@ export function useFileQueue() {
     isImportingAll,
     readyUploads,
     totalReadyTxns,
+    totalDupeSkipped,
     hasPreviewing,
     addPdfFiles,
     removeUpload,

@@ -56,5 +56,12 @@ export async function buildPreviewResult(
     if (existingSigs.has(rowSig(r.txn_date, r.description, r.amount))) dbDupes.add(i)
   })
 
-  return { preview: data, autoExcluded, dupeIndices: new Set([...intraDupes, ...dbDupes]) }
+  const dupeIndices = new Set([...intraDupes, ...dbDupes])
+
+  // Duplicates are excluded by default so the user doesn't accidentally
+  // re-import transactions that already exist. They can still be re-included
+  // row-by-row via the toggle control.
+  const initialExcluded = new Set([...autoExcluded, ...dupeIndices])
+
+  return { preview: data, autoExcluded: initialExcluded, dupeIndices }
 }

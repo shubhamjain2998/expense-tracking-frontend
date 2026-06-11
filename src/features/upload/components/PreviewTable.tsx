@@ -46,12 +46,16 @@ export function PreviewTable({
               rows.map(({ row, globalIndex }) => {
                 const isExcluded = excludedIndices.has(globalIndex)
                 const isDupe = dupeIndices.has(globalIndex)
+                // A dupe that's been excluded shows a struck-through amber row
+                // to signal it will be skipped; if the user restores it the
+                // row reverts to the normal amber highlight.
+                const isDupeSkipped = isDupe && isExcluded
                 return (
                   <tr
                     key={globalIndex}
                     style={{
-                      opacity: isExcluded ? 0.4 : 1,
-                      background: isDupe && !isExcluded ? 'var(--warn-soft)' : undefined,
+                      opacity: isExcluded ? 0.45 : 1,
+                      background: isDupe ? 'var(--warn-soft)' : undefined,
                     }}
                   >
                     <td className="num" style={{ color: 'var(--ink-3)' }}>
@@ -63,13 +67,17 @@ export function PreviewTable({
                       <span style={{ textDecoration: isExcluded ? 'line-through' : undefined }}>
                         {row.description}
                       </span>
-                      {isDupe && !isExcluded && (
+                      {isDupe && (
                         <span
                           className="chip warn ml-2"
                           style={{ height: 18, padding: '0 6px', fontSize: 9.5 }}
-                          title="Possible duplicate — same date, description, and amount"
+                          title={
+                            isDupeSkipped
+                              ? 'Duplicate — will be skipped. Click restore to include it anyway.'
+                              : 'Possible duplicate — same date, description, and amount already in your transactions'
+                          }
                         >
-                          duplicate
+                          {isDupeSkipped ? 'skipped' : 'duplicate'}
                         </span>
                       )}
                     </td>
@@ -83,8 +91,20 @@ export function PreviewTable({
                         <button
                           onClick={() => onToggleExclude(globalIndex)}
                           className="btn ghost icon sm"
-                          aria-label={isExcluded ? 'Include transaction' : 'Exclude transaction'}
-                          title={isExcluded ? 'Restore — include in import' : 'Exclude from import'}
+                          aria-label={
+                            isExcluded
+                              ? isDupe
+                                ? 'Include duplicate anyway'
+                                : 'Include transaction'
+                              : 'Exclude transaction'
+                          }
+                          title={
+                            isExcluded
+                              ? isDupe
+                                ? 'Include this duplicate in the import anyway'
+                                : 'Restore — include in import'
+                              : 'Exclude from import'
+                          }
                         >
                           <Icon name={isExcluded ? 'undo' : 'remove_circle'} size={14} />
                         </button>
