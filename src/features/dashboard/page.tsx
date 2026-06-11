@@ -53,6 +53,16 @@ export function DashboardPage() {
       { replace: true }
     )
   }
+  function setPeriod(y: number, m: number) {
+    setSearchParams(
+      (p) => {
+        p.set('year', String(y))
+        p.set('month', String(m))
+        return p
+      },
+      { replace: true }
+    )
+  }
   const [includeSettled, setIncludeSettled] = useState(false)
   const [trendMode, setTrendMode] = useState<'stacked' | 'total'>('stacked')
   const [trendWindow, setTrendWindow] = useState(6)
@@ -134,9 +144,12 @@ export function DashboardPage() {
           selectorMonth={month}
           onYearChange={setYear}
           onMonthChange={setMonth}
+          onPeriodJump={setPeriod}
           isLoading={data.summaryLoading}
           pendingCount={data.pendingItems.length}
           pendingUrl={pendingTransactionsUrl(data.pendingItems)}
+          isCurrentMonth={isCurrentMonth}
+          lastActiveMonthHint={data.lastActiveMonthHint}
         />
 
         <IncomeSummaryCards
