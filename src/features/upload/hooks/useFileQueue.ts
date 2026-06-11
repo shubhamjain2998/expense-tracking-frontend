@@ -161,9 +161,7 @@ export function useFileQueue() {
     await Promise.allSettled(
       readyUploads.map(async (upload) => {
         try {
-          const excludedRows = upload.preview
-            ? upload.preview.rows.filter((_, i) => upload.excludedIndices.has(i))
-            : []
+          const excludedIndices = [...upload.excludedIndices]
           // Track the most recent date among the rows that will actually be imported
           // so we can navigate there after import.
           if (upload.preview) {
@@ -178,7 +176,7 @@ export function useFileQueue() {
               latestTxnDate = maxDate
             }
           }
-          const data = await importFile(upload.file, excludedRows, upload.password)
+          const data = await importFile(upload.file, excludedIndices, upload.password)
           totalInserted += data.inserted
           totalSkipped += data.skipped
           setUploads((prev) =>
@@ -243,9 +241,7 @@ export function useFileQueue() {
   )
   // Count how many of those excluded rows are duplicates (across all ready uploads).
   const totalDupeSkipped = readyUploads.reduce(
-    (sum, u) =>
-      sum +
-      [...u.excludedIndices].filter((i) => u.dupeIndices.has(i)).length,
+    (sum, u) => sum + [...u.excludedIndices].filter((i) => u.dupeIndices.has(i)).length,
     0
   )
   const hasPreviewing = uploads.some((u) => u.status === 'previewing')
