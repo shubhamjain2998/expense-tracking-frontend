@@ -65,6 +65,7 @@ export function CategoryTransactionStats({
                           whiteSpace: 'nowrap',
                           textOverflow: 'ellipsis',
                         }}
+                        title={stat.category}
                       >
                         {stat.category}
                       </span>

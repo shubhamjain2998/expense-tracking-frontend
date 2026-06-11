@@ -37,7 +37,7 @@ export function UnbudgetedCategoryRow({
     <tr className="group" style={{ opacity: 0.7 }}>
       {/* Category */}
       <td>
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <span
             style={{
               display: 'inline-block',
@@ -48,7 +48,19 @@ export function UnbudgetedCategoryRow({
               flexShrink: 0,
             }}
           />
-          <span style={{ color: 'var(--ink-3)', fontWeight: 500 }}>{row.categoryName}</span>
+          <span
+            style={{
+              color: 'var(--ink-3)',
+              fontWeight: 500,
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
+              textOverflow: 'ellipsis',
+              minWidth: 0,
+            }}
+            title={row.categoryName}
+          >
+            {row.categoryName}
+          </span>
         </div>
       </td>
 
