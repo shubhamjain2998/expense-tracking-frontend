@@ -109,7 +109,7 @@ export function FilterBar({
         value={categoryFilter}
         onChange={(e) => onCategoryFilter(e.target.value)}
         className="input"
-        style={{ width: 'auto' }}
+        style={{ width: 'auto', maxWidth: 200 }}
         aria-label="Filter by category"
       >
         <option value="">All categories</option>
@@ -128,7 +128,7 @@ export function FilterBar({
           value={tagFilter}
           onChange={(e) => onTagFilter(e.target.value)}
           className="input"
-          style={{ width: 'auto' }}
+          style={{ width: 'auto', maxWidth: 200 }}
           aria-label="Filter by tag"
         >
           <option value="">All tags</option>
