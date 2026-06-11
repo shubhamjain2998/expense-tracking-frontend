@@ -17,8 +17,8 @@ export function DragDropCategoryGrid({
 }: DragDropCategoryGridProps) {
   return (
     <div
-      className="flex flex-wrap items-center gap-2"
-      style={{ padding: '8px 0', borderBottom: '1px solid var(--line)' }}
+      className="hidden md:flex items-center gap-2 overflow-x-auto"
+      style={{ padding: '8px 0', borderBottom: '1px solid var(--line)', flexWrap: 'nowrap' }}
     >
       <span className="shrink-0 text-[11.5px]" style={{ color: 'var(--ink-4)' }}>
         Drop to categorize:
@@ -56,12 +56,24 @@ export function DragDropCategoryGrid({
               fontWeight: 500,
               color: isOver ? color : 'var(--ink-2)',
               userSelect: 'none',
+              flexShrink: 0,
+              maxWidth: 160,
             }}
+            title={cat.name}
           >
             <span
               style={{ width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0 }}
             />
-            <span>{cat.name}</span>
+            <span
+              style={{
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                textOverflow: 'ellipsis',
+                minWidth: 0,
+              }}
+            >
+              {cat.name}
+            </span>
             {idx < 9 && (
               <span
                 style={{
@@ -70,6 +82,7 @@ export function DragDropCategoryGrid({
                   fontVariantNumeric: 'tabular-nums',
                   color: 'var(--ink-4)',
                   fontWeight: 600,
+                  flexShrink: 0,
                 }}
               >
                 {idx + 1}
