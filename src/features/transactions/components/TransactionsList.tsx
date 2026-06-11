@@ -9,6 +9,7 @@ import { formatCurrency } from '@/lib/format'
 import type { Category } from '@/types/settings'
 import type { ProcessedTransactionItem } from '@/types/transaction'
 
+import { txnTotals } from '../lib/txnFormat'
 import type { SortCol, SortDir, UnifiedTxn } from '../types'
 
 import { EditPanel } from './EditPanel'
@@ -37,8 +38,6 @@ interface TransactionsListProps {
   setEditingTxn: (txn: ProcessedTransactionItem | null) => void
   openMenuUid: string | null
   setOpenMenuUid: (uid: string | null) => void
-  hoveredRowUid: string | null
-  setHoveredRowUid: (uid: string | null) => void
   draggingUids: Set<string>
   onDragStart: (uid: string, e: React.DragEvent) => void
   onDragEnd: () => void
@@ -70,8 +69,6 @@ export function TransactionsList({
   setEditingTxn,
   openMenuUid,
   setOpenMenuUid,
-  hoveredRowUid,
-  setHoveredRowUid,
   draggingUids,
   onDragStart,
   onDragEnd,
@@ -94,22 +91,11 @@ export function TransactionsList({
   // authoritative (see txnFormat.ts: isIncome).
   const checkedVisible = visibleFiltered.filter((t) => checkedUids.has(t.uid))
   const totalsSource = checkedVisible.length > 0 ? checkedVisible : visibleFiltered
-  const moneyIn = (t: (typeof totalsSource)[number]) =>
-    t.txnType === 'income' ||
-    t.txnType === 'refund' ||
-    (t.kind === 'pending' && Number(t.effectiveAmount) < 0)
-  const incomeTotal = totalsSource
-    .filter(moneyIn)
-    .reduce((s, t) => s + Math.abs(Number(t.effectiveAmount)), 0)
-  const expenseTotal = totalsSource
-    .filter((t) => !moneyIn(t))
-    .reduce((s, t) => s + Math.abs(Number(t.effectiveAmount)), 0)
-  const netTotal = expenseTotal - incomeTotal
+  const { incomeTotal, expenseTotal, netTotal, hasMixed } = txnTotals(totalsSource)
   const totalsLabel =
     checkedVisible.length > 0
       ? `${checkedVisible.length} selected`
       : `${visibleFiltered.length} transaction${visibleFiltered.length === 1 ? '' : 's'}`
-  const hasMixed = incomeTotal > 0 && expenseTotal > 0
 
   return (
     <div className="card card-flush mt-4" style={{ overflow: 'clip' }}>
@@ -241,7 +227,6 @@ export function TransactionsList({
                         isDragging={draggingUids.has(txn.uid)}
                         hasMenu={openMenuUid === txn.uid}
                         isChecked={checkedUids.has(txn.uid)}
-                        isHovered={hoveredRowUid === txn.uid}
                         onProcess={() => {
                           setSelectedUid(txn.uid)
                           setEditingTxn(null)
@@ -290,8 +275,6 @@ export function TransactionsList({
                           onDragStart(txn.uid, e)
                         }}
                         onDragEnd={onDragEnd}
-                        onMouseEnter={() => setHoveredRowUid(txn.uid)}
-                        onMouseLeave={() => setHoveredRowUid(null)}
                         setSelectedUid={setSelectedUid}
                         setEditingTxn={setEditingTxn}
                       />
