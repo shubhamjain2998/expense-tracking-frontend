@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 
 import { Icon, type IconName } from '@/components/ui/Icon'
 import { useSidebarStats } from '@/hooks/useSidebarStats'
+import { pendingTransactionsUrl } from '@/lib/pendingNav'
 
 interface BottomTabBarProps {
   /** Opens the existing Sidebar drawer (used as the "More" tab destination). */
@@ -16,14 +17,15 @@ const TABS: { to: string; icon: IconName; label: string; key: string }[] = [
 ]
 
 export function BottomTabBar({ onOpenMore }: BottomTabBarProps) {
-  const { pendingCount } = useSidebarStats()
+  const { pendingCount, pendingItems } = useSidebarStats()
+  const txnsTo = pendingCount > 0 ? pendingTransactionsUrl(pendingItems) : '/transactions'
 
   return (
     <nav className="bottom-tab-bar md:hidden" role="navigation" aria-label="Primary">
       {TABS.map((t) => (
         <NavLink
           key={t.key}
-          to={t.to}
+          to={t.key === 'txns' ? txnsTo : t.to}
           end={t.to === '/dashboard'}
           className={({ isActive }) => (isActive ? 'tab-item on' : 'tab-item')}
         >

@@ -6,6 +6,7 @@ import { Icon, type IconName } from '@/components/ui/Icon'
 import { useAuth } from '../../contexts/AuthContext'
 import { useSidebarStats } from '../../hooks/useSidebarStats'
 import { formatCompact } from '../../lib/format'
+import { pendingTransactionsUrl } from '../../lib/pendingNav'
 import { getInitials } from '../../lib/strings'
 
 const NAV: { to: string; icon: IconName; label: string }[] = [
@@ -67,7 +68,8 @@ export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
     navigate('/login', { replace: true })
   }
 
-  const { spent, totalBudget, owedToYou, pendingCount } = useSidebarStats()
+  const { spent, totalBudget, owedToYou, pendingCount, pendingItems } = useSidebarStats()
+  const txnsTo = pendingCount > 0 ? pendingTransactionsUrl(pendingItems) : '/transactions'
 
   return (
     <aside className="app-sidebar" data-mobile-open={mobileOpen ? 'true' : 'false'}>
@@ -343,21 +345,29 @@ export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
         >
           Workspace
         </p>
-        {NAV.map(({ to, icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/dashboard'}
-            onClick={onNavigate}
-            className={({ isActive }) => (isActive ? 'side-nav-item active' : 'side-nav-item')}
-          >
-            <Icon name={icon} size={15} />
-            <span style={{ flex: 1, lineHeight: 1.3 }}>{label}</span>
-            {label === 'Transactions' && pendingCount > 0 && (
-              <span className="side-nav-badge num">{pendingCount}</span>
-            )}
-          </NavLink>
-        ))}
+        {NAV.map(({ to, icon, label }) => {
+          const resolvedTo = label === 'Transactions' ? txnsTo : to
+          return (
+            <NavLink
+              key={to}
+              to={resolvedTo}
+              end={to === '/dashboard'}
+              onClick={onNavigate}
+              className={({ isActive }) => (isActive ? 'side-nav-item active' : 'side-nav-item')}
+            >
+              <Icon name={icon} size={15} />
+              <span style={{ flex: 1, lineHeight: 1.3 }}>{label}</span>
+              {label === 'Transactions' && pendingCount > 0 && (
+                <span
+                  className="side-nav-badge num"
+                  title={`${pendingCount} pending across all months`}
+                >
+                  {pendingCount}
+                </span>
+              )}
+            </NavLink>
+          )
+        })}
       </nav>
 
       {/* This month */}
