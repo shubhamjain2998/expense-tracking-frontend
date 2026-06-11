@@ -1,5 +1,13 @@
 import type { YTDRow } from '@/types/dashboard'
 
+export interface LastActiveMonthHint {
+  /** Calendar month (1–12) of the last month with recorded activity. */
+  month: number
+  year: number
+  /** Human-readable label, e.g. "January 2026". */
+  label: string
+}
+
 export interface CategoryStat {
   category: string
   total: number

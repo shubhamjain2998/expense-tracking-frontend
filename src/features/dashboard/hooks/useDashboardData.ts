@@ -20,11 +20,20 @@ import type { PendingManualTransaction, ProcessedTransactionItem } from '@/types
 import {
   computeCategoryStats,
   computeDailySpend,
+  computeLastActiveMonthHint,
   computeStackedTrend,
   computeYtdExtras,
   computeYtdLineData,
 } from '../lib/dashboardMath'
-import type { CategoryStat, IncomeExpenseTrendPoint, YtdComputedData, YtdDataPoint } from '../types'
+import type {
+  CategoryStat,
+  IncomeExpenseTrendPoint,
+  LastActiveMonthHint,
+  YtdComputedData,
+  YtdDataPoint,
+} from '../types'
+
+export type { LastActiveMonthHint }
 
 export interface DashboardDataResult {
   // Monthly summary
@@ -65,6 +74,14 @@ export interface DashboardDataResult {
   /** Months elapsed in the selected FY *as of today* — drives YTD labels
    *  and projection math (not the picker's selected month). */
   monthsElapsedYtd: number
+
+  /**
+   * Set when the selected month has zero spend but other months in the
+   * multi-month window do have activity. Used to render the empty-month
+   * hero hint. Null when the selected month has spend or no prior data
+   * is available.
+   */
+  lastActiveMonthHint: LastActiveMonthHint | null
 
   // Per-query loading flags
   summaryLoading: boolean
@@ -263,6 +280,14 @@ export function useDashboardData({
   const categoryStats = useMemo(() => computeCategoryStats(allTransactions), [allTransactions])
   const dailySpend = useMemo(() => computeDailySpend(allTransactions), [allTransactions])
 
+  // ── Derived: last-active-month hint (for empty months) ───────────────────────
+
+  const lastActiveMonthHint = useMemo(
+    () =>
+      computeLastActiveMonthHint(totalDebit, multiMonthSummaryQuery.data ?? [], calYear, calMonth),
+    [totalDebit, multiMonthSummaryQuery.data, calYear, calMonth]
+  )
+
   // ── Derived: 6-month stacked trend ──────────────────────────────────────────
 
   const { stackedTrendData, stackCategories } = useMemo(
@@ -376,6 +401,7 @@ export function useDashboardData({
     dailySpend,
     stackedTrendData,
     stackCategories,
+    lastActiveMonthHint,
     tags: tagsQuery.data ?? [],
     ledger: ledgerQuery.data ?? [],
     pendingItems: pendingQuery.data ?? [],
