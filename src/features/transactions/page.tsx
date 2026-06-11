@@ -23,6 +23,7 @@ import { useRawMutations } from './hooks/useRawMutations'
 import { useTransactionKeyboard } from './hooks/useTransactionKeyboard'
 import { useTransactionsData } from './hooks/useTransactionsData'
 import { buildUnified } from './lib/buildUnified'
+import { txnTotals } from './lib/txnFormat'
 import type { SortCol, SortDir, StatusFilter } from './types'
 
 export function TransactionsPage() {
@@ -55,7 +56,6 @@ export function TransactionsPage() {
   const [draggingUids, setDraggingUids] = useState<Set<string>>(new Set())
   const [openMenuUid, setOpenMenuUid] = useState<string | null>(null)
   const [checkedUids, setCheckedUids] = useState<Set<string>>(new Set())
-  const [hoveredRowUid, setHoveredRowUid] = useState<string | null>(null)
   const [sortCol, setSortCol] = useState<SortCol>('date')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
 
@@ -137,7 +137,7 @@ export function TransactionsPage() {
   // visible table (e.g. "Processed" tab shows the processed-only total).
   const visibleForHeading = filtered.filter((t) => t.kind !== 'deleted')
   const headingCount = visibleForHeading.length
-  const total = visibleForHeading.reduce((s, t) => s + Number(t.effectiveAmount), 0)
+  const headingTotals = txnTotals(visibleForHeading)
   const hasActiveFilters = !!(search || categoryFilter || tagFilter)
   const selectedTxn = selectedUid ? filtered.find((t) => t.uid === selectedUid) : null
   const showProcessPanel =
@@ -156,9 +156,7 @@ export function TransactionsPage() {
       const [y, m] = item.txn_date.split('-').map(Number)
       return y !== year || m !== month
     })
-  const pendingElsewhereUrl = pendingInOtherMonths
-    ? pendingTransactionsUrl(allPendingItems)
-    : null
+  const pendingElsewhereUrl = pendingInOtherMonths ? pendingTransactionsUrl(allPendingItems) : null
 
   function prevMonth() {
     setSelectedUid(null)
@@ -341,7 +339,7 @@ export function TransactionsPage() {
         month={month}
         mode={mode}
         allTxnsCount={headingCount}
-        total={total}
+        totals={headingTotals}
         onPrevMonth={prevMonth}
         onNextMonth={nextMonth}
         onManualEntry={() => setShowManualEntry(true)}
@@ -368,42 +366,39 @@ export function TransactionsPage() {
         }}
         autoMutation={autoMutation}
       />
-      {pendingElsewhereUrl && (() => {
-        // Compute a human-readable label for the target month (e.g. "April 2026").
-        const latestPending = allPendingItems.reduce((max, item) =>
-          item.txn_date > max.txn_date ? item : max
-        )
-        const [targetYear, targetMonth] = latestPending.txn_date.split('-').map(Number)
-        const monthLabel = monthLongLabel(targetMonth, 'calendar')
-        return (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              padding: '10px 14px',
-              margin: '0 0 4px',
-              background: 'var(--accent-soft)',
-              borderRadius: 'var(--radius)',
-              border: '1px solid color-mix(in oklch, var(--accent) 20%, transparent)',
-            }}
-          >
-            <Icon name="info" size={15} style={{ color: 'var(--accent)', flexShrink: 0 }} />
-            <span style={{ fontSize: 13, color: 'var(--accent)', flex: 1 }}>
-              {allPendingItems.length} pending transaction
-              {allPendingItems.length === 1 ? '' : 's'} in {monthLabel} {targetYear}
-            </span>
-            <Link
-              to={pendingElsewhereUrl}
-              className="btn sm"
-              style={{ gap: 5, flexShrink: 0 }}
+      {pendingElsewhereUrl &&
+        (() => {
+          // Compute a human-readable label for the target month (e.g. "April 2026").
+          const latestPending = allPendingItems.reduce((max, item) =>
+            item.txn_date > max.txn_date ? item : max
+          )
+          const [targetYear, targetMonth] = latestPending.txn_date.split('-').map(Number)
+          const monthLabel = monthLongLabel(targetMonth, 'calendar')
+          return (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '10px 14px',
+                margin: '0 0 4px',
+                background: 'var(--accent-soft)',
+                borderRadius: 'var(--radius)',
+                border: '1px solid color-mix(in oklch, var(--accent) 20%, transparent)',
+              }}
             >
-              Go
-              <Icon name="arrow_forward" size={12} />
-            </Link>
-          </div>
-        )
-      })()}
+              <Icon name="info" size={15} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+              <span style={{ fontSize: 13, color: 'var(--accent)', flex: 1 }}>
+                {allPendingItems.length} pending transaction
+                {allPendingItems.length === 1 ? '' : 's'} in {monthLabel} {targetYear}
+              </span>
+              <Link to={pendingElsewhereUrl} className="btn sm" style={{ gap: 5, flexShrink: 0 }}>
+                Go
+                <Icon name="arrow_forward" size={12} />
+              </Link>
+            </div>
+          )
+        })()}
       {categories.length > 0 && (
         <DragDropCategoryGrid
           categories={categories}
@@ -420,16 +415,48 @@ export function TransactionsPage() {
           const pendingRawIds = filtered
             .filter((t) => t.kind === 'pending' && t.rawId && checkedUids.has(t.uid))
             .map((t) => t.rawId as string)
+
+          async function handleBulkCategorise(categoryId: string) {
+            const selected = filtered.filter((t) => checkedUids.has(t.uid) && t.kind !== 'deleted')
+            const tasks = selected.map((txn) => {
+              if (txn.kind === 'pending' && txn.rawId)
+                return quickCategorizeMutation.mutateAsync({
+                  rawId: txn.rawId,
+                  categoryId,
+                  silent: true,
+                  ...findBaseContext(txn.description),
+                })
+              if (txn.kind === 'processed' && txn.processedId)
+                return changeCategoryMutation.mutateAsync({
+                  procId: txn.processedId,
+                  categoryId,
+                  silent: true,
+                })
+              return Promise.resolve()
+            })
+            const results = await Promise.allSettled(tasks)
+            const succeeded = results.filter((r) => r.status === 'fulfilled').length
+            const failed = results.length - succeeded
+            if (succeeded > 0) {
+              toast.success(`Categorised ${succeeded} transaction${succeeded === 1 ? '' : 's'}`)
+              setCheckedUids(new Set())
+            }
+            if (failed > 0)
+              toast.error(`Failed to categorise ${failed} transaction${failed === 1 ? '' : 's'}`)
+          }
+
           return (
             <BulkActionsBar
               count={checkedUids.size}
               pendingCount={pendingRawIds.length}
+              categories={categories}
               autoCategoriseLoading={autoMutation.isPending}
               onAutoCategorise={() =>
                 autoMutation.mutate(pendingRawIds, {
                   onSettled: () => setCheckedUids(new Set()),
                 })
               }
+              onCategorise={handleBulkCategorise}
               onDelete={() => void handleBulkDelete(filtered, checkedUids, setCheckedUids)}
               onClear={() => setCheckedUids(new Set())}
             />
@@ -454,8 +481,6 @@ export function TransactionsPage() {
         setEditingTxn={setEditingTxn}
         openMenuUid={openMenuUid}
         setOpenMenuUid={setOpenMenuUid}
-        hoveredRowUid={hoveredRowUid}
-        setHoveredRowUid={setHoveredRowUid}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         draggingUids={draggingUids}

@@ -14,7 +14,6 @@ interface TransactionRowProps {
   isDragging: boolean
   hasMenu: boolean
   isChecked: boolean
-  isHovered: boolean
   onProcess: () => void
   onEdit: () => void
   onDelete: () => void
@@ -24,8 +23,6 @@ interface TransactionRowProps {
   onRowClick: () => void
   onDragStart: (e: React.DragEvent) => void
   onDragEnd: () => void
-  onMouseEnter: () => void
-  onMouseLeave: () => void
   setSelectedUid: (uid: string | null) => void
   setEditingTxn: (txn: ProcessedTransactionItem | null) => void
 }
@@ -36,7 +33,6 @@ export function TransactionRow({
   isDragging,
   hasMenu,
   isChecked,
-  isHovered,
   onProcess,
   onEdit,
   onDelete,
@@ -46,8 +42,6 @@ export function TransactionRow({
   onRowClick,
   onDragStart,
   onDragEnd,
-  onMouseEnter,
-  onMouseLeave,
   setSelectedUid,
   setEditingTxn,
 }: TransactionRowProps) {
@@ -73,10 +67,9 @@ export function TransactionRow({
         opacity: isDragging || isDeleted ? 0.4 : 1,
         cursor: isDeleted ? 'default' : 'pointer',
       }}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
     >
-      {/* Checkbox */}
+      {/* Checkbox — always visible so the column is stable and bulk selection
+          is a first-class gesture (no hover-discovery needed). */}
       <td
         className="txn-col-check"
         style={{ padding: '0 0 0 10px' }}
@@ -85,7 +78,7 @@ export function TransactionRow({
           if (!isDeleted) onToggleCheck()
         }}
       >
-        {(isChecked || isHovered) && !isDeleted && (
+        {!isDeleted && (
           <input
             type="checkbox"
             checked={isChecked}
