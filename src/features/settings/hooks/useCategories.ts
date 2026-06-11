@@ -55,9 +55,10 @@ export function useCategories() {
   const deleteMutation = useMutation({
     mutationFn: deleteCategory,
     onSuccess: () => {
-      // Cascades: budget entries reference categories, transactions show
-      // category names, dashboard groups by category, mapping rules target a
-      // category id.
+      // The backend blocks delete with 409 if the category is referenced by
+      // transactions, budget entries, or category mappings, so a successful
+      // delete means none of those references existed. Still invalidate broadly
+      // to keep cached counts consistent.
       invalidateDomains(qc, [
         'categories',
         'budget',
