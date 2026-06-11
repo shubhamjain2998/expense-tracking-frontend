@@ -20,6 +20,8 @@ interface DashboardHeaderProps {
   onMonthChange: (m: number) => void
   isLoading: boolean
   pendingCount: number
+  /** Pre-computed URL for the pending transactions link (lands on the right month). */
+  pendingUrl: string
 }
 
 export function DashboardHeader({
@@ -36,6 +38,7 @@ export function DashboardHeader({
   onMonthChange,
   isLoading,
   pendingCount,
+  pendingUrl,
 }: DashboardHeaderProps) {
   const animatedTotal = useCountUp(totalDebit, { duration: 750 })
 
@@ -95,7 +98,7 @@ export function DashboardHeader({
               <>
                 {' · '}
                 <Link
-                  to="/transactions"
+                  to={pendingUrl}
                   className="border-b border-[color-mix(in_oklch,var(--accent)_30%,transparent)] pb-px font-medium text-[var(--accent)] no-underline hover:border-[var(--accent)]"
                 >
                   {pendingCount} pending categorization

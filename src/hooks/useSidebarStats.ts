@@ -3,12 +3,14 @@ import { useQuery } from '@tanstack/react-query'
 import { getDashboardSummary, getSplitLedger } from '@/lib/api/dashboard'
 import { getPendingManual } from '@/lib/api/transactions'
 import { qk } from '@/lib/queryKeys'
+import type { PendingManualTransaction } from '@/types/transaction'
 
 export interface SidebarStats {
   spent: number
   totalBudget: number
   owedToYou: number
   pendingCount: number
+  pendingItems: PendingManualTransaction[]
   isLoading: boolean
 }
 
@@ -39,13 +41,15 @@ export function useSidebarStats(): SidebarStats {
   const spent = rows.filter((r) => Number(r.actual) > 0).reduce((s, r) => s + Number(r.actual), 0)
   const totalBudget = rows.reduce((s, r) => s + Number(r.allocated_monthly), 0)
   const owedToYou = (ledgerQ.data ?? []).reduce((s, r) => s + Number(r.total_split_amount), 0)
-  const pendingCount = (pendingQ.data ?? []).length
+  const pendingItems = pendingQ.data ?? []
+  const pendingCount = pendingItems.length
 
   return {
     spent,
     totalBudget,
     owedToYou,
     pendingCount,
+    pendingItems,
     isLoading: summaryQ.isLoading || ledgerQ.isLoading || pendingQ.isLoading,
   }
 }

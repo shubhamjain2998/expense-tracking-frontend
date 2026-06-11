@@ -1,10 +1,15 @@
+import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { AddTransactionDialog } from '@/components/ui/AddTransactionDialog'
+import { Icon } from '@/components/ui/Icon'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { useToastContext } from '@/hooks/useToastContext'
-import { getCurrentPeriod, loadPeriodMode } from '@/lib/period'
+import { getPendingManual } from '@/lib/api/transactions'
+import { pendingTransactionsUrl } from '@/lib/pendingNav'
+import { getCurrentPeriod, loadPeriodMode, monthLongLabel } from '@/lib/period'
+import { qk } from '@/lib/queryKeys'
 import type { ProcessedTransactionItem } from '@/types/transaction'
 
 import { BulkActionsBar } from './components/BulkActionsBar'
@@ -75,6 +80,15 @@ export function TransactionsPage() {
     useProcessedMutations(year, month, mode)
   const { autoMutation } = useAutoCategorise()
 
+  // Global pending count — same query key as useSidebarStats, so it's served
+  // from cache on most page loads (zero extra network requests).
+  const pendingManualQuery = useQuery({
+    queryKey: qk.transactions.pendingManual(),
+    queryFn: getPendingManual,
+    staleTime: 60_000,
+  })
+  const allPendingItems = pendingManualQuery.data ?? []
+
   const categories = categoriesQuery.data ?? []
   const shortcutCats = categories.slice(0, 9)
   const isLoading = rawQuery.isLoading || processedQuery.isLoading
@@ -129,6 +143,22 @@ export function TransactionsPage() {
   const showProcessPanel =
     selectedTxn?.kind === 'pending' && !!selectedTxn.rawOriginal && !editingTxn
   const showEditPanel = !!editingTxn
+
+  // Show a banner when the current month is empty but pending items exist in
+  // other months.  We only show it after queries have settled so we don't
+  // flash a false positive while data is loading.
+  const pendingInOtherMonths =
+    !isLoading &&
+    !pendingManualQuery.isLoading &&
+    allTxns.length === 0 &&
+    allPendingItems.length > 0 &&
+    allPendingItems.some((item) => {
+      const [y, m] = item.txn_date.split('-').map(Number)
+      return y !== year || m !== month
+    })
+  const pendingElsewhereUrl = pendingInOtherMonths
+    ? pendingTransactionsUrl(allPendingItems)
+    : null
 
   function prevMonth() {
     setSelectedUid(null)
@@ -338,6 +368,42 @@ export function TransactionsPage() {
         }}
         autoMutation={autoMutation}
       />
+      {pendingElsewhereUrl && (() => {
+        // Compute a human-readable label for the target month (e.g. "April 2026").
+        const latestPending = allPendingItems.reduce((max, item) =>
+          item.txn_date > max.txn_date ? item : max
+        )
+        const [targetYear, targetMonth] = latestPending.txn_date.split('-').map(Number)
+        const monthLabel = monthLongLabel(targetMonth, 'calendar')
+        return (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              padding: '10px 14px',
+              margin: '0 0 4px',
+              background: 'var(--accent-soft)',
+              borderRadius: 'var(--radius)',
+              border: '1px solid color-mix(in oklch, var(--accent) 20%, transparent)',
+            }}
+          >
+            <Icon name="info" size={15} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+            <span style={{ fontSize: 13, color: 'var(--accent)', flex: 1 }}>
+              {allPendingItems.length} pending transaction
+              {allPendingItems.length === 1 ? '' : 's'} in {monthLabel} {targetYear}
+            </span>
+            <Link
+              to={pendingElsewhereUrl}
+              className="btn sm"
+              style={{ gap: 5, flexShrink: 0 }}
+            >
+              Go
+              <Icon name="arrow_forward" size={12} />
+            </Link>
+          </div>
+        )
+      })()}
       {categories.length > 0 && (
         <DragDropCategoryGrid
           categories={categories}
