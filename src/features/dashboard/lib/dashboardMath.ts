@@ -1,9 +1,15 @@
 import type { PeriodMode } from '@/lib/period'
 import { monthShortLabel } from '@/lib/period'
-import type { TrendDataPoint, YTDRow } from '@/types/dashboard'
+import type { MultiMonthSummaryItem, TrendDataPoint, YTDRow } from '@/types/dashboard'
 import type { ProcessedTransactionItem } from '@/types/transaction'
 
-import type { CategoryStat, MonthStat, YtdComputedData, YtdDataPoint } from '../types'
+import type {
+  CategoryStat,
+  LastActiveMonthHint,
+  MonthStat,
+  YtdComputedData,
+  YtdDataPoint,
+} from '../types'
 
 export function computeCategoryStats(txns: ProcessedTransactionItem[]): CategoryStat[] {
   const map = new Map<string, { total: number; count: number }>()
@@ -31,6 +37,37 @@ export function computeDailySpend(txns: ProcessedTransactionItem[]): Map<number,
     }
   }
   return map
+}
+
+/**
+ * Find the most recent month (from the multi-month summary window, excluding
+ * the currently selected calendar month) that has expense or income activity.
+ * Returns null when the selected month already has spend, or no prior data exists.
+ */
+export function computeLastActiveMonthHint(
+  totalDebit: number,
+  items: MultiMonthSummaryItem[],
+  calYear: number,
+  calMonth: number
+): LastActiveMonthHint | null {
+  if (totalDebit > 0) return null
+  if (items.length === 0) return null
+
+  // Sort newest-first so we find the most recent active month quickly.
+  const sorted = items
+    .slice()
+    .sort((a, b) => (a.year !== b.year ? b.year - a.year : b.month - a.month))
+
+  for (const item of sorted) {
+    if (item.year === calYear && item.month === calMonth) continue
+    if (Number(item.expense_total) > 0 || Number(item.income_total) > 0) {
+      const d = new Date(item.year, item.month - 1, 1)
+      const label = d.toLocaleString('en-US', { month: 'long', year: 'numeric' })
+      return { month: item.month, year: item.year, label }
+    }
+  }
+
+  return null
 }
 
 interface Last6Month {
