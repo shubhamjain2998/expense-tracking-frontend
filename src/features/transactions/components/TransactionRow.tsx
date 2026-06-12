@@ -168,7 +168,16 @@ export function TransactionRow({
                 flexShrink: 0,
               }}
             />
-            {isPendingCredit ? 'credit?' : 'pending'}
+            {isPendingCredit ? (
+              <span
+                title="Could be a refund, income, or transfer — open to classify"
+                style={{ cursor: 'pointer' }}
+              >
+                Credit — review
+              </span>
+            ) : (
+              'pending'
+            )}
           </span>
         ) : isDeleted ? (
           <span
