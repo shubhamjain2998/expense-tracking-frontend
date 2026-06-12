@@ -21,6 +21,7 @@ export function FileCard({ upload, onRemove, onToggleExclude, onTryBulkPaste }: 
   const [searchQuery, setSearchQuery] = useState('')
   const [dateFilter, setDateFilter] = useState('')
   const [skippedExpanded, setSkippedExpanded] = useState(false)
+  const [allSkippedExpanded, setAllSkippedExpanded] = useState(false)
 
   const allRows = upload.preview?.rows ?? []
   const uniqueDates = [...new Set(allRows.map((r) => r.txn_date.slice(0, 10)))].sort()
@@ -86,9 +87,7 @@ export function FileCard({ upload, onRemove, onToggleExclude, onTryBulkPaste }: 
               Parsing…
             </span>
           )}
-          {upload.status === 'ready' && (
-            <Chip variant="success">{readyCount} to import</Chip>
-          )}
+          {upload.status === 'ready' && <Chip variant="success">{readyCount} to import</Chip>}
           {upload.status === 'importing' && <span className="chip">Importing…</span>}
           {upload.status === 'done' && <Chip variant="success">Imported</Chip>}
           {upload.status === 'needs_password' && (
@@ -141,9 +140,7 @@ export function FileCard({ upload, onRemove, onToggleExclude, onTryBulkPaste }: 
       {isActive && upload.preview && (
         <>
           {/* Info chips */}
-          {(candidateMisses.length > 0 ||
-            manuallyExcludedCount > 0 ||
-            dupeSkippedCount > 0) && (
+          {(candidateMisses.length > 0 || manuallyExcludedCount > 0 || dupeSkippedCount > 0) && (
             <div
               className="flex flex-wrap items-center gap-2"
               style={{ padding: '8px 14px', borderBottom: '1px solid var(--line)' }}
@@ -222,6 +219,47 @@ export function FileCard({ upload, onRemove, onToggleExclude, onTryBulkPaste }: 
             dupeIndices={upload.dupeIndices}
             onToggleExclude={upload.status === 'ready' ? onToggleExclude : undefined}
           />
+
+          {/* All-skipped disclosure — shows every raw line the parser rejected,
+              collapsed by default. Surfaced when there are skipped rows that
+              are NOT already shown in the candidateMisses warning section
+              below (i.e. lines the parser rejected as noise: headers, totals,
+              GST blocks, etc.). Useful for verifying the parser didn't drop
+              any real transactions without flagging them. */}
+          {(upload.preview?.skipped_rows ?? []).length > candidateMisses.length && (
+            <div style={{ borderTop: '1px solid var(--line)' }}>
+              <button
+                onClick={() => setAllSkippedExpanded((v) => !v)}
+                className="flex w-full items-center justify-between px-4 py-2 text-left"
+              >
+                <span className="text-[11.5px]" style={{ color: 'var(--ink-3)' }}>
+                  {(upload.preview?.skipped_rows ?? []).length} row
+                  {(upload.preview?.skipped_rows ?? []).length === 1 ? '' : 's'} skipped by parser
+                </span>
+                <Icon
+                  name={allSkippedExpanded ? 'expand_less' : 'expand_more'}
+                  size={14}
+                  style={{ color: 'var(--ink-4)' }}
+                />
+              </button>
+              {allSkippedExpanded && (
+                <ul
+                  className="space-y-1 px-4 pt-1 pb-3"
+                  style={{ borderTop: '1px solid var(--line)' }}
+                >
+                  {(upload.preview?.skipped_rows ?? []).map((row, i) => (
+                    <li
+                      key={i}
+                      className="mono truncate text-[11px]"
+                      style={{ color: 'var(--ink-3)' }}
+                    >
+                      {row}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
 
           {candidateMisses.length > 0 && (
             <div style={{ borderTop: '1px solid var(--line)', background: 'var(--warn-soft)' }}>
