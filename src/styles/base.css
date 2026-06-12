@@ -16,6 +16,11 @@ input[type='number'] {
   -moz-appearance: textfield;
 }
 
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--accent);
+}
+
 body {
   margin: 0;
   font-family: var(--font-body);

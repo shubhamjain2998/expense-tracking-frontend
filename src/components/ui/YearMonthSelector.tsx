@@ -1,4 +1,8 @@
+import { AnimatePresence, motion } from 'motion/react'
+import { useState } from 'react'
+
 import { Icon } from '@/components/ui/Icon'
+import { slideByDirection } from '@/lib/motion'
 
 import { usePeriodMode } from '../../hooks/usePeriodMode'
 import { formatYearLabel, monthShortLabel } from '../../lib/period'
@@ -23,8 +27,11 @@ export function YearMonthSelector({
   onMonthChange,
 }: YearMonthSelectorProps) {
   const { mode } = usePeriodMode()
+  // Last step direction (+1 next / -1 prev) drives the label slide.
+  const [direction, setDirection] = useState(0)
 
   function step(delta: 1 | -1) {
+    setDirection(delta)
     const next = month + delta
     if (next < 1) {
       onYearChange(year - 1)
@@ -45,7 +52,21 @@ export function YearMonthSelector({
         <button type="button" onClick={() => step(-1)} aria-label="Previous month">
           <Icon name="chevron_left" size={14} />
         </button>
-        <div className="label">{monthShortLabel(month, mode)}</div>
+        <div className="label">
+          <AnimatePresence mode="popLayout" custom={direction} initial={false}>
+            <motion.span
+              key={`${year}-${month}`}
+              custom={direction}
+              variants={slideByDirection}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              style={{ display: 'inline-block' }}
+            >
+              {monthShortLabel(month, mode)}
+            </motion.span>
+          </AnimatePresence>
+        </div>
         <button type="button" onClick={() => step(1)} aria-label="Next month">
           <Icon name="chevron_right" size={14} />
         </button>

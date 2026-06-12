@@ -192,7 +192,7 @@ html.dark {
   /* ─── Animation utilities ─────────────────────────────────────────── */
   --animate-fade-up: fade-up 0.18s ease both;
   --animate-fade-down: fade-down 0.15s ease both;
-  --animate-scale-in: pop 0.18s ease both;
-  --animate-toast-in: toast-in 0.18s ease both;
-  --animate-dialog-in: pop 0.18s ease both;
+  --animate-scale-in: pop 0.22s var(--ease-spring) both;
+  --animate-toast-in: toast-in 0.32s var(--ease-spring) both;
+  --animate-dialog-in: pop 0.26s var(--ease-spring) both;
 }
