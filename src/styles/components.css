@@ -138,11 +138,15 @@
   transition:
     background 0.1s ease,
     border-color 0.1s ease,
-    color 0.1s ease;
+    color 0.1s ease,
+    transform 0.1s ease;
   white-space: nowrap;
 }
 .btn:hover:not(:disabled) {
   background: var(--surface-2);
+}
+.btn:active:not(:disabled) {
+  transform: scale(0.96);
 }
 .btn:focus-visible {
   outline: none;
@@ -302,6 +306,12 @@ textarea.input-field {
   color: var(--ink-2);
   border: 1px solid var(--line);
   white-space: nowrap;
+}
+button.chip {
+  transition: transform 0.1s ease;
+}
+button.chip:active {
+  transform: scale(0.95);
 }
 .chip .dot {
   width: 6px;
@@ -1281,11 +1291,17 @@ select:disabled,
     transform 0.12s ease,
     background 0.12s ease;
 }
+.fab svg {
+  transition: transform 0.22s var(--ease-spring);
+}
 .fab:hover {
   transform: translateY(-1px);
 }
+.fab:hover svg {
+  transform: rotate(90deg);
+}
 .fab:active {
-  transform: translateY(0) scale(0.97);
+  transform: translateY(0) scale(0.94);
 }
 @media (max-width: 767px) {
   .fab {

@@ -93,7 +93,7 @@ export function AddTransactionDialog({ onClose }: AddTransactionDialogProps) {
           border: '1px solid var(--line)',
           borderRadius: 'var(--radius-lg)',
           boxShadow: 'var(--shadow-pop)',
-          animation: 'pop .18s ease',
+          animation: 'pop .26s var(--ease-spring)',
           maxHeight: 'calc(100vh - 48px)',
         }}
       >
