@@ -169,6 +169,13 @@ export function CategoriesSection() {
                     >
                       {cat.name}
                     </span>
+                    <span
+                      className="shrink-0 text-[11px]"
+                      style={{ color: 'var(--ink-4)', marginRight: 4 }}
+                      title={`${cat.txn_count ?? 0} transaction${(cat.txn_count ?? 0) !== 1 ? 's' : ''}`}
+                    >
+                      {(cat.txn_count ?? 0) === 0 ? 'unused' : `${cat.txn_count} txns`}
+                    </span>
                     {cat.is_income && (
                       <span
                         style={{
@@ -264,7 +271,15 @@ export function CategoriesSection() {
       <ConfirmDialog
         isOpen={deleteCategoryId !== null}
         title="Delete category"
-        message="This category can only be deleted if it has no transactions, budget entries, or auto-categorisation rules referencing it. If any exist, the delete will be blocked and you will see an error."
+        message={(() => {
+          const cat = query.data?.find((c: Category) => c.id === deleteCategoryId)
+          const count = cat?.txn_count ?? 0
+          const usageLine =
+            count > 0
+              ? `Used by ${count} transaction${count !== 1 ? 's' : ''} — delete will be blocked if any transactions, budget entries, or mappings reference it.`
+              : 'Unused — safe to delete as long as no budget entries or mappings reference it.'
+          return usageLine
+        })()}
         confirmLabel="Delete"
         danger
         loading={deleteMutation.isPending}
