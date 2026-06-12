@@ -43,6 +43,52 @@ body {
   min-height: 100vh;
 }
 
+/* Text selection carries the accent. */
+::selection {
+  background: color-mix(in oklch, var(--accent) 24%, transparent);
+}
+
+/* Slim, token-coloured scrollbars. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--ink-4);
+}
+
+/* One focus ring everywhere — accent halo, offset so it never clips. */
+:focus-visible {
+  outline: 2px solid color-mix(in oklch, var(--accent) 65%, transparent);
+  outline-offset: 2px;
+}
+
+/* Theme-toggle circular reveal (View Transitions API).
+   The default crossfade is replaced by a clip-path circle animated from
+   the toggle button in useTheme.ts. `theme-switching` suspends the body's
+   color transition so the snapshot doesn't smear mid-fade. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+html.theme-switching body {
+  transition: none;
+}
+
 /* Paper-grain overlay — light mode only. Adds sub-conscious paper texture
    without affecting contrast or interactivity. Disabled in dark mode where
    grain reads as dirt. */

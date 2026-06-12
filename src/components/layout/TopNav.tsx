@@ -51,7 +51,13 @@ export function TopNav({ onOpenNav: _onOpenNav }: TopNavProps) {
       {/* Right: theme toggle (available on every viewport) */}
       <div className="flex items-center gap-0.5">
         <button
-          onClick={toggleTheme}
+          onClick={(e) => {
+            // Keyboard activation reports (0,0) — fall back to the button center.
+            const rect = e.currentTarget.getBoundingClientRect()
+            const x = e.clientX || rect.left + rect.width / 2
+            const y = e.clientY || rect.top + rect.height / 2
+            toggleTheme({ x, y })
+          }}
           className="btn ghost icon"
           aria-label={isDark ? 'Light mode' : 'Dark mode'}
           title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}

@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react'
 
 interface ThemeContextValue {
   isDark: boolean
-  toggleTheme: () => void
+  toggleTheme: (origin?: { x: number; y: number }) => void
 }
 
 export const ThemeContext = createContext<ThemeContextValue>({
