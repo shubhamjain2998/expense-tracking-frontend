@@ -1,3 +1,4 @@
+import { motion } from 'motion/react'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
@@ -5,6 +6,7 @@ import { GettingStartedChecklist } from '@/components/onboarding/GettingStartedC
 import { WelcomeModal } from '@/components/onboarding/WelcomeModal'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { useThemeContext } from '@/hooks/useThemeContext'
+import { fadeUp, staggerContainer } from '@/lib/motion'
 import { onboardingStorage } from '@/lib/onboardingStorage'
 import { pendingTransactionsUrl } from '@/lib/pendingNav'
 import { formatYearLabel, getCurrentPeriod, loadPeriodMode, resolvePeriodMonth } from '@/lib/period'
@@ -125,13 +127,18 @@ export function DashboardPage() {
   ]
 
   return (
-    <div className="dashboard-page space-y-4">
+    <motion.div
+      className="dashboard-page space-y-4"
+      variants={staggerContainer(0.06)}
+      initial="hidden"
+      animate="visible"
+    >
       {welcomeOpen && (
         <WelcomeModal onGetStarted={handleWelcomeGetStarted} onSkip={handleWelcomeSkip} />
       )}
       {showChecklist && <GettingStartedChecklist onDismiss={() => setShowChecklist(false)} />}
       <SectionPillBar sections={sections} />
-      <section id="sec-overview" className="space-y-4">
+      <motion.section variants={fadeUp} id="sec-overview" className="space-y-4">
         <DashboardHeader
           totalDebit={data.totalDebit}
           totalBudget={data.totalBudget}
@@ -158,9 +165,9 @@ export function DashboardPage() {
           incomeByCategory={data.incomeByCategory}
           isLoading={data.allTxnLoading}
         />
-      </section>
+      </motion.section>
 
-      <section id="sec-ytd">
+      <motion.section variants={fadeUp} id="sec-ytd">
         <YtdSection
           yearlyTrendData={data.yearlyTrendData}
           month={data.monthsElapsedYtd}
@@ -173,9 +180,9 @@ export function DashboardPage() {
           ytdComputed={data.ytdComputed}
           isLoading={data.ytdLoading || data.yearlyTrendLoading}
         />
-      </section>
+      </motion.section>
 
-      <section id="sec-trend" className="space-y-4">
+      <motion.section variants={fadeUp} id="sec-trend" className="space-y-4">
         <IncomeFlowAndTrend
           totalIncome={data.totalIncome}
           totalExpenses={data.totalDebit}
@@ -193,18 +200,18 @@ export function DashboardPage() {
           isLoading={data.trendQueriesLoading}
           isDark={isDark}
         />
-      </section>
+      </motion.section>
 
-      <section id="sec-budget">
+      <motion.section variants={fadeUp} id="sec-budget">
         <BudgetPaceBars
           budgetRows={data.budgetRows}
           paceAt={paceAt}
           dayOfMonth={dayOfMonth}
           isLoading={data.summaryLoading}
         />
-      </section>
+      </motion.section>
 
-      <section id="sec-categories">
+      <motion.section variants={fadeUp} id="sec-categories">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-stretch">
           <CategoryDonutChart
             data={data.categoryChartData}
@@ -218,9 +225,9 @@ export function DashboardPage() {
             isLoading={data.allTxnLoading}
           />
         </div>
-      </section>
+      </motion.section>
 
-      <section id="sec-deepdive">
+      <motion.section variants={fadeUp} id="sec-deepdive">
         <CategoryDeepDive
           allTransactions={data.allTransactions}
           summaryRows={data.summaryRows}
@@ -230,9 +237,9 @@ export function DashboardPage() {
           isLoading={data.allTxnLoading}
           isDark={isDark}
         />
-      </section>
+      </motion.section>
 
-      <section id="sec-splits" className="space-y-4">
+      <motion.section variants={fadeUp} id="sec-splits" className="space-y-4">
         <SplitLedger
           ledger={data.ledger}
           includeSettled={includeSettled}
@@ -253,7 +260,7 @@ export function DashboardPage() {
           />
           <NeedsReview pendingItems={data.pendingItems} isLoading={data.pendingLoading} />
         </div>
-      </section>
-    </div>
+      </motion.section>
+    </motion.div>
   )
 }
