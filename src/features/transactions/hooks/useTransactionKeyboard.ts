@@ -14,6 +14,7 @@ interface UseTransactionKeyboardParams {
   setEditingTxn: (txn: ProcessedTransactionItem | null) => void
   quickCategorize: (params: { rawId: string; categoryId: string }) => void
   changeCategory: (params: { procId: string; categoryId: string }) => void
+  onShowShortcuts?: () => void
 }
 
 export function useTransactionKeyboard({
@@ -25,11 +26,18 @@ export function useTransactionKeyboard({
   setEditingTxn,
   quickCategorize,
   changeCategory,
+  onShowShortcuts,
 }: UseTransactionKeyboardParams) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const tag = (e.target as HTMLElement).tagName
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return
+
+      if (e.key === '?' && !e.shiftKey) {
+        e.preventDefault()
+        onShowShortcuts?.()
+        return
+      }
 
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault()
@@ -69,5 +77,6 @@ export function useTransactionKeyboard({
     setEditingTxn,
     quickCategorize,
     changeCategory,
+    onShowShortcuts,
   ])
 }
