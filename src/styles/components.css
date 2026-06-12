@@ -498,11 +498,16 @@ button.chip:active {
   background: var(--surface);
   transition:
     border-color 0.15s ease,
-    background 0.15s ease;
+    background 0.15s ease,
+    transform 0.15s ease;
 }
 .dropzone.hot {
   border-color: var(--accent);
   background: var(--accent-soft);
+  transform: scale(1.01);
+}
+.dropzone.hot svg {
+  animation: bob 0.5s ease-in-out infinite alternate;
 }
 
 /* Interactive cursors. */
@@ -924,6 +929,49 @@ select:disabled,
 @media (max-width: 767px) {
   .dashboard-page section[id^='sec-'] {
     scroll-margin-top: 56px;
+  }
+}
+
+/* ─── Auth ambience — two soft colour fields drifting behind the card.
+   Solid blurred circles (not gradients), accent + warn softs, very slow.
+   pointer-events: none and z-index 0 keep them purely decorative. */
+.auth-page {
+  position: relative;
+  overflow: hidden;
+}
+.auth-page::before,
+.auth-page::after {
+  content: '';
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 0;
+}
+.auth-page::before {
+  background: var(--accent-soft);
+  top: -120px;
+  left: -100px;
+  animation: blob-drift 26s ease-in-out infinite alternate;
+}
+.auth-page::after {
+  background: var(--warn-soft);
+  bottom: -140px;
+  right: -120px;
+  animation: blob-drift 34s ease-in-out infinite alternate-reverse;
+}
+.auth-page > * {
+  position: relative;
+  z-index: 1;
+}
+@keyframes blob-drift {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(60px, 40px) scale(1.15);
   }
 }
 

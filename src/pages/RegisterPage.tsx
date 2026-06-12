@@ -64,7 +64,7 @@ export function RegisterPage() {
 
   return (
     <div
-      className="flex min-h-screen items-center justify-center px-4"
+      className="auth-page flex min-h-screen items-center justify-center px-4"
       style={{ background: 'var(--bg)' }}
     >
       <div className="w-full max-w-sm">
@@ -94,7 +94,7 @@ export function RegisterPage() {
           </span>
         </div>
 
-        <div className="card">
+        <div className="card animate-scale-in">
           <p className="eyebrow">Get started</p>
           <h1 className="display mt-2 text-[28px] text-[var(--ink)]">Create account</h1>
           <p className="mt-2 text-[13px] text-[var(--ink-3)]">

@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 
 import { useToastContext } from '@/hooks/useToastContext'
 import { importBackup } from '@/lib/api/backup'
+import { celebrate } from '@/lib/confetti'
 import type { BackupImportResponse, ParsedBackupPayload } from '@/types/backup'
 
 export type MappingMode = 'derive' | 'explicit' | 'skip'
@@ -154,6 +155,7 @@ export function useBackupImport() {
       }
       const result = await importBackup(toSend)
       setImportResult(result)
+      celebrate()
       setParsedPayload(null)
       setParsedFileName(null)
       void qc.invalidateQueries()

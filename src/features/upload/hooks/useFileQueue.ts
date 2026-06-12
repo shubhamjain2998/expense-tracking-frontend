@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { useToastContext } from '@/hooks/useToastContext'
 import { PDF_PASSWORD_INCORRECT, PDF_PASSWORD_REQUIRED } from '@/lib/api/uploads'
+import { celebrate } from '@/lib/confetti'
 
 import type { FileStatus, FileUpload } from '../types'
 
@@ -215,6 +216,7 @@ export function useFileQueue() {
       toast.error(`${errorCount} file${errorCount > 1 ? 's' : ''} failed to import`)
     if (totalInserted > 0 || totalSkipped > 0)
       toast.success(`${totalInserted} transactions imported, ${totalSkipped} skipped`)
+    if (totalInserted > 0 && errorCount === 0) celebrate()
 
     if (totalInserted > 0) {
       // Navigate to the month of the most recent imported transaction so the

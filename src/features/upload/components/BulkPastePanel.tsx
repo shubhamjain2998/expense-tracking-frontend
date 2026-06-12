@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { Icon } from '@/components/ui/Icon'
 import { useIgnoreRules } from '@/hooks/useIgnoreRules'
 import { useToastContext } from '@/hooks/useToastContext'
+import { celebrate } from '@/lib/confetti'
 import type { PreviewResponse, PreviewRow } from '@/types/transaction'
 
 import { useBulkPasteImport } from '../hooks/useBulkPasteImport'
@@ -121,6 +122,7 @@ export function BulkPastePanel() {
         }))
       )
       toast.success(`${data.inserted} transactions imported, ${data.skipped} skipped`)
+      if (data.inserted > 0) celebrate()
       if (data.inserted > 0) navigate('/transactions')
     } catch (err) {
       const e = err as { detail?: string; status?: number }
