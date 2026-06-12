@@ -12,6 +12,7 @@ export function ProgressBar({ pct }: { pct: number }) {
       }}
     >
       <div
+        className="grow-x-anim"
         style={{
           position: 'absolute',
           left: 0,
