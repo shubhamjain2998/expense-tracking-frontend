@@ -1,5 +1,5 @@
 import type { BudgetEntry } from '@/types/budget'
-import type { Category, Person, Tag } from '@/types/settings'
+import type { Category, CategoryMapping, Person, Tag } from '@/types/settings'
 import type {
   ImportResponse,
   PreviewResponse,
@@ -11,7 +11,19 @@ let _id = 0
 const nextId = () => `test-${++_id}`
 
 export function makeCategory(overrides: Partial<Category> = {}): Category {
-  return { id: nextId(), name: 'Test Category', is_income: false, ...overrides }
+  return { id: nextId(), name: 'Test Category', is_income: false, txn_count: 0, ...overrides }
+}
+
+export function makeCategoryMapping(overrides: Partial<CategoryMapping> = {}): CategoryMapping {
+  return {
+    id: nextId(),
+    description_pattern: 'TEST MERCHANT',
+    category_id: 'cat-1',
+    category: 'Groceries',
+    match_count: 0,
+    last_used: null,
+    ...overrides,
+  }
 }
 
 export function makeTag(overrides: Partial<Tag> = {}): Tag {

@@ -19,13 +19,37 @@ export const handlers = [
   // Reference data
   http.get(`${BASE}/categories`, () =>
     HttpResponse.json([
-      makeCategory({ id: 'cat-1', name: 'Groceries' }),
-      makeCategory({ id: 'cat-2', name: 'Transport' }),
+      makeCategory({ id: 'cat-1', name: 'Groceries', txn_count: 3 }),
+      makeCategory({ id: 'cat-2', name: 'Transport', txn_count: 0 }),
     ])
   ),
   http.get(`${BASE}/tags`, () => HttpResponse.json([])),
   http.get(`${BASE}/persons`, () => HttpResponse.json([])),
   http.get(`${BASE}/category-mappings`, () => HttpResponse.json([])),
+  http.post(`${BASE}/category-mappings`, () =>
+    HttpResponse.json(
+      {
+        id: 'map-1',
+        description_pattern: 'SWIGGY',
+        category_id: 'cat-1',
+        category: 'Groceries',
+        match_count: 0,
+        last_used: null,
+      },
+      { status: 201 }
+    )
+  ),
+  http.patch(`${BASE}/category-mappings/:id`, () =>
+    HttpResponse.json({
+      id: 'map-1',
+      description_pattern: 'SWIGGY',
+      category_id: 'cat-1',
+      category: 'Groceries',
+      match_count: 0,
+      last_used: null,
+    })
+  ),
+  http.delete(`${BASE}/category-mappings/:id`, () => new HttpResponse(null, { status: 204 })),
 
   // Transactions
   http.get(`${BASE}/transactions/raw`, () => HttpResponse.json([])),
