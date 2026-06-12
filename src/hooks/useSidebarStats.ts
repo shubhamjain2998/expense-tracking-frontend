@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 
+import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { getDashboardSummary, getSplitLedger } from '@/lib/api/dashboard'
 import { getPendingManual } from '@/lib/api/transactions'
 import { qk } from '@/lib/queryKeys'
@@ -18,16 +19,20 @@ export function useSidebarStats(): SidebarStats {
   const today = new Date()
   const year = today.getFullYear()
   const month = today.getMonth() + 1
+  // Include period_mode in the query keys so they match useDashboardData's
+  // keys exactly when the dashboard is on the current month — React Query
+  // then deduplicates the request and serves both from the same cache entry.
+  const { mode } = usePeriodMode()
 
   const summaryQ = useQuery({
-    queryKey: qk.dashboard.summary(year, month),
-    queryFn: () => getDashboardSummary(year, month),
+    queryKey: qk.dashboard.summary(year, month, mode),
+    queryFn: () => getDashboardSummary(year, month, undefined, mode),
     staleTime: 5 * 60_000,
   })
 
   const ledgerQ = useQuery({
-    queryKey: qk.dashboard.splitLedger(year, month, false),
-    queryFn: () => getSplitLedger(year, month, false),
+    queryKey: qk.dashboard.splitLedger(year, month, false, mode),
+    queryFn: () => getSplitLedger(year, month, false, mode),
     staleTime: 5 * 60_000,
   })
 
