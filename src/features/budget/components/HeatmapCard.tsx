@@ -80,7 +80,7 @@ export function HeatmapCard({
             </tr>
           </thead>
           <tbody>
-            {data.map((row) => (
+            {data.map((row, rowIdx) => (
               <tr key={row.categoryId}>
                 <td style={{ paddingRight: 12 }}>
                   <div className="flex items-center gap-1.5">
@@ -115,7 +115,9 @@ export function HeatmapCard({
                         <button
                           onClick={() => onMonthClick(cell.month)}
                           title={`${row.categoryName} – ${monthLongLabel(cell.month, mode)}: ${cell.percent}%`}
+                          className="cell-pop"
                           style={{
+                            '--d': `${(rowIdx + cell.month) * 14}ms`,
                             display: 'block',
                             width: '100%',
                             background: bg,

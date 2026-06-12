@@ -1655,6 +1655,7 @@ select:disabled,
   background: var(--ink);
   border-radius: 999px;
   transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: grow-x 0.7s var(--ease-out-soft);
 }
 .pace-row .pace-fill.over {
   background: var(--neg);

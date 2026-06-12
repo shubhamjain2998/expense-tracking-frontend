@@ -94,6 +94,32 @@
   }
 }
 
+/* Bar fills grow from zero to their inline width on mount. */
+@keyframes grow-x {
+  from {
+    width: 0;
+  }
+}
+.grow-x-anim {
+  animation: grow-x 0.7s var(--ease-out-soft);
+}
+
+/* Grid-cell entrance for heatmaps/calendars. Stagger with --d per cell. */
+@keyframes cell-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.cell-pop {
+  animation: cell-pop 0.3s var(--ease-out-soft) both;
+  animation-delay: var(--d, 0ms);
+}
+
 /* Opacity-only route transition. Avoids `transform`, which would create a
    containing block for fixed-positioned descendants (mobile side panels,
    overlays) and pin them inside the route wrapper instead of the viewport. */

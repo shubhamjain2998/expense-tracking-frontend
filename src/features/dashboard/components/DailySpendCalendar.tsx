@@ -91,12 +91,14 @@ export function DailySpendCalendar({
             return (
               <div
                 key={i}
+                className={isValid ? 'cell-pop' : undefined}
                 title={
                   isValid && spend > 0
                     ? `${day} ${currentMonthLabel}: ${formatCompact(spend)}`
                     : undefined
                 }
                 style={{
+                  '--d': `${i * 10}ms`,
                   aspectRatio: '1',
                   borderRadius: 5,
                   display: 'flex',

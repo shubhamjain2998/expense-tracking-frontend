@@ -2,6 +2,7 @@ import { Cell, PieChart, Pie, ResponsiveContainer, Tooltip } from 'recharts'
 
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { useCountUp } from '@/hooks/useCountUp'
 import { formatCompact, formatCurrency } from '@/lib/format'
 
 import { PIE_COLORS, TOOLTIP_STYLE } from '../lib/chartTheme'
@@ -25,6 +26,7 @@ export function CategoryDonutChart({
   isLoading,
 }: CategoryDonutChartProps) {
   const total = data.reduce((s, d) => s + d.value, 0) || totalDebit
+  const totalAnim = useCountUp(total)
 
   // Consolidate the long tail into a single "Other" slice so the donut and
   // legend agree on what's visible. Donut keeps top N as separate slices.
@@ -74,6 +76,9 @@ export function CategoryDonutChart({
                     outerRadius={82}
                     paddingAngle={2}
                     stroke="none"
+                    animationBegin={120}
+                    animationDuration={650}
+                    animationEasing="ease-out"
                   >
                     {displayData.map((d, i) => (
                       <Cell key={d.name} fill={colorAt(i, d.name)} />
@@ -87,7 +92,7 @@ export function CategoryDonutChart({
               </ResponsiveContainer>
               <div className="donut-center">
                 <div className="lbl">Total</div>
-                <div className="val">{formatCompact(total)}</div>
+                <div className="val">{formatCompact(totalAnim)}</div>
               </div>
             </div>
 

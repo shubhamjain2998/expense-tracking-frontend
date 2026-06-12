@@ -1,5 +1,6 @@
 import { Icon } from '@/components/ui/Icon'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { useCountUp } from '@/hooks/useCountUp'
 import { formatCompact, formatCurrency } from '@/lib/format'
 
 interface IncomeSummaryCardsProps {
@@ -19,6 +20,9 @@ export function IncomeSummaryCards({
   const savingsPositive = savings > 0
   const savingsRate = totalIncome > 0 ? (savings / totalIncome) * 100 : 0
   const expensePct = totalIncome > 0 ? Math.round((totalExpenses / totalIncome) * 100) : 0
+  const incomeAnim = useCountUp(totalIncome)
+  const expensesAnim = useCountUp(totalExpenses)
+  const savingsAnim = useCountUp(savings)
 
   return (
     <section className="kpi-strip" style={{ '--kpi-cols': 3 } as React.CSSProperties}>
@@ -32,7 +36,7 @@ export function IncomeSummaryCards({
               <span className="inline-block size-2 rounded-[2px] bg-[var(--pos)]" />
               Income
             </div>
-            <div className="kpi-value num">{formatCurrency(totalIncome)}</div>
+            <div className="kpi-value num">{formatCurrency(incomeAnim)}</div>
             {incomeByCategory.length > 0 && (
               <div className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1">
                 {incomeByCategory.slice(0, 3).map(({ category, total }) => (
@@ -60,7 +64,7 @@ export function IncomeSummaryCards({
               <span className="inline-block size-2 rounded-[2px] bg-[var(--neg)]" />
               Expenses
             </div>
-            <div className="kpi-value num">{formatCurrency(totalExpenses)}</div>
+            <div className="kpi-value num">{formatCurrency(expensesAnim)}</div>
             {totalIncome > 0 && (
               <div className="kpi-delta">
                 <Icon name="trending_down" size={11} />
@@ -106,7 +110,7 @@ export function IncomeSummaryCards({
               }}
             >
               {savings > 0 ? '+' : ''}
-              {formatCurrency(savings)}
+              {formatCurrency(savingsAnim)}
             </div>
             {totalIncome > 0 && (
               <div className={`kpi-delta ${savingsPositive ? 'pos' : savings < 0 ? 'neg' : ''}`}>
