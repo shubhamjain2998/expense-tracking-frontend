@@ -1,7 +1,9 @@
+import { motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 
 import { Icon, type IconName } from '@/components/ui/Icon'
+import { springSnappy } from '@/lib/motion'
 
 import { useAuth } from '../../contexts/AuthContext'
 import { useSidebarStats } from '../../hooks/useSidebarStats'
@@ -356,15 +358,27 @@ export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
               onClick={onNavigate}
               className={({ isActive }) => (isActive ? 'side-nav-item active' : 'side-nav-item')}
             >
-              <Icon name={icon} size={15} />
-              <span style={{ flex: 1, lineHeight: 1.3 }}>{label}</span>
-              {label === 'Transactions' && pendingCount > 0 && (
-                <span
-                  className="side-nav-badge num"
-                  title={`${pendingCount} pending across all months`}
-                >
-                  {pendingCount}
-                </span>
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <motion.span
+                      layoutId="side-nav-pill"
+                      className="side-nav-pill"
+                      transition={springSnappy}
+                      aria-hidden
+                    />
+                  )}
+                  <Icon name={icon} size={15} />
+                  <span style={{ flex: 1, lineHeight: 1.3 }}>{label}</span>
+                  {label === 'Transactions' && pendingCount > 0 && (
+                    <span
+                      className="side-nav-badge num"
+                      title={`${pendingCount} pending across all months`}
+                    >
+                      {pendingCount}
+                    </span>
+                  )}
+                </>
               )}
             </NavLink>
           )

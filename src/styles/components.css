@@ -941,11 +941,19 @@ select:disabled,
   color: var(--ink-2);
 }
 .side-nav-item.active {
-  background: var(--surface-2);
   color: var(--ink);
   font-weight: 500;
 }
-.side-nav-item.active::before {
+/* Sliding active pill — a motion.span with layoutId that glides between
+   nav items. Carries the surface fill and the accent edge bar; content
+   sits above it via z-index. */
+.side-nav-pill {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  background: var(--surface-2);
+}
+.side-nav-pill::before {
   content: '';
   position: absolute;
   left: -4px;
@@ -954,6 +962,10 @@ select:disabled,
   width: 3px;
   border-radius: 0 2px 2px 0;
   background: var(--accent);
+}
+.side-nav-item > :not(.side-nav-pill) {
+  position: relative;
+  z-index: 1;
 }
 .side-nav-badge {
   background: var(--accent);
