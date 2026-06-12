@@ -15,6 +15,7 @@ import type { ProcessedTransactionItem } from '@/types/transaction'
 import { BulkActionsBar } from './components/BulkActionsBar'
 import { DragDropCategoryGrid } from './components/DragDropCategoryGrid'
 import { FilterBar } from './components/FilterBar'
+import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal'
 import { TransactionsHeader } from './components/TransactionsHeader'
 import { TransactionsList } from './components/TransactionsList'
 import { useAutoCategorise } from './hooks/useAutoCategorise'
@@ -23,7 +24,7 @@ import { useRawMutations } from './hooks/useRawMutations'
 import { useTransactionKeyboard } from './hooks/useTransactionKeyboard'
 import { useTransactionsData } from './hooks/useTransactionsData'
 import { buildUnified } from './lib/buildUnified'
-import { txnTotals } from './lib/txnFormat'
+import { formatAmount, txnTotals } from './lib/txnFormat'
 import type { SortCol, SortDir, StatusFilter } from './types'
 
 export function TransactionsPage() {
@@ -52,6 +53,7 @@ export function TransactionsPage() {
   const [selectedUid, setSelectedUid] = useState<string | null>(null)
   const [editingTxn, setEditingTxn] = useState<ProcessedTransactionItem | null>(null)
   const [showManualEntry, setShowManualEntry] = useState(false)
+  const [showShortcuts, setShowShortcuts] = useState(false)
   const [dragOverCatId, setDragOverCatId] = useState<string | null>(null)
   const [draggingUids, setDraggingUids] = useState<Set<string>>(new Set())
   const [openMenuUid, setOpenMenuUid] = useState<string | null>(null)
@@ -96,7 +98,17 @@ export function TransactionsPage() {
 
   const filtered = allTxns.filter((t) => {
     if (t.kind === 'deleted' && !showDeleted) return false
-    if (search && !t.description.toLowerCase().includes(search.toLowerCase())) return false
+    if (search) {
+      const q = search.toLowerCase()
+      const amtFormatted = formatAmount(t.effectiveAmount, t.txnType).display.toLowerCase()
+      const amtRaw = String(Math.abs(Number(t.effectiveAmount)))
+      const matchesSearch =
+        t.description.toLowerCase().includes(q) ||
+        (t.notes ?? '').toLowerCase().includes(q) ||
+        amtRaw.includes(q) ||
+        amtFormatted.includes(q)
+      if (!matchesSearch) return false
+    }
     if (statusFilter === 'pending' && t.kind !== 'pending') return false
     if (statusFilter === 'income' && t.txnType !== 'income') return false
     if (statusFilter === 'processed' && t.kind !== 'processed') return false
@@ -321,6 +333,7 @@ export function TransactionsPage() {
       quickCategorizeMutation.mutate({ ...p, ...(txn ? findBaseContext(txn.description) : {}) })
     },
     changeCategory: (p) => changeCategoryMutation.mutate(p),
+    onShowShortcuts: () => setShowShortcuts(true),
   })
 
   useEffect(() => {
@@ -365,6 +378,7 @@ export function TransactionsPage() {
           setTagFilter('')
         }}
         autoMutation={autoMutation}
+        onShowShortcuts={() => setShowShortcuts(true)}
       />
       {pendingElsewhereUrl &&
         (() => {
@@ -493,6 +507,7 @@ export function TransactionsPage() {
         selectedTxn={selectedTxn}
       />
       {showManualEntry && <AddTransactionDialog onClose={() => setShowManualEntry(false)} />}
+      {showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}
     </div>
   )
 }

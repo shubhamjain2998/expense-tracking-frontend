@@ -27,6 +27,7 @@ interface FilterBarProps {
     UseMutationResult<unknown, { detail: string }, string[] | undefined>,
     'mutate' | 'isPending'
   >
+  onShowShortcuts?: () => void
 }
 
 export function FilterBar({
@@ -45,6 +46,7 @@ export function FilterBar({
   hasActiveFilters,
   onClearFilters,
   autoMutation,
+  onShowShortcuts,
 }: FilterBarProps) {
   return (
     <div
@@ -63,7 +65,7 @@ export function FilterBar({
           type="text"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
-          placeholder="Search merchant…"
+          placeholder="Search merchant, notes, amount…"
           className="input"
           style={{ paddingLeft: 28 }}
         />
@@ -171,7 +173,28 @@ export function FilterBar({
         style={{ color: 'var(--ink-4)', userSelect: 'none' }}
       >
         <Icon name="keyboard" size={12} />
-        1–9 categorize · ↑↓ navigate
+        1–9 categorize · ↑↓ navigate ·{' '}
+        <button
+          onClick={onShowShortcuts}
+          className="btn ghost"
+          style={{
+            padding: '1px 5px',
+            fontSize: 10,
+            height: 'auto',
+            minHeight: 0,
+            borderRadius: 'var(--radius-sm)',
+            border: '1px solid var(--line)',
+            background: 'var(--surface-2)',
+            fontFamily: 'var(--font-mono)',
+            fontWeight: 600,
+            color: 'var(--ink-3)',
+            lineHeight: 1.4,
+          }}
+          title="Show keyboard shortcuts"
+          aria-label="Show keyboard shortcuts"
+        >
+          ?
+        </button>
       </span>
     </div>
   )
