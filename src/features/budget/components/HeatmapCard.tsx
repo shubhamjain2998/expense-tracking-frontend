@@ -19,7 +19,7 @@ export function HeatmapCard({
       <div style={{ marginBottom: 16 }}>
         <p className="card-title">Monthly spend heatmap</p>
         <p className="card-sub" style={{ marginTop: 2 }}>
-          Each cell is that month&apos;s spend as % of category budget. Click to drill in.
+          Values are % of category budget. Click to drill in.
         </p>
       </div>
       <div style={{ overflowX: 'auto' }}>
@@ -133,7 +133,7 @@ export function HeatmapCard({
                             textAlign: 'center',
                           }}
                         >
-                          {cell.percent}
+                          {cell.percent}%
                         </button>
                       ) : (
                         <div

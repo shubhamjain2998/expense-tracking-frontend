@@ -1,3 +1,4 @@
+import { Icon } from '@/components/ui/Icon'
 import { formatCurrency } from '@/lib/format'
 
 import type { CategoryTableRow, UnbudgetedCategoryRow } from '../types'
@@ -19,6 +20,7 @@ export function BudgetCategoryTable({
   onDelete,
   onSetBudget,
   isSavingInline,
+  editHint,
 }: {
   tableData: CategoryTableRow[]
   unbudgetedData: UnbudgetedCategoryRow[]
@@ -32,6 +34,7 @@ export function BudgetCategoryTable({
   onDelete: (id: string) => void
   onSetBudget: (categoryId: string, monthlyAmount: number) => void
   isSavingInline: boolean
+  editHint?: string
 }) {
   return (
     <div className="card card-flush">
@@ -55,6 +58,24 @@ export function BudgetCategoryTable({
               </th>
               <th style={{ width: 36 }} />
             </tr>
+            {editHint && (
+              <tr style={{ background: 'transparent' }}>
+                <td colSpan={7} style={{ paddingBottom: 12, paddingTop: 10 }}>
+                  <p
+                    style={{
+                      fontSize: 11,
+                      color: 'var(--ink-4)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <Icon name="edit" size={11} />
+                    {editHint}
+                  </p>
+                </td>
+              </tr>
+            )}
           </thead>
           <tbody>
             {tableData.map((row) => (

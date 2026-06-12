@@ -1,7 +1,6 @@
 import { useState } from 'react'
 
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { Icon } from '@/components/ui/Icon'
 import { SkeletonTable } from '@/components/ui/Skeleton'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { getCurrentPeriod, loadPeriodMode, monthLongLabel } from '@/lib/period'
@@ -104,14 +103,12 @@ export function BudgetPage() {
               mutations.createInlineMutation.mutate({ categoryId, monthlyAmount })
             }
             isSavingInline={mutations.createInlineMutation.isPending}
+            editHint={
+              data.entries.length > 0
+                ? `Click any budget amount to set a custom budget for ${monthLongLabel(month, mode)}.`
+                : undefined
+            }
           />
-
-          {data.entries.length > 0 && (
-            <p style={{ fontSize: 12, color: 'var(--ink-4)', textAlign: 'center' }}>
-              Click any <Icon name="edit" size={11} /> budget amount to set a custom budget for{' '}
-              {monthLongLabel(month, mode)}.
-            </p>
-          )}
         </>
       )}
 

@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useSidebarStats } from '../../hooks/useSidebarStats'
 import { formatCompact } from '../../lib/format'
 import { pendingTransactionsUrl } from '../../lib/pendingNav'
+import { monthShortLabel } from '../../lib/period'
 import { getInitials } from '../../lib/strings'
 
 const NAV: { to: string; icon: IconName; label: string }[] = [
@@ -388,7 +389,7 @@ export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
             marginBottom: 8,
           }}
         >
-          This month
+          This month · {monthShortLabel(new Date().getMonth() + 1, 'fy')}
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           {(

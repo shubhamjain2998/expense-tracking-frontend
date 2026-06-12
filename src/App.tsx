@@ -14,6 +14,7 @@ import { useTheme } from './hooks/useTheme'
 import { ThemeContext } from './hooks/useThemeContext'
 import { useToast } from './hooks/useToast'
 import { ToastContext } from './hooks/useToastContext'
+import { IS_DEV } from './lib/config'
 
 // Pages export named functions; the .then(...) shim adapts them to React.lazy's default-export contract.
 const DashboardPage = lazy(() =>
@@ -137,7 +138,7 @@ export default function App() {
       <AuthProvider>
         <AppWithProviders />
       </AuthProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
+      {IS_DEV && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   )
 }
