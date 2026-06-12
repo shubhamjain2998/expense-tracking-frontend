@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { MotionConfig } from 'motion/react'
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
@@ -134,11 +135,13 @@ function AppWithProviders() {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AppWithProviders />
-      </AuthProvider>
-      {IS_DEV && <ReactQueryDevtools initialIsOpen={false} />}
-    </QueryClientProvider>
+    <MotionConfig reducedMotion="user">
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <AppWithProviders />
+        </AuthProvider>
+        {IS_DEV && <ReactQueryDevtools initialIsOpen={false} />}
+      </QueryClientProvider>
+    </MotionConfig>
   )
 }
