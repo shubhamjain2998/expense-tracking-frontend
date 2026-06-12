@@ -389,7 +389,7 @@ export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
             marginBottom: 8,
           }}
         >
-          This month · {monthShortLabel(new Date().getMonth() + 1, 'fy')}
+          This month · {monthShortLabel(new Date().getMonth() + 1, 'calendar')}
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           {(
