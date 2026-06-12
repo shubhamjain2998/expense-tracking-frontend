@@ -1283,7 +1283,7 @@ select:disabled,
 @media (min-width: 768px) {
   .fab {
     right: 24px;
-    bottom: 80px;
+    bottom: 24px;
   }
 }
 
