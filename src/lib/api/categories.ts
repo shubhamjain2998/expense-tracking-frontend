@@ -31,6 +31,25 @@ export async function getCategoryMappings(): Promise<CategoryMapping[]> {
   return data
 }
 
+export async function createCategoryMapping(
+  descriptionPattern: string,
+  categoryId: string
+): Promise<CategoryMapping> {
+  const { data } = await client.post<CategoryMapping>('/category-mappings', {
+    description_pattern: descriptionPattern,
+    category_id: categoryId,
+  })
+  return data
+}
+
+export async function updateCategoryMapping(
+  id: string,
+  fields: { description_pattern?: string; category_id?: string }
+): Promise<CategoryMapping> {
+  const { data } = await client.patch<CategoryMapping>(`/category-mappings/${id}`, fields)
+  return data
+}
+
 export async function deleteCategoryMapping(id: string): Promise<void> {
   await client.delete(`/category-mappings/${id}`)
 }
