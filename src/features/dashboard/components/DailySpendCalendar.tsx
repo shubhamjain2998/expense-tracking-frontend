@@ -97,21 +97,23 @@ export function DailySpendCalendar({
                     ? `${day} ${currentMonthLabel}: ${formatCompact(spend)}`
                     : undefined
                 }
-                style={{
-                  '--d': `${i * 10}ms`,
-                  aspectRatio: '1',
-                  borderRadius: 5,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 1,
-                  padding: '3px 2px',
-                  color: textColor,
-                  background: bgColor,
-                  outline: isToday ? '1.5px solid var(--ink)' : 'none',
-                  outlineOffset: 1,
-                }}
+                style={
+                  {
+                    '--d': `${i * 10}ms`,
+                    aspectRatio: '1',
+                    borderRadius: 5,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 1,
+                    padding: '3px 2px',
+                    color: textColor,
+                    background: bgColor,
+                    outline: isToday ? '1.5px solid var(--ink)' : 'none',
+                    outlineOffset: 1,
+                  } as React.CSSProperties
+                }
               >
                 {isValid && (
                   <>

@@ -28,3 +28,7 @@ coverage/
 *.njsproj
 *.sln
 *.sw?
+
+# Local design screenshots (QA surveys, mock captures)
+design-survey/
+design-mock/*.png
