@@ -120,6 +120,33 @@
   animation-delay: var(--d, 0ms);
 }
 
+/* Self-drawing checkmark (CheckDraw.tsx). */
+@keyframes draw-stroke {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.check-draw circle {
+  stroke-dasharray: 158;
+  stroke-dashoffset: 158;
+  animation: draw-stroke 0.5s var(--ease-out-soft) forwards;
+}
+.check-draw path {
+  stroke-dasharray: 34;
+  stroke-dashoffset: 34;
+  animation: draw-stroke 0.35s 0.4s var(--ease-out-soft) forwards;
+}
+
+/* Dropzone invite — icon bobs while a file is dragged over. */
+@keyframes bob {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-5px);
+  }
+}
+
 /* Opacity-only route transition. Avoids `transform`, which would create a
    containing block for fixed-positioned descendants (mobile side panels,
    overlays) and pin them inside the route wrapper instead of the viewport. */

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 
+import { CheckDraw } from '@/components/ui/CheckDraw'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Icon } from '@/components/ui/Icon'
 import { Skeleton } from '@/components/ui/Skeleton'
@@ -39,7 +40,7 @@ export function NeedsReview({ pendingItems, isLoading }: NeedsReviewProps) {
           <Skeleton className="h-32 w-full" />
         ) : pendingItems.length === 0 ? (
           <EmptyState
-            icon="check_circle"
+            illustration={<CheckDraw />}
             title="All caught up"
             description="No transactions pending review."
           />
