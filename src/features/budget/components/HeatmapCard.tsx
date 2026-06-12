@@ -116,24 +116,26 @@ export function HeatmapCard({
                           onClick={() => onMonthClick(cell.month)}
                           title={`${row.categoryName} – ${monthLongLabel(cell.month, mode)}: ${cell.percent}%`}
                           className="cell-pop"
-                          style={{
-                            '--d': `${(rowIdx + cell.month) * 14}ms`,
-                            display: 'block',
-                            width: '100%',
-                            background: bg,
-                            color: fg,
-                            borderRadius: 4,
-                            border: isSelected
-                              ? '1.5px solid currentColor'
-                              : '1.5px solid transparent',
-                            fontSize: 11,
-                            fontWeight: 600,
-                            padding: '5px 2px',
-                            cursor: 'pointer',
-                            fontVariantNumeric: 'tabular-nums',
-                            transition: 'opacity 0.1s',
-                            textAlign: 'center',
-                          }}
+                          style={
+                            {
+                              '--d': `${(rowIdx + cell.month) * 14}ms`,
+                              display: 'block',
+                              width: '100%',
+                              background: bg,
+                              color: fg,
+                              borderRadius: 4,
+                              border: isSelected
+                                ? '1.5px solid currentColor'
+                                : '1.5px solid transparent',
+                              fontSize: 11,
+                              fontWeight: 600,
+                              padding: '5px 2px',
+                              cursor: 'pointer',
+                              fontVariantNumeric: 'tabular-nums',
+                              transition: 'opacity 0.1s',
+                              textAlign: 'center',
+                            } as React.CSSProperties
+                          }
                         >
                           {cell.percent}%
                         </button>
