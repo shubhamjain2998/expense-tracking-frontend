@@ -178,6 +178,35 @@ export function BulkPastePanel() {
             <span>{parseError}</span>
           </p>
         )}
+        {!text.trim() && (
+          <div
+            className="mt-3 rounded-[var(--radius)] border border-dashed border-[var(--line)] px-4 py-3"
+            style={{ background: 'var(--surface-2)' }}
+          >
+            <p
+              className="mb-1.5 text-[11px] font-semibold tracking-wide uppercase"
+              style={{ color: 'var(--ink-4)' }}
+            >
+              Expected format
+            </p>
+            <pre
+              className="overflow-x-auto text-[11px] leading-relaxed"
+              style={{ color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}
+            >{`{
+  "schema_version": 1,
+  "rows": [
+    {
+      "txn_date": "2026-05-14",
+      "description": "Swiggy",
+      "amount": 449.00
+    }
+  ]
+}`}</pre>
+            <p className="mt-1.5 text-[11px]" style={{ color: 'var(--ink-4)' }}>
+              Positive amount = money out (debit). Negative = money in (credit/refund).
+            </p>
+          </div>
+        )}
       </div>
 
       {parsedRows && (
