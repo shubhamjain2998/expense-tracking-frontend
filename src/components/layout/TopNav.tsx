@@ -76,10 +76,26 @@ export function TopNav() {
     <header className="topnav" style={{ position: 'sticky', top: 0, zIndex: 50 }}>
       {/* Brand */}
       <div className="topnav-brand">
-        <div className="topnav-logo" aria-hidden>
-          PF
-        </div>
-        <span className="topnav-brand-name">Personal Finance</span>
+        <span
+          aria-hidden
+          style={{
+            width: 22,
+            height: 22,
+            background: 'var(--kosh-amber)',
+            color: 'var(--kosh-brown-deep)',
+            borderRadius: 5,
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 800,
+            fontSize: 12,
+            letterSpacing: '-0.5px',
+            flexShrink: 0,
+          }}
+        >
+          K
+        </span>
+        <span className="topnav-brand-name">Kosh</span>
         <div className="topnav-brand-sep" aria-hidden />
       </div>
 
