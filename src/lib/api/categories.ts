@@ -7,8 +7,8 @@ export async function getCategories(): Promise<Category[]> {
   return data
 }
 
-export async function createCategory(name: string): Promise<Category> {
-  const { data } = await client.post<Category>('/categories', { name })
+export async function createCategory(name: string, isIncome = false): Promise<Category> {
+  const { data } = await client.post<Category>('/categories', { name, is_income: isIncome })
   return data
 }
 
@@ -17,8 +17,17 @@ export async function renameCategory(id: string, name: string): Promise<Category
   return data
 }
 
-export async function deleteCategory(id: string): Promise<void> {
-  await client.delete(`/categories/${id}`)
+export async function deleteCategory(
+  id: string,
+  opts?: { action: 'pending' | 'move'; targetCategoryId?: string }
+): Promise<void> {
+  const params = opts
+    ? new URLSearchParams({
+        action: opts.action,
+        ...(opts.targetCategoryId ? { target_category_id: opts.targetCategoryId } : {}),
+      })
+    : null
+  await client.delete(`/categories/${id}${params ? `?${params}` : ''}`)
 }
 
 export async function setCategoryIncomeFlag(id: string, isIncome: boolean): Promise<Category> {

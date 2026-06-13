@@ -22,7 +22,8 @@ export function useCategories() {
   const query = useQuery({ queryKey: qk.categories.all, queryFn: getCategories })
 
   const createMutation = useMutation({
-    mutationFn: createCategory,
+    mutationFn: ({ name, isIncome = false }: { name: string; isIncome?: boolean }) =>
+      createCategory(name, isIncome),
     onSuccess: () => {
       invalidateDomains(qc, ['categories'])
       setNewCategoryName('')
@@ -53,12 +54,16 @@ export function useCategories() {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: deleteCategory,
+    mutationFn: ({
+      id,
+      action,
+      targetCategoryId,
+    }: {
+      id: string
+      action?: 'pending' | 'move'
+      targetCategoryId?: string
+    }) => deleteCategory(id, action ? { action, targetCategoryId } : undefined),
     onSuccess: () => {
-      // The backend blocks delete with 409 if the category is referenced by
-      // transactions, budget entries, or category mappings, so a successful
-      // delete means none of those references existed. Still invalidate broadly
-      // to keep cached counts consistent.
       invalidateDomains(qc, [
         'categories',
         'budget',

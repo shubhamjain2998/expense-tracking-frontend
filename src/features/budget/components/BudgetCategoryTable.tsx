@@ -1,7 +1,6 @@
 import { useState, type CSSProperties } from 'react'
 
 import { Button } from '@/components/ui/Button'
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Icon } from '@/components/ui/Icon'
 import { useCategories } from '@/features/settings/hooks/useCategories'
 import { formatCurrency } from '@/lib/format'
@@ -9,6 +8,7 @@ import { formatCurrency } from '@/lib/format'
 import type { CategoryTableRow, UnbudgetedCategoryRow } from '../types'
 
 import { BudgetCategoryRow } from './BudgetCategoryRow'
+import { CategoryDeleteDialog } from './CategoryDeleteDialog'
 import { IncomeCategoryRow } from './IncomeCategoryRow'
 import { ProgressBar } from './ProgressBar'
 import { UnbudgetedCategoryRow as UnbudgetedCategoryRowComponent } from './UnbudgetedCategoryRow'
@@ -559,18 +559,17 @@ export function BudgetCategoryTable({
         </Button>
       </div>
 
-      <ConfirmDialog
+      <CategoryDeleteDialog
         isOpen={deleteCategoryId !== null}
-        title="Delete category"
-        message={
-          deleteCount > 0
-            ? `Used by ${deleteCount} transaction${deleteCount !== 1 ? 's' : ''} — delete will be blocked if any transactions, budget entries, or mappings reference it.`
-            : 'Unused — safe to delete as long as no budget entries or mappings reference it.'
-        }
-        confirmLabel="Delete"
-        danger
+        categoryId={deleteCategoryId}
+        categoryName={deleteTarget?.name ?? ''}
+        txnCount={deleteCount}
+        categories={allCats}
         loading={deleteMutation.isPending}
-        onConfirm={() => deleteCategoryId && deleteMutation.mutate(deleteCategoryId)}
+        onConfirm={(action, targetCategoryId) =>
+          deleteCategoryId &&
+          deleteMutation.mutate({ id: deleteCategoryId, action, targetCategoryId })
+        }
         onCancel={() => setDeleteCategoryId(null)}
       />
     </div>
