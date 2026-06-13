@@ -183,14 +183,14 @@ export function BudgetCategoryRow({
                 name="edit"
                 size={12}
                 style={{ color: 'var(--ink-4)' }}
-                className="opacity-0 transition-opacity group-hover:opacity-100"
+                className="opacity-0 transition-opacity group-hover:opacity-100 [@media(hover:none)]:opacity-100"
               />
             </button>
             {row.hasOverride && (
               <button
                 onClick={onResetBudget}
                 title="Reset to default (annual / 12)"
-                className="opacity-0 transition-opacity group-hover:opacity-100"
+                className="opacity-0 transition-opacity group-hover:opacity-100 [@media(hover:none)]:opacity-100"
                 style={{
                   background: 'transparent',
                   border: 'none',
@@ -301,7 +301,7 @@ export function BudgetCategoryRow({
             </button>
           </div>
         ) : (
-          <div className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          <div className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 [@media(hover:none)]:opacity-100">
             <button
               onClick={() => {
                 setRenamingCategoryId(row.categoryId)

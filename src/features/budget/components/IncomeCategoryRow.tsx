@@ -121,7 +121,7 @@ export function IncomeCategoryRow({
             </button>
           </div>
         ) : (
-          <div className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          <div className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 [@media(hover:none)]:opacity-100">
             <button
               onClick={() => {
                 setRenamingCategoryId(cat.id)

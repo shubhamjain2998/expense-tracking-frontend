@@ -321,7 +321,7 @@ function CategoryRow({
           <span style={{ fontSize: 11, color: 'var(--ink-4)', flexShrink: 0, marginRight: 2 }}>
             {(cat.txn_count ?? 0) === 0 ? 'unused' : `${cat.txn_count} txns`}
           </span>
-          <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 [@media(hover:none)]:opacity-100">
             <button
               onClick={() => incomeFlagMutation.mutate({ id: cat.id, is_income: !cat.is_income })}
               disabled={incomeFlagMutation.isPending}
