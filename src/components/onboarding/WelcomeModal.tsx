@@ -31,8 +31,8 @@ const STEPS: PlaybookStep[] = [
   },
   {
     icon: 'upload',
-    title: 'Ingest',
-    why: 'Bank statements are the source of truth — every chart in the app derives from them. PDFs are parsed in memory and never saved; only the parsed rows survive.',
+    title: 'Upload',
+    why: 'Drop your bank PDF. Kosh reads it locally — the file is never stored on any server. Only the parsed transaction rows are saved to your account.',
     todo: 'Drop a statement PDF on the Upload page. Parsed transactions land in a review queue, not your live data.',
   },
   {
@@ -116,8 +116,7 @@ export function WelcomeModal({ onGetStarted, onSkip }: WelcomeModalProps) {
         <div className="space-y-4 overflow-auto px-5 py-[18px]">
           {isFirst && (
             <p className="text-[13px] leading-[1.55] text-[var(--ink-2)]">
-              Personal Finance is a four-step loop you repeat each month. Here&apos;s why each step
-              is there and what you&apos;ll fill in.
+              Kosh works as a four-step loop you repeat each month. Simple by design.
             </p>
           )}
 
