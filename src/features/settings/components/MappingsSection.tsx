@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -31,6 +32,12 @@ export function MappingsSection() {
     cancelEdit,
   } = useCategoryMappings()
 
+  const [search, setSearch] = useState('')
+  const [sortCol, setSortCol] = useState<'pattern' | 'category' | 'matches' | 'last_used'>(
+    'matches'
+  )
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+
   const categoriesQuery = useQuery({ queryKey: qk.categories.all, queryFn: getCategories })
   const categoryOptions = (categoriesQuery.data ?? []).map((c) => ({
     value: c.id,
@@ -48,6 +55,40 @@ export function MappingsSection() {
     if (!p || !editCategoryId) return
     updateMutation.mutate({ id, pattern: p, categoryId: editCategoryId })
   }
+
+  function toggleSort(col: typeof sortCol) {
+    if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    else {
+      setSortCol(col)
+      setSortDir(col === 'matches' ? 'desc' : 'asc')
+    }
+  }
+
+  const rawData = query.data ?? []
+
+  const filtered = search.trim()
+    ? rawData.filter((m) => {
+        const q = search.trim().toLowerCase()
+        return (
+          m.description_pattern.toLowerCase().includes(q) || m.category.toLowerCase().includes(q)
+        )
+      })
+    : rawData
+
+  const displayData = [...filtered].sort((a, b) => {
+    let cmp = 0
+    if (sortCol === 'pattern') cmp = a.description_pattern.localeCompare(b.description_pattern)
+    else if (sortCol === 'category') cmp = a.category.localeCompare(b.category)
+    else if (sortCol === 'matches') cmp = a.match_count - b.match_count
+    else if (sortCol === 'last_used') {
+      const da = a.last_used ?? ''
+      const db = b.last_used ?? ''
+      if (!da && db) return 1 // nulls last
+      if (da && !db) return -1
+      cmp = da.localeCompare(db)
+    }
+    return sortDir === 'asc' ? cmp : -cmp
+  })
 
   return (
     <>
@@ -70,119 +111,190 @@ export function MappingsSection() {
             rule&rdquo;.
           </p>
         ) : (
-          <div className="overflow-x-auto" style={{ borderTop: '1px solid var(--line)' }}>
-            <table className="tbl">
-              <thead>
-                <tr>
-                  <th>Pattern</th>
-                  <th>Category</th>
-                  <th className="num">Matches</th>
-                  <th>Last used</th>
-                  <th style={{ width: 72 }} />
-                </tr>
-              </thead>
-              <tbody>
-                {query.data.map((mapping) =>
-                  editingMappingId === mapping.id ? (
-                    <tr key={mapping.id}>
-                      <td>
-                        <input
-                          value={editPattern}
-                          onChange={(e) => setEditPattern(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleSaveEdit(mapping.id)
-                            if (e.key === 'Escape') cancelEdit()
-                          }}
-                          className="input mono"
-                          maxLength={500}
-                          autoFocus
-                          aria-label="Edit pattern"
-                        />
-                      </td>
-                      <td style={{ minWidth: 180 }}>
-                        <SearchableSelect
-                          options={categoryOptions}
-                          value={editCategoryId}
-                          onChange={setEditCategoryId}
-                          placeholder="Category…"
-                        />
-                      </td>
-                      <td className="num" style={{ color: 'var(--ink-2)' }}>
-                        {mapping.match_count}
-                      </td>
-                      <td style={{ color: 'var(--ink-3)' }}>
-                        {mapping.last_used
-                          ? new Date(mapping.last_used).toLocaleDateString('en-IN', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })
-                          : '—'}
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-0.5">
-                          <button
-                            onClick={() => handleSaveEdit(mapping.id)}
-                            disabled={updateMutation.isPending}
-                            className="btn ghost icon sm"
-                            aria-label="Save mapping"
-                          >
-                            <Icon name="check" size={14} />
-                          </button>
-                          <button
-                            onClick={cancelEdit}
-                            className="btn ghost icon sm"
-                            aria-label="Cancel edit"
-                          >
-                            <Icon name="close" size={14} />
-                          </button>
-                        </div>
-                      </td>
+          <>
+            <div style={{ padding: '12px 20px 8px', borderBottom: '1px solid var(--line)' }}>
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by pattern or category…"
+                className="input"
+                style={{ fontSize: 12 }}
+              />
+            </div>
+
+            {displayData.length === 0 && search.trim() && rawData.length > 0 ? (
+              <p
+                className="text-center text-[13px]"
+                style={{ color: 'var(--ink-3)', padding: '16px 20px' }}
+              >
+                No mappings match &ldquo;{search}&rdquo;
+              </p>
+            ) : (
+              <div className="overflow-x-auto" style={{ borderTop: '1px solid var(--line)' }}>
+                <table className="tbl">
+                  <thead>
+                    <tr>
+                      <th
+                        onClick={() => toggleSort('pattern')}
+                        style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}
+                      >
+                        Pattern
+                        {sortCol === 'pattern' && (
+                          <Icon
+                            name={sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                            size={11}
+                            style={{ marginLeft: 3, verticalAlign: 'middle' }}
+                          />
+                        )}
+                      </th>
+                      <th
+                        onClick={() => toggleSort('category')}
+                        style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}
+                      >
+                        Category
+                        {sortCol === 'category' && (
+                          <Icon
+                            name={sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                            size={11}
+                            style={{ marginLeft: 3, verticalAlign: 'middle' }}
+                          />
+                        )}
+                      </th>
+                      <th
+                        className="num"
+                        onClick={() => toggleSort('matches')}
+                        style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}
+                      >
+                        Matches
+                        {sortCol === 'matches' && (
+                          <Icon
+                            name={sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                            size={11}
+                            style={{ marginLeft: 3, verticalAlign: 'middle' }}
+                          />
+                        )}
+                      </th>
+                      <th
+                        onClick={() => toggleSort('last_used')}
+                        style={{ cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}
+                      >
+                        Last used
+                        {sortCol === 'last_used' && (
+                          <Icon
+                            name={sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                            size={11}
+                            style={{ marginLeft: 3, verticalAlign: 'middle' }}
+                          />
+                        )}
+                      </th>
+                      <th style={{ width: 72 }} />
                     </tr>
-                  ) : (
-                    <tr key={mapping.id} className="group">
-                      <td className="mono" style={{ color: 'var(--ink)' }}>
-                        {mapping.description_pattern}
-                      </td>
-                      <td>
-                        <span className="chip">{mapping.category}</span>
-                      </td>
-                      <td className="num" style={{ color: 'var(--ink-2)' }}>
-                        {mapping.match_count}
-                      </td>
-                      <td style={{ color: 'var(--ink-3)' }}>
-                        {mapping.last_used
-                          ? new Date(mapping.last_used).toLocaleDateString('en-IN', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })
-                          : '—'}
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-                          <button
-                            onClick={() => startEdit(mapping)}
-                            className="btn ghost icon sm"
-                            aria-label={`Edit mapping for ${mapping.description_pattern}`}
-                          >
-                            <Icon name="edit" size={14} />
-                          </button>
-                          <button
-                            onClick={() => setDeleteMappingId(mapping.id)}
-                            className="btn ghost icon sm"
-                            aria-label={`Delete mapping for ${mapping.description_pattern}`}
-                          >
-                            <Icon name="delete" size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                )}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody>
+                    {displayData.map((mapping) =>
+                      editingMappingId === mapping.id ? (
+                        <tr key={mapping.id}>
+                          <td>
+                            <input
+                              value={editPattern}
+                              onChange={(e) => setEditPattern(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSaveEdit(mapping.id)
+                                if (e.key === 'Escape') cancelEdit()
+                              }}
+                              className="input mono"
+                              maxLength={500}
+                              autoFocus
+                              aria-label="Edit pattern"
+                            />
+                          </td>
+                          <td style={{ minWidth: 180 }}>
+                            <SearchableSelect
+                              options={categoryOptions}
+                              value={editCategoryId}
+                              onChange={setEditCategoryId}
+                              placeholder="Category…"
+                            />
+                          </td>
+                          <td className="num" style={{ color: 'var(--ink-2)' }}>
+                            {mapping.match_count}
+                          </td>
+                          <td style={{ color: 'var(--ink-3)' }}>
+                            {mapping.last_used
+                              ? new Date(mapping.last_used).toLocaleDateString('en-IN', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                })
+                              : '—'}
+                          </td>
+                          <td>
+                            <div className="flex items-center gap-0.5">
+                              <button
+                                onClick={() => handleSaveEdit(mapping.id)}
+                                disabled={updateMutation.isPending}
+                                className="btn ghost icon sm"
+                                aria-label="Save mapping"
+                              >
+                                <Icon name="check" size={14} />
+                              </button>
+                              <button
+                                onClick={cancelEdit}
+                                className="btn ghost icon sm"
+                                aria-label="Cancel edit"
+                              >
+                                <Icon name="close" size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        <tr key={mapping.id} className="group">
+                          <td className="mono" style={{ color: 'var(--ink)' }}>
+                            {mapping.description_pattern}
+                          </td>
+                          <td>
+                            <span className="chip">{mapping.category}</span>
+                          </td>
+                          <td className="num" style={{ color: 'var(--ink-2)' }}>
+                            {mapping.match_count}
+                          </td>
+                          <td style={{ color: 'var(--ink-3)' }}>
+                            {mapping.last_used
+                              ? new Date(mapping.last_used).toLocaleDateString('en-IN', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                })
+                              : '—'}
+                          </td>
+                          <td>
+                            <div className="flex items-center gap-0.5">
+                              <button
+                                onClick={() => startEdit(mapping)}
+                                className="btn ghost icon sm"
+                                aria-label={`Edit mapping for ${mapping.description_pattern}`}
+                              >
+                                <Icon name="edit" size={14} />
+                              </button>
+                              <button
+                                onClick={() => setDeleteMappingId(mapping.id)}
+                                className="btn ghost icon sm"
+                                aria-label={`Delete mapping for ${mapping.description_pattern}`}
+                              >
+                                <Icon name="delete" size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
         )}
 
         {/* Create form */}
