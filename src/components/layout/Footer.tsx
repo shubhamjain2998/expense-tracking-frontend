@@ -18,14 +18,27 @@ export function Footer() {
           <div className="flex items-center gap-2.5">
             <span
               aria-hidden
-              className="w-[18px] h-[18px] bg-[var(--ink)] text-[var(--bg)] rounded-[3px] inline-flex items-center justify-center font-bold text-[10px]"
+              style={{
+                width: 18,
+                height: 18,
+                background: 'var(--kosh-amber)',
+                color: 'var(--kosh-brown-deep)',
+                borderRadius: 4,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 800,
+                fontSize: 10,
+                letterSpacing: '-0.5px',
+                flexShrink: 0,
+              }}
             >
-              ₹
+              K
             </span>
-            <span className="text-[12px] font-semibold text-[var(--ink-2)] tracking-[-0.005em]">
-              Personal Finance
+            <span className="text-[12px] font-semibold tracking-[-0.005em] text-[var(--ink-2)]">
+              Kosh
             </span>
-            <span className="hidden text-[11.5px] sm:inline text-[var(--ink-4)]">
+            <span className="hidden text-[11.5px] text-[var(--ink-4)] sm:inline">
               · privacy-first · local
             </span>
           </div>
@@ -38,7 +51,7 @@ export function Footer() {
                 className={({ isActive }) =>
                   isActive
                     ? 'text-[11.5px] font-medium text-[var(--ink-2)] no-underline'
-                    : 'text-[11.5px] transition-colors text-[var(--ink-3)] no-underline'
+                    : 'text-[11.5px] text-[var(--ink-3)] no-underline transition-colors'
                 }
               >
                 {label}
@@ -47,12 +60,12 @@ export function Footer() {
           </nav>
         </div>
 
-        <div className="mt-4 flex flex-col items-start justify-between gap-1 pt-4 sm:flex-row sm:items-center border-t border-[var(--line)]">
+        <div className="mt-4 flex flex-col items-start justify-between gap-1 border-t border-[var(--line)] pt-4 sm:flex-row sm:items-center">
           <p className="text-[10.5px] text-[var(--ink-4)]">
-            © {year} Personal Finance. All rights reserved.
+            © {year} Kosh · Your data, your rules.
           </p>
           <p className="text-[10.5px] text-[var(--ink-4)]">
-            Built for clarity, not complexity.
+            Track what you spend. Own what you know.
           </p>
         </div>
       </div>
