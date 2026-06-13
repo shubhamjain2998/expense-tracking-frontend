@@ -59,6 +59,16 @@
   --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
   --mono: var(--font-mono); /* legacy alias */
 
+  /* Kosh brand palette — Warm Treasury */
+  --kosh-brown-deep: #2e1608;
+  --kosh-brown-mid: #3d1f0a;
+  --kosh-brown-warm: #5c3520;
+  --kosh-amber: #d4a96a;
+  --kosh-amber-light: #e8c99a;
+  --kosh-cream: #fef9f2;
+  --kosh-cream-dark: #f5ede0;
+  --kosh-sand: #ead9c4;
+
   /* ── Map legacy --app-* token names to Personal Finance palette ───────────
      This lets every existing Tailwind utility (bg-surface, text-on-surface,
      text-primary, etc.) inherit the new aesthetic without code changes. */
