@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { getDashboardSummary, getSplitLedger } from '@/lib/api/dashboard'
 import { getPendingManual } from '@/lib/api/transactions'
+import { getCurrentPeriod } from '@/lib/period'
 import { qk } from '@/lib/queryKeys'
 import type { PendingManualTransaction } from '@/types/transaction'
 
@@ -16,13 +17,10 @@ export interface SidebarStats {
 }
 
 export function useSidebarStats(): SidebarStats {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = today.getMonth() + 1
-  // Include period_mode in the query keys so they match useDashboardData's
-  // keys exactly when the dashboard is on the current month — React Query
-  // then deduplicates the request and serves both from the same cache entry.
   const { mode } = usePeriodMode()
+  // Use period-adjusted year/month so query keys match useDashboardData exactly
+  // and the backend receives FY-indexed values consistent with the dashboard.
+  const { year, month } = getCurrentPeriod(mode)
 
   const summaryQ = useQuery({
     queryKey: qk.dashboard.summary(year, month, mode),
