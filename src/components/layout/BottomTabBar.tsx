@@ -4,19 +4,15 @@ import { Icon, type IconName } from '@/components/ui/Icon'
 import { useSidebarStats } from '@/hooks/useSidebarStats'
 import { pendingTransactionsUrl } from '@/lib/pendingNav'
 
-interface BottomTabBarProps {
-  /** Opens the existing Sidebar drawer (used as the "More" tab destination). */
-  onOpenMore: () => void
-}
-
 const TABS: { to: string; icon: IconName; label: string; key: string }[] = [
   { to: '/dashboard', icon: 'dashboard', label: 'Home', key: 'home' },
   { to: '/transactions', icon: 'receipt_long', label: 'Txns', key: 'txns' },
   { to: '/upload', icon: 'upload', label: 'Upload', key: 'upload' },
   { to: '/budget', icon: 'account_balance_wallet', label: 'Budget', key: 'budget' },
+  { to: '/settings', icon: 'settings', label: 'Settings', key: 'settings' },
 ]
 
-export function BottomTabBar({ onOpenMore }: BottomTabBarProps) {
+export function BottomTabBar() {
   const { pendingCount, pendingItems } = useSidebarStats()
   const txnsTo = pendingCount > 0 ? pendingTransactionsUrl(pendingItems) : '/transactions'
 
@@ -40,13 +36,6 @@ export function BottomTabBar({ onOpenMore }: BottomTabBarProps) {
           <span className="tab-label">{t.label}</span>
         </NavLink>
       ))}
-
-      <button type="button" onClick={onOpenMore} className="tab-item" aria-label="More">
-        <span className="tab-icon-wrap">
-          <Icon name="menu" size={20} strokeWidth={1.7} />
-        </span>
-        <span className="tab-label">More</span>
-      </button>
     </nav>
   )
 }
