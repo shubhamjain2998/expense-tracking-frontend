@@ -36,7 +36,6 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
   const [description, setDescription] = useState(txn.description)
   const [txnDate, setTxnDate] = useState(txn.txn_date?.slice(0, 10) ?? '')
   const [categoryId, setCategoryId] = useState(txn.category_id)
-  const [saveMapping, setSaveMapping] = useState(false)
   const [shares, setShares] = useState<PersonShareIn[]>(
     txn.shares.map((s) => ({
       person_id: s.person_id,
@@ -126,7 +125,6 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
       description: description.trim() || undefined,
       txn_date: txnDate || undefined,
       category_id: categoryId,
-      save_mapping: saveMapping,
       shares,
       notes: notes.trim() || null,
       tag_ids: selectedTagIds,
@@ -265,27 +263,6 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
           onCreateOption={handleCreateCategory}
           onCreateError={(msg) => toast.error(msg)}
         />
-
-        <button
-          type="button"
-          onClick={() => setSaveMapping((v) => !v)}
-          className="flex w-full items-center justify-between"
-          style={{
-            background: saveMapping ? 'var(--accent-soft)' : 'var(--surface-2)',
-            color: saveMapping ? 'var(--accent)' : 'var(--ink-2)',
-            border: '1px solid ' + (saveMapping ? 'transparent' : 'var(--line)'),
-            borderRadius: 'var(--radius)',
-            padding: '8px 12px',
-            fontSize: 12.5,
-            fontWeight: 500,
-          }}
-        >
-          <span className="flex items-center gap-2">
-            <Icon name="rule" size={14} />
-            Save as rule
-          </span>
-          <Icon name={saveMapping ? 'toggle_on' : 'toggle_off'} size={16} />
-        </button>
 
         {personsQuery.data && (
           <PersonShareBuilder
