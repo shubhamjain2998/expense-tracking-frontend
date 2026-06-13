@@ -68,30 +68,33 @@ export function LoginPage() {
             style={{
               width: 22,
               height: 22,
-              background: 'var(--ink)',
-              color: 'var(--bg)',
+              background: 'var(--kosh-amber)',
+              color: 'var(--kosh-brown-deep)',
               borderRadius: 4,
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontWeight: 700,
+              fontWeight: 800,
               fontSize: 12,
+              letterSpacing: '-0.5px',
             }}
           >
-            ₹
+            K
           </span>
           <span
             className="text-[14px] font-semibold"
             style={{ color: 'var(--ink)', letterSpacing: '-0.01em' }}
           >
-            Personal Finance
+            Kosh
           </span>
         </div>
 
         <div className="card animate-scale-in">
           <p className="eyebrow">Sign in</p>
           <h1 className="display mt-2 text-[28px] text-[var(--ink)]">Welcome back</h1>
-          <p className="mt-2 text-[13px] text-[var(--ink-3)]">Sign in to your account.</p>
+          <p className="mt-2 text-[13px] text-[var(--ink-3)]">
+            Track what you spend. Own what you know.
+          </p>
 
           <div className="mt-5">
             <GoogleSignInButton
@@ -170,6 +173,41 @@ export function LoginPage() {
               Register
             </Link>
           </p>
+        </div>
+
+        {/* Privacy trust marks */}
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          {[
+            { icon: '🔒', title: 'No SMS access', sub: 'We never read your messages' },
+            { icon: '📭', title: 'No email access', sub: 'We never scan your inbox' },
+            { icon: '📄', title: 'PDFs not stored', sub: 'Processed locally, then discarded' },
+            { icon: '👤', title: 'You own your data', sub: 'Export or delete anytime' },
+          ].map(({ icon, title, sub }) => (
+            <div
+              key={title}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 8,
+                background: 'var(--surface)',
+                border: '1px solid var(--line)',
+                borderRadius: 'var(--radius)',
+                padding: '8px 10px',
+              }}
+            >
+              <span style={{ fontSize: 14, lineHeight: 1, marginTop: 1 }}>{icon}</span>
+              <div>
+                <p
+                  style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-2)', lineHeight: 1.3 }}
+                >
+                  {title}
+                </p>
+                <p style={{ fontSize: 10.5, color: 'var(--ink-4)', marginTop: 2, lineHeight: 1.3 }}>
+                  {sub}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
