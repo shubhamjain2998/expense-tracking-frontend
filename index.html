@@ -7,7 +7,12 @@
     <title>Personal Finance</title>
     <script>
       (function () {
-        var stored = localStorage.getItem('pf-theme');
+        var legacy = localStorage.getItem('pf-theme');
+        if (legacy !== null) {
+          localStorage.setItem('kosh-theme', legacy);
+          localStorage.removeItem('pf-theme');
+        }
+        var stored = localStorage.getItem('kosh-theme');
         var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         if (stored === 'dark' || (!stored && prefersDark)) {
           document.documentElement.classList.add('dark');
