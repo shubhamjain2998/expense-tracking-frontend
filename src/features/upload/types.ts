@@ -1,6 +1,6 @@
 import type { PreviewResponse } from '@/types/transaction'
 
-export type UploadMode = 'pdf' | 'bulk-paste' | 'manual'
+export type UploadMode = 'pdf' | 'bulk-paste' | 'manual' | 'backup'
 export type FileStatus =
   | 'previewing'
   | 'ready'
