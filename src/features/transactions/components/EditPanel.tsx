@@ -134,7 +134,10 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
     })
   }
 
-  const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }))
+  const isIncomeTxn = txnType === 'income'
+  const categoryOptions = categories
+    .filter((c) => !!c.is_income === isIncomeTxn)
+    .map((c) => ({ value: c.id, label: c.name }))
   const totalAmount = Math.abs(Number(amount) || Number(txn.amount))
 
   const TXN_TYPE_OPTIONS: { value: TxnType; label: string; color: string }[] = [
@@ -184,7 +187,16 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => setTxnType(opt.value)}
+                onClick={() => {
+                  if (opt.value !== txnType) {
+                    const newIsIncome = opt.value === 'income'
+                    const selectedCat = categories.find((c) => c.id === categoryId)
+                    if (selectedCat && !!selectedCat.is_income !== newIsIncome) {
+                      setCategoryId('')
+                    }
+                    setTxnType(opt.value)
+                  }
+                }}
                 style={{
                   flex: 1,
                   padding: '5px 0',

@@ -4,7 +4,6 @@ import { Icon } from '@/components/ui/Icon'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 
 import { BackupImportSection } from './components/BackupImportSection'
-import { CategoriesSection } from './components/CategoriesSection'
 import { DangerZoneSection } from './components/DangerZoneSection'
 import { IgnoreRulesSection } from './components/IgnoreRulesSection'
 import { MappingsSection } from './components/MappingsSection'
@@ -14,7 +13,6 @@ import { TagsSection } from './components/TagsSection'
 
 const navItems = [
   { id: 'persons', label: 'Persons' },
-  { id: 'categories', label: 'Categories' },
   { id: 'tags', label: 'Tags' },
   { id: 'ignore-rules', label: 'Ignore rules' },
   { id: 'mappings', label: 'Auto-mappings' },
@@ -80,7 +78,6 @@ export function SettingsPage() {
 
         <div className="space-y-5 lg:col-span-9">
           {activeNav === 'persons' && <PersonsSection />}
-          {activeNav === 'categories' && <CategoriesSection />}
           {activeNav === 'tags' && <TagsSection />}
           {activeNav === 'ignore-rules' && <IgnoreRulesSection />}
           {activeNav === 'mappings' && <MappingsSection />}

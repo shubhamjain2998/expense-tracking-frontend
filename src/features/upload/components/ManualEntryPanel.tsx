@@ -33,7 +33,10 @@ export function ManualEntryPanel() {
     },
   })
 
-  const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }))
+  const isIncomeTxn = txnType === 'income'
+  const categoryOptions = categories
+    .filter((c) => !!c.is_income === isIncomeTxn)
+    .map((c) => ({ value: c.id, label: c.name }))
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -74,7 +77,10 @@ export function ManualEntryPanel() {
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => setTxnType(opt.value)}
+                onClick={() => {
+                  setTxnType(opt.value)
+                  setCategoryId('')
+                }}
                 style={{
                   flex: 1,
                   padding: '5px 0',

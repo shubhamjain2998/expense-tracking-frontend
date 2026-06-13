@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 
 import { AmountInput } from '@/components/ui/AmountInput'
+import { Icon } from '@/components/ui/Icon'
 import { formatCurrency } from '@/lib/format'
 
 import { CAT_COLORS } from '../lib/heatColor'
@@ -10,14 +11,32 @@ export function UnbudgetedCategoryRow({
   row,
   onSetBudget,
   isSaving,
+  renamingCategoryId,
+  renamingCategoryName,
+  setRenamingCategoryName,
+  setRenamingCategoryId,
+  renameMutation,
+  incomeFlagMutation,
+  onDeleteCategory,
 }: {
   row: UnbudgetedCategoryRowData
   onSetBudget: (categoryId: string, monthlyAmount: number) => void
   isSaving: boolean
+  renamingCategoryId: string | null
+  renamingCategoryName: string
+  setRenamingCategoryName: (v: string) => void
+  setRenamingCategoryId: (id: string | null) => void
+  renameMutation: { mutate: (args: { id: string; name: string }) => void; isPending: boolean }
+  incomeFlagMutation: {
+    mutate: (args: { id: string; is_income: boolean }) => void
+    isPending: boolean
+  }
+  onDeleteCategory: () => void
 }) {
   const [editing, setEditing] = useState(false)
   const [editValue, setEditValue] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const isRenaming = renamingCategoryId === row.categoryId
 
   function startEdit() {
     setEditValue('')
@@ -40,7 +59,7 @@ export function UnbudgetedCategoryRow({
 
   return (
     <tr className="group" style={{ opacity: 0.7 }}>
-      {/* Category */}
+      {/* Category name — or rename input */}
       <td>
         <div className="flex min-w-0 items-center gap-2">
           <span
@@ -53,19 +72,36 @@ export function UnbudgetedCategoryRow({
               flexShrink: 0,
             }}
           />
-          <span
-            style={{
-              color: 'var(--ink-3)',
-              fontWeight: 500,
-              overflow: 'hidden',
-              whiteSpace: 'nowrap',
-              textOverflow: 'ellipsis',
-              minWidth: 0,
-            }}
-            title={row.categoryName}
-          >
-            {row.categoryName}
-          </span>
+          {isRenaming ? (
+            <input
+              value={renamingCategoryName}
+              onChange={(e) => setRenamingCategoryName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter')
+                  renameMutation.mutate({ id: row.categoryId, name: renamingCategoryName })
+                if (e.key === 'Escape') setRenamingCategoryId(null)
+              }}
+              className="input flex-1"
+              style={{ fontSize: 13, height: 26, minWidth: 0 }}
+              maxLength={64}
+              autoFocus
+              aria-label="Rename category"
+            />
+          ) : (
+            <span
+              style={{
+                color: 'var(--ink-3)',
+                fontWeight: 500,
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                textOverflow: 'ellipsis',
+                minWidth: 0,
+              }}
+              title={row.categoryName}
+            >
+              {row.categoryName}
+            </span>
+          )}
         </div>
       </td>
 
@@ -164,7 +200,61 @@ export function UnbudgetedCategoryRow({
         —
       </td>
 
-      <td />
+      {/* Actions */}
+      <td>
+        {isRenaming ? (
+          <div className="flex items-center justify-end gap-0.5">
+            <button
+              onClick={() =>
+                renameMutation.mutate({ id: row.categoryId, name: renamingCategoryName })
+              }
+              disabled={renameMutation.isPending}
+              className="btn ghost icon sm"
+              aria-label="Confirm rename"
+            >
+              <Icon name="check" size={13} />
+            </button>
+            <button
+              onClick={() => setRenamingCategoryId(null)}
+              className="btn ghost icon sm"
+              aria-label="Cancel rename"
+            >
+              <Icon name="close" size={13} />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+            <button
+              onClick={() => {
+                setRenamingCategoryId(row.categoryId)
+                setRenamingCategoryName(row.categoryName)
+              }}
+              className="btn ghost icon sm"
+              title="Rename category"
+              aria-label={`Rename ${row.categoryName}`}
+            >
+              <Icon name="edit" size={13} />
+            </button>
+            <button
+              onClick={() => incomeFlagMutation.mutate({ id: row.categoryId, is_income: true })}
+              disabled={incomeFlagMutation.isPending}
+              className="btn ghost icon sm"
+              title="Move to income"
+              aria-label={`Move ${row.categoryName} to income`}
+            >
+              <Icon name="trending_up" size={13} style={{ color: 'var(--pos)' }} />
+            </button>
+            <button
+              onClick={onDeleteCategory}
+              className="btn ghost icon sm"
+              title="Delete category"
+              aria-label={`Delete ${row.categoryName}`}
+            >
+              <Icon name="delete" size={13} />
+            </button>
+          </div>
+        )}
+      </td>
     </tr>
   )
 }

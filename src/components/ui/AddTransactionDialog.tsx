@@ -70,7 +70,10 @@ export function AddTransactionDialog({ onClose }: AddTransactionDialogProps) {
     })
   }
 
-  const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }))
+  const isIncomeTxn = txnType === 'income'
+  const categoryOptions = categories
+    .filter((c) => !!c.is_income === isIncomeTxn)
+    .map((c) => ({ value: c.id, label: c.name }))
 
   return (
     <div
@@ -85,7 +88,14 @@ export function AddTransactionDialog({ onClose }: AddTransactionDialogProps) {
       aria-modal
       aria-label="Add transaction"
     >
-      <div className="absolute inset-0" onClick={onClose} />
+      <div
+        className="absolute inset-0"
+        role="button"
+        tabIndex={-1}
+        aria-label="Close"
+        onClick={onClose}
+        onKeyDown={(e) => e.key === 'Escape' && onClose()}
+      />
       <div
         className="relative z-10 flex w-full max-w-sm flex-col"
         style={{
@@ -127,7 +137,10 @@ export function AddTransactionDialog({ onClose }: AddTransactionDialogProps) {
                 <button
                   key={opt.value}
                   type="button"
-                  onClick={() => setTxnType(opt.value)}
+                  onClick={() => {
+                    setTxnType(opt.value)
+                    setCategoryId('')
+                  }}
                   style={{
                     flex: 1,
                     padding: '5px 0',

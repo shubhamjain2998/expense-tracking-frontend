@@ -131,7 +131,10 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
     })
   }
 
-  const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }))
+  const isIncomeTxn = txnType === 'income'
+  const categoryOptions = categories
+    .filter((c) => !!c.is_income === isIncomeTxn)
+    .map((c) => ({ value: c.id, label: c.name }))
   const totalAmount = Math.abs(Number(amount) || Number(txn.amount))
   // Tint affordances ('this is incoming money') when the user has marked it
   // income or refund — both behave the same way visually.
@@ -162,7 +165,10 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => setTxnType(opt.value)}
+                onClick={() => {
+                  setTxnType(opt.value)
+                  setCategoryId('')
+                }}
                 style={{
                   flex: 1,
                   padding: '5px 0',
