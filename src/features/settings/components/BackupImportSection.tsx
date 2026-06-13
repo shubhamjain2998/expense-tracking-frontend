@@ -61,55 +61,6 @@ export function BackupImportSection() {
       <section className="card">
         <div className="card-head">
           <div>
-            <p className="card-title">Privacy posture</p>
-            <p className="card-sub">
-              This app does not connect to banks, read emails, or use AI for categorization.
-            </p>
-          </div>
-        </div>
-        <div
-          style={{
-            border: '1px solid var(--line)',
-            borderRadius: 'var(--radius)',
-            overflow: 'hidden',
-          }}
-        >
-          {[
-            { label: 'Bank account connections', value: 'Never', highlight: true },
-            { label: 'Email / inbox access', value: 'Never', highlight: true },
-            { label: 'AI / LLM categorization', value: 'Off', highlight: true },
-            {
-              label: 'Uploaded PDFs retained',
-              value: 'In-memory only, never stored',
-              highlight: true,
-            },
-            { label: 'Saved pattern matching', value: 'On (RapidFuzz)', highlight: false },
-          ].map((item, i) => (
-            <div
-              key={item.label}
-              className="flex items-center justify-between"
-              style={{
-                padding: '10px 14px',
-                borderTop: i === 0 ? 'none' : '1px solid var(--line)',
-              }}
-            >
-              <span className="text-[13px]" style={{ color: 'var(--ink-2)' }}>
-                {item.label}
-              </span>
-              <span
-                className="text-[13px] font-medium"
-                style={{ color: item.highlight ? 'var(--pos)' : 'var(--ink-2)' }}
-              >
-                {item.value}
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="card">
-        <div className="card-head">
-          <div>
             <p className="card-title">Data export</p>
             <p className="card-sub">
               Download a copy of your data at any time. The JSON backup is the authoritative export
