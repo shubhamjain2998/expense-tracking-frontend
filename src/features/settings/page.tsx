@@ -3,10 +3,7 @@ import { useState } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 
-import { BackupImportSection } from './components/BackupImportSection'
 import { DangerZoneSection } from './components/DangerZoneSection'
-import { IgnoreRulesSection } from './components/IgnoreRulesSection'
-import { MappingsSection } from './components/MappingsSection'
 import { OnboardingResetSection } from './components/OnboardingResetSection'
 import { PersonsSection } from './components/PersonsSection'
 import { TagsSection } from './components/TagsSection'
@@ -14,10 +11,8 @@ import { TagsSection } from './components/TagsSection'
 const navItems = [
   { id: 'persons', label: 'Persons' },
   { id: 'tags', label: 'Tags' },
-  { id: 'ignore-rules', label: 'Ignore rules' },
-  { id: 'mappings', label: 'Auto-mappings' },
   { id: 'period', label: 'Financial year' },
-  { id: 'privacy', label: 'Privacy & Data' },
+  { id: 'privacy', label: 'Privacy & onboarding' },
   { id: 'danger', label: 'Danger zone' },
 ]
 
@@ -79,8 +74,6 @@ export function SettingsPage() {
         <div className="space-y-5 lg:col-span-9">
           {activeNav === 'persons' && <PersonsSection />}
           {activeNav === 'tags' && <TagsSection />}
-          {activeNav === 'ignore-rules' && <IgnoreRulesSection />}
-          {activeNav === 'mappings' && <MappingsSection />}
 
           {activeNav === 'period' && (
             <section className="card">
@@ -174,12 +167,7 @@ export function SettingsPage() {
             </section>
           )}
 
-          {activeNav === 'privacy' && (
-            <>
-              <BackupImportSection />
-              <OnboardingResetSection />
-            </>
-          )}
+          {activeNav === 'privacy' && <OnboardingResetSection />}
           {activeNav === 'danger' && <DangerZoneSection />}
         </div>
       </div>
