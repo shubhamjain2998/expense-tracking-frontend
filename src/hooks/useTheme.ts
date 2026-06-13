@@ -3,7 +3,7 @@ import { flushSync } from 'react-dom'
 
 type Theme = 'light' | 'dark'
 
-const STORAGE_KEY = 'pf-theme'
+const STORAGE_KEY = 'kosh-theme'
 
 function getInitialTheme(): Theme {
   const stored = localStorage.getItem(STORAGE_KEY) as Theme | null
