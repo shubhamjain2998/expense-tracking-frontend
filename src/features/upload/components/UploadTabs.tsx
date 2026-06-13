@@ -11,6 +11,7 @@ const TABS: { id: UploadMode; label: string; icon: IconName }[] = [
   { id: 'pdf', label: 'PDF statement', icon: 'picture_as_pdf' },
   { id: 'bulk-paste', label: 'Bulk paste', icon: 'content_paste' },
   { id: 'manual', label: 'Manual entry', icon: 'add' },
+  { id: 'backup', label: 'Backup', icon: 'download' },
 ]
 
 export function UploadTabs({ mode, onSwitch }: UploadTabsProps) {

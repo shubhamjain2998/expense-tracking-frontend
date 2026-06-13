@@ -1,5 +1,7 @@
 import { useState } from 'react'
 
+import { BackupImportSection } from '@/features/settings/components/BackupImportSection'
+
 import { BulkPastePanel } from './components/BulkPastePanel'
 import { ManualEntryPanel } from './components/ManualEntryPanel'
 import { PdfUploadPanel } from './components/PdfUploadPanel'
@@ -39,6 +41,7 @@ export function UploadPage() {
       )}
       {mode === 'bulk-paste' && <BulkPastePanel key={mode} />}
       {mode === 'manual' && <ManualEntryPanel key={mode} />}
+      {mode === 'backup' && <BackupImportSection />}
     </div>
   )
 }
