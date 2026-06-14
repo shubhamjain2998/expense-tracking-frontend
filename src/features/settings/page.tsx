@@ -6,9 +6,11 @@ import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { DangerZoneSection } from './components/DangerZoneSection'
 import { OnboardingResetSection } from './components/OnboardingResetSection'
 import { PersonsSection } from './components/PersonsSection'
+import { ProfileSection } from './components/ProfileSection'
 import { TagsSection } from './components/TagsSection'
 
 const navItems = [
+  { id: 'profile', label: 'Profile' },
   { id: 'persons', label: 'Persons' },
   { id: 'tags', label: 'Tags' },
   { id: 'period', label: 'Financial year' },
@@ -17,7 +19,7 @@ const navItems = [
 ]
 
 export function SettingsPage() {
-  const [activeNav, setActiveNav] = useState('persons')
+  const [activeNav, setActiveNav] = useState('profile')
   const { mode: periodMode, setMode: setPeriodMode } = usePeriodMode()
 
   return (
@@ -72,6 +74,7 @@ export function SettingsPage() {
         </nav>
 
         <div className="space-y-5 lg:col-span-9">
+          {activeNav === 'profile' && <ProfileSection />}
           {activeNav === 'persons' && <PersonsSection />}
           {activeNav === 'tags' && <TagsSection />}
 
