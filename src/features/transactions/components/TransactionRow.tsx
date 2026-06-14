@@ -55,11 +55,6 @@ export function TransactionRow({
 
   return (
     <tr
-      draggable={!isDeleted}
-      onDragStart={(e) => {
-        e.dataTransfer.effectAllowed = 'move'
-        onDragStart(e)
-      }}
       onDragEnd={onDragEnd}
       onClick={onRowClick}
       className={isSelected ? 'row sel' : 'row'}
@@ -88,9 +83,23 @@ export function TransactionRow({
         )}
       </td>
 
-      {/* Drag handle */}
+      {/* Drag handle — draggable here so Chrome picks up the drag source
+          correctly (draggable on <tr> is not reliably triggered from child
+          elements in Chrome). Ghost image is set to the parent <tr> so the
+          whole row appears to be dragged. */}
       <td
         className="txn-col-drag"
+        draggable={!isDeleted}
+        onDragStart={(e) => {
+          e.stopPropagation()
+          const tr = e.currentTarget.closest('tr')
+          if (tr) {
+            const rect = tr.getBoundingClientRect()
+            e.dataTransfer.setDragImage(tr, e.clientX - rect.left, e.clientY - rect.top)
+          }
+          e.dataTransfer.effectAllowed = 'move'
+          onDragStart(e)
+        }}
         style={{ padding: '0 0 0 6px', cursor: isDeleted ? 'default' : 'grab' }}
         onClick={(e) => e.stopPropagation()}
       >
