@@ -148,10 +148,10 @@ describe('detectRecurring', () => {
     )
     const result = detectRecurring(txns, NOW)
     expect(result.commitments).toHaveLength(1)
-    // monthlyAmount = total / monthsSeen (one charge per month here).
-    const total = amounts.reduce((s, a) => s + Number(a), 0)
-    expect(result.commitments[0].monthlyAmount).toBeCloseTo(total / 7, 5)
-    expect(result.lockedInPerMonth).toBeCloseTo(total / 7, 5)
+    // monthlyAmount = MEDIAN of per-month totals (one charge per month here) →
+    // median of [18000,18000,19000,19000,25000,25000,26000] = 19000.
+    expect(result.commitments[0].monthlyAmount).toBe(19000)
+    expect(result.lockedInPerMonth).toBe(19000)
   })
 
   it('counts bundled same-month charges into the monthly committed amount', () => {
@@ -174,6 +174,39 @@ describe('detectRecurring', () => {
     const result = detectRecurring(txns, NOW)
     expect(result.commitments).toHaveLength(1)
     expect(result.commitments[0].monthlyAmount).toBeCloseTo(10000, 5)
+  })
+
+  it('reports the median monthly figure, unaffected by sporadic same-tag outliers', () => {
+    // A monthly RD (₹5,900) sharing the 'insurance premium' tag with a couple of
+    // big one-off annual premiums. The monthly figure must be the RD (₹5,900),
+    // NOT inflated by the outliers (the bug: it read ~₹10k, implying 2×/month).
+    const base = ['2025-07', '2025-08', '2025-09', '2025-10', '2026-01', '2026-03', '2026-04']
+    const txns = base.map((ym) =>
+      txn({
+        txn_date: `${ym}-05`,
+        effective_amount: '5900',
+        description: 'Insurance RD',
+        tags: [{ id: 't1', name: 'insurance premium' }],
+      })
+    )
+    // Two months carry an extra big annual premium on top of the RD.
+    txns.push(
+      txn({
+        txn_date: '2025-12-05',
+        effective_amount: '5900',
+        description: 'Insurance RD',
+        tags: [{ id: 't1', name: 'insurance premium' }],
+      }),
+      txn({
+        txn_date: '2025-12-20',
+        effective_amount: '29000',
+        description: 'Life insurance',
+        tags: [{ id: 't1', name: 'insurance premium' }],
+      })
+    )
+    const result = detectRecurring(txns, NOW)
+    expect(result.commitments).toHaveLength(1)
+    expect(result.commitments[0].monthlyAmount).toBe(5900)
   })
 
   it('excludes groups seen in fewer than 6 distinct months', () => {

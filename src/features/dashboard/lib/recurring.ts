@@ -247,9 +247,21 @@ export function detectRecurring(txns: ProcessedTransactionItem[], now: Date): Re
       if (withinBand / amounts.length < STABILITY_FRACTION) continue
     }
 
-    // Average committed outflow per active month (handles bundled/drifting charges).
-    const groupTotal = amounts.reduce((s, a) => s + a, 0)
-    const monthlyAmount = groupTotal / monthsSet.size
+    // Per-month totals for this commitment.
+    const monthTotals = new Map<string, number>()
+    for (const c of charges) {
+      const mk = monthKey(toISODate(c.date))
+      monthTotals.set(mk, (monthTotals.get(mk) ?? 0) + c.amount)
+    }
+
+    // Committed monthly amount = MEDIAN of per-month totals (not the mean).
+    // The median is robust to sporadic outliers that share the same tag — e.g.
+    // a monthly RD (₹5,900) tagged 'insurance premium' alongside occasional big
+    // annual premiums; the mean would inflate it, the median reports the true
+    // recurring monthly figure (₹5,900). Bundled-but-consistent charges (two
+    // SIPs every month) are still counted because every month's total includes
+    // both.
+    const monthlyAmount = median([...monthTotals.values()])
 
     // Order charges chronologically.
     const ordered = [...charges].sort((a, b) => a.date.getTime() - b.date.getTime())
@@ -292,22 +304,18 @@ export function detectRecurring(txns: ProcessedTransactionItem[], now: Date): Re
       flags.push('missing')
     }
 
-    // changed: the most recent active month's total deviates meaningfully (>25%)
-    // from the typical monthly total. Comparing month-totals (not single charges)
-    // avoids false positives from commitments that naturally vary charge-to-charge
-    // or bundle several charges per month.
-    const monthTotals = new Map<string, number>()
-    for (const c of ordered) {
-      const mk = monthKey(toISODate(c.date))
-      monthTotals.set(mk, (monthTotals.get(mk) ?? 0) + c.amount)
-    }
-    // Exclude the in-progress current month — it's incomplete, so its lower
-    // partial total would otherwise look like a (false) drop.
-    monthTotals.delete(monthKey(toISODate(now)))
-    if (monthTotals.size >= 2) {
-      const sortedMonthKeys = [...monthTotals.keys()].sort()
-      const lastMonthTotal = monthTotals.get(sortedMonthKeys[sortedMonthKeys.length - 1]) ?? 0
-      const medMonthTotal = median([...monthTotals.values()])
+    // changed: the most recent COMPLETED month's total deviates meaningfully
+    // (>25%) from the typical monthly total. Comparing month-totals (not single
+    // charges) avoids false positives from commitments that vary charge-to-charge
+    // or bundle several charges per month. The in-progress current month is
+    // excluded — its partial total would otherwise look like a (false) drop.
+    const completedMonthTotals = new Map(monthTotals)
+    completedMonthTotals.delete(monthKey(toISODate(now)))
+    if (completedMonthTotals.size >= 2) {
+      const sortedMonthKeys = [...completedMonthTotals.keys()].sort()
+      const lastMonthTotal =
+        completedMonthTotals.get(sortedMonthKeys[sortedMonthKeys.length - 1]) ?? 0
+      const medMonthTotal = median([...completedMonthTotals.values()])
       if (
         medMonthTotal > 0 &&
         Math.abs(lastMonthTotal - medMonthTotal) > medMonthTotal * CHANGED_PCT
