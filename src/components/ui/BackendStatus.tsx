@@ -34,8 +34,8 @@ export function BackendStatus() {
     <div
       style={{
         position: 'fixed',
-        top: 44,
-        left: 200,
+        top: 52, // flush under the 52px-tall .topnav
+        left: 0,
         right: 0,
         zIndex: 9999,
         height: 46,
