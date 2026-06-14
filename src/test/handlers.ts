@@ -13,8 +13,18 @@ export const handlers = [
     HttpResponse.json({ access_token: 'test-token', token_type: 'bearer' })
   ),
   http.get(`${BASE}/auth/me`, () =>
-    HttpResponse.json({ id: 'user-1', email: 'test@example.com', period_mode: 'calendar' })
+    HttpResponse.json({
+      id: 'user-1',
+      email: 'test@example.com',
+      period_mode: 'calendar',
+      created_at: '2024-06-01T00:00:00Z',
+      has_password: true,
+    })
   ),
+  http.get(`${BASE}/auth/me/stats`, () =>
+    HttpResponse.json({ transaction_count: 42, total_spend: 18400.0 })
+  ),
+  http.patch(`${BASE}/auth/me/password`, () => new HttpResponse(null, { status: 204 })),
 
   // Reference data
   http.get(`${BASE}/categories`, () =>

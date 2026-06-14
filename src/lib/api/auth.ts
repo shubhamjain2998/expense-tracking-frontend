@@ -12,6 +12,8 @@ export interface MeResponse {
   email: string
   /** Null means the user has not yet picked between calendar and FY mode. */
   period_mode: PeriodMode | null
+  created_at: string // ISO datetime string
+  has_password: boolean
 }
 
 export async function getMe(): Promise<MeResponse> {
