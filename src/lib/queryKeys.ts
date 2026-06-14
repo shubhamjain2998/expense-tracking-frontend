@@ -17,6 +17,7 @@ export const qk = {
   auth: {
     all: ['auth'] as const,
     me: ['auth', 'me'] as const,
+    stats: ['auth', 'stats'] as const,
   },
   persons: {
     all: ['persons'] as const,
