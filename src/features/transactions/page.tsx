@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { AddTransactionDialog } from '@/components/ui/AddTransactionDialog'
@@ -15,7 +15,7 @@ import { qk } from '@/lib/queryKeys'
 import type { ProcessedTransactionItem } from '@/types/transaction'
 
 import { BulkActionsBar } from './components/BulkActionsBar'
-import { DragDropCategoryGrid } from './components/DragDropCategoryGrid'
+import { DragDropOverlay } from './components/DragDropOverlay'
 import { FilterBar } from './components/FilterBar'
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal'
 import { TransactionsHeader } from './components/TransactionsHeader'
@@ -62,6 +62,9 @@ export function TransactionsPage() {
   const [draggingUids, setDraggingUids] = useState<Set<string>>(new Set())
   const [openMenuUid, setOpenMenuUid] = useState<string | null>(null)
   const [checkedUids, setCheckedUids] = useState<Set<string>>(new Set())
+  const [pendingCategoryId, setPendingCategoryId] = useState<string | null>(null)
+  const [pendingTagIds, setPendingTagIds] = useState<Set<string>>(new Set())
+  const droppedOnCategoryRef = useRef(false)
   const [sortCol, setSortCol] = useState<SortCol>('date')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [activeTab, setActiveTab] = useState<TxnTab>('transactions')
@@ -269,59 +272,92 @@ export function TransactionsPage() {
     }
   }
   function handleDragEnd() {
+    setDragOverCatId(null)
+    if (!droppedOnCategoryRef.current) {
+      // Dropped outside the overlay — cancel the whole drag
+      setDraggingUids(new Set())
+    }
+    droppedOnCategoryRef.current = false
+  }
+
+  function handleDropOnCategory(categoryId: string) {
+    droppedOnCategoryRef.current = true
+    setPendingCategoryId(categoryId)
+  }
+
+  function handleToggleTag(tagId: string) {
+    setPendingTagIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(tagId)) next.delete(tagId)
+      else next.add(tagId)
+      return next
+    })
+  }
+
+  function handleCancelPending() {
+    setPendingCategoryId(null)
+    setPendingTagIds(new Set())
     setDraggingUids(new Set())
     setDragOverCatId(null)
   }
-  async function handleDropOnCategory(categoryId: string) {
-    if (draggingUids.size === 0) return
+
+  async function handleApply(categoryId: string, tagIds: string[]) {
     const uids = Array.from(draggingUids)
     const isMulti = uids.length > 1
 
-    // Single-drop fast path keeps the prior toast/UX exactly the same.
+    setPendingCategoryId(null)
+    setPendingTagIds(new Set())
+    setDraggingUids(new Set())
+    setDragOverCatId(null)
+
     if (!isMulti) {
       const txn = allTxns.find((t) => t.uid === uids[0])
-      if (!txn) {
-        setDraggingUids(new Set())
-        setDragOverCatId(null)
-        return
-      }
+      if (!txn) return
+      const baseCtx = findBaseContext(txn.description)
       if (txn.kind === 'pending' && txn.rawId)
         quickCategorizeMutation.mutate({
           rawId: txn.rawId,
           categoryId,
-          ...findBaseContext(txn.description),
+          shares: baseCtx.shares,
+          notes: baseCtx.notes,
+          tag_ids: tagIds.length > 0 ? tagIds : baseCtx.tag_ids,
         })
       else if (txn.kind === 'processed' && txn.processedId)
-        changeCategoryMutation.mutate({ procId: txn.processedId, categoryId })
+        changeCategoryMutation.mutate({
+          procId: txn.processedId,
+          categoryId,
+          tag_ids: tagIds.length > 0 ? tagIds : undefined,
+        })
       if (txn.kind === 'pending') setSelectedUid(null)
-      setDraggingUids(new Set())
-      setDragOverCatId(null)
       return
     }
 
-    // Multi-drop: dispatch in parallel, suppress per-row toasts, show one summary.
+    // Multi-row: dispatch in parallel, suppress per-row toasts, show one summary.
     const tasks = uids
       .map((uid) => allTxns.find((t) => t.uid === uid))
       .filter((txn): txn is NonNullable<typeof txn> => !!txn)
       .map((txn) => {
-        if (txn.kind === 'pending' && txn.rawId)
+        if (txn.kind === 'pending' && txn.rawId) {
+          const baseCtx = findBaseContext(txn.description)
           return quickCategorizeMutation.mutateAsync({
             rawId: txn.rawId,
             categoryId,
+            shares: baseCtx.shares,
+            notes: baseCtx.notes,
+            tag_ids: tagIds.length > 0 ? tagIds : baseCtx.tag_ids,
             silent: true,
-            ...findBaseContext(txn.description),
           })
+        }
         if (txn.kind === 'processed' && txn.processedId)
           return changeCategoryMutation.mutateAsync({
             procId: txn.processedId,
             categoryId,
+            tag_ids: tagIds.length > 0 ? tagIds : undefined,
             silent: true,
           })
         return Promise.resolve()
       })
 
-    setDraggingUids(new Set())
-    setDragOverCatId(null)
     setSelectedUid(null)
 
     const results = await Promise.allSettled(tasks)
@@ -437,14 +473,23 @@ export function TransactionsPage() {
                 </div>
               )
             })()}
-          {categories.length > 0 && (
-            <DragDropCategoryGrid
-              categories={categories}
-              dragOverCatId={dragOverCatId}
-              setDragOverCatId={setDragOverCatId}
-              onDropOnCategory={handleDropOnCategory}
-            />
-          )}
+          <div style={{ position: 'relative' }}>
+            {(draggingUids.size > 0 || pendingCategoryId !== null) && categories.length > 0 && (
+              <DragDropOverlay
+                categories={categories}
+                tags={tagsQuery.data ?? []}
+                isDragging={draggingUids.size > 0 && pendingCategoryId === null}
+                dragOverCatId={dragOverCatId}
+                setDragOverCatId={setDragOverCatId}
+                pendingCategoryId={pendingCategoryId}
+                pendingTagIds={pendingTagIds}
+                onDropOnCategory={handleDropOnCategory}
+                onToggleTag={handleToggleTag}
+                onApply={handleApply}
+                onCancel={handleCancelPending}
+              />
+            )}
+          </div>
           {checkedUids.size > 0 &&
             (() => {
               // Only PENDING rows can be auto-categorised. Filter the selection
