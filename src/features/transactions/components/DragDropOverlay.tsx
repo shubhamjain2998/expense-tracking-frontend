@@ -210,7 +210,7 @@ export function DragDropOverlay({
             {tags.map((tag) => {
               const isSelected = pendingTagIds.has(tag.id)
               return (
-                <div
+                <button
                   key={tag.id}
                   onClick={() => onToggleTag(tag.id)}
                   style={{
@@ -229,7 +229,7 @@ export function DragDropOverlay({
                   }}
                 >
                   {tag.name}
-                </div>
+                </button>
               )
             })}
           </div>
@@ -242,10 +242,6 @@ export function DragDropOverlay({
           disabled={!pendingCategoryId}
           onClick={() => pendingCategoryId && onApply(pendingCategoryId, Array.from(pendingTagIds))}
           className="btn sm"
-          style={{
-            opacity: pendingCategoryId ? 1 : 0.38,
-            cursor: pendingCategoryId ? 'pointer' : 'default',
-          }}
         >
           {applyLabel}
         </button>
