@@ -70,11 +70,13 @@ export function useProcessedMutations(year: number, month: number, mode: PeriodM
     mutationFn: ({
       procId,
       categoryId,
+      tag_ids,
     }: {
       procId: string
       categoryId: string
+      tag_ids?: string[]
       silent?: boolean
-    }) => editProcessedTransaction(procId, { category_id: categoryId }),
+    }) => editProcessedTransaction(procId, { category_id: categoryId, tag_ids }),
     onSuccess: (_data, variables) => {
       void qc.invalidateQueries({ queryKey: qk.transactions.processed(year, month) })
       // Reassigns spend from one category bucket to another on the dashboard.
