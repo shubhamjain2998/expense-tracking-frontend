@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 
+import { AuthSealBackdrop } from '../components/auth/AuthSealBackdrop'
 import { GoogleSignInButton } from '../components/auth/GoogleSignInButton'
 import { Button } from '../components/ui/Button'
 import { useAuth } from '../contexts/AuthContext'
@@ -61,6 +62,7 @@ export function LoginPage() {
       className="auth-page flex min-h-screen items-center justify-center px-4"
       style={{ background: 'var(--bg)' }}
     >
+      <AuthSealBackdrop />
       <div className="w-full max-w-sm">
         <div className="mb-6 flex items-center gap-2.5">
           <span

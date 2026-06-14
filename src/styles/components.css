@@ -2035,21 +2035,21 @@ html.dark .topnav {
   pointer-events: none;
   background: var(--bg); /* base colour behind the blurred blobs */
 
-  /* Light mode (warm paper): gentle, low-opacity warm clouds. */
+  /* Light mode (warm paper): gentle warm clouds — a touch more present. */
   --aurora-1: oklch(0.42 0.16 22); /* oxblood */
   --aurora-2: var(--kosh-amber); /* amber */
   --aurora-3: var(--kosh-brown-warm); /* warm brown */
-  --aurora-opacity: 0.2;
+  --aurora-opacity: 0.26;
 
   display: none; /* mobile: absent entirely — no DOM cost, no motion */
 }
 
 html.dark .aurora-bg {
-  /* Dark mode: dim, moody glow — oxblood + amber on near-black. */
-  --aurora-1: oklch(0.45 0.15 22);
-  --aurora-2: oklch(0.62 0.09 70); /* dimmed amber */
-  --aurora-3: oklch(0.4 0.06 50);
-  --aurora-opacity: 0.3;
+  /* Dark mode: very dim, moody glow — stays well behind the content. */
+  --aurora-1: oklch(0.42 0.13 22);
+  --aurora-2: oklch(0.58 0.08 70); /* dimmed amber */
+  --aurora-3: oklch(0.38 0.05 50);
+  --aurora-opacity: 0.22;
 }
 
 @media (min-width: 768px) {
@@ -2152,5 +2152,79 @@ html.dark .aurora-grain {
     backdrop-filter: blur(18px) saturate(1.15);
     -webkit-backdrop-filter: blur(18px) saturate(1.15);
     border-color: color-mix(in oklch, var(--ink) 12%, transparent);
+  }
+}
+
+/* ─── Kosh treasury seal — auth backdrop + loading indicator ────────────────
+   Shared rotation keyframe; the seal geometry lives in KoshSeal.tsx. */
+@keyframes kosh-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes kosh-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Auth pages: large, faint, slowly-rotating seal behind the card. Desktop-only
+   (matches the rest of the ambient flourishes). */
+.auth-seal {
+  position: absolute;
+  top: 50%;
+  right: -160px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  display: none;
+  color: var(--kosh-brown-warm);
+  opacity: 0.5;
+}
+html.dark .auth-seal {
+  color: var(--kosh-amber);
+  opacity: 0.4;
+}
+@media (min-width: 768px) {
+  .auth-seal {
+    display: block;
+  }
+}
+.auth-seal svg {
+  animation: kosh-rotate 120s linear infinite;
+  transform-origin: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-seal svg {
+    animation: none;
+  }
+}
+
+/* Loading indicator: the seal spun continuously, with an optional label. */
+.kosh-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  color: var(--accent); /* oxblood — reads on both cream and near-black */
+}
+.kosh-spinner-seal {
+  transform-origin: center;
+  animation: kosh-rotate 3.2s linear infinite;
+}
+.kosh-spinner-label {
+  font:
+    500 12px/1 var(--font-body),
+    sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+@media (prefers-reduced-motion: reduce) {
+  .kosh-spinner-seal {
+    animation: kosh-pulse 1.6s ease-in-out infinite;
   }
 }

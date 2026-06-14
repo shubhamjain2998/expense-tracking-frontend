@@ -9,7 +9,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { AuroraBackground } from './components/layout/AuroraBackground'
 import { Layout } from './components/layout/Layout'
 import { BackendStatus } from './components/ui/BackendStatus'
-import { Skeleton } from './components/ui/Skeleton'
+import { KoshSpinner } from './components/ui/KoshSpinner'
 import { ToastContainer } from './components/ui/Toast'
 import { AuthProvider } from './contexts/AuthContext'
 import { useTheme } from './hooks/useTheme'
@@ -46,11 +46,8 @@ const queryClient = new QueryClient({
 
 function RouteFallback() {
   return (
-    <div style={{ padding: 32 }}>
-      <Skeleton className="mb-4 h-10 w-72" />
-      <Skeleton className="mb-2 h-5 w-full" />
-      <Skeleton className="mb-2 h-5 w-2/3" />
-      <Skeleton className="h-5 w-1/2" />
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <KoshSpinner label="Loading" />
     </div>
   )
 }
