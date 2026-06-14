@@ -7,6 +7,30 @@ import { celebrate } from '@/lib/confetti'
 import type { BackupImportResponse, ParsedBackupPayload } from '@/types/backup'
 
 export type MappingMode = 'derive' | 'explicit' | 'skip'
+export type DateMode = 'all' | 'range'
+
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+
+/** Normalize a parsed txn_date to a YYYY-MM-DD string, or null if invalid. */
+function normalizeTxnDate(value: unknown): string | null {
+  const s = String(value ?? '').slice(0, 10)
+  return ISO_DATE_RE.test(s) ? s : null
+}
+
+/** Min/max ISO date across transactions, or null when none carry a valid date. */
+function computeDateBounds(
+  txns: ParsedBackupPayload['transactions']
+): { min: string; max: string } | null {
+  let min: string | null = null
+  let max: string | null = null
+  for (const t of txns) {
+    const d = normalizeTxnDate(t.txn_date)
+    if (d === null) continue
+    if (min === null || d < min) min = d
+    if (max === null || d > max) max = d
+  }
+  return min !== null && max !== null ? { min, max } : null
+}
 
 export interface ParsedSummary {
   txnCount: number
@@ -91,8 +115,29 @@ export function useBackupImport() {
   const [optImportTransactions, setOptImportTransactions] = useState(true)
   const [optImportBudgetPlans, setOptImportBudgetPlans] = useState(true)
   const [optMappingMode, setOptMappingMode] = useState<MappingMode>('derive')
+  const [optDateMode, setOptDateMode] = useState<DateMode>('all')
+  const [rangeStart, setRangeStart] = useState('')
+  const [rangeEnd, setRangeEnd] = useState('')
 
-  const parsedSummary: ParsedSummary | null = parsedPayload ? computeSummary(parsedPayload) : null
+  // Min/max ISO date across all parsed transactions, used to seed/bound the picker.
+  const fileDateBounds = parsedPayload ? computeDateBounds(parsedPayload.transactions) : null
+
+  // Transactions actually sent on import. In 'all' mode this is the identity
+  // (same array reference) so nothing changes for full restores; in 'range'
+  // mode rows with missing/invalid dates are dropped.
+  const filteredTransactions = (() => {
+    if (!parsedPayload) return []
+    if (optDateMode !== 'range') return parsedPayload.transactions
+    return parsedPayload.transactions.filter((t) => {
+      const d = normalizeTxnDate(t.txn_date)
+      if (d === null) return false
+      return rangeStart <= d && d <= rangeEnd
+    })
+  })()
+
+  const parsedSummary: ParsedSummary | null = parsedPayload
+    ? computeSummary({ ...parsedPayload, transactions: filteredTransactions })
+    : null
 
   async function handleParseImportFile(file: File) {
     setImportError(null)
@@ -122,6 +167,11 @@ export function useBackupImport() {
       setOptImportTransactions(true)
       setOptImportBudgetPlans(true)
       setOptMappingMode(Array.isArray(payload.category_mappings) ? 'explicit' : 'derive')
+      // Reset the date filter and prefill the range with the file's bounds.
+      const bounds = computeDateBounds(payload.transactions)
+      setOptDateMode('all')
+      setRangeStart(bounds?.min ?? '')
+      setRangeEnd(bounds?.max ?? '')
     } catch {
       setImportError('Could not read the selected file.')
     } finally {
@@ -145,7 +195,7 @@ export function useBackupImport() {
         categories: parsedPayload.categories ?? [],
         tags: parsedPayload.tags ?? [],
         persons: parsedPayload.persons ?? [],
-        transactions: optImportTransactions ? parsedPayload.transactions : [],
+        transactions: optImportTransactions ? filteredTransactions : [],
         budget_plans: optImportBudgetPlans ? (parsedPayload.budget_plans ?? []) : [],
       }
       if (optMappingMode === 'explicit') {
@@ -204,6 +254,14 @@ export function useBackupImport() {
     setOptImportBudgetPlans,
     optMappingMode,
     setOptMappingMode,
+    optDateMode,
+    setOptDateMode,
+    rangeStart,
+    setRangeStart,
+    rangeEnd,
+    setRangeEnd,
+    fileDateBounds,
+    filteredTxnCount: filteredTransactions.length,
     handleParseImportFile,
     handleCancelImport,
     handleConfirmImport,

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/Button'
 
-import type { MappingMode, ParsedSummary } from '../hooks/useBackupImport'
+import type { DateMode, MappingMode, ParsedSummary } from '../hooks/useBackupImport'
 
 interface ImportPreviewPanelProps {
   parsedSummary: ParsedSummary
@@ -11,6 +11,14 @@ interface ImportPreviewPanelProps {
   setOptImportBudgetPlans: (v: boolean) => void
   optMappingMode: MappingMode
   setOptMappingMode: (m: MappingMode) => void
+  optDateMode: DateMode
+  setOptDateMode: (m: DateMode) => void
+  rangeStart: string
+  setRangeStart: (v: string) => void
+  rangeEnd: string
+  setRangeEnd: (v: string) => void
+  fileDateBounds: { min: string; max: string } | null
+  filteredTxnCount: number
   importingJSON: boolean
   onConfirm: () => void
   onCancel: () => void
@@ -25,6 +33,14 @@ export function ImportPreviewPanel({
   setOptImportBudgetPlans,
   optMappingMode,
   setOptMappingMode,
+  optDateMode,
+  setOptDateMode,
+  rangeStart,
+  setRangeStart,
+  rangeEnd,
+  setRangeEnd,
+  fileDateBounds,
+  filteredTxnCount,
   importingJSON,
   onConfirm,
   onCancel,
@@ -114,6 +130,102 @@ export function ImportPreviewPanel({
             </span>
           </span>
         </label>
+
+        <div
+          style={{
+            marginLeft: 24,
+            opacity: optImportTransactions ? 1 : 0.45,
+          }}
+        >
+          <label
+            className="flex items-start gap-2 text-[12.5px]"
+            style={{
+              color: 'var(--ink)',
+              cursor: optImportTransactions ? 'pointer' : 'default',
+            }}
+          >
+            <input
+              type="radio"
+              name="import-date-mode"
+              checked={optDateMode === 'all'}
+              disabled={!optImportTransactions}
+              onChange={() => setOptDateMode('all')}
+              style={{ marginTop: 3 }}
+            />
+            <span>Import everything</span>
+          </label>
+          <label
+            className="mt-2 flex items-start gap-2 text-[12.5px]"
+            style={{
+              color: 'var(--ink)',
+              cursor: optImportTransactions ? 'pointer' : 'default',
+            }}
+          >
+            <input
+              type="radio"
+              name="import-date-mode"
+              checked={optDateMode === 'range'}
+              disabled={!optImportTransactions}
+              onChange={() => setOptDateMode('range')}
+              style={{ marginTop: 3 }}
+            />
+            <span>Only a date range</span>
+          </label>
+
+          {optDateMode === 'range' && (
+            <div style={{ marginLeft: 24, marginTop: 6 }}>
+              <div className="flex flex-wrap gap-3">
+                <label
+                  className="text-[11.5px]"
+                  style={{ color: 'var(--ink-3)', display: 'grid', gap: 2 }}
+                >
+                  From
+                  <input
+                    type="date"
+                    value={rangeStart}
+                    disabled={!optImportTransactions}
+                    min={fileDateBounds?.min}
+                    max={fileDateBounds?.max}
+                    onChange={(e) => setRangeStart(e.target.value)}
+                    className="text-[12.5px]"
+                    style={{
+                      color: 'var(--ink)',
+                      background: 'var(--surface)',
+                      border: '1px solid var(--line)',
+                      borderRadius: 'var(--radius)',
+                      padding: '4px 6px',
+                    }}
+                  />
+                </label>
+                <label
+                  className="text-[11.5px]"
+                  style={{ color: 'var(--ink-3)', display: 'grid', gap: 2 }}
+                >
+                  To
+                  <input
+                    type="date"
+                    value={rangeEnd}
+                    disabled={!optImportTransactions}
+                    min={fileDateBounds?.min}
+                    max={fileDateBounds?.max}
+                    onChange={(e) => setRangeEnd(e.target.value)}
+                    className="text-[12.5px]"
+                    style={{
+                      color: 'var(--ink)',
+                      background: 'var(--surface)',
+                      border: '1px solid var(--line)',
+                      borderRadius: 'var(--radius)',
+                      padding: '4px 6px',
+                    }}
+                  />
+                </label>
+              </div>
+              <p className="text-[11.5px]" style={{ color: 'var(--ink-3)', marginTop: 6 }}>
+                {filteredTxnCount} transaction{filteredTxnCount === 1 ? '' : 's'} in range.
+              </p>
+            </div>
+          )}
+        </div>
 
         {parsedSummary.bpCount > 0 && (
           <label

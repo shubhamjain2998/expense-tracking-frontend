@@ -25,6 +25,14 @@ export function BackupImportSection() {
     setOptImportBudgetPlans,
     optMappingMode,
     setOptMappingMode,
+    optDateMode,
+    setOptDateMode,
+    rangeStart,
+    setRangeStart,
+    rangeEnd,
+    setRangeEnd,
+    fileDateBounds,
+    filteredTxnCount,
     handleParseImportFile,
     handleCancelImport,
     handleConfirmImport,
@@ -125,6 +133,14 @@ export function BackupImportSection() {
             setOptImportBudgetPlans={setOptImportBudgetPlans}
             optMappingMode={optMappingMode}
             setOptMappingMode={setOptMappingMode}
+            optDateMode={optDateMode}
+            setOptDateMode={setOptDateMode}
+            rangeStart={rangeStart}
+            setRangeStart={setRangeStart}
+            rangeEnd={rangeEnd}
+            setRangeEnd={setRangeEnd}
+            fileDateBounds={fileDateBounds}
+            filteredTxnCount={filteredTxnCount}
             importingJSON={importingJSON}
             onConfirm={handleConfirmImport}
             onCancel={handleCancelImport}
