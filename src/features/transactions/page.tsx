@@ -238,6 +238,7 @@ export function TransactionsPage() {
   }
 
   function handleDragStart(uid: string, e: React.DragEvent) {
+    droppedOnCategoryRef.current = false
     // If the dragged row is part of a multi-select, drag all checked rows.
     // Otherwise drag just the row the user grabbed — preserves the
     // single-row workflow when no checkboxes are involved.
