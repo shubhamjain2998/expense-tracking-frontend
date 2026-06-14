@@ -474,23 +474,21 @@ export function TransactionsPage() {
                 </div>
               )
             })()}
-          <div style={{ position: 'relative' }}>
-            {(draggingUids.size > 0 || pendingCategoryId !== null) && categories.length > 0 && (
-              <DragDropOverlay
-                categories={categories}
-                tags={tagsQuery.data ?? []}
-                isDragging={draggingUids.size > 0 && pendingCategoryId === null}
-                dragOverCatId={dragOverCatId}
-                setDragOverCatId={setDragOverCatId}
-                pendingCategoryId={pendingCategoryId}
-                pendingTagIds={pendingTagIds}
-                onDropOnCategory={handleDropOnCategory}
-                onToggleTag={handleToggleTag}
-                onApply={handleApply}
-                onCancel={handleCancelPending}
-              />
-            )}
-          </div>
+          {categories.length > 0 && (
+            <DragDropOverlay
+              categories={categories}
+              tags={tagsQuery.data ?? []}
+              isDragging={draggingUids.size > 0 && pendingCategoryId === null}
+              dragOverCatId={dragOverCatId}
+              setDragOverCatId={setDragOverCatId}
+              pendingCategoryId={pendingCategoryId}
+              pendingTagIds={pendingTagIds}
+              onDropOnCategory={handleDropOnCategory}
+              onToggleTag={handleToggleTag}
+              onApply={handleApply}
+              onCancel={handleCancelPending}
+            />
+          )}
           {checkedUids.size > 0 &&
             (() => {
               // Only PENDING rows can be auto-categorised. Filter the selection
