@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 
+import { Avatar } from '@/components/ui/Avatar'
 import { Icon } from '@/components/ui/Icon'
 import { useAuth } from '@/contexts/AuthContext'
+import { useAvatarPrefs } from '@/hooks/useAvatarPrefs'
 import { useSidebarStats } from '@/hooks/useSidebarStats'
 import { useThemeContext } from '@/hooks/useThemeContext'
 import { formatCompact } from '@/lib/format'
@@ -23,13 +25,10 @@ export function TopNav() {
   const { isDark, toggleTheme } = useThemeContext()
   const { spent, totalBudget, pendingCount, pendingItems } = useSidebarStats()
   const initials = getInitials(email)
+  const { prefs } = useAvatarPrefs()
+  const displayName = localStorage.getItem('pf_display_name') || email.split('@')[0] || ''
 
   const [profileOpen, setProfileOpen] = useState(false)
-  const [displayName, setDisplayName] = useState(
-    () => localStorage.getItem('pf_display_name') || email.split('@')[0] || ''
-  )
-  const [editingName, setEditingName] = useState(false)
-  const [nameInput, setNameInput] = useState(displayName)
 
   const popoverRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -44,21 +43,11 @@ export function TopNav() {
         !triggerRef.current.contains(e.target as Node)
       ) {
         setProfileOpen(false)
-        setEditingName(false)
       }
     }
     document.addEventListener('pointerdown', onPointerDown)
     return () => document.removeEventListener('pointerdown', onPointerDown)
   }, [profileOpen])
-
-  function saveName() {
-    const trimmed = nameInput.trim()
-    if (trimmed) {
-      localStorage.setItem('pf_display_name', trimmed)
-      setDisplayName(trimmed)
-    }
-    setEditingName(false)
-  }
 
   function handleSignOut() {
     logout()
@@ -150,94 +139,24 @@ export function TopNav() {
         <div style={{ position: 'relative' }}>
           <button
             ref={triggerRef}
-            onClick={() => {
-              setProfileOpen((v) => !v)
-              setNameInput(displayName)
-              setEditingName(false)
-            }}
+            onClick={() => setProfileOpen((v) => !v)}
             className="topnav-avatar"
             aria-label="Profile and settings"
             aria-expanded={profileOpen}
+            style={{ padding: 0, background: 'none', border: 'none', cursor: 'pointer' }}
           >
-            {initials}
+            <Avatar initials={initials} prefs={prefs} size={32} />
           </button>
 
           {profileOpen && (
             <div ref={popoverRef} className="topnav-profile-popover">
               {/* Header */}
               <div className="topnav-profile-header">
-                <div className="topnav-profile-av">{initials}</div>
+                <Avatar initials={initials} prefs={prefs} size={40} />
                 <div style={{ minWidth: 0 }}>
                   <p className="topnav-profile-name">{displayName}</p>
                   <p className="topnav-profile-email">{email}</p>
                 </div>
-              </div>
-
-              {/* Display name */}
-              <div className="topnav-profile-section">
-                <p className="eyebrow mb-1.5">Display name</p>
-                {editingName ? (
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    <input
-                      autoFocus
-                      value={nameInput}
-                      onChange={(e) => setNameInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') saveName()
-                        if (e.key === 'Escape') setEditingName(false)
-                      }}
-                      className="input"
-                      style={{ fontSize: 12, height: 28, flex: 1 }}
-                    />
-                    <button
-                      onClick={saveName}
-                      className="btn ghost icon sm"
-                      style={{ color: 'var(--accent)' }}
-                      aria-label="Save"
-                    >
-                      <Icon name="check" size={13} />
-                    </button>
-                    <button
-                      onClick={() => setEditingName(false)}
-                      className="btn ghost icon sm"
-                      aria-label="Cancel"
-                    >
-                      <Icon name="close" size={13} />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => {
-                      setNameInput(displayName)
-                      setEditingName(true)
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      width: '100%',
-                      background: 'var(--surface-2)',
-                      border: '1px solid var(--line)',
-                      borderRadius: 'var(--radius)',
-                      padding: '5px 8px',
-                      cursor: 'pointer',
-                      gap: 6,
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: 12,
-                        color: 'var(--ink)',
-                        overflow: 'hidden',
-                        whiteSpace: 'nowrap',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {displayName}
-                    </span>
-                    <Icon name="edit" size={12} style={{ color: 'var(--ink-4)' }} />
-                  </button>
-                )}
               </div>
 
               {/* Settings link */}
