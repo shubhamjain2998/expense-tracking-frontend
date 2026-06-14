@@ -6,6 +6,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { AuroraBackground } from './components/layout/AuroraBackground'
 import { Layout } from './components/layout/Layout'
 import { BackendStatus } from './components/ui/BackendStatus'
 import { Skeleton } from './components/ui/Skeleton'
@@ -68,6 +69,7 @@ function AppWithProviders() {
     <ThemeContext.Provider value={{ isDark, toggleTheme }}>
       <ToastContext.Provider value={toast}>
         <div data-theme={theme}>
+          <AuroraBackground />
           <BrowserRouter>
             <ErrorBoundary>
               <Suspense fallback={<RouteFallback />}>

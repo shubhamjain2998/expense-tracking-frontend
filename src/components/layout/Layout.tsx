@@ -19,7 +19,7 @@ export function Layout() {
   const location = useLocation()
 
   return (
-    <div className="has-bottom-tabs flex h-screen flex-col overflow-hidden bg-[var(--bg)]">
+    <div className="has-bottom-tabs flex h-screen flex-col overflow-hidden bg-transparent">
       <TopNav />
       <main className="flex-1 overflow-x-hidden overflow-y-auto">
         <div className="mx-auto max-w-[1380px] px-4 pt-5 pb-14 md:px-7 md:pt-6">

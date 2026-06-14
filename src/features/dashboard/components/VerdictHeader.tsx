@@ -56,7 +56,7 @@ export function VerdictHeader({
   const status = STATUS_META[verdict.status]
 
   return (
-    <header className="verdict-header flex flex-wrap items-start justify-between gap-4 rounded-[18px] border border-[var(--line)] bg-[linear-gradient(160deg,color-mix(in_oklch,var(--accent)_8%,var(--surface)),var(--surface))] p-6">
+    <header className="verdict-header glass flex flex-wrap items-start justify-between gap-4 rounded-[18px] border border-[var(--line)] bg-[linear-gradient(160deg,color-mix(in_oklch,var(--accent)_8%,var(--surface)),var(--surface))] p-6">
       {/* Left: verdict */}
       <div className="min-w-0 flex-1">
         <p className="eyebrow mb-3">{`OVERVIEW · ${currentMonthLabel.toUpperCase()} ${displayYear}`}</p>
