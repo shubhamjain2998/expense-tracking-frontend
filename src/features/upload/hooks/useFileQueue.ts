@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { useToastContext } from '@/hooks/useToastContext'
 import { PDF_PASSWORD_INCORRECT, PDF_PASSWORD_REQUIRED } from '@/lib/api/uploads'
 import { celebrate } from '@/lib/confetti'
+import { calendarToPeriod } from '@/lib/period'
 
 import type { FileStatus, FileUpload } from '../types'
 
@@ -13,6 +15,7 @@ import { useStatementPreview } from './useStatementPreview'
 export function useFileQueue() {
   const navigate = useNavigate()
   const toast = useToastContext()
+  const { mode } = usePeriodMode()
   const { previewFile } = useStatementPreview()
   const { importFile } = useStatementImport()
 
@@ -223,7 +226,10 @@ export function useFileQueue() {
       // user lands on the view that contains what they just imported.
       if (latestTxnDate) {
         const d = new Date(latestTxnDate)
-        navigate(`/transactions?year=${d.getFullYear()}&month=${d.getMonth() + 1}`)
+        // The `month` param is a period month — convert the calendar date
+        // first, otherwise FY mode lands three months ahead.
+        const { year, month } = calendarToPeriod(d.getFullYear(), d.getMonth() + 1, mode)
+        navigate(`/transactions?year=${year}&month=${month}`)
       } else {
         navigate('/transactions')
       }

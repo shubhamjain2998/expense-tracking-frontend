@@ -134,7 +134,7 @@ export function DashboardPage() {
     return rates.reduce((s, r) => s + r, 0) / rates.length
   }, [data.incomeTrendData])
 
-  const pendingHref = pendingTransactionsUrl(data.pendingItems)
+  const pendingHref = pendingTransactionsUrl(data.pendingItems, mode)
 
   const insightsResult = useMemo(
     () =>

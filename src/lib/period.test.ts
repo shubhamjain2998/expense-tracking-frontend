@@ -1,6 +1,7 @@
 import {
   DEFAULT_PERIOD_MODE,
   PERIOD_MODE_STORAGE_KEY,
+  calendarToPeriod,
   formatYearLabel,
   getCurrentPeriod,
   loadPeriodMode,
@@ -116,6 +117,27 @@ describe('getCurrentPeriod', () => {
   it('fy mode: January 2025 → {year:2024, month:10}', () => {
     const now = new Date(2025, 0, 1) // January is month index 0
     expect(getCurrentPeriod('fy', now)).toEqual({ year: 2024, month: 10 })
+  })
+})
+
+describe('calendarToPeriod', () => {
+  it('calendar mode is a pass-through', () => {
+    expect(calendarToPeriod(2026, 9, 'calendar')).toEqual({ year: 2026, month: 9 })
+  })
+
+  it('fy mode: calendar September 2026 → FY 26-27 month 6', () => {
+    expect(calendarToPeriod(2026, 9, 'fy')).toEqual({ year: 2026, month: 6 })
+  })
+
+  it('fy mode: calendar January 2026 belongs to FY 25-26 month 10', () => {
+    expect(calendarToPeriod(2026, 1, 'fy')).toEqual({ year: 2025, month: 10 })
+  })
+
+  it('fy mode: round-trips with resolvePeriodMonth for every calendar month', () => {
+    for (let m = 1; m <= 12; m++) {
+      const p = calendarToPeriod(2026, m, 'fy')
+      expect(resolvePeriodMonth(p.year, p.month, 'fy')).toEqual({ year: 2026, month: m })
+    }
   })
 })
 

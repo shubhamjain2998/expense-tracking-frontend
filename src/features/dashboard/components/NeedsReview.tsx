@@ -4,6 +4,7 @@ import { CheckDraw } from '@/components/ui/CheckDraw'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Icon } from '@/components/ui/Icon'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { formatCompact, formatShortDate } from '@/lib/format'
 import { pendingTransactionsUrl } from '@/lib/pendingNav'
 import type { PendingManualTransaction } from '@/types/transaction'
@@ -14,6 +15,8 @@ interface NeedsReviewProps {
 }
 
 export function NeedsReview({ pendingItems, isLoading }: NeedsReviewProps) {
+  const { mode } = usePeriodMode()
+
   return (
     <div>
       <div className="section-head">
@@ -27,7 +30,11 @@ export function NeedsReview({ pendingItems, isLoading }: NeedsReviewProps) {
         </div>
         {pendingItems.length > 0 && (
           <div className="right">
-            <Link to={pendingTransactionsUrl(pendingItems)} className="btn" style={{ gap: 6 }}>
+            <Link
+              to={pendingTransactionsUrl(pendingItems, mode)}
+              className="btn"
+              style={{ gap: 6 }}
+            >
               Review all
               <Icon name="arrow_forward" size={13} />
             </Link>

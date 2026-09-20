@@ -5,6 +5,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Icon } from '@/components/ui/Icon'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAvatarPrefs } from '@/hooks/useAvatarPrefs'
+import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { useSidebarStats } from '@/hooks/useSidebarStats'
 import { useThemeContext } from '@/hooks/useThemeContext'
 import { formatCompact } from '@/lib/format'
@@ -24,6 +25,7 @@ export function TopNav() {
   const navigate = useNavigate()
   const { isDark, toggleTheme } = useThemeContext()
   const { spent, totalBudget, pendingCount, pendingItems } = useSidebarStats()
+  const { mode } = usePeriodMode()
   const initials = getInitials(email)
   const { prefs } = useAvatarPrefs()
   const displayName = localStorage.getItem('pf_display_name') || email.split('@')[0] || ''
@@ -54,7 +56,7 @@ export function TopNav() {
     navigate('/login', { replace: true })
   }
 
-  const txnsTo = pendingCount > 0 ? pendingTransactionsUrl(pendingItems) : '/transactions'
+  const txnsTo = pendingCount > 0 ? pendingTransactionsUrl(pendingItems, mode) : '/transactions'
   const monthLabel = monthShortLabel(new Date().getMonth() + 1, 'calendar')
   const statLabel =
     totalBudget > 0

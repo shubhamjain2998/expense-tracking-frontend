@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 
 import { Icon, type IconName } from '@/components/ui/Icon'
+import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { useSidebarStats } from '@/hooks/useSidebarStats'
 import { pendingTransactionsUrl } from '@/lib/pendingNav'
 
@@ -14,7 +15,8 @@ const TABS: { to: string; icon: IconName; label: string; key: string }[] = [
 
 export function BottomTabBar() {
   const { pendingCount, pendingItems } = useSidebarStats()
-  const txnsTo = pendingCount > 0 ? pendingTransactionsUrl(pendingItems) : '/transactions'
+  const { mode } = usePeriodMode()
+  const txnsTo = pendingCount > 0 ? pendingTransactionsUrl(pendingItems, mode) : '/transactions'
 
   return (
     <nav className="bottom-tab-bar md:hidden" role="navigation" aria-label="Primary">

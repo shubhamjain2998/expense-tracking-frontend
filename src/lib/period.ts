@@ -78,16 +78,20 @@ export function monthShortLabel(periodMonth: number, mode: PeriodMode): string {
   return CALENDAR_MONTHS_SHORT[idx]
 }
 
-/** Returns the period_year and period_month containing today's date. */
-export function getCurrentPeriod(
-  mode: PeriodMode,
-  now = new Date()
-): {
-  year: number
-  month: number
-} {
-  const calYear = now.getFullYear()
-  const calMonth = now.getMonth() + 1 // 1-12
+/**
+ * Translate a calendar (year, month) — e.g. the parts of a `txn_date` — to the
+ * (period_year, period_month) tuple that contains it. Inverse of
+ * `resolvePeriodMonth`.
+ *
+ * Always use this before putting a month into a `?month=` URL param or
+ * comparing it against a page's `month` state: those are period months, so in
+ * FY mode a raw calendar month is off by three (September → December).
+ */
+export function calendarToPeriod(
+  calYear: number,
+  calMonth: number,
+  mode: PeriodMode
+): { year: number; month: number } {
   if (mode === 'calendar') {
     return { year: calYear, month: calMonth }
   }
@@ -96,6 +100,17 @@ export function getCurrentPeriod(
   // Map calendar month -> FY index (1=April, …, 12=March).
   const fyMonth = ((calMonth - 4 + 12) % 12) + 1
   return { year: fyYear, month: fyMonth }
+}
+
+/** Returns the period_year and period_month containing today's date. */
+export function getCurrentPeriod(
+  mode: PeriodMode,
+  now = new Date()
+): {
+  year: number
+  month: number
+} {
+  return calendarToPeriod(now.getFullYear(), now.getMonth() + 1, mode)
 }
 
 /**

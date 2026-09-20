@@ -10,7 +10,7 @@ import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { useToastContext } from '@/hooks/useToastContext'
 import { getPendingManual } from '@/lib/api/transactions'
 import { pendingTransactionsUrl } from '@/lib/pendingNav'
-import { getCurrentPeriod, loadPeriodMode, monthLongLabel } from '@/lib/period'
+import { calendarToPeriod, getCurrentPeriod, monthLongLabel } from '@/lib/period'
 import { qk } from '@/lib/queryKeys'
 import type { ProcessedTransactionItem } from '@/types/transaction'
 
@@ -34,7 +34,10 @@ import type { SortCol, SortDir, StatusFilter } from './types'
 export function TransactionsPage() {
   const { mode } = usePeriodMode()
   const [searchParams, setSearchParams] = useSearchParams()
-  const initial = getCurrentPeriod(loadPeriodMode())
+  // `mode` comes from the server preference (with the localStorage value as a
+  // fallback while /auth/me is in flight), so the default month matches the
+  // mode the rest of the page renders in.
+  const initial = getCurrentPeriod(mode)
 
   const year = Number(searchParams.get('year')) || initial.year
   const month = Number(searchParams.get('month')) || initial.month
@@ -181,10 +184,14 @@ export function TransactionsPage() {
     allTxns.length === 0 &&
     allPendingItems.length > 0 &&
     allPendingItems.some((item) => {
-      const [y, m] = item.txn_date.split('-').map(Number)
-      return y !== year || m !== month
+      const [calY, calM] = item.txn_date.split('-').map(Number)
+      // txn_date is a calendar date; `year`/`month` are period values.
+      const p = calendarToPeriod(calY, calM, mode)
+      return p.year !== year || p.month !== month
     })
-  const pendingElsewhereUrl = pendingInOtherMonths ? pendingTransactionsUrl(allPendingItems) : null
+  const pendingElsewhereUrl = pendingInOtherMonths
+    ? pendingTransactionsUrl(allPendingItems, mode)
+    : null
 
   function prevMonth() {
     setSelectedUid(null)
