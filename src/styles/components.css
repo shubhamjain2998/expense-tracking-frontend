@@ -2229,6 +2229,20 @@ html.dark .auth-seal {
   color: var(--warn);
 }
 
+/* ─── hero number (Category drill-down) ──────────────────────────────── */
+/* Genuinely missing: Home's VerdictBlock uses the smaller `.money .v` KPI
+   size for its four figures, but the category drill-down (/c/:categoryId)
+   shows ONE amount at true hero scale — MASTER.md §3's "Hero number" row.
+   Compose with `.pos`/`.neg` for the sign. */
+.hero-num {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(40px, 6vw, 64px);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ─── verdict / hero (Home block 1) ──────────────────────────────────── */
 .verdict {
   display: grid;

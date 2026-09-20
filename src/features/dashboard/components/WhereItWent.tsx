@@ -13,6 +13,12 @@ interface WhereItWentProps {
   budgetRows: SummaryRow[]
   /** Fraction of the month elapsed, 0–1 — position of the pace tick. */
   paceAt: number
+  /** The period year/month currently selected on Home (searchParams
+   *  convention, not calendar) — carried into the row link so the category
+   *  drill-down opens on the same month the user was looking at instead of
+   *  defaulting to today's (possibly empty) month. */
+  year: number
+  month: number
   isLoading: boolean
 }
 
@@ -36,7 +42,14 @@ function toRow(r: SummaryRow): Row {
  * CategoryDeepDive and CategoryTransactionStats — the row's link target IS
  * the deep dive now (/c/:categoryId).
  */
-export function WhereItWent({ summaryRows, budgetRows, paceAt, isLoading }: WhereItWentProps) {
+export function WhereItWent({
+  summaryRows,
+  budgetRows,
+  paceAt,
+  year,
+  month,
+  isLoading,
+}: WhereItWentProps) {
   const [sort, setSort] = useState<SortMode>('amount')
 
   // Amount mode: every category with spend, largest first — the old
@@ -105,7 +118,7 @@ export function WhereItWent({ summaryRows, budgetRows, paceAt, isLoading }: Wher
               <Link
                 key={row.category}
                 className="bar-row"
-                to={`/c/${encodeURIComponent(row.category)}`}
+                to={`/c/${encodeURIComponent(row.category)}?year=${year}&month=${month}`}
               >
                 <span className="name">{row.category}</span>
                 <span className="track">

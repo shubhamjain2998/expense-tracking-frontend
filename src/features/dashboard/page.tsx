@@ -204,6 +204,8 @@ export function DashboardPage() {
           summaryRows={data.summaryRows}
           budgetRows={data.budgetRows}
           paceAt={paceAt}
+          year={year}
+          month={month}
           isLoading={data.summaryLoading}
         />
       </motion.div>
