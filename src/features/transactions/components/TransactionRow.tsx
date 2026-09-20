@@ -109,11 +109,11 @@ export function TransactionRow({
 
       {/* Date */}
       <td
+        className="num"
         style={{
           padding: '11px 12px',
           fontSize: 12.5,
           color: 'var(--ink-3)',
-          fontVariantNumeric: 'tabular-nums',
           whiteSpace: 'nowrap',
         }}
       >
@@ -154,9 +154,10 @@ export function TransactionRow({
       </td>
 
       {/* Category */}
-      <td style={{ padding: '11px 12px' }}>
+      <td className="hide-sm" style={{ padding: '11px 12px' }}>
         {txn.kind === 'pending' ? (
           <span
+            className="tag"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -191,6 +192,7 @@ export function TransactionRow({
           </span>
         ) : isDeleted ? (
           <span
+            className="tag"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -207,6 +209,7 @@ export function TransactionRow({
           </span>
         ) : (
           <span
+            className="tag"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -254,15 +257,11 @@ export function TransactionRow({
       </td>
 
       {/* Tags */}
-      <td className="txn-col-tags" style={{ padding: '11px 12px' }}>
+      <td className="txn-col-tags hide-sm" style={{ padding: '11px 12px' }}>
         {txn.tags.length > 0 ? (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+          <div className="tagset">
             {txn.tags.map((tag) => (
-              <span
-                key={tag.id}
-                className="chip"
-                style={{ height: 18, padding: '0 6px', fontSize: 9.5 }}
-              >
+              <span key={tag.id} className="tag">
                 {tag.name}
               </span>
             ))}
@@ -272,9 +271,10 @@ export function TransactionRow({
         )}
       </td>
 
-      {/* Split */}
+      {/* Split — overlapping avatars (mock's "With" column) when the
+          transaction is split, otherwise a faint add-split affordance. */}
       <td
-        className="txn-col-split"
+        className="txn-col-split hide-sm"
         style={{ padding: '11px 12px', textAlign: 'center' }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -283,22 +283,26 @@ export function TransactionRow({
             if (txn.processedOriginal) setEditingTxn(txn.processedOriginal)
             else if (txn.rawOriginal) setSelectedUid(txn.uid)
           }}
-          className={split ? 'btn ghost sm' : 'btn ghost icon sm'}
+          className="btn ghost icon sm"
           title={split ? `Split ${split.peopleCount} ways — ${split.breakdown}` : 'Add split'}
           style={{
             margin: '0 auto',
-            gap: 3,
-            padding: split ? '0 6px' : undefined,
             opacity: split ? 1 : 0.3,
             color: split ? 'var(--accent)' : 'var(--ink-3)',
           }}
           disabled={isDeleted}
         >
-          <Icon name="call_split" size={14} />
-          {split && (
-            <span className="num" style={{ fontSize: 11, fontWeight: 600 }}>
-              {split.peopleCount}
+          {split ? (
+            <span className="people">
+              <span className="avatar">Y</span>
+              {txn.shares.slice(0, 2).map((s, i) => (
+                <span key={i} className="avatar">
+                  {s.person_name?.[0]?.toUpperCase() ?? '?'}
+                </span>
+              ))}
             </span>
+          ) : (
+            <Icon name="call_split" size={14} />
           )}
         </button>
       </td>
@@ -307,6 +311,7 @@ export function TransactionRow({
           For pending rows that haven't been classified yet, fall back to a
           credit indicator based on sign, but never assert "income". */}
       <td
+        className="num"
         style={{
           padding: '11px 12px',
           textAlign: 'right',
@@ -320,7 +325,6 @@ export function TransactionRow({
                 : isPendingCredit
                   ? 'var(--pos)'
                   : 'var(--ink)',
-          fontVariantNumeric: 'tabular-nums',
           whiteSpace: 'nowrap',
         }}
       >

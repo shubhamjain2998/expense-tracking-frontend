@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Icon } from '@/components/ui/Icon'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 
+import { BackupImportSection } from './components/BackupImportSection'
 import { DangerZoneSection } from './components/DangerZoneSection'
 import { OnboardingResetSection } from './components/OnboardingResetSection'
 import { PersonsSection } from './components/PersonsSection'
@@ -14,6 +15,7 @@ const navItems = [
   { id: 'persons', label: 'Persons' },
   { id: 'tags', label: 'Tags' },
   { id: 'period', label: 'Financial year' },
+  { id: 'backup', label: 'Backup' },
   { id: 'privacy', label: 'Privacy & onboarding' },
   { id: 'danger', label: 'Danger zone' },
 ]
@@ -169,6 +171,8 @@ export function SettingsPage() {
               </div>
             </section>
           )}
+
+          {activeNav === 'backup' && <BackupImportSection />}
 
           {activeNav === 'privacy' && <OnboardingResetSection />}
           {activeNav === 'danger' && <DangerZoneSection />}

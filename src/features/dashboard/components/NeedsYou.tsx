@@ -241,7 +241,10 @@ export function NeedsYou({
             icon="upload_file"
             title="Nothing waiting on you"
             description="Import a statement to bring in your latest transactions."
-            action={{ label: 'Import a statement', onClick: () => navigate('/upload') }}
+            action={{
+              label: 'Import a statement',
+              onClick: () => navigate('/transactions?import=pdf'),
+            }}
           />
         ) : (
           <div className="alerts">

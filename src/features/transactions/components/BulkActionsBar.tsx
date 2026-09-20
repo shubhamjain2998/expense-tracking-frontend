@@ -76,20 +76,15 @@ export function BulkActionsBar({
     <div
       className="animate-fade-down"
       style={{
-        position: 'sticky',
-        bottom: 0,
-        zIndex: 10,
         display: 'flex',
         alignItems: 'center',
-        gap: 10,
-        padding: '8px 14px',
-        marginTop: 12,
-        background: 'var(--accent-soft)',
-        border: '1px solid color-mix(in oklch, var(--accent) 30%, transparent)',
-        borderRadius: 'var(--radius)',
+        gap: 8,
+        paddingLeft: 10,
+        marginLeft: 2,
+        borderLeft: '1px solid var(--line-strong)',
       }}
     >
-      <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--accent)', flex: 1 }}>
+      <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink-2)' }}>
         {count} selected
       </span>
 

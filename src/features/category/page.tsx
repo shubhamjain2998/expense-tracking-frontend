@@ -150,11 +150,15 @@ export function CategoryPage() {
 
   const isLoading = historyLoading || budgetQuery.isLoading || overridesQuery.isLoading
 
-  // "Open in Transactions" — Transactions doesn't read a category filter
-  // from the URL (out of scope this phase), so this lands on the right
-  // period instead of a category-filtered view.
+  // "Open in Transactions" — pre-filters to this category via the
+  // `?category=<id>` param Transactions now reads on mount. `category_id`
+  // comes off any matching transaction since this page only has the
+  // category's NAME (see the class comment above), not a separate id.
   const txnPeriod = calendarToPeriod(calYear, calMonth, mode)
-  const openInTransactionsHref = `/transactions?year=${txnPeriod.year}&month=${txnPeriod.month}`
+  const matchedCategoryId = allHistory.find((t) => t.category === category)?.category_id
+  const openInTransactionsHref = `/transactions?year=${txnPeriod.year}&month=${txnPeriod.month}${
+    matchedCategoryId ? `&category=${matchedCategoryId}` : ''
+  }`
 
   if (!historyLoading && !categoryExists) {
     return (

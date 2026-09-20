@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 
 import { AddTransactionDialog } from '@/components/ui/AddTransactionDialog'
 import { Icon } from '@/components/ui/Icon'
@@ -54,7 +54,19 @@ export function TransactionsPage() {
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [search, setSearch] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('')
+  // URL-driven like year/month — Category's "Open in Transactions" link can
+  // pre-filter this way (see CategoryPage's openInTransactionsHref).
+  const categoryFilter = searchParams.get('category') ?? ''
+  function setCategoryFilter(v: string) {
+    setSearchParams(
+      (p) => {
+        if (v) p.set('category', v)
+        else p.delete('category')
+        return p
+      },
+      { replace: true }
+    )
+  }
   const [tagFilter, setTagFilter] = useState('')
   const [showDeleted, setShowDeleted] = useState(false)
   const [selectedUid, setSelectedUid] = useState<string | null>(null)
@@ -80,7 +92,6 @@ export function TransactionsPage() {
     }
   }
 
-  const navigate = useNavigate()
   const toast = useToastContext()
   const { rawQuery, processedQuery, categoriesQuery, tagsQuery } = useTransactionsData(
     year,
@@ -162,8 +173,8 @@ export function TransactionsPage() {
   })
 
   const pendingCount = allTxns.filter((t) => t.kind === 'pending').length
-  const incomeCount = allTxns.filter((t) => t.kind !== 'deleted' && t.txnType === 'income').length
   const deletedCount = allTxns.filter((t) => t.kind === 'deleted').length
+  const allCount = allTxns.filter((t) => t.kind !== 'deleted').length
   // Heading reflects the active tab/filter so the count and sum match the
   // visible table (e.g. "Processed" tab shows the processed-only total).
   const visibleForHeading = filtered.filter((t) => t.kind !== 'deleted')
@@ -402,6 +413,63 @@ export function TransactionsPage() {
     return () => document.removeEventListener('click', handler)
   }, [openMenuUid])
 
+  // Selection count + bulk actions — rendered inline in the toolbar's second
+  // row (FilterBar) rather than as a floating bar. Kept as a variable (not
+  // JSX inline) so the closures below stay readable.
+  let bulkActionsNode: React.ReactNode = null
+  if (checkedUids.size > 0) {
+    // Only PENDING rows can be auto-categorised. Filter the selection down
+    // to their raw IDs so the backend's selective endpoint gets exactly the
+    // rows the user expects.
+    const pendingRawIds = filtered
+      .filter((t) => t.kind === 'pending' && t.rawId && checkedUids.has(t.uid))
+      .map((t) => t.rawId as string)
+
+    const handleBulkCategorise = async (categoryId: string) => {
+      const selected = filtered.filter((t) => checkedUids.has(t.uid) && t.kind !== 'deleted')
+      const tasks = selected.map((txn) => {
+        if (txn.kind === 'pending' && txn.rawId)
+          return quickCategorizeMutation.mutateAsync({
+            rawId: txn.rawId,
+            categoryId,
+            silent: true,
+            ...findBaseContext(txn.description),
+          })
+        if (txn.kind === 'processed' && txn.processedId)
+          return changeCategoryMutation.mutateAsync({
+            procId: txn.processedId,
+            categoryId,
+            silent: true,
+          })
+        return Promise.resolve()
+      })
+      const results = await Promise.allSettled(tasks)
+      const succeeded = results.filter((r) => r.status === 'fulfilled').length
+      const failed = results.length - succeeded
+      if (succeeded > 0) {
+        toast.success(`Categorised ${succeeded} transaction${succeeded === 1 ? '' : 's'}`)
+        setCheckedUids(new Set())
+      }
+      if (failed > 0)
+        toast.error(`Failed to categorise ${failed} transaction${failed === 1 ? '' : 's'}`)
+    }
+
+    bulkActionsNode = (
+      <BulkActionsBar
+        count={checkedUids.size}
+        pendingCount={pendingRawIds.length}
+        categories={categories}
+        autoCategoriseLoading={autoMutation.isPending}
+        onAutoCategorise={() =>
+          autoMutation.mutate(pendingRawIds, { onSettled: () => setCheckedUids(new Set()) })
+        }
+        onCategorise={handleBulkCategorise}
+        onDelete={() => void handleBulkDelete(filtered, checkedUids, setCheckedUids)}
+        onClear={() => setCheckedUids(new Set())}
+      />
+    )
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0, marginTop: -4 }}>
       <TransactionsTabs active={activeTab} onChange={handleTabChange} />
@@ -412,37 +480,46 @@ export function TransactionsPage() {
       {activeTab === 'transactions' && (
         <>
           <TransactionsHeader
+            statusFilter={statusFilter}
+            onStatusFilter={setStatusFilter}
+            allCount={allCount}
+            pendingCount={pendingCount}
+            search={search}
+            onSearch={setSearch}
             year={year}
             month={month}
             mode={mode}
-            allTxnsCount={headingCount}
-            totals={headingTotals}
             onPrevMonth={prevMonth}
             onNextMonth={nextMonth}
-            onManualEntry={() => setShowManualEntry(true)}
-            onUpload={() => navigate('/upload')}
-          />
-          <FilterBar
-            search={search}
-            onSearch={setSearch}
-            statusFilter={statusFilter}
-            onStatusFilter={setStatusFilter}
-            pendingCount={pendingCount}
-            incomeCount={incomeCount}
             categories={categories}
             categoryFilter={categoryFilter}
             onCategoryFilter={setCategoryFilter}
             tags={tagsQuery.data ?? []}
             tagFilter={tagFilter}
             onTagFilter={setTagFilter}
+            onAdd={() => setShowManualEntry(true)}
+          />
+          <FilterBar
+            categories={categories}
+            categoryFilter={categoryFilter}
+            onCategoryFilter={setCategoryFilter}
+            tags={tagsQuery.data ?? []}
+            tagFilter={tagFilter}
+            onTagFilter={setTagFilter}
+            statusFilter={statusFilter}
+            onStatusFilter={setStatusFilter}
             hasActiveFilters={hasActiveFilters}
             onClearFilters={() => {
               setSearch('')
               setCategoryFilter('')
               setTagFilter('')
             }}
+            count={headingCount}
+            totals={headingTotals}
+            pendingCount={pendingCount}
             autoMutation={autoMutation}
             onShowShortcuts={() => setShowShortcuts(true)}
+            bulkActions={bulkActionsNode}
           />
           {pendingElsewhereUrl &&
             (() => {
@@ -496,65 +573,6 @@ export function TransactionsPage() {
               onCancel={handleCancelPending}
             />
           )}
-          {checkedUids.size > 0 &&
-            (() => {
-              // Only PENDING rows can be auto-categorised. Filter the selection
-              // down to their raw IDs so the backend's selective endpoint gets
-              // exactly the rows the user expects.
-              const pendingRawIds = filtered
-                .filter((t) => t.kind === 'pending' && t.rawId && checkedUids.has(t.uid))
-                .map((t) => t.rawId as string)
-
-              async function handleBulkCategorise(categoryId: string) {
-                const selected = filtered.filter(
-                  (t) => checkedUids.has(t.uid) && t.kind !== 'deleted'
-                )
-                const tasks = selected.map((txn) => {
-                  if (txn.kind === 'pending' && txn.rawId)
-                    return quickCategorizeMutation.mutateAsync({
-                      rawId: txn.rawId,
-                      categoryId,
-                      silent: true,
-                      ...findBaseContext(txn.description),
-                    })
-                  if (txn.kind === 'processed' && txn.processedId)
-                    return changeCategoryMutation.mutateAsync({
-                      procId: txn.processedId,
-                      categoryId,
-                      silent: true,
-                    })
-                  return Promise.resolve()
-                })
-                const results = await Promise.allSettled(tasks)
-                const succeeded = results.filter((r) => r.status === 'fulfilled').length
-                const failed = results.length - succeeded
-                if (succeeded > 0) {
-                  toast.success(`Categorised ${succeeded} transaction${succeeded === 1 ? '' : 's'}`)
-                  setCheckedUids(new Set())
-                }
-                if (failed > 0)
-                  toast.error(
-                    `Failed to categorise ${failed} transaction${failed === 1 ? '' : 's'}`
-                  )
-              }
-
-              return (
-                <BulkActionsBar
-                  count={checkedUids.size}
-                  pendingCount={pendingRawIds.length}
-                  categories={categories}
-                  autoCategoriseLoading={autoMutation.isPending}
-                  onAutoCategorise={() =>
-                    autoMutation.mutate(pendingRawIds, {
-                      onSettled: () => setCheckedUids(new Set()),
-                    })
-                  }
-                  onCategorise={handleBulkCategorise}
-                  onDelete={() => void handleBulkDelete(filtered, checkedUids, setCheckedUids)}
-                  onClear={() => setCheckedUids(new Set())}
-                />
-              )
-            })()}
           <TransactionsList
             sorted={sorted}
             filtered={filtered}

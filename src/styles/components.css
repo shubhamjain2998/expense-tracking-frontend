@@ -356,6 +356,21 @@ button.chip:active {
   color: var(--accent);
   border-color: transparent;
 }
+/* Small "x" trigger inside a removable chip (active filter chips). */
+.chip-x {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.chip-x:hover {
+  opacity: 1;
+}
 
 /* Segmented control. */
 .seg {
@@ -2907,6 +2922,82 @@ a.alert:hover {
   display: block;
 }
 
+/* ─── bordered input+icon field (toolbar search, ledger mock) ─────────── */
+.field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink-3);
+  font-size: 13px;
+  min-width: 0;
+}
+.field input {
+  border: 0;
+  outline: 0;
+  background: none;
+  font: inherit;
+  color: var(--ink);
+  width: 100%;
+  min-width: 0;
+}
+.field input::placeholder {
+  color: var(--ink-4);
+}
+
+/* ─── small / strong text utilities (ledger mock) ──────────────────────── */
+.small {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.strong {
+  font-weight: 550;
+}
+
+/* Muted variant of .badge — used for the "All" count in a segmented control
+   so only the state that needs attention (e.g. "Needs review") reads as
+   accent-colored. */
+.badge.quiet {
+  background: var(--surface-2);
+  color: var(--ink-3);
+}
+
+/* Sticky table header — only meaningful once the table scrolls under a
+   fixed topbar; collapses to static on narrow viewports (see mobile block
+   below) since the whole page scrolls there instead. */
+.tbl.sticky th {
+  position: sticky;
+  top: var(--topbar-h);
+  z-index: 2;
+}
+
+/* ─── docked transaction editor (>=1200px) ─────────────────────────────
+   Below 1200px the existing .txn-side-panel behaviour (sticky column on
+   tablet, swipe-down sheet on mobile) is untouched — see the .txn-side-panel
+   rules above. At >=1200px we lay the list and the panel out side by side as
+   a fixed-width docked column, ledger-mock style, instead of an overlay. */
+@media (min-width: 1200px) {
+  .worksplit {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 328px;
+    gap: 16px;
+    align-items: start;
+  }
+  .worksplit > .txn-side-panel {
+    position: static;
+    width: auto;
+    max-height: none;
+    border-left: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+}
+
 /* ─── sparkline ───────────────────────────────────────────────────────── */
 .spark {
   width: 64px;
@@ -2996,5 +3087,8 @@ a.alert:hover {
   }
   .card:has(> .tbl) {
     overflow-x: auto;
+  }
+  .tbl.sticky th {
+    position: static;
   }
 }

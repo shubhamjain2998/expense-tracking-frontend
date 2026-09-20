@@ -56,7 +56,7 @@ export function GettingStartedChecklist({ onDismiss }: GettingStartedChecklistPr
       done: progress.hasUpload,
       title: 'Upload a bank statement',
       helper: 'Drop a PDF — we parse rows in memory and never save the file.',
-      to: '/upload',
+      to: '/transactions?import=pdf',
       cta: 'Go to Upload',
     },
     {

@@ -2,6 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 
+import { formatCurrency } from '@/lib/format'
 import { TransactionsPage } from '@/pages/TransactionsPage'
 
 import { makeProcessedTransaction, makeRawTransaction } from '../factories'
@@ -141,7 +142,7 @@ describe('Bulk selection bar', () => {
     expect(await screen.findByText(/categorised 1 transaction/i)).toBeInTheDocument()
   })
 
-  it('header shows split when both income and expenses are present', async () => {
+  it('toolbar summary shows both totals when income and expenses are present', async () => {
     const expense = makeProcessedTransaction({
       id: 'pe1',
       description: 'Rent',
@@ -163,13 +164,14 @@ describe('Bulk selection bar', () => {
 
     renderWithProviders(<TransactionsPage />, { initialEntries: ['/transactions'] })
 
-    // Both expense and income — header should show the split ("−₹…" and "+₹…")
-    // The exact format depends on en-IN locale in JSDOM; check for presence of
-    // both directional indicators rather than exact currency strings.
+    // Both expense and income — the toolbar's row-2 summary line ("N
+    // transactions · X out · Y in") should carry both figures. This replaces
+    // the old big page heading, which the redesign dropped in favour of the
+    // toolbar summary — see FilterBar.tsx.
     await waitFor(() => {
-      const heading = screen.getByRole('heading', { level: 1 })
-      expect(heading.textContent).toMatch(/−/)
-      expect(heading.textContent).toMatch(/\+/)
+      const summary = screen.getByTestId('txn-summary')
+      expect(summary.textContent).toContain(formatCurrency(5000, { fractionDigits: 0 }))
+      expect(summary.textContent).toContain(formatCurrency(10000, { fractionDigits: 0 }))
     })
   })
 })

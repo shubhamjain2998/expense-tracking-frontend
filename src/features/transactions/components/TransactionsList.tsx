@@ -109,14 +109,14 @@ export function TransactionsList({
             description="Upload a bank-statement PDF to populate this view, or add a transaction by hand."
           />
           <div className="mt-1 flex justify-center">
-            <Link to="/upload" className="btn primary sm" style={{ gap: 4 }}>
+            <Link to="/transactions?import=pdf" className="btn primary sm" style={{ gap: 4 }}>
               <Icon name="upload" size={14} />
               Upload a statement
             </Link>
           </div>
         </div>
       ) : (
-        <div className="flex min-h-0">
+        <div className="worksplit flex min-h-0">
           <div className="min-w-0 flex-1 overflow-x-auto">
             {/* Mobile card list — replaces the table below 767px */}
             <div className="txn-list-mobile list mt-2 md:hidden">
@@ -180,7 +180,10 @@ export function TransactionsList({
                 </div>
               )}
             </div>
-            <table className="tbl txn-table hidden md:table" style={{ tableLayout: 'fixed' }}>
+            <table
+              className="tbl txn-table sticky hidden md:table"
+              style={{ tableLayout: 'fixed' }}
+            >
               <colgroup>
                 <col className="txn-col-check" style={{ width: 36 }} />
                 <col className="txn-col-drag" style={{ width: 32 }} />

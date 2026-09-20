@@ -183,7 +183,7 @@ export function DashboardHeader({
             onMonthChange={onMonthChange}
           />
           <Link
-            to="/upload"
+            to="/transactions?import=pdf"
             className="btn primary hidden gap-[5px] md:inline-flex"
             aria-label="Upload statement"
           >

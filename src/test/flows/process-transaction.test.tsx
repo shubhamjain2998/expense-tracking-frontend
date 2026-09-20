@@ -51,12 +51,12 @@ describe('Process transaction flow', () => {
     await user.clear(searchInput)
     await waitFor(() => expect(table().getByText('Electricity Bill')).toBeInTheDocument())
 
-    // Click "pending" status filter — covers statusFilter branch in the filter fn
-    await user.click(screen.getByRole('button', { name: /pending/i }))
+    // Click "Needs review" status filter — covers statusFilter branch in the filter fn
+    await user.click(screen.getByRole('button', { name: /needs review/i }))
     expect(table().getByText('Supermarket')).toBeInTheDocument()
 
-    // Click "all" to reset
-    await user.click(screen.getByRole('button', { name: /^all$/i }))
+    // Click "All" to reset
+    await user.click(screen.getByRole('button', { name: /^all/i }))
 
     // Navigate to previous month (covers prevMonth / nextMonth)
     await user.click(screen.getByRole('button', { name: /previous month/i }))

@@ -1,9 +1,9 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import { vi } from 'vitest'
 
-import { UploadPage } from '@/pages/UploadPage'
+import { TransactionsPage } from '@/pages/TransactionsPage'
 
 import { renderWithProviders } from '../renderWithProviders'
 
@@ -52,16 +52,15 @@ vi.mock('@/lib/api/uploads', () => ({
   }),
 }))
 
-function UploadRoutes() {
+function TransactionsRoutes() {
   return (
     <Routes>
-      <Route path="/upload" element={<UploadPage />} />
-      <Route path="/transactions" element={<h1>Transactions</h1>} />
+      <Route path="/transactions" element={<TransactionsPage />} />
     </Routes>
   )
 }
 
-describe('PDF upload flow', () => {
+describe('PDF upload flow — via the Transactions Import dialog', () => {
   beforeEach(() => {
     localStorage.setItem('access_token', 'test-token')
   })
@@ -71,18 +70,28 @@ describe('PDF upload flow', () => {
     vi.clearAllMocks()
   })
 
-  it('switches to bulk-paste tab, validates JSON, and imports', async () => {
+  it('`/transactions?import=pdf` (the old /upload redirect target) opens the dialog on the PDF tab', async () => {
+    renderWithProviders(<TransactionsRoutes />, {
+      initialEntries: ['/transactions?import=pdf'],
+    })
+
+    const dialog = await screen.findByRole('dialog', { name: /import transactions/i })
+    // The PDF tab is active by default — its dropzone copy is visible.
+    expect(within(dialog).getByText(/drop a pdf statement here/i)).toBeInTheDocument()
+  })
+
+  it('opens the Import menu, switches to Paste rows, validates JSON, and imports', async () => {
     const user = userEvent.setup()
-    renderWithProviders(<UploadRoutes />, { initialEntries: ['/upload'] })
+    renderWithProviders(<TransactionsRoutes />, { initialEntries: ['/transactions'] })
 
-    await screen.findByRole('heading', { name: /import transactions/i })
+    await user.click(await screen.findByRole('button', { name: /^import$/i }))
+    await user.click(await screen.findByRole('menuitem', { name: /paste rows/i }))
 
-    // Switch to the "Bulk paste" tab
-    await user.click(screen.getByRole('button', { name: /bulk paste/i }))
+    const dialog = await screen.findByRole('dialog', { name: /import transactions/i })
 
     // Paste an LLM-shaped JSON payload into the textarea — pasting (not
     // typing key-by-key) keeps the parse memo from running for every keystroke.
-    const textarea = screen.getByLabelText(/llm json output/i)
+    const textarea = within(dialog).getByLabelText(/llm json output/i)
     const payload = JSON.stringify({
       schema_version: 1,
       rows: [{ txn_date: '2026-05-01', description: 'Coffee Shop', amount: -50 }],
@@ -91,30 +100,33 @@ describe('PDF upload flow', () => {
     await user.paste(payload)
 
     // Preview row renders once validation + dedupe pipeline settles
-    expect(await screen.findByText('Coffee Shop')).toBeInTheDocument()
+    expect(await within(dialog).findByText('Coffee Shop')).toBeInTheDocument()
 
     // Import
-    await user.click(await screen.findByRole('button', { name: /import 1 transactions/i }))
+    await user.click(await within(dialog).findByRole('button', { name: /import 1 transactions/i }))
 
     // Success toast — matches the PDF flow's wording, "N transactions imported, 0 skipped"
     expect(await screen.findByText(/1 transactions imported/i)).toBeInTheDocument()
   })
 
-  it('uploads a PDF, preview rows appear, import shows success toast', async () => {
+  it('opens the Import menu on the PDF tab, uploads a file, preview rows appear, import shows success toast', async () => {
     const user = userEvent.setup()
-    renderWithProviders(<UploadRoutes />, { initialEntries: ['/upload'] })
+    renderWithProviders(<TransactionsRoutes />, { initialEntries: ['/transactions'] })
 
-    expect(await screen.findByRole('heading', { name: /import transactions/i })).toBeInTheDocument()
+    await user.click(await screen.findByRole('button', { name: /^import$/i }))
+    await user.click(await screen.findByRole('menuitem', { name: /bank statement pdf/i }))
 
-    const fileInput = screen.getByLabelText('Choose PDF files')
+    const dialog = await screen.findByRole('dialog', { name: /import transactions/i })
+
+    const fileInput = within(dialog).getByLabelText('Choose PDF files')
     const file = new File(['%PDF dummy'], 'statement.pdf', { type: 'application/pdf' })
     await user.upload(fileInput, file)
 
     // Preview row description from makePreviewResponse fixture
-    expect(await screen.findByText('Coffee Shop')).toBeInTheDocument()
+    expect(await within(dialog).findByText('Coffee Shop')).toBeInTheDocument()
 
     // Import button appears once preview is ready
-    const importBtn = await screen.findByRole('button', { name: /import/i })
+    const importBtn = await within(dialog).findByRole('button', { name: /import/i })
     await user.click(importBtn)
 
     // Success toast: "1 transactions imported, 0 skipped"

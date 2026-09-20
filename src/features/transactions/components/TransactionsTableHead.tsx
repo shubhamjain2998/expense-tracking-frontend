@@ -21,9 +21,9 @@ const columns: {
 }[] = [
   { label: 'Date', col: 'date', align: 'left' },
   { label: 'Merchant', col: 'merchant', align: 'left' },
-  { label: 'Category', col: 'category', align: 'left' },
-  { label: 'Tags', col: 'tags', align: 'left', className: 'txn-col-tags' },
-  { label: 'Split', col: 'split', align: 'center', className: 'txn-col-split' },
+  { label: 'Category', col: 'category', align: 'left', className: 'hide-sm' },
+  { label: 'Tags', col: 'tags', align: 'left', className: 'txn-col-tags hide-sm' },
+  { label: 'With', col: 'split', align: 'center', className: 'txn-col-split hide-sm' },
   { label: 'Amount', col: 'amount', align: 'right' },
 ]
 
