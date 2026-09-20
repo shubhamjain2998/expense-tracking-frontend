@@ -2,7 +2,7 @@ import { Icon } from '@/components/ui/Icon'
 import { formatShortDate } from '@/lib/format'
 
 import { categoryColor } from '../lib/categoryColor'
-import { formatAmount, isCreditAmount } from '../lib/txnFormat'
+import { formatAmount, isCreditAmount, splitInfo } from '../lib/txnFormat'
 import type { UnifiedTxn } from '../types'
 
 interface TransactionRowMobileProps {
@@ -22,6 +22,7 @@ export function TransactionRowMobile({ txn, isSelected, onTap }: TransactionRowM
   const catColor = txn.categoryId ? categoryColor(txn.categoryId) : 'var(--warn)'
   const { display: amtDisplay } = formatAmount(txn.effectiveAmount, txn.txnType)
   const isPendingCredit = txn.kind === 'pending' && isCreditAmount(txn.effectiveAmount)
+  const split = splitInfo(txn)
 
   let categoryLabel: string
   let categoryColorRef: string
@@ -69,13 +70,21 @@ export function TransactionRowMobile({ txn, isSelected, onTap }: TransactionRowM
           >
             {txn.description}
           </span>
-          <span className="l-amount shrink-0" style={{ color: amtColor, fontWeight: 600 }}>
-            {txn.txnType === 'income' || (isPendingCredit && !txn.txnType)
-              ? '+'
-              : txn.txnType === 'refund'
-                ? '-'
-                : ''}
-            {amtDisplay}
+          <span className="shrink-0 text-right">
+            <span className="l-amount block" style={{ color: amtColor, fontWeight: 600 }}>
+              {txn.txnType === 'income' || (isPendingCredit && !txn.txnType)
+                ? '+'
+                : txn.txnType === 'refund'
+                  ? '-'
+                  : ''}
+              {amtDisplay}
+            </span>
+            {/* Your share is above; the full bill is what the others need. */}
+            {split && (
+              <span className="num block text-[10.5px] text-[var(--ink-3)]">
+                of {split.totalDisplay}
+              </span>
+            )}
           </span>
         </div>
         <div className="mt-1 flex items-center gap-2 text-[12px] text-[var(--ink-3)]">
@@ -92,10 +101,13 @@ export function TransactionRowMobile({ txn, isSelected, onTap }: TransactionRowM
             />
             <span className="truncate">{categoryLabel}</span>
           </span>
-          {txn.shares.length > 0 && (
-            <span className="ml-auto inline-flex items-center gap-1 text-[var(--accent)]">
+          {split && (
+            <span
+              className="ml-auto inline-flex shrink-0 items-center gap-1 text-[var(--accent)]"
+              title={split.breakdown}
+            >
               <Icon name="call_split" size={12} />
-              {txn.shares.length}
+              {split.peopleCount} ways
             </span>
           )}
         </div>

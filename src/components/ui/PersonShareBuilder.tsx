@@ -135,22 +135,42 @@ export function PersonShareBuilder({
 
       {shares.length > 0 && (
         <div
-          className="flex items-center justify-between"
+          className="space-y-1"
           style={{
             background: 'var(--accent-soft)',
             borderRadius: 'var(--radius)',
             padding: '8px 12px',
           }}
         >
-          <span className="text-[12px] font-medium" style={{ color: 'var(--accent)' }}>
-            Your share
-          </span>
-          <span
-            className="num text-[13px] font-semibold"
-            style={{ color: 'var(--accent)', letterSpacing: '-0.005em' }}
-          >
-            {fmt(yourShare)}
-          </span>
+          {/* The total and what the others owe are what the user has to quote
+              back to the people they split with — the share alone isn't enough. */}
+          <div className="flex items-center justify-between">
+            <span className="text-[11.5px]" style={{ color: 'var(--ink-3)' }}>
+              Total bill
+            </span>
+            <span className="num text-[12px]" style={{ color: 'var(--ink-2)' }}>
+              {fmt(totalAmount)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[11.5px]" style={{ color: 'var(--ink-3)' }}>
+              Others ({shares.length})
+            </span>
+            <span className="num text-[12px]" style={{ color: 'var(--ink-2)' }}>
+              {fmt(totalAmount - yourShare)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] font-medium" style={{ color: 'var(--accent)' }}>
+              Your share
+            </span>
+            <span
+              className="num text-[13px] font-semibold"
+              style={{ color: 'var(--accent)', letterSpacing: '-0.005em' }}
+            >
+              {fmt(yourShare)}
+            </span>
+          </div>
         </div>
       )}
     </div>

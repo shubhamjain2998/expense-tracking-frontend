@@ -70,6 +70,51 @@ export function formatTxnSplit(totals: TxnTotals): string | null {
   return `−${formatCurrency(totals.expenseTotal, { fractionDigits: 0 })} · +${formatCurrency(totals.incomeTotal, { fractionDigits: 0 })}`
 }
 
+export interface SplitInfo {
+  /** Full bill amount, before anyone else's share is deducted. */
+  total: number
+  /** What the user keeps — the amount every other surface shows. */
+  yourShare: number
+  /** Sum of everyone else's shares. */
+  othersTotal: number
+  /** People on the bill, the user included. */
+  peopleCount: number
+  totalDisplay: string
+  yourShareDisplay: string
+  /** "Total ₹1,800.00 · you ₹600.00 · Alice ₹600.00 · Bob ₹600.00" */
+  breakdown: string
+}
+
+/**
+ * Split figures for a transaction, or `null` when it isn't split.
+ *
+ * The list and the panels both show only the user's share, which makes the
+ * full bill impossible to quote back to the people they split with — so every
+ * split surface renders the total from here too.
+ */
+export function splitInfo(txn: UnifiedTxn): SplitInfo | null {
+  if (txn.shares.length === 0) return null
+
+  const total = Math.abs(Number(txn.amount))
+  const yourShare = Math.abs(Number(txn.effectiveAmount))
+  const othersTotal = txn.shares.reduce((s, sh) => s + Math.abs(Number(sh.share_amount)), 0)
+  const money = (n: number) => formatCurrency(n, { fractionDigits: 2 })
+
+  return {
+    total,
+    yourShare,
+    othersTotal,
+    peopleCount: txn.shares.length + 1,
+    totalDisplay: money(total),
+    yourShareDisplay: money(yourShare),
+    breakdown: [
+      `Total ${money(total)}`,
+      `you ${money(yourShare)}`,
+      ...txn.shares.map((s) => `${s.person_name} ${money(Math.abs(Number(s.share_amount)))}`),
+    ].join(' · '),
+  }
+}
+
 export function formatAmount(
   effectiveAmount: string | number,
   txnType?: TxnType | null

@@ -3,7 +3,7 @@ import { formatShortDate } from '@/lib/format'
 import type { ProcessedTransactionItem } from '@/types/transaction'
 
 import { categoryColor } from '../lib/categoryColor'
-import { formatAmount, isCreditAmount } from '../lib/txnFormat'
+import { formatAmount, isCreditAmount, splitInfo } from '../lib/txnFormat'
 import type { UnifiedTxn } from '../types'
 
 import { TxnContextMenu } from './TxnContextMenu'
@@ -52,6 +52,7 @@ export function TransactionRow({
   // sign-based hint — flagged as a *credit* (money in), never as confirmed
   // income, since classify_txn_type would map this to refund or transfer.
   const isPendingCredit = txn.kind === 'pending' && isCreditAmount(txn.effectiveAmount)
+  const split = splitInfo(txn)
 
   return (
     <tr
@@ -282,16 +283,23 @@ export function TransactionRow({
             if (txn.processedOriginal) setEditingTxn(txn.processedOriginal)
             else if (txn.rawOriginal) setSelectedUid(txn.uid)
           }}
-          className="btn ghost icon sm"
-          title={txn.shares.length > 0 ? 'View split' : 'Add split'}
+          className={split ? 'btn ghost sm' : 'btn ghost icon sm'}
+          title={split ? `Split ${split.peopleCount} ways — ${split.breakdown}` : 'Add split'}
           style={{
             margin: '0 auto',
-            opacity: txn.shares.length > 0 ? 1 : 0.3,
-            color: txn.shares.length > 0 ? 'var(--accent)' : 'var(--ink-3)',
+            gap: 3,
+            padding: split ? '0 6px' : undefined,
+            opacity: split ? 1 : 0.3,
+            color: split ? 'var(--accent)' : 'var(--ink-3)',
           }}
           disabled={isDeleted}
         >
           <Icon name="call_split" size={14} />
+          {split && (
+            <span className="num" style={{ fontSize: 11, fontWeight: 600 }}>
+              {split.peopleCount}
+            </span>
+          )}
         </button>
       </td>
 
@@ -322,6 +330,21 @@ export function TransactionRow({
             ? '-'
             : ''}
         {amtDisplay}
+        {/* Split rows show only the user's share above — the full bill goes
+            underneath so it can be quoted to the people they split with. */}
+        {split && (
+          <div
+            title={split.breakdown}
+            style={{
+              fontSize: 10.5,
+              fontWeight: 500,
+              color: 'var(--ink-3)',
+              marginTop: 1,
+            }}
+          >
+            of {split.totalDisplay}
+          </div>
+        )}
       </td>
 
       {/* Context menu (or direct Restore button on deleted rows — the menu
