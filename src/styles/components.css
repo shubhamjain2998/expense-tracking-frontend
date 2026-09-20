@@ -969,6 +969,22 @@ select:disabled,
   }
 }
 
+/* ─── page container — MASTER.md §4: 1280px max-width, 24px gutter desktop
+   / 16px mobile. Genuinely missing from the earlier ledger port: Layout.tsx
+   was still sizing the main column with ad hoc Tailwind arbitrary values
+   (max-w-[1380px], px-7) that don't match the spec and left an oversized
+   empty gutter next to the side nav. */
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px;
+}
+@media (max-width: 899px) {
+  .container {
+    padding: 16px 16px 84px;
+  }
+}
+
 .brand {
   display: flex;
   align-items: center;

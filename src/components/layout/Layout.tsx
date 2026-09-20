@@ -25,7 +25,9 @@ export function Layout() {
       <div className="flex h-screen min-w-0 flex-col overflow-hidden bg-transparent">
         <TopNav />
         <main className="flex-1 overflow-x-hidden overflow-y-auto">
-          <div className="mx-auto max-w-[1380px] px-4 pt-5 pb-14 md:px-7 md:pt-6">
+          {/* MASTER.md §4: 1280px max-width, 24px gutter (16px mobile) — see
+              .container in components.css. */}
+          <div className="container">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={location.pathname}

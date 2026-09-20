@@ -182,6 +182,7 @@ export function DashboardPage() {
           verdict={insightsResult.verdict}
           totalIncome={data.totalIncome}
           totalDebit={data.totalDebit}
+          totalBudget={data.totalBudget}
           daysLeftInMonth={daysLeftInMonth}
           dayOfMonth={dayOfMonth}
           daysInMonth={daysInMonth}
@@ -234,6 +235,8 @@ export function DashboardPage() {
           insights={insightsResult.insights}
           pendingItems={data.pendingItems}
           ledger={data.ledger}
+          monthLabel={currentMonthLabel ?? ''}
+          isCurrentMonth={isCurrentMonth}
           isLoading={engineLoading || data.ledgerLoading || data.pendingLoading}
         />
       </motion.div>

@@ -19,6 +19,13 @@ interface NeedsYouProps {
   insights: Insight[]
   pendingItems: PendingManualTransaction[]
   ledger: SplitLedgerRow[]
+  /** Label of the viewed period's calendar month, e.g. "Jun" — used only for
+   *  the combined "N commitments weren't charged in {month}" row. */
+  monthLabel: string
+  /** Whether the viewed month is the real, in-progress current month. The
+   *  engine's "missing" flag is computed against the real `now`, so on a
+   *  completed past month it's stale, not actionable — see below. */
+  isCurrentMonth: boolean
   isLoading: boolean
 }
 
@@ -41,14 +48,21 @@ const SEVERITY_CLASS: Record<Severity, string> = {
 function iconForInsight(id: string, severity: Severity): IconName {
   if (id.startsWith('budget-blowout')) return 'trending_up'
   if (id.startsWith('recurring-due')) return 'calendar_today'
-  if (id.startsWith('recurring-missing')) return 'info'
-  if (id === 'seasonality-down') return 'trending_down'
-  if (id === 'seasonality-peak') return 'calendar_today'
-  if (id === 'savings-above-avg') return 'check_circle'
   if (id.startsWith('big-share')) return 'info'
   if (severity === 'good') return 'check_circle'
   if (severity === 'info') return 'info'
   return 'warning'
+}
+
+/** Secondary detail line for insight-derived rows that don't already carry
+ *  one of their own (pending-review, splits-owed and the combined missing
+ *  row build a real one from their own data) — every row gets a second
+ *  line, matching the mock, without fabricating numbers we don't have. */
+function subtitleForInsight(id: string): string | null {
+  if (id.startsWith('budget-blowout-')) return "Open the category to see what's driving it."
+  if (id.startsWith('big-share-')) return 'Open the category for the full breakdown.'
+  if (id.startsWith('recurring-due-')) return 'Auto-debits in the next few days.'
+  return null
 }
 
 function daysOld(dateStr: string, now: Date): number {
@@ -64,7 +78,14 @@ function daysOld(dateStr: string, now: Date): number {
  * only ever built once (from ledger, with the per-person breakdown), not
  * repeated via the engine's own split-owed insight.
  */
-export function NeedsYou({ insights, pendingItems, ledger, isLoading }: NeedsYouProps) {
+export function NeedsYou({
+  insights,
+  pendingItems,
+  ledger,
+  monthLabel,
+  isCurrentMonth,
+  isLoading,
+}: NeedsYouProps) {
   const { mode } = usePeriodMode()
   const navigate = useNavigate()
   const now = useMemo(() => new Date(), [])
@@ -94,21 +115,79 @@ export function NeedsYou({ insights, pendingItems, ledger, isLoading }: NeedsYou
       })
     }
 
+    // "Hasn't been charged this month" fires once per commitment; a past,
+    // completed month is expected to be fully missing by then (not
+    // actionable), and even on the in-progress month six individual rows
+    // of the same message is noise — collapse to one, with the commitment
+    // names as the detail line.
+    const missingNames: string[] = []
+
     for (const insight of insights) {
       // Superseded below by the richer, per-person ledger row — the same
       // owed total must not appear twice on the page.
       if (insight.id === 'split-owed') continue
+
+      if (insight.id.startsWith('recurring-missing-')) {
+        if (isCurrentMonth) {
+          const name = insight.text[0]?.t
+          if (name) missingNames.push(name)
+        }
+        continue
+      }
+
+      // Seasonality/savings insights are FYI, not open loops — they have no
+      // natural action and belong on /insights, not in a "needs you" list
+      // where every row must have exactly one action.
+      if (
+        insight.id === 'seasonality-down' ||
+        insight.id === 'seasonality-peak' ||
+        insight.id === 'savings-above-avg'
+      ) {
+        continue
+      }
+
       const category = insight.id.startsWith('budget-blowout-')
         ? insight.id.slice('budget-blowout-'.length)
-        : null
+        : insight.id.startsWith('big-share-')
+          ? insight.id.slice('big-share-'.length)
+          : null
+      const subtitle = subtitleForInsight(insight.id)
+
       out.push({
         id: insight.id,
         severity: insight.severity,
         icon: iconForInsight(insight.id, insight.severity),
-        body: <span className="text-[var(--ink-2)]">{renderParts(insight.text)}</span>,
+        body: (
+          <>
+            <span className="text-[var(--ink-2)]">{renderParts(insight.text)}</span>
+            {subtitle && (
+              <span className="block text-[12.5px] text-[var(--ink-3)]">{subtitle}</span>
+            )}
+          </>
+        ),
         action: category
           ? { label: 'Open', href: `/c/${encodeURIComponent(category)}` }
           : insight.action,
+      })
+    }
+
+    if (missingNames.length > 0) {
+      out.push({
+        id: 'recurring-missing-combined',
+        severity: 'info',
+        icon: 'info',
+        body: (
+          <>
+            <span className="font-medium text-[var(--ink)]">
+              {missingNames.length} commitment{missingNames.length === 1 ? '' : 's'} weren&rsquo;t
+              charged in {monthLabel}
+            </span>
+            <span className="block text-[12.5px] text-[var(--ink-3)]">
+              {missingNames.join(' · ')}
+            </span>
+          </>
+        ),
+        action: { label: 'Review', href: '/insights' },
       })
     }
 
@@ -141,7 +220,7 @@ export function NeedsYou({ insights, pendingItems, ledger, isLoading }: NeedsYou
 
     out.sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity])
     return out.slice(0, 6)
-  }, [insights, pendingItems, ledger, mode, now])
+  }, [insights, pendingItems, ledger, mode, now, isCurrentMonth, monthLabel])
 
   return (
     <section className="sec">

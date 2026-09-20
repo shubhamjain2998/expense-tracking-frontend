@@ -116,7 +116,14 @@ export function WhereItWent({ summaryRows, budgetRows, paceAt, isLoading }: Wher
                   {row.allocated > 0 && (
                     <span
                       className="tick"
-                      style={{ left: `${Math.min(100, paceAt * 100)}%` }}
+                      // Same scale as the fill: the tick marks where THIS
+                      // row's expected-by-today spend sits on the shared
+                      // largest-category axis, not a percentage of the
+                      // row's own budget (that would put every tick near
+                      // the right edge regardless of budget size).
+                      style={{
+                        left: `${Math.min(100, ((row.allocated * paceAt) / maxActual) * 100)}%`,
+                      }}
                       data-label="expected today"
                     />
                   )}

@@ -9,7 +9,7 @@ import {
 } from 'recharts'
 
 import { Skeleton } from '@/components/ui/Skeleton'
-import { formatCompact, formatCurrency } from '@/lib/format'
+import { formatCurrency } from '@/lib/format'
 
 import { TOOLTIP_STYLE } from '../lib/chartTheme'
 import type { IncomeExpenseTrendPoint } from '../types'
@@ -23,6 +23,32 @@ interface TrendBlockProps {
 }
 
 const WINDOW_OPTIONS = [6, 12, 15] as const
+
+/** 5 evenly-spaced "nice" ticks (0, step, 2·step, 3·step, 4·step) so the
+ *  axis never lands on odd values like ₹65.0k between round lakh steps. */
+function niceAxisTicks(maxValue: number): number[] {
+  if (maxValue <= 0) return [0]
+  const rawStep = maxValue / 4
+  const magnitude = 10 ** Math.floor(Math.log10(rawStep))
+  const normalized = rawStep / magnitude
+  const niceNormalized = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10
+  const step = niceNormalized * magnitude
+  return [0, step, step * 2, step * 3, step * 4]
+}
+
+/** One consistent unit for every tick on the axis, chosen from the top
+ *  tick — never a mix of "65.0k" next to "2.6L". */
+function axisUnit(maxTick: number): { divisor: number; suffix: string; decimals: number } {
+  if (maxTick >= 1e7) return { divisor: 1e7, suffix: 'Cr', decimals: 1 }
+  if (maxTick >= 1e5) return { divisor: 1e5, suffix: 'L', decimals: 1 }
+  if (maxTick >= 1e3) return { divisor: 1e3, suffix: 'k', decimals: 0 }
+  return { divisor: 1, suffix: '', decimals: 0 }
+}
+
+function formatAxisTick(value: number, unit: ReturnType<typeof axisUnit>): string {
+  if (value === 0) return '₹0'
+  return `₹${(value / unit.divisor).toFixed(unit.decimals)}${unit.suffix}`
+}
 
 /**
  * Block 4 — Trend. "Is this month normal?"
@@ -46,6 +72,11 @@ export function TrendBlock({
       : 0
   const lastExpense = incomeTrendData.at(-1)?.expense ?? 0
   const vsAvgPct = avgExpense > 0 ? ((lastExpense - avgExpense) / avgExpense) * 100 : null
+
+  const maxSeriesValue = incomeTrendData.reduce((m, p) => Math.max(m, p.income, p.expense), 0)
+  const yTicks = niceAxisTicks(maxSeriesValue)
+  const yDomainMax = yTicks[yTicks.length - 1] || 1
+  const yUnit = axisUnit(yDomainMax)
 
   return (
     <section className="sec">
@@ -118,8 +149,10 @@ export function TrendBlock({
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 10, fill: tickColor }}
-                  tickFormatter={formatCompact}
-                  width={50}
+                  domain={[0, yDomainMax]}
+                  ticks={yTicks}
+                  tickFormatter={(v) => formatAxisTick(Number(v), yUnit)}
+                  width={54}
                 />
                 <Tooltip
                   cursor={{ stroke: tickColor, strokeDasharray: '3 4', strokeOpacity: 0.5 }}
@@ -145,7 +178,9 @@ export function TrendBlock({
                   stroke="var(--accent)"
                   strokeWidth={2}
                   strokeDasharray="5 4"
-                  dot={{ r: 3.5, strokeWidth: 2, fill: 'var(--surface)', stroke: 'var(--accent)' }}
+                  // Plain dot — a stroke+fill override on a dashed line
+                  // produced stray glyph-like artefacts at each point.
+                  dot={{ r: 3 }}
                   activeDot={{ r: 5.5 }}
                 />
               </LineChart>
