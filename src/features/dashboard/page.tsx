@@ -9,30 +9,29 @@ import { useThemeContext } from '@/hooks/useThemeContext'
 import { fadeUp, staggerContainer } from '@/lib/motion'
 import { onboardingStorage } from '@/lib/onboardingStorage'
 import { pendingTransactionsUrl } from '@/lib/pendingNav'
-import { formatYearLabel, getCurrentPeriod, loadPeriodMode, resolvePeriodMonth } from '@/lib/period'
+import { getCurrentPeriod, loadPeriodMode, resolvePeriodMonth } from '@/lib/period'
 
-import { CategorySection } from './components/CategorySection'
-import { DailySpendCalendar } from './components/DailySpendCalendar'
-import { HabitsPanel } from './components/HabitsPanel'
-import { IncomeFlowAndTrend } from './components/IncomeFlowAndTrend'
-import { IncomeSummaryCards } from './components/IncomeSummaryCards'
-import { NeedsAttention } from './components/NeedsAttention'
-import { NeedsReview } from './components/NeedsReview'
-import { RecurringPanel } from './components/RecurringPanel'
-import { SeasonalityPanel } from './components/SeasonalityPanel'
-import { SectionPillBar } from './components/SectionPillBar'
-import { SixMonthTrend } from './components/SixMonthTrend'
-import { SplitLedger } from './components/SplitLedger'
-import { VerdictHeader } from './components/VerdictHeader'
-import { YtdSection } from './components/YtdSection'
+import { CommittedVsChosen } from './components/CommittedVsChosen'
+import { NeedsYou } from './components/NeedsYou'
+import { TrendBlock } from './components/TrendBlock'
+import { VerdictBlock } from './components/VerdictBlock'
+import { WhereItWent } from './components/WhereItWent'
 import { useAllProcessedTransactions } from './hooks/useAllProcessedTransactions'
 import { useDashboardData } from './hooks/useDashboardData'
 import { MONTH_LABELS_FULL } from './lib/chartTheme'
-import { computeHabits, computeTagSpend } from './lib/habits'
 import { computeInsights } from './lib/insights'
 import { detectRecurring } from './lib/recurring'
 import { computeSeasonality } from './lib/seasonality'
 
+/**
+ * Home (/) — five blocks, in this order: verdict, where it went, committed
+ * vs chosen, trend, needs you. Nothing else renders here.
+ *
+ * design-system/kosh-ledger/pages/dashboard.md is the spec. Habits,
+ * seasonality detail, weekday patterns, the forecast, the full commitment
+ * list and the people ledger live at /insights; per-category detail lives
+ * at /c/:categoryId.
+ */
 export function DashboardPage() {
   // Stable per-mount "now" so the cross-period engine memos can be preserved
   // (a fresh `new Date()` each render would invalidate them every time).
@@ -73,8 +72,6 @@ export function DashboardPage() {
       { replace: true }
     )
   }
-  const [includeSettled, setIncludeSettled] = useState(false)
-  const [trendMode, setTrendMode] = useState<'stacked' | 'total'>('stacked')
   const [trendWindow, setTrendWindow] = useState(6)
 
   // ── Onboarding (welcome modal + Getting Started checklist) ─────────────────
@@ -97,11 +94,8 @@ export function DashboardPage() {
   const dayOfMonth = isCurrentMonth ? now.getDate() : new Date(calYear, calMonth, 0).getDate()
   const daysInMonth = new Date(calYear, calMonth, 0).getDate()
   const paceAt = dayOfMonth / daysInMonth
+  const daysLeftInMonth = Math.max(0, daysInMonth - dayOfMonth)
   const currentMonthLabel = MONTH_LABELS_FULL[calMonth]
-
-  // ── Calendar layout ───────────────────────────────────────────────────────────────────────────
-  const firstDayOfMonth = new Date(calYear, calMonth - 1, 1).getDay()
-  const totalCells = Math.ceil((firstDayOfMonth + daysInMonth) / 7) * 7
 
   // ── Data ────────────────────────────────────────────────────────────────────────────────────
   const data = useDashboardData({
@@ -110,7 +104,7 @@ export function DashboardPage() {
     calYear,
     calMonth,
     selectedTagId: '',
-    includeSettled,
+    includeSettled: false,
     mode,
     trendWindow,
   })
@@ -119,9 +113,10 @@ export function DashboardPage() {
   const { transactions: allHistory, isLoading: historyLoading } = useAllProcessedTransactions()
 
   // ── Engines (pure functions over the data the page already has) ──────────────
+  // computeHabits/computeTagSpend and the YTD helpers move to /insights — their
+  // mount point moves, the engines themselves are untouched. computeSeasonality
+  // stays here because computeInsights() still needs it as an input.
   const recurring = useMemo(() => detectRecurring(allHistory, now), [allHistory, now])
-  const habits = useMemo(() => computeHabits(allHistory, now, 12), [allHistory, now])
-  const tagSpend = useMemo(() => computeTagSpend(allHistory, now, 12), [allHistory, now])
   const seasonality = useMemo(
     () => computeSeasonality(allHistory, now, { projectedFY: data.projectedFY }),
     [allHistory, now, data.projectedFY]
@@ -141,7 +136,7 @@ export function DashboardPage() {
       computeInsights({
         summaryRows: data.summaryRows,
         pace: paceAt,
-        daysLeftInMonth: Math.max(0, daysInMonth - dayOfMonth),
+        daysLeftInMonth,
         totalDebit: data.totalDebit,
         totalBudget: data.totalBudget,
         totalIncome: data.totalIncome,
@@ -158,8 +153,7 @@ export function DashboardPage() {
       data.totalIncome,
       data.ledger,
       paceAt,
-      daysInMonth,
-      dayOfMonth,
+      daysLeftInMonth,
       recurring,
       seasonality,
       avgSavingsRate,
@@ -170,21 +164,9 @@ export function DashboardPage() {
   const engineLoading = data.allTxnLoading || historyLoading
 
   // ── Render ──────────────────────────────────────────────────────────────────────────────────
-  const sections = [
-    { id: 'sec-verdict', label: 'Verdict' },
-    { id: 'sec-month', label: 'Month' },
-    { id: 'sec-categories', label: 'Categories' },
-    { id: 'sec-recurring', label: 'Recurring' },
-    { id: 'sec-habits', label: 'Habits' },
-    { id: 'sec-trend', label: 'Trends' },
-    { id: 'sec-seasonality', label: 'Seasonality' },
-    { id: 'sec-ytd', label: 'YTD' },
-    { id: 'sec-splits', label: 'Splits' },
-  ]
-
   return (
     <motion.div
-      className="dashboard-page space-y-4"
+      className="space-y-8"
       variants={staggerContainer(0.06)}
       initial="hidden"
       animate="visible"
@@ -193,15 +175,16 @@ export function DashboardPage() {
         <WelcomeModal onGetStarted={handleWelcomeGetStarted} onSkip={handleWelcomeSkip} />
       )}
       {showChecklist && <GettingStartedChecklist onDismiss={() => setShowChecklist(false)} />}
-      <SectionPillBar sections={sections} />
 
-      {/* 1 · Verdict + needs attention */}
-      <motion.section variants={fadeUp} id="sec-verdict" className="space-y-4">
-        <VerdictHeader
+      {/* 1 · Verdict — the only place this month's money figures appear */}
+      <motion.div variants={fadeUp}>
+        <VerdictBlock
           verdict={insightsResult.verdict}
           totalIncome={data.totalIncome}
           totalDebit={data.totalDebit}
-          savings={data.totalIncome - data.totalDebit}
+          daysLeftInMonth={daysLeftInMonth}
+          dayOfMonth={dayOfMonth}
+          daysInMonth={daysInMonth}
           currentMonthLabel={currentMonthLabel ?? ''}
           displayYear={calYear}
           selectorYear={year}
@@ -210,118 +193,50 @@ export function DashboardPage() {
           onMonthChange={setMonth}
           onPeriodJump={setPeriod}
           isLoading={data.summaryLoading}
-          pendingCount={data.pendingItems.length}
-          pendingUrl={pendingHref}
           lastActiveMonthHint={data.lastActiveMonthHint}
         />
-        <NeedsAttention insights={insightsResult.insights} isLoading={engineLoading} />
-      </motion.section>
+      </motion.div>
 
-      {/* 2 · Month at a glance */}
-      <motion.section variants={fadeUp} id="sec-month">
-        <IncomeSummaryCards
-          totalIncome={data.totalIncome}
-          totalExpenses={data.totalDebit}
-          incomeByCategory={data.incomeByCategory}
-          isLoading={data.allTxnLoading}
-        />
-      </motion.section>
-
-      {/* 3 · Category breakdown + budget pace (consolidated) */}
-      <motion.section variants={fadeUp} id="sec-categories">
-        <CategorySection
-          categoryChartData={data.categoryChartData}
-          totalDebit={data.totalDebit}
+      {/* 2 · Where it went — bar list doubles as the budget-pace view */}
+      <motion.div variants={fadeUp}>
+        <WhereItWent
+          summaryRows={data.summaryRows}
           budgetRows={data.budgetRows}
           paceAt={paceAt}
-          dayOfMonth={dayOfMonth}
-          categoryStats={data.categoryStats}
-          allTransactions={data.allTransactions}
-          summaryRows={data.summaryRows}
-          daysInMonth={daysInMonth}
-          currentMonthLabel={currentMonthLabel ?? ''}
-          year={calYear}
-          isDark={isDark}
-          summaryLoading={data.summaryLoading}
-          allTxnLoading={data.allTxnLoading}
+          isLoading={data.summaryLoading}
         />
-      </motion.section>
+      </motion.div>
 
-      {/* 4 · Recurring & subscriptions */}
-      <motion.section variants={fadeUp} id="sec-recurring">
-        <RecurringPanel result={recurring} isLoading={engineLoading} />
-      </motion.section>
+      {/* 3 · Committed vs chosen */}
+      <motion.div variants={fadeUp}>
+        <CommittedVsChosen
+          recurring={recurring}
+          totalDebit={data.totalDebit}
+          now={now}
+          isLoading={engineLoading}
+        />
+      </motion.div>
 
-      {/* 5 · Habits */}
-      <motion.section variants={fadeUp} id="sec-habits">
-        <HabitsPanel result={habits} tagSpend={tagSpend} isLoading={engineLoading} />
-      </motion.section>
-
-      {/* 6 · Trends */}
-      <motion.section variants={fadeUp} id="sec-trend" className="space-y-4">
-        <IncomeFlowAndTrend
-          totalIncome={data.totalIncome}
-          totalExpenses={data.totalDebit}
+      {/* 4 · Trend — the ONE time-series on this page */}
+      <motion.div variants={fadeUp}>
+        <TrendBlock
           incomeTrendData={data.incomeTrendData}
           trendWindow={trendWindow}
           onTrendWindowChange={setTrendWindow}
           isLoading={data.allTxnLoading || data.incomeQueriesLoading}
           isDark={isDark}
         />
-        <SixMonthTrend
-          stackedTrendData={data.stackedTrendData}
-          stackCategories={data.stackCategories}
-          trendMode={trendMode}
-          onTrendModeChange={setTrendMode}
-          isLoading={data.trendQueriesLoading}
-          isDark={isDark}
-        />
-      </motion.section>
+      </motion.div>
 
-      {/* 7 · Seasonality & forecast */}
-      <motion.section variants={fadeUp} id="sec-seasonality">
-        <SeasonalityPanel result={seasonality} isLoading={engineLoading} />
-      </motion.section>
-
-      {/* 8 · Year to date */}
-      <motion.section variants={fadeUp} id="sec-ytd">
-        <YtdSection
-          yearlyTrendData={data.yearlyTrendData}
-          month={data.monthsElapsedYtd}
-          yearLabel={formatYearLabel(year, mode)}
-          isDark={isDark}
-          ytdSpentTotal={data.ytdSpentTotal}
-          annualBudget={data.annualBudget}
-          projectedFY={data.projectedFY}
-          ytdLineData={data.ytdLineData}
-          ytdComputed={data.ytdComputed}
-          isLoading={data.ytdLoading || data.yearlyTrendLoading}
-        />
-      </motion.section>
-
-      {/* 9 · Splits · Calendar · Needs review */}
-      <motion.section variants={fadeUp} id="sec-splits" className="space-y-4">
-        <SplitLedger
+      {/* 5 · Needs you — every open loop, nothing else. Ends the page. */}
+      <motion.div variants={fadeUp}>
+        <NeedsYou
+          insights={insightsResult.insights}
+          pendingItems={data.pendingItems}
           ledger={data.ledger}
-          includeSettled={includeSettled}
-          onToggleSettled={() => setIncludeSettled((v) => !v)}
-          isLoading={data.ledgerLoading}
+          isLoading={engineLoading || data.ledgerLoading || data.pendingLoading}
         />
-
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <DailySpendCalendar
-            dailySpend={data.dailySpend}
-            year={calYear}
-            daysInMonth={daysInMonth}
-            firstDayOfMonth={firstDayOfMonth}
-            totalCells={totalCells}
-            currentMonthLabel={currentMonthLabel ?? ''}
-            isCurrentMonth={isCurrentMonth}
-            isDark={isDark}
-          />
-          <NeedsReview pendingItems={data.pendingItems} isLoading={data.pendingLoading} />
-        </div>
-      </motion.section>
+      </motion.div>
     </motion.div>
   )
 }

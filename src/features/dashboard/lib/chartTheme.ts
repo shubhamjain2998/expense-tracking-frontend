@@ -1,17 +1,15 @@
-// Muted OKLCH palette — perceptually uniform so all slices appear equally weighted
+// Ledger design system, MASTER.md §2: the data greys (--d1..--d5, largest→
+// smallest) are the only palette charts may use, plus --accent for a single
+// highlighted/selected series. No 8-hue category palette any more — this
+// used to be a 12-stop OKLCH rainbow; callers still cycle through it by
+// index/hash, which works unchanged against a shorter greyscale ramp.
 export const PIE_COLORS = [
-  'oklch(0.62 0.10 250)',
-  'oklch(0.65 0.10 155)',
-  'oklch(0.68 0.10 75)',
-  'oklch(0.63 0.10 25)',
-  'oklch(0.62 0.10 310)',
-  'oklch(0.65 0.10 200)',
-  'oklch(0.60 0.10 350)',
-  'oklch(0.65 0.08 100)',
-  'oklch(0.58 0.10 270)',
-  'oklch(0.70 0.09 130)',
-  'oklch(0.66 0.11 50)',
-  'oklch(0.60 0.12 320)',
+  'var(--d1)',
+  'var(--d2)',
+  'var(--d3)',
+  'var(--d4)',
+  'var(--d5)',
+  'var(--accent)',
 ]
 
 export const MONTH_LABELS_FULL = [

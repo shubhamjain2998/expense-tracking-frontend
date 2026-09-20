@@ -2197,6 +2197,69 @@ html.dark .auth-seal {
    var(--topbar-h, 52px) until a later phase defines that token for real.
    ════════════════════════════════════════════════════════════════════════ */
 
+/* ─── money sign colour utilities ────────────────────────────────────── */
+/* Genuinely missing from the earlier ledger port: MASTER.md §2 reserves
+   pos/neg for the SIGN of money (in vs out, under vs over budget) — a
+   narrower job than the app's older `.n-pos`/`.n-neg` (which deliberately
+   never colours plain expenses red). Home block 1/2/4 need this literal
+   sign-of-money pairing, so it's added here rather than reused. */
+.pos {
+  color: var(--pos);
+}
+.neg {
+  color: var(--neg);
+}
+.warn {
+  color: var(--warn);
+}
+
+/* ─── verdict / hero (Home block 1) ──────────────────────────────────── */
+.verdict {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: end;
+  padding-bottom: 24px;
+  border-bottom: 2px solid var(--ink);
+}
+.verdict-line {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 19px;
+  line-height: 1.4;
+  letter-spacing: -0.015em;
+  color: var(--ink-2);
+  max-width: 54ch;
+}
+.money-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+  align-items: flex-end;
+}
+.money {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.money .v {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 26px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 899px) {
+  .verdict {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 16px;
+  }
+  .money-row {
+    gap: 24px;
+  }
+}
+
 /* ─── section head ───────────────────────────────────────────────────── */
 .sec {
   display: flex;
