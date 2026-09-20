@@ -12,14 +12,19 @@
   font-feature-settings: 'tnum';
 }
 
-/* Display type — Cabinet Grotesk. Use for hero amounts, KPI values, section titles.
+/* Display type — Space Grotesk. Use for hero amounts, KPI values, section titles.
    Add `.num` for tabular numerals when displaying currency. Default weight is
    600 so the typeface reads "calm confident" rather than "heavy" at large
-   sizes; bump to 700 explicitly when a page hero needs more weight. */
+   sizes; bump to 700 explicitly when a page hero needs more weight.
+   Letter-spacing follows MASTER.md §3: call sites use this class in the
+   22–36px range (page title / KPI number), where the spec calls for
+   -0.02em — -0.03em (the hero-number value) read too tight on Space
+   Grotesk at those sizes, so it's tuned down from the previous Cabinet
+   Grotesk value. */
 .display {
   font-family: var(--font-display);
   font-weight: 600;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   line-height: 1;
 }
 
@@ -75,11 +80,13 @@
   color: var(--ink-4);
 }
 
-/* Card — the primary grouping primitive. */
+/* Card — the primary grouping primitive. Ledger uses hairlines, not
+   shadows — see the "Card depth (global)" section below, which no longer
+   applies a shadow. */
 .card {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius);
   padding: 20px;
 }
 .card-flush {
@@ -677,7 +684,7 @@ select:disabled,
   grid-template-columns: repeat(var(--kpi-cols, 4), 1fr);
   gap: 0;
   border: 1px solid var(--line);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius);
   background: var(--surface);
   overflow: hidden;
 }
@@ -983,21 +990,15 @@ select:disabled,
 }
 
 /* ─── Card depth (global) ─────────────────────────────────────────────
-   Lift every card off the page background so the surface reads as
-   paper-on-paper, not "box on box". Hover adds a small bloom so the
-   user feels the affordance without animation noise. Applies app-wide
-   — Dashboard, Transactions, Budget, Settings, Upload, Auth. Variants
-   `.card.elevated` and `.card.subtle` keep their own shadows because
-   their rules come later in this file and win on specificity-equal. */
+   Ledger: "hairlines, not shadows" (MASTER.md §4) — structure comes from
+   the 1px --line border already on .card / .kpi-strip, not a shadow lift,
+   and there is no hover bloom. --shadow-card / --shadow-card-hover both
+   resolve to `none`; this rule is kept only for the transition so a
+   variant like `.card.elevated` (a genuine floating layer, --shadow-pop)
+   still animates in/out smoothly. */
 .card,
 .kpi-strip {
-  box-shadow: var(--shadow-card);
-  transition:
-    box-shadow 0.24s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.card:hover {
-  box-shadow: var(--shadow-card-hover);
+  transition: box-shadow var(--dur-2) var(--ease-out-soft);
 }
 @media (prefers-reduced-motion: reduce) {
   .card,
@@ -2226,5 +2227,725 @@ html.dark .auth-seal {
 @media (prefers-reduced-motion: reduce) {
   .kosh-spinner-seal {
     animation: kosh-pulse 1.6s ease-in-out infinite;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   Ledger primitives (Phase 1 — Foundation)
+   Ported from design-mock/ledger/ledger.css, which mirrors
+   design-system/kosh-ledger/MASTER.md. Nothing here is wired into a page
+   yet — a later phase adopts these on Home/Transactions/Budget/Insights.
+   Translations from the mock: html[data-theme='dark'] -> html.dark (none
+   of these primitives needed a dark-specific override beyond the token
+   swap already in tokens.css); --paper/--card/--card-2/--line-2 ->
+   --bg/--surface/--surface-2/--line-strong; --ease -> --ease-out-soft
+   (same cubic-bezier, app's existing name). The mock's --space-1..7 scale
+   isn't part of this phase's token additions, so spacing is inlined here
+   as literal px (4 8 12 16 24 32 48) rather than introducing a new scale.
+   `.panel`/`.setnav` stick below a topbar; the mock's --topbar-h isn't an
+   app token, so they fall back to the real .topnav height (52px) via
+   var(--topbar-h, 52px) until a later phase defines that token for real.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ─── section head ───────────────────────────────────────────────────── */
+.sec {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sec-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.sec-head .sub {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.sec-head .act {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ─── bar list — "where it went" ─────────────────────────────────────── */
+.bars {
+  display: flex;
+  flex-direction: column;
+}
+.bar-row {
+  display: grid;
+  grid-template-columns: 152px minmax(0, 1fr) 100px 108px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  color: inherit;
+  transition: background var(--dur-1) var(--ease-out-soft);
+}
+.bar-row:last-child {
+  border-bottom: 0;
+}
+a.bar-row:hover {
+  background: var(--surface-2);
+  color: inherit;
+  text-decoration: none;
+}
+.bar-row .name {
+  font-size: 13.5px;
+  font-weight: 550;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.track {
+  display: block;
+  position: relative;
+  height: 20px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  overflow: visible;
+}
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-sm);
+  background: var(--d3);
+}
+.bar-row:nth-child(1) .fill {
+  background: var(--d1);
+}
+.bar-row:nth-child(2) .fill {
+  background: var(--d2);
+}
+.bar-row:nth-child(3) .fill {
+  background: var(--d3);
+}
+.bar-row:nth-child(4) .fill {
+  background: var(--d4);
+}
+.bar-row:nth-child(n + 5) .fill {
+  background: var(--d5);
+}
+.bars .bar-row .fill.over {
+  background: var(--neg);
+}
+/* budget pace marker — the tick that replaces a second budget chart */
+.tick {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  background: var(--ink);
+}
+.tick::after {
+  content: attr(data-label);
+  position: absolute;
+  top: -17px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity var(--dur-1) var(--ease-out-soft);
+}
+.bar-row:hover .tick::after {
+  opacity: 1;
+}
+.bar-row .amt {
+  text-align: right;
+}
+.bar-row .of {
+  text-align: right;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+}
+
+/* ─── meter (single-line progress) ───────────────────────────────────── */
+.meter {
+  height: 8px;
+  background: var(--surface-2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.meter i {
+  display: block;
+  font-style: normal;
+  height: 100%;
+  background: var(--ink);
+  border-radius: 999px;
+}
+.meter i.over {
+  background: var(--neg);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .fill,
+  .meter i {
+    animation: ledger-grow 560ms var(--ease-out-soft) both;
+    transform-origin: left center;
+  }
+}
+@keyframes ledger-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* ─── chart — HTML axes + non-scaling SVG plot ───────────────────────── */
+.chart {
+  --plot-h: clamp(170px, 19vw, 230px);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 8px;
+}
+.chart .yax {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  height: var(--plot-h);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+.chart .yax span {
+  transform: translateY(-50%);
+}
+.chart .yax span:first-child {
+  transform: translateY(0);
+}
+.chart .yax span:last-child {
+  transform: translateY(-100%);
+}
+.chart .plot {
+  position: relative;
+  height: var(--plot-h);
+  border-bottom: 1px solid var(--line-strong);
+  background-image: repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px 25%);
+}
+.chart .plot svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.chart .plot path {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.chart .plot .s-out {
+  stroke: var(--ink);
+  stroke-width: 2.25;
+}
+.chart .plot .s-in {
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+}
+.chart .plot .area {
+  fill: var(--ink);
+  fill-opacity: 0.06;
+  stroke: none;
+}
+.chart .dot {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--ink);
+  transform: translate(-50%, -50%);
+}
+.chart .dot.now {
+  width: 11px;
+  height: 11px;
+  border: 2.5px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+.chart .xax {
+  grid-column: 2;
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+.chart .xax b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.chart .legend {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+.chart .legend .small {
+  margin-left: auto;
+}
+.lineswatch {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 5px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .chart .plot {
+    animation: ledger-draw 700ms var(--ease-out-soft) both;
+  }
+}
+@keyframes ledger-draw {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ─── heatmap ─────────────────────────────────────────────────────────── */
+.heat {
+  display: grid;
+  grid-template-columns: 132px repeat(12, minmax(0, 1fr));
+  gap: 3px;
+  font-size: 11px;
+}
+.heat .lab {
+  color: var(--ink-3);
+  align-self: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.heat .cell {
+  height: 28px;
+  font-size: 0;
+  color: transparent;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  cursor: default;
+}
+.heat .cell:hover {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.h1 {
+  background: color-mix(in srgb, var(--ink) 8%, var(--surface-2));
+}
+.h2 {
+  background: color-mix(in srgb, var(--ink) 22%, var(--surface-2));
+}
+.h3 {
+  background: color-mix(in srgb, var(--ink) 42%, var(--surface-2));
+}
+.h4 {
+  background: color-mix(in srgb, var(--ink) 66%, var(--surface-2));
+}
+.h5 {
+  background: var(--ink);
+}
+.heat .cell.h1 {
+  background: color-mix(in srgb, var(--ink) 8%, var(--surface-2));
+}
+.heat .cell.h2 {
+  background: color-mix(in srgb, var(--ink) 22%, var(--surface-2));
+}
+.heat .cell.h3 {
+  background: color-mix(in srgb, var(--ink) 42%, var(--surface-2));
+}
+.heat .cell.h4 {
+  background: color-mix(in srgb, var(--ink) 66%, var(--surface-2));
+}
+.heat .cell.h5 {
+  background: var(--ink);
+}
+.heat .cell.over {
+  box-shadow: inset 0 0 0 2px var(--neg);
+}
+.legendrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+.heat-key {
+  display: inline-flex;
+  gap: 3px;
+}
+.heat-key span {
+  width: 16px;
+  height: 12px;
+  border-radius: var(--radius-sm);
+}
+.heat .colhead {
+  text-align: center;
+  color: var(--ink-3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+/* ─── day-of-week columns ─────────────────────────────────────────────── */
+.dow {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  align-items: end;
+  height: 148px;
+}
+.dow .col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  justify-content: flex-end;
+}
+.dow .col i {
+  display: block;
+  width: 100%;
+  background: var(--d3);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transform-origin: bottom center;
+}
+.dow .col.peak i {
+  background: var(--ink);
+}
+.dow .col span {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+/* ─── stat grid ───────────────────────────────────────────────────────── */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+}
+.stats > div {
+  padding: 12px 16px;
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.stats > div:last-child {
+  border-right: 0;
+}
+.stats .v {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── alert list (needs attention) ───────────────────────────────────── */
+.alerts {
+  display: flex;
+  flex-direction: column;
+}
+.alert {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.alert:last-child {
+  border-bottom: 0;
+}
+.alert .ico {
+  flex: none;
+  margin-top: 1px;
+  color: var(--ink-3);
+}
+.alert.is-warn .ico {
+  color: var(--warn);
+}
+.alert.is-neg .ico {
+  color: var(--neg);
+}
+.alert.is-pos .ico {
+  color: var(--pos);
+}
+.alert .body {
+  min-width: 0;
+}
+.alert .act {
+  margin-left: auto;
+  flex: none;
+}
+a.alert {
+  color: inherit;
+}
+a.alert:hover {
+  background: var(--surface-2);
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ─── tag / people chips inside rows ──────────────────────────────────── */
+.tagset {
+  display: inline-flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.tag {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 550;
+  white-space: nowrap;
+}
+.tag.accent {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.people {
+  display: inline-flex;
+}
+.people .avatar {
+  width: 20px;
+  height: 20px;
+  font-size: 9px;
+  border: 1.5px solid var(--surface);
+  margin-left: -6px;
+  background: var(--ink-2);
+}
+.people .avatar:first-child {
+  margin-left: 0;
+}
+
+/* ─── work split: list + docked panel ────────────────────────────────── */
+.worksplit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 328px;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 1199px) {
+  .worksplit {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.panel {
+  position: sticky;
+  top: calc(var(--topbar-h, 52px) + 24px);
+  display: flex;
+  flex-direction: column;
+}
+.panel .row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.panel .row:last-child {
+  border-bottom: 0;
+}
+.panel label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* ─── settings two-column ─────────────────────────────────────────────── */
+.setsplit {
+  display: grid;
+  grid-template-columns: 196px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 899px) {
+  .setsplit {
+    grid-template-columns: 1fr;
+  }
+}
+.setnav {
+  position: sticky;
+  top: calc(var(--topbar-h, 52px) + 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.setnav a {
+  padding: 7px 12px;
+  border-left: 2px solid transparent;
+  color: var(--ink-2);
+  font-size: 13.5px;
+}
+.setnav a:hover {
+  color: var(--ink);
+  background: var(--surface-2);
+  text-decoration: none;
+}
+.setnav a[aria-current='true'] {
+  border-left-color: var(--ink);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* ─── toolbar / filter bar ────────────────────────────────────────────── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.toolbar .grow {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.toolbar .push {
+  margin-left: auto;
+}
+
+/* ─── menu (import dropdown, kebab menus) ────────────────────────────── */
+.menu-wrap {
+  position: relative;
+}
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 232px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-pop);
+  padding: 4px;
+  z-index: 30;
+}
+.menu-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  color: var(--ink);
+}
+.menu-item:hover {
+  background: var(--surface-2);
+  text-decoration: none;
+}
+.menu-item .small {
+  display: block;
+}
+
+/* ─── sparkline ───────────────────────────────────────────────────────── */
+.spark {
+  width: 64px;
+  height: 20px;
+  color: var(--ink-3);
+}
+.spark path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* ─── empty state ─────────────────────────────────────────────────────── */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--ink-3);
+}
+.empty .ico {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  color: var(--ink-3);
+}
+
+/* ─── "or" divider (auth) ─────────────────────────────────────────────── */
+.rule {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink-3);
+  font-size: 11.5px;
+}
+.rule::before,
+.rule::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* ─── mobile (<900px) ─────────────────────────────────────────────────── */
+@media (max-width: 899px) {
+  .sec-head {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  .sec-head .sub {
+    order: 3;
+    flex: 1 0 100%;
+  }
+  .sec-head .act {
+    margin-left: auto;
+  }
+  .bar-row {
+    grid-template-columns: minmax(0, 1fr) 96px;
+    grid-template-areas: 'name amt' 'track track';
+    row-gap: 6px;
+  }
+  .bar-row .name {
+    grid-area: name;
+  }
+  .bar-row .amt {
+    grid-area: amt;
+  }
+  .bar-row .track {
+    grid-area: track;
+  }
+  .bar-row .of {
+    display: none;
+  }
+  .worksplit .panel {
+    position: static;
+  }
+  /* Utility: mark a .tbl column to hide on narrow tables. */
+  .tbl .hide-sm {
+    display: none;
+  }
+  .card:has(> .tbl) {
+    overflow-x: auto;
   }
 }

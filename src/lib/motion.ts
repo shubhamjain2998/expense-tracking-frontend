@@ -5,27 +5,29 @@ import type { Transition, Variants } from 'motion/react'
    of ad-hoc transition objects so every surface moves with the same accent. */
 
 export const DUR = {
-  fast: 0.14,
-  base: 0.22,
-  slow: 0.36,
+  fast: 0.12,
+  base: 0.2,
+  slow: 0.32,
 } as const
 
 /** Soft decelerating ease — the default for entrances. */
 export const EASE_OUT_SOFT = [0.22, 1, 0.36, 1] as const
 
-/** Snappy spring for small UI (menus, FAB, toasts, chips). */
+/** Snappy spring for small UI (menus, FAB, toasts, chips). Ledger motion is
+    subtle (tier 3/10) — damping is raised so nothing bounces or overshoots. */
 export const springSnappy: Transition = {
   type: 'spring',
-  stiffness: 520,
-  damping: 34,
+  stiffness: 420,
+  damping: 42,
   mass: 0.8,
 }
 
-/** Gentle spring for larger surfaces (dialogs, panels, cards). */
+/** Gentle spring for larger surfaces (dialogs, panels, cards). Raised damping
+    relative to stiffness keeps the settle critically damped, not springy. */
 export const springGentle: Transition = {
   type: 'spring',
-  stiffness: 280,
-  damping: 30,
+  stiffness: 240,
+  damping: 36,
 }
 
 /* ─── Variants ─────────────────────────────────────────────────────────── */

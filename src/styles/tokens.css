@@ -1,75 +1,77 @@
-/* ─── Personal Finance design tokens (light / warm paper) ─────────────────── */
+/* ─── Ledger design tokens (light) ────────────────────────────────────────
+   design-system/kosh-ledger/MASTER.md §2. Greyscale + a single accent;
+   green/red carry the sign of money only. Ported from design-mock/ledger/
+   ledger.css — the app uses the `html.dark` class, never `data-theme`. */
 :root {
-  /* Warm-cream paper neutrals — sub-conscious warmth without looking tinted */
-  --bg: oklch(0.985 0.005 85);
-  --surface: oklch(0.997 0.003 85);
-  --surface-2: oklch(0.965 0.005 85);
-  --surface-3: oklch(0.94 0.006 85);
-  --line: oklch(0.91 0.007 85);
-  --line-strong: oklch(0.85 0.009 85);
-  --ink: oklch(0.2 0.01 50);
-  --ink-2: oklch(0.36 0.01 50);
-  --ink-3: oklch(0.54 0.008 50);
-  --ink-4: oklch(0.7 0.006 50);
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --surface-2: #f4f4f5;
+  --surface-3: #ececee;
+  --line: #e4e4e7;
+  --line-strong: #d4d4d8;
+  --ink: #18181b;
+  --ink-2: #3f3f46;
+  --ink-3: #71717a;
+  --ink-4: #a1a1aa;
 
-  /* Accents — oxblood (signature), green pos, red neg, amber warn */
-  --accent: oklch(0.42 0.16 22);
-  --accent-soft: oklch(0.94 0.035 22);
-  --pos: oklch(0.5 0.13 155);
-  --pos-soft: oklch(0.94 0.04 155);
-  --neg: oklch(0.55 0.16 28);
-  --neg-soft: oklch(0.95 0.04 28);
-  --warn: oklch(0.7 0.14 75);
-  --warn-soft: oklch(0.94 0.04 75);
+  /* Accent — links, active state, focus ring, selected series */
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: #eff6ff;
+  --pos: #15803d;
+  --pos-soft: #edf7ef;
+  --neg: #b91c1c;
+  --neg-soft: #fcecec;
+  --warn: #a16207;
+  --warn-soft: #fef9ec;
 
-  /* Category palette */
-  --cat-1: oklch(0.62 0.1 250);
-  --cat-2: oklch(0.65 0.1 155);
-  --cat-3: oklch(0.68 0.1 75);
-  --cat-4: oklch(0.63 0.1 25);
-  --cat-5: oklch(0.62 0.1 310);
-  --cat-6: oklch(0.65 0.1 200);
-  --cat-7: oklch(0.6 0.1 350);
-  --cat-8: oklch(0.65 0.08 100);
+  /* Chart greys — the only palette charts may use, plus --accent for a
+     highlighted/selected series. Largest → smallest. */
+  --d1: #18181b;
+  --d2: #3f3f46;
+  --d3: #71717a;
+  --d4: #a1a1aa;
+  --d5: #d4d4d8;
+
+  /* Category palette — retired per MASTER §2 ("no 8-hue category palette
+     any more"). Redefined as the greyscale ramp so nothing renders in the
+     old eight hues; a later phase removes the --cat-* call sites. */
+  --cat-1: var(--d1);
+  --cat-2: var(--d2);
+  --cat-3: var(--d3);
+  --cat-4: var(--d4);
+  --cat-5: var(--d5);
+  --cat-6: var(--d2);
+  --cat-7: var(--d4);
+  --cat-8: var(--d3);
 
   --radius-sm: 4px;
   --radius: 6px;
   --radius-lg: 10px;
   --radius-xl: 14px;
 
-  --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.04);
-  --shadow-card:
-    0 1px 0 oklch(0 0 0 / 0.02), 0 2px 4px oklch(0 0 0 / 0.04),
-    0 10px 24px oklch(0.4 0.08 25 / 0.05);
-  --shadow-card-hover:
-    0 1px 0 oklch(0 0 0 / 0.03), 0 4px 8px oklch(0 0 0 / 0.06),
-    0 18px 40px oklch(0.4 0.08 25 / 0.09);
-  --shadow-pop: 0 1px 2px oklch(0 0 0 / 0.04), 0 14px 36px oklch(0.4 0.08 25 / 0.08);
+  /* Ledger uses 1px borders, not shadows. Only floating layers (menus,
+     sheets, toasts) keep a shadow — see --shadow-pop. */
+  --shadow-sm: none;
+  --shadow-card: none;
+  --shadow-card-hover: none;
+  --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.1), 0 1px 2px rgb(0 0 0 / 0.06);
 
   /* Motion — single vocabulary shared with src/lib/motion.ts */
-  --dur-1: 140ms;
-  --dur-2: 220ms;
-  --dur-3: 360ms;
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 320ms;
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* Type stack — Cabinet Grotesk for hero, General Sans for body, JetBrains Mono for numbers */
-  --font-display: 'Cabinet Grotesk', 'General Sans', -apple-system, system-ui, sans-serif;
-  --font-body: 'General Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  /* Type stack — Space Grotesk for display, Inter for body, JetBrains Mono
+     for every other numeral (table cells, axes, amounts, dates). */
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body: 'Inter', -apple-system, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
   --mono: var(--font-mono); /* legacy alias */
 
-  /* Kosh brand palette — Warm Treasury */
-  --kosh-brown-deep: #2e1608;
-  --kosh-brown-mid: #3d1f0a;
-  --kosh-brown-warm: #5c3520;
-  --kosh-amber: #d4a96a;
-  --kosh-amber-light: #e8c99a;
-  --kosh-cream: #fef9f2;
-  --kosh-cream-dark: #f5ede0;
-  --kosh-sand: #ead9c4;
-
-  /* ── Map legacy --app-* token names to Personal Finance palette ───────────
+  /* ── Map legacy --app-* token names to the Ledger palette ─────────────────
      This lets every existing Tailwind utility (bg-surface, text-on-surface,
      text-primary, etc.) inherit the new aesthetic without code changes. */
   --app-background: var(--bg);
@@ -120,34 +122,36 @@
   --app-surface-tint: var(--accent);
 }
 
-/* ─── Personal Finance design tokens (dark) ───────────────────────────────── */
+/* ─── Ledger design tokens (dark) ─────────────────────────────────────────── */
 html.dark {
-  --bg: oklch(0.16 0.005 60);
-  --surface: oklch(0.2 0.005 60);
-  --surface-2: oklch(0.24 0.005 60);
-  --surface-3: oklch(0.28 0.006 60);
-  --line: oklch(0.3 0.007 60);
-  --line-strong: oklch(0.38 0.008 60);
-  --ink: oklch(0.95 0.005 85);
-  --ink-2: oklch(0.82 0.005 85);
-  --ink-3: oklch(0.62 0.006 85);
-  --ink-4: oklch(0.46 0.007 85);
+  --bg: #0b0b0c;
+  --surface: #141416;
+  --surface-2: #1c1c1f;
+  --surface-3: #212124;
+  --line: #27272a;
+  --line-strong: #3f3f46;
+  --ink: #fafafa;
+  --ink-2: #d4d4d8;
+  --ink-3: #a1a1aa;
+  --ink-4: #71717a;
 
-  --accent: oklch(0.72 0.16 22);
-  --accent-soft: oklch(0.3 0.08 22);
-  --pos: oklch(0.72 0.14 155);
-  --pos-soft: oklch(0.3 0.06 155);
-  --neg: oklch(0.68 0.17 28);
-  --neg-soft: oklch(0.3 0.08 28);
-  --warn: oklch(0.78 0.14 75);
-  --warn-soft: oklch(0.3 0.08 75);
+  --accent: #60a5fa;
+  --accent-hover: #93c5fd;
+  --accent-soft: #12203a;
+  --pos: #4ade80;
+  --pos-soft: #132118;
+  --neg: #f87171;
+  --neg-soft: #2a1315;
+  --warn: #fbbf24;
+  --warn-soft: #231b06;
 
-  --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.3);
-  --shadow-card:
-    0 1px 0 oklch(0 0 0 / 0.18), 0 2px 4px oklch(0 0 0 / 0.28), 0 10px 24px oklch(0 0 0 / 0.32);
-  --shadow-card-hover:
-    0 1px 0 oklch(0 0 0 / 0.25), 0 4px 8px oklch(0 0 0 / 0.36), 0 18px 40px oklch(0 0 0 / 0.45);
-  --shadow-pop: 0 1px 2px oklch(0 0 0 / 0.4), 0 14px 36px oklch(0 0 0 / 0.5);
+  --d1: #e7e7ea;
+  --d2: #babac0;
+  --d3: #8e8e96;
+  --d4: #63636b;
+  --d5: #3f3f46;
+
+  --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.5), 0 1px 2px rgb(0 0 0 / 0.4);
 }
 
 /* ─── Tailwind v4: map utilities to CSS vars ──────────────────────── */
