@@ -66,9 +66,7 @@ export function useBackendHealth() {
 
       // Debounce: only show the banner after FAILURE_THRESHOLD failures in FAILURE_WINDOW_MS.
       const now = Date.now()
-      failureTimesRef.current = failureTimesRef.current.filter(
-        (t) => now - t < FAILURE_WINDOW_MS
-      )
+      failureTimesRef.current = failureTimesRef.current.filter((t) => now - t < FAILURE_WINDOW_MS)
       failureTimesRef.current.push(now)
       if (failureTimesRef.current.length < FAILURE_THRESHOLD) return
 

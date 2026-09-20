@@ -6,7 +6,6 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { AuroraBackground } from './components/layout/AuroraBackground'
 import { Layout } from './components/layout/Layout'
 import { BackendStatus } from './components/ui/BackendStatus'
 import { KoshSpinner } from './components/ui/KoshSpinner'
@@ -22,13 +21,18 @@ import { IS_DEV } from './lib/config'
 const DashboardPage = lazy(() =>
   import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage }))
 )
-const UploadPage = lazy(() => import('./pages/UploadPage').then((m) => ({ default: m.UploadPage })))
 const BudgetPage = lazy(() => import('./pages/BudgetPage').then((m) => ({ default: m.BudgetPage })))
 const SettingsPage = lazy(() =>
   import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage }))
 )
 const TransactionsPage = lazy(() =>
   import('./pages/TransactionsPage').then((m) => ({ default: m.TransactionsPage }))
+)
+const InsightsPage = lazy(() =>
+  import('./pages/InsightsPage').then((m) => ({ default: m.InsightsPage }))
+)
+const CategoryPage = lazy(() =>
+  import('./pages/CategoryPage').then((m) => ({ default: m.CategoryPage }))
 )
 const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default: m.LoginPage })))
 const RegisterPage = lazy(() =>
@@ -66,7 +70,6 @@ function AppWithProviders() {
     <ThemeContext.Provider value={{ isDark, toggleTheme }}>
       <ToastContext.Provider value={toast}>
         <div data-theme={theme}>
-          <AuroraBackground />
           <BrowserRouter>
             <ErrorBoundary>
               <Suspense fallback={<RouteFallback />}>
@@ -86,11 +89,7 @@ function AppWithProviders() {
                       />
                       <Route
                         path="/upload"
-                        element={
-                          <ProtectedPage>
-                            <UploadPage />
-                          </ProtectedPage>
-                        }
+                        element={<Navigate to="/transactions?import=pdf" replace />}
                       />
                       <Route path="/review" element={<Navigate to="/transactions" replace />} />
                       <Route
@@ -114,6 +113,22 @@ function AppWithProviders() {
                         element={
                           <ProtectedPage>
                             <TransactionsPage />
+                          </ProtectedPage>
+                        }
+                      />
+                      <Route
+                        path="/insights"
+                        element={
+                          <ProtectedPage>
+                            <InsightsPage />
+                          </ProtectedPage>
+                        }
+                      />
+                      <Route
+                        path="/c/:categoryId"
+                        element={
+                          <ProtectedPage>
+                            <CategoryPage />
                           </ProtectedPage>
                         }
                       />

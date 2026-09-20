@@ -1,10 +1,10 @@
 import { NavLink } from 'react-router-dom'
 
 const navLinks = [
-  { to: '/dashboard', label: 'Dashboard' },
-  { to: '/upload', label: 'Upload' },
+  { to: '/dashboard', label: 'Home' },
   { to: '/transactions', label: 'Transactions' },
   { to: '/budget', label: 'Budget' },
+  { to: '/insights', label: 'Insights' },
   { to: '/settings', label: 'Settings' },
 ]
 
@@ -21,9 +21,9 @@ export function Footer() {
               style={{
                 width: 18,
                 height: 18,
-                background: 'var(--kosh-amber)',
-                color: 'var(--kosh-brown-deep)',
-                borderRadius: 4,
+                background: 'var(--ink)',
+                color: 'var(--surface)',
+                borderRadius: 'var(--radius-sm)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',

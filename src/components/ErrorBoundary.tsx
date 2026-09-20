@@ -45,13 +45,13 @@ function DefaultFallback({ error, onReset }: { error: Error; onReset: () => void
   return (
     <div
       role="alert"
-      className="flex min-h-[40vh] flex-col items-center justify-center text-center p-8 text-[var(--ink)]"
+      className="flex min-h-[40vh] flex-col items-center justify-center p-8 text-center text-[var(--ink)]"
     >
       <p className="card-eyebrow mb-2">Something went wrong</p>
-      <h1 className="text-[22px] font-semibold text-[var(--ink)] tracking-[-0.02em]">
+      <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-[var(--ink)]">
         Unexpected error
       </h1>
-      <p className="mt-2 max-w-md text-[13px] text-[var(--ink-3)] leading-[1.5]">
+      <p className="mt-2 max-w-md text-[13px] leading-[1.5] text-[var(--ink-3)]">
         {error.message || 'An unrecoverable error occurred while rendering this view.'}
       </p>
       <div className="mt-5 flex gap-2">

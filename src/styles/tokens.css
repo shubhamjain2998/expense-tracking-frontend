@@ -45,10 +45,14 @@
   --cat-7: var(--d4);
   --cat-8: var(--d3);
 
-  --radius-sm: 4px;
-  --radius: 6px;
-  --radius-lg: 10px;
-  --radius-xl: 14px;
+  /* MASTER.md §4 — 4px everywhere, 2px for chips and swatches. */
+  --radius-sm: 2px;
+  --radius: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+
+  /* Sticky offset for .panel / .setnav; .topnav is 52px today. */
+  --topbar-h: 52px;
 
   /* Ledger uses 1px borders, not shadows. Only floating layers (menus,
      sheets, toasts) keep a shadow — see --shadow-pop. */

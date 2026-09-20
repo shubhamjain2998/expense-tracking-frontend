@@ -71,6 +71,15 @@
   color: var(--ink-3);
 }
 
+/* Top bar page title — set from the current route in TopNav.tsx. */
+.page-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
 /* Eyebrow / uppercase section label */
 .eyebrow {
   font-size: 10.5px;
@@ -927,66 +936,128 @@ select:disabled,
   }
 }
 
-/* ─── Sidebar nav item — replaces the inline styles in Sidebar.tsx
-   for the nav links specifically. Active state gets a 3px accent bar
-   on the left edge (the mock pattern). */
-.side-nav-item {
+/* ─── App shell — desktop side nav ──────────────────────────────────────
+   Transcribed from design-mock/ledger/ledger.css (.app/.sidenav/.brand/
+   .navlist/.navlink/.nav-foot) and shell.js. Desktop-only: a fixed-width
+   left rail sticks alongside the fluid main column; below 900px it hides
+   entirely and `.bottom-tab-bar` takes over primary navigation. */
+.app {
+  display: grid;
+  grid-template-columns: 208px 1fr;
+  min-height: 100vh;
+}
+@media (max-width: 899px) {
+  .app {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sidenav {
+  border-right: 1px solid var(--line);
+  background: var(--surface);
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+@media (max-width: 899px) {
+  .sidenav {
+    display: none;
+  }
+}
+
+.brand {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 8px;
-  border-radius: 6px;
-  color: var(--ink-3);
+  padding: 4px 8px;
+}
+.brand-mark {
+  width: 26px;
+  height: 26px;
+  background: var(--ink);
+  color: var(--surface);
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 700;
   font-size: 13px;
-  font-weight: 400;
-  text-decoration: none;
-  margin-bottom: 1px;
-  position: relative;
-  transition:
-    background 0.12s ease,
-    color 0.12s ease;
-}
-.side-nav-item:hover {
-  background: var(--surface-2);
-  color: var(--ink-2);
-}
-.side-nav-item.active {
-  color: var(--ink);
-  font-weight: 500;
-}
-/* Sliding active pill — a motion.span with layoutId that glides between
-   nav items. Carries the surface fill and the accent edge bar; content
-   sits above it via z-index. */
-.side-nav-pill {
-  position: absolute;
-  inset: 0;
-  border-radius: 6px;
-  background: var(--surface-2);
-}
-.side-nav-pill::before {
-  content: '';
-  position: absolute;
-  left: -4px;
-  top: 6px;
-  bottom: 6px;
-  width: 3px;
-  border-radius: 0 2px 2px 0;
-  background: var(--accent);
-}
-.side-nav-item > :not(.side-nav-pill) {
-  position: relative;
-  z-index: 1;
-}
-.side-nav-badge {
-  background: var(--accent);
-  color: oklch(0.99 0 0);
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 600;
-  padding: 1px 6px;
-  line-height: 1.4;
+  letter-spacing: -0.04em;
   flex-shrink: 0;
-  font-family: var(--font-mono);
+}
+.brand-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.navlist {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.navlink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 8px;
+  border-radius: var(--radius);
+  color: var(--ink-2);
+  font-size: 13.5px;
+  font-weight: 500;
+  min-height: 38px;
+  text-decoration: none;
+  transition:
+    background var(--dur-1) var(--ease-out-soft),
+    color var(--dur-1) var(--ease-out-soft);
+}
+.navlink:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+  text-decoration: none;
+}
+.navlink[aria-current='page'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+.navlink .badge {
+  margin-left: auto;
+}
+
+.nav-foot {
+  margin-top: auto;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Small numeric pill — used for the pending-transactions count on the
+   Transactions nav link. Not yet ported elsewhere in Phase 1; kept minimal
+   to what the side nav needs. */
+.badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+html.dark .badge {
+  color: var(--bg);
 }
 
 /* ─── Card depth (global) ─────────────────────────────────────────────
@@ -2023,127 +2094,6 @@ html.dark .topnav {
   }
 }
 
-/* ─── Ambient aurora background ─────────────────────────────────────────────
-   A slow-moving, brand-coloured glow fixed behind the whole app, visible in
-   the page margins and the gaps between cards. Desktop-only; motion freezes
-   under prefers-reduced-motion. Mounted once in App.tsx via <AuroraBackground/>.
-   See src/components/layout/AuroraBackground.tsx. */
-.aurora-bg {
-  position: fixed;
-  inset: 0;
-  z-index: -1; /* behind page content, in front of the body background */
-  overflow: hidden;
-  pointer-events: none;
-  background: var(--bg); /* base colour behind the blurred blobs */
-
-  /* Light mode (warm paper): gentle warm clouds — a touch more present. */
-  --aurora-1: oklch(0.42 0.16 22); /* oxblood */
-  --aurora-2: var(--kosh-amber); /* amber */
-  --aurora-3: var(--kosh-brown-warm); /* warm brown */
-  --aurora-opacity: 0.26;
-
-  display: none; /* mobile: absent entirely — no DOM cost, no motion */
-}
-
-html.dark .aurora-bg {
-  /* Dark mode: very dim, moody glow — stays well behind the content. */
-  --aurora-1: oklch(0.42 0.13 22);
-  --aurora-2: oklch(0.58 0.08 70); /* dimmed amber */
-  --aurora-3: oklch(0.38 0.05 50);
-  --aurora-opacity: 0.22;
-}
-
-@media (min-width: 768px) {
-  .aurora-bg {
-    display: block;
-  }
-}
-
-.aurora-blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(70px);
-  opacity: var(--aurora-opacity);
-  will-change: transform;
-}
-.aurora-blob-1 {
-  width: 48vw;
-  height: 48vw;
-  top: -12vh;
-  left: -6vw;
-  background: var(--aurora-1);
-  animation: aurora-drift-1 19s ease-in-out infinite;
-}
-.aurora-blob-2 {
-  width: 42vw;
-  height: 42vw;
-  right: -8vw;
-  bottom: -16vh;
-  background: var(--aurora-2);
-  animation: aurora-drift-2 23s ease-in-out infinite;
-}
-.aurora-blob-3 {
-  width: 34vw;
-  height: 34vw;
-  top: 28vh;
-  right: 16vw;
-  background: var(--aurora-3);
-  opacity: calc(var(--aurora-opacity) * 0.8);
-  animation: aurora-drift-3 28s ease-in-out infinite;
-}
-
-/* Subtle grain over the blur — dark mode only, to break up gradient banding.
-   Light mode keeps its own paper grain via body::before. */
-.aurora-grain {
-  display: none;
-}
-html.dark .aurora-grain {
-  display: block;
-  position: absolute;
-  inset: 0;
-  opacity: 0.045;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-@keyframes aurora-drift-1 {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
-  50% {
-    transform: translate3d(15vw, 11vh, 0);
-  }
-}
-@keyframes aurora-drift-2 {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
-  50% {
-    transform: translate3d(-14vw, -10vh, 0);
-  }
-}
-@keyframes aurora-drift-3 {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  33% {
-    transform: translate3d(-11vw, 9vh, 0) scale(1.22);
-  }
-  66% {
-    transform: translate3d(9vw, -6vh, 0) scale(0.9);
-  }
-}
-
-/* Respect reduced-motion: keep the rich composition, drop the drift. */
-@media (prefers-reduced-motion: reduce) {
-  .aurora-blob {
-    animation: none;
-  }
-}
-
 /* Dashboard hero "verdict" card — the one premium glass moment. The aurora
    glows through it; every other card stays opaque. Desktop only (the aurora is
    absent on mobile, so glass there would just blur the flat background). */
@@ -2182,11 +2132,11 @@ html.dark .aurora-grain {
   transform: translateY(-50%);
   pointer-events: none;
   display: none;
-  color: var(--kosh-brown-warm);
+  color: var(--ink-3);
   opacity: 0.5;
 }
 html.dark .auth-seal {
-  color: var(--kosh-amber);
+  color: var(--accent);
   opacity: 0.4;
 }
 @media (min-width: 768px) {
@@ -2263,6 +2213,12 @@ html.dark .auth-seal {
 .sec-head .sub {
   font-size: 12.5px;
   color: var(--ink-3);
+}
+.sec-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: -0.015em;
 }
 .sec-head .act {
   margin-left: auto;

@@ -1,36 +1,42 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 
+import { AddTransactionDialog } from '@/components/ui/AddTransactionDialog'
 import { Avatar } from '@/components/ui/Avatar'
 import { Icon } from '@/components/ui/Icon'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAvatarPrefs } from '@/hooks/useAvatarPrefs'
-import { usePeriodMode } from '@/hooks/usePeriodMode'
-import { useSidebarStats } from '@/hooks/useSidebarStats'
 import { useThemeContext } from '@/hooks/useThemeContext'
-import { formatCompact } from '@/lib/format'
-import { pendingTransactionsUrl } from '@/lib/pendingNav'
-import { monthShortLabel } from '@/lib/period'
 import { getInitials } from '@/lib/strings'
 
-const NAV = [
-  { to: '/dashboard', label: 'Dashboard', end: true },
+// Route -> page title. Used only to label the top bar; the actual nav links
+// live in SideNav (desktop) and BottomTabBar (mobile). Keep in sync with the
+// four-destination IA — see design-system/kosh-ledger/MASTER.md §7.
+const PAGE_TITLES: { to: string; label: string; end: boolean }[] = [
+  { to: '/dashboard', label: 'Home', end: true },
   { to: '/transactions', label: 'Transactions', end: false },
-  { to: '/upload', label: 'Upload', end: false },
   { to: '/budget', label: 'Budget', end: false },
+  { to: '/settings', label: 'Settings', end: false },
+  { to: '/insights', label: 'Insights', end: false },
 ]
+
+function pageTitleFor(pathname: string): string {
+  if (pathname.startsWith('/c/')) return 'Category'
+  const match = PAGE_TITLES.find(({ to, end }) => (end ? pathname === to : pathname.startsWith(to)))
+  return match?.label ?? ''
+}
 
 export function TopNav() {
   const { email, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const { isDark, toggleTheme } = useThemeContext()
-  const { spent, totalBudget, pendingCount, pendingItems } = useSidebarStats()
-  const { mode } = usePeriodMode()
   const initials = getInitials(email)
   const { prefs } = useAvatarPrefs()
   const displayName = localStorage.getItem('pf_display_name') || email.split('@')[0] || ''
 
   const [profileOpen, setProfileOpen] = useState(false)
+  const [addOpen, setAddOpen] = useState(false)
 
   const popoverRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -56,72 +62,12 @@ export function TopNav() {
     navigate('/login', { replace: true })
   }
 
-  const txnsTo = pendingCount > 0 ? pendingTransactionsUrl(pendingItems, mode) : '/transactions'
-  const monthLabel = monthShortLabel(new Date().getMonth() + 1, 'calendar')
-  const statLabel =
-    totalBudget > 0
-      ? `${formatCompact(spent)} / ${formatCompact(totalBudget)} · ${monthLabel}`
-      : `${formatCompact(spent)} · ${monthLabel}`
+  const title = pageTitleFor(location.pathname)
 
   return (
     <header className="topnav" style={{ position: 'sticky', top: 0, zIndex: 50 }}>
-      {/* Brand */}
-      <div className="topnav-brand">
-        <Link
-          to="/dashboard"
-          style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}
-        >
-          <span
-            aria-hidden
-            style={{
-              width: 22,
-              height: 22,
-              background: 'var(--kosh-amber)',
-              color: 'var(--kosh-brown-deep)',
-              borderRadius: 5,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 800,
-              fontSize: 12,
-              letterSpacing: '-0.5px',
-              flexShrink: 0,
-            }}
-          >
-            K
-          </span>
-          <span className="topnav-brand-name">Kosh</span>
-        </Link>
-        <div className="topnav-brand-sep" aria-hidden />
-      </div>
-
-      {/* Desktop nav links */}
-      <nav className="topnav-links" aria-label="Primary">
-        {NAV.map(({ to, label, end }) => {
-          const resolvedTo = label === 'Transactions' ? txnsTo : to
-          return (
-            <NavLink
-              key={to}
-              to={resolvedTo}
-              end={end}
-              className={({ isActive }) => (isActive ? 'topnav-link active' : 'topnav-link')}
-            >
-              {label}
-              {label === 'Transactions' && pendingCount > 0 && (
-                <span className="topnav-badge num">{pendingCount > 9 ? '9+' : pendingCount}</span>
-              )}
-            </NavLink>
-          )
-        })}
-      </nav>
-
-      {/* Right controls */}
-      <div className="topnav-right">
-        {/* Month stat chip — desktop only */}
-        <div className="topnav-stat hidden md:flex">
-          <span className="topnav-stat-text">{statLabel}</span>
-        </div>
-
+      <span className="page-title">{title}</span>
+      <span className="topnav-right">
         {/* Theme toggle */}
         <button
           onClick={(e) => {
@@ -135,6 +81,12 @@ export function TopNav() {
           title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
         >
           <Icon name={isDark ? 'light_mode' : 'dark_mode'} size={15} />
+        </button>
+
+        {/* Primary add action */}
+        <button onClick={() => setAddOpen(true)} className="btn primary gap-[5px]">
+          <Icon name="add" size={15} />
+          <span>Add</span>
         </button>
 
         {/* Avatar / profile */}
@@ -214,7 +166,9 @@ export function TopNav() {
             </div>
           )}
         </div>
-      </div>
+      </span>
+
+      {addOpen && <AddTransactionDialog onClose={() => setAddOpen(false)} />}
     </header>
   )
 }

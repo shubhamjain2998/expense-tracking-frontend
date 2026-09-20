@@ -4,6 +4,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { AuthSealBackdrop } from '../components/auth/AuthSealBackdrop'
 import { GoogleSignInButton } from '../components/auth/GoogleSignInButton'
 import { Button } from '../components/ui/Button'
+import { Icon, type IconName } from '../components/ui/Icon'
 import { useAuth } from '../contexts/AuthContext'
 import { googleSignIn, login as loginApi } from '../lib/api'
 
@@ -70,9 +71,9 @@ export function LoginPage() {
             style={{
               width: 22,
               height: 22,
-              background: 'var(--kosh-amber)',
-              color: 'var(--kosh-brown-deep)',
-              borderRadius: 4,
+              background: 'var(--ink)',
+              color: 'var(--surface)',
+              borderRadius: 'var(--radius-sm)',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -179,12 +180,18 @@ export function LoginPage() {
 
         {/* Privacy trust marks */}
         <div className="mt-5 grid grid-cols-2 gap-2">
-          {[
-            { icon: '🔒', title: 'No SMS access', sub: 'We never read your messages' },
-            { icon: '📭', title: 'No email access', sub: 'We never scan your inbox' },
-            { icon: '📄', title: 'PDFs not stored', sub: 'Processed locally, then discarded' },
-            { icon: '👤', title: 'You own your data', sub: 'Export or delete anytime' },
-          ].map(({ icon, title, sub }) => (
+          {(
+            [
+              { icon: 'lock', title: 'No SMS access', sub: 'We never read your messages' },
+              { icon: 'mail_off', title: 'No email access', sub: 'We never scan your inbox' },
+              {
+                icon: 'insert_drive_file',
+                title: 'PDFs not stored',
+                sub: 'Processed locally, then discarded',
+              },
+              { icon: 'person', title: 'You own your data', sub: 'Export or delete anytime' },
+            ] satisfies { icon: IconName; title: string; sub: string }[]
+          ).map(({ icon, title, sub }) => (
             <div
               key={title}
               style={{
@@ -197,7 +204,9 @@ export function LoginPage() {
                 padding: '8px 10px',
               }}
             >
-              <span style={{ fontSize: 14, lineHeight: 1, marginTop: 1 }}>{icon}</span>
+              <span style={{ color: 'var(--ink-3)', marginTop: 1 }}>
+                <Icon name={icon} size={14} aria-hidden="true" />
+              </span>
               <div>
                 <p
                   style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-2)', lineHeight: 1.3 }}

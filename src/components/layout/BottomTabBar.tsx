@@ -8,7 +8,6 @@ import { pendingTransactionsUrl } from '@/lib/pendingNav'
 const TABS: { to: string; icon: IconName; label: string; key: string }[] = [
   { to: '/dashboard', icon: 'dashboard', label: 'Home', key: 'home' },
   { to: '/transactions', icon: 'receipt_long', label: 'Txns', key: 'txns' },
-  { to: '/upload', icon: 'upload', label: 'Upload', key: 'upload' },
   { to: '/budget', icon: 'account_balance_wallet', label: 'Budget', key: 'budget' },
   { to: '/settings', icon: 'settings', label: 'Settings', key: 'settings' },
 ]
