@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Kosh — Insights</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="ledger.css" />
+  </head>
+  <body data-page="insights" data-title="Insights">
+    <div class="app">
+      <aside class="sidenav" data-slot="sidenav"></aside>
+      <div class="main">
+        <header class="topbar" data-slot="topbar"></header>
+        <div class="container stack">
+          <section class="enter">
+            <p class="eyebrow">Patterns · last 15 months</p>
+            <p class="verdict-line" style="margin-top: var(--space-3); font-size: 21px">
+              Nothing here needs a decision today. It is the slow-moving picture behind
+              <a href="dashboard.html">this month</a>.
+            </p>
+          </section>
+
+          <!-- ══ HABITS — spend grouped by what it is FOR, across categories ══ -->
+          <section class="sec enter">
+            <div class="sec-head">
+              <h2 class="sec-title">Habits</h2>
+              <span class="sub">Tag groups that cut across categories · average per month over 12 months</span>
+            </div>
+            <div class="card">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th>Habit</th><th>Spans</th><th style="width: 88px">Shape</th>
+                    <th class="r">Avg / month</th><th class="r">Share of spend</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="strong">Eating out</td>
+                    <td class="small">Food &amp; dining · Travel · Entertainment</td>
+                    <td><svg class="spark" viewBox="0 0 64 20"><path d="M0,14 L9,11 L18,15 L27,8 L36,10 L45,5 L54,9 L64,4" /></svg></td>
+                    <td class="r num">₹9,240</td><td class="r num">5.4%</td>
+                  </tr>
+                  <tr>
+                    <td class="strong">Convenience &amp; delivery</td>
+                    <td class="small">Food &amp; dining · Transport</td>
+                    <td><svg class="spark" viewBox="0 0 64 20"><path d="M0,6 L9,9 L18,7 L27,12 L36,11 L45,14 L54,13 L64,15" /></svg></td>
+                    <td class="r num">₹6,120</td><td class="r num">3.6%</td>
+                  </tr>
+                  <tr>
+                    <td class="strong">Staying fit</td>
+                    <td class="small">Health · Shopping</td>
+                    <td><svg class="spark" viewBox="0 0 64 20"><path d="M0,12 L9,12 L18,11 L27,12 L36,10 L45,11 L54,10 L64,10" /></svg></td>
+                    <td class="r num">₹3,480</td><td class="r num">2.0%</td>
+                  </tr>
+                  <tr>
+                    <td class="strong">Gifts &amp; occasions</td>
+                    <td class="small">Shopping · Food &amp; dining</td>
+                    <td><svg class="spark" viewBox="0 0 64 20"><path d="M0,17 L9,16 L18,17 L27,4 L36,16 L45,17 L54,15 L64,17" /></svg></td>
+                    <td class="r num">₹2,840</td><td class="r num">1.7%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="small">
+              Eating out has risen in 5 of the last 6 months — the only habit with a clear direction.
+            </p>
+          </section>
+
+          <!-- ══ WHEN — the only "when × what" view in the app ══ -->
+          <section class="sec enter">
+            <div class="sec-head">
+              <h2 class="sec-title">When it happens</h2>
+              <span class="sub">Shade is relative to each row's own peak · a red outline means over that month's budget</span>
+            </div>
+            <div class="card card-pad">
+              <div class="heat">
+              <span></span>
+              <span class="colhead">Apr</span>
+              <span class="colhead">May</span>
+              <span class="colhead">Jun</span>
+              <span class="colhead">Jul</span>
+              <span class="colhead">Aug</span>
+              <span class="colhead">Sep</span>
+              <span class="colhead">Oct</span>
+              <span class="colhead">Nov</span>
+              <span class="colhead">Dec</span>
+              <span class="colhead">Jan</span>
+              <span class="colhead">Feb</span>
+              <span class="colhead">Mar</span>
+              <span class="lab">Housing & rent</span>
+              <span class="cell h5" title="Housing & rent · Apr · ₹62,000">62</span>
+              <span class="cell h5" title="Housing & rent · May · ₹62,000">62</span>
+              <span class="cell h5" title="Housing & rent · Jun · ₹62,000">62</span>
+              <span class="cell h5" title="Housing & rent · Jul · ₹62,000">62</span>
+              <span class="cell h5" title="Housing & rent · Aug · ₹62,000">62</span>
+              <span class="cell h5" title="Housing & rent · Sep · ₹62,000">62</span>
+              <span class="cell h5" title="Housing & rent · Oct · ₹62,000">62</span>
+              <span class="cell h5" title="Housing & rent · Nov · ₹62,000">62</span>
+              <span class="cell h5" title="Housing & rent · Dec · ₹62,000">62</span>
+              <span class="cell h5" title="Housing & rent · Jan · ₹62,000">62</span>
+              <span class="cell h5" title="Housing & rent · Feb · ₹62,000">62</span>
+              <span class="cell" title="Mar — not yet"></span>
+              <span class="lab">Food & dining</span>
+              <span class="cell h3" title="Food & dining · Apr · ₹24,100">24</span>
+              <span class="cell h4" title="Food & dining · May · ₹25,800">26</span>
+              <span class="cell h3" title="Food & dining · Jun · ₹23,400">23</span>
+              <span class="cell h4" title="Food & dining · Jul · ₹26,900">27</span>
+              <span class="cell h4 over" title="Food & dining · Aug · ₹28,200 · over budget">28</span>
+              <span class="cell h4" title="Food & dining · Sep · ₹24,600">25</span>
+              <span class="cell h4 over" title="Food & dining · Oct · ₹29,800 · over budget">30</span>
+              <span class="cell h4 over" title="Food & dining · Nov · ₹31,100 · over budget">31</span>
+              <span class="cell h5 over" title="Food & dining · Dec · ₹34,800 · over budget">35</span>
+              <span class="cell h4" title="Food & dining · Jan · ₹26,400">26</span>
+              <span class="cell h4 over" title="Food & dining · Feb · ₹31,240 · over budget">31</span>
+              <span class="cell" title="Mar — not yet"></span>
+              <span class="lab">Travel</span>
+              <span class="cell h1" title="Travel · Apr · ₹8,200">8</span>
+              <span class="cell h1" title="Travel · May · ₹4,100">4</span>
+              <span class="cell h3 over" title="Travel · Jun · ₹26,400 · over budget">26</span>
+              <span class="cell h1" title="Travel · Jul · ₹3,900">4</span>
+              <span class="cell h1" title="Travel · Aug · ₹2,800">3</span>
+              <span class="cell h1" title="Travel · Sep · ₹7,600">8</span>
+              <span class="cell h1" title="Travel · Oct · ₹9,400">9</span>
+              <span class="cell h2" title="Travel · Nov · ₹12,100">12</span>
+              <span class="cell h5 over" title="Travel · Dec · ₹38,200 · over budget">38</span>
+              <span class="cell h1" title="Travel · Jan · ₹4,300">4</span>
+              <span class="cell h3 over" title="Travel · Feb · ₹24,800 · over budget">25</span>
+              <span class="cell" title="Mar — not yet"></span>
+              <span class="lab">Shopping</span>
+              <span class="cell h2" title="Shopping · Apr · ₹16,400">16</span>
+              <span class="cell h3" title="Shopping · May · ₹21,900">22</span>
+              <span class="cell h2" title="Shopping · Jun · ₹12,800">13</span>
+              <span class="cell h3" title="Shopping · Jul · ₹18,200">18</span>
+              <span class="cell h4 over" title="Shopping · Aug · ₹26,700 · over budget">27</span>
+              <span class="cell h2" title="Shopping · Sep · ₹14,300">14</span>
+              <span class="cell h5 over" title="Shopping · Oct · ₹31,200 · over budget">31</span>
+              <span class="cell h4 over" title="Shopping · Nov · ₹28,400 · over budget">28</span>
+              <span class="cell h5 over" title="Shopping · Dec · ₹34,100 · over budget">34</span>
+              <span class="cell h2" title="Shopping · Jan · ₹11,900">12</span>
+              <span class="cell h3" title="Shopping · Feb · ₹18,960">19</span>
+              <span class="cell" title="Mar — not yet"></span>
+              <span class="lab">Utilities</span>
+              <span class="cell h3" title="Utilities · Apr · ₹9,800">10</span>
+              <span class="cell h4" title="Utilities · May · ₹12,400">12</span>
+              <span class="cell h5 over" title="Utilities · Jun · ₹14,100 · over budget">14</span>
+              <span class="cell h5 over" title="Utilities · Jul · ₹13,200 · over budget">13</span>
+              <span class="cell h4" title="Utilities · Aug · ₹11,800">12</span>
+              <span class="cell h4" title="Utilities · Sep · ₹10,400">10</span>
+              <span class="cell h4" title="Utilities · Oct · ₹9,900">10</span>
+              <span class="cell h4" title="Utilities · Nov · ₹10,200">10</span>
+              <span class="cell h4" title="Utilities · Dec · ₹11,100">11</span>
+              <span class="cell h5 over" title="Utilities · Jan · ₹12,800 · over budget">13</span>
+              <span class="cell h4" title="Utilities · Feb · ₹11,420">11</span>
+              <span class="cell" title="Mar — not yet"></span>
+              <span class="lab">Health</span>
+              <span class="cell h1" title="Health · Apr · ₹4,200">4</span>
+              <span class="cell h2" title="Health · May · ₹9,300">9</span>
+              <span class="cell h2" title="Health · Jun · ₹6,100">6</span>
+              <span class="cell h3 over" title="Health · Jul · ₹12,400 · over budget">12</span>
+              <span class="cell h1" title="Health · Aug · ₹3,800">4</span>
+              <span class="cell h2" title="Health · Sep · ₹9,300">9</span>
+              <span class="cell h2" title="Health · Oct · ₹7,100">7</span>
+              <span class="cell h2" title="Health · Nov · ₹5,400">5</span>
+              <span class="cell h2" title="Health · Dec · ₹6,200">6</span>
+              <span class="cell h5 over" title="Health · Jan · ₹18,900 · over budget">19</span>
+              <span class="cell h2" title="Health · Feb · ₹9,300">9</span>
+              <span class="cell" title="Mar — not yet"></span>
+              <span class="lab">Subscriptions</span>
+              <span class="cell h5" title="Subscriptions · Apr · ₹5,700">6</span>
+              <span class="cell h5" title="Subscriptions · May · ₹5,700">6</span>
+              <span class="cell h5" title="Subscriptions · Jun · ₹5,900">6</span>
+              <span class="cell h5" title="Subscriptions · Jul · ₹5,900">6</span>
+              <span class="cell h5" title="Subscriptions · Aug · ₹5,900">6</span>
+              <span class="cell h5" title="Subscriptions · Sep · ₹5,900">6</span>
+              <span class="cell h5" title="Subscriptions · Oct · ₹5,900">6</span>
+              <span class="cell h5" title="Subscriptions · Nov · ₹5,900">6</span>
+              <span class="cell h5" title="Subscriptions · Dec · ₹5,900">6</span>
+              <span class="cell h5" title="Subscriptions · Jan · ₹5,900">6</span>
+              <span class="cell h5" title="Subscriptions · Feb · ₹5,900">6</span>
+              <span class="cell" title="Mar — not yet"></span>
+              <span class="lab">Transport</span>
+              <span class="cell h3" title="Transport · Apr · ₹5,100">5</span>
+              <span class="cell h3" title="Transport · May · ₹4,600">5</span>
+              <span class="cell h4 over" title="Transport · Jun · ₹7,800 · over budget">8</span>
+              <span class="cell h2" title="Transport · Jul · ₹4,200">4</span>
+              <span class="cell h2" title="Transport · Aug · ₹3,900">4</span>
+              <span class="cell h3" title="Transport · Sep · ₹4,800">5</span>
+              <span class="cell h3" title="Transport · Oct · ₹5,600">6</span>
+              <span class="cell h3" title="Transport · Nov · ₹6,100">6</span>
+              <span class="cell h5 over" title="Transport · Dec · ₹9,200 · over budget">9</span>
+              <span class="cell h2" title="Transport · Jan · ₹3,800">4</span>
+              <span class="cell h2" title="Transport · Feb · ₹4,300">4</span>
+              <span class="cell" title="Mar — not yet"></span>
+              </div>
+              <div class="legendrow">
+                <span>Quiet</span>
+                <span class="heat-key">
+                  <span style="background: var(--card-2)"></span>
+                  <span class="h1"></span><span class="h2"></span><span class="h3"></span
+                  ><span class="h4"></span><span class="h5"></span>
+                </span>
+                <span>Peak</span>
+                <span style="margin-left: var(--space-4)">
+                  <span
+                    class="heat-key"
+                    style="vertical-align: middle"
+                    ><span class="h2 over" style="box-shadow: inset 0 0 0 2px var(--neg)"></span
+                  ></span>
+                  over budget
+                </span>
+                <span style="margin-left: auto">Hover a cell for the exact figure</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- ══ DAY OF WEEK + FORECAST ══ -->
+          <section class="sec enter">
+            <div class="sec-head">
+              <h2 class="sec-title">Which day, and what's next</h2>
+              <span class="sub">Weekday averages over 12 months, excluding rent and SIPs</span>
+            </div>
+            <div class="grid-2">
+              <div class="card card-pad">
+                <div class="dow">
+                  <span class="col"><i style="height: 38%"></i><span>Mon</span></span>
+                  <span class="col"><i style="height: 31%"></i><span>Tue</span></span>
+                  <span class="col"><i style="height: 44%"></i><span>Wed</span></span>
+                  <span class="col"><i style="height: 52%"></i><span>Thu</span></span>
+                  <span class="col peak"><i style="height: 100%"></i><span>Fri</span></span>
+                  <span class="col"><i style="height: 86%"></i><span>Sat</span></span>
+                  <span class="col"><i style="height: 61%"></i><span>Sun</span></span>
+                </div>
+                <p class="small" style="margin-top: var(--space-4)">
+                  Friday and Saturday carry <b>41%</b> of discretionary spend. A Friday averages
+                  <b class="num">₹3,180</b> against <b class="num">₹1,240</b> on a Tuesday.
+                </p>
+              </div>
+              <div class="card" style="display: flex; flex-direction: column">
+                <div class="card-head"><span class="strong">What March is likely to cost</span></div>
+                <div class="card-pad" style="display: flex; flex-direction: column; gap: var(--space-4)">
+                  <span class="money">
+                    <span class="eyebrow">Projection</span>
+                    <span class="v">₹1,92,400</span>
+                    <span class="small">±₹14,000 · from 15 months of March-adjusted history</span>
+                  </span>
+                  <div>
+                    <div class="meter"><i class="over" style="width: 100%"></i></div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 6px">
+                      <span class="small num">plan ₹1,59,000</span>
+                      <span class="small num neg">+₹33,400 likely</span>
+                    </div>
+                  </div>
+                  <p class="small">
+                    March has run <b>8% above</b> the yearly average in each of the last two years —
+                    insurance renewals and travel land in the same fortnight.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ══ COMMITMENTS — full list; Home shows only the next 14 days ══ -->
+          <section class="sec enter">
+            <div class="sec-head">
+              <h2 class="sec-title">Every commitment</h2>
+              <span class="sub">Detected from 6+ months of history · the monthly figure is the median, never the mean</span>
+            </div>
+            <div class="card">
+              <table class="tbl">
+                <thead>
+                  <tr><th>Charge</th><th>Cadence</th><th>Seen</th><th class="r">Median / month</th><th class="r">Change</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td class="strong">Rent</td><td class="small">1st of month</td><td class="small num">15 / 15</td><td class="r num">₹62,000</td><td class="r small">flat</td></tr>
+                  <tr><td class="strong">SIP — index fund</td><td class="small">1st of month</td><td class="small num">14 / 15</td><td class="r num">₹12,000</td><td class="r small">+₹2,000 in Nov</td></tr>
+                  <tr><td class="strong">Insurance RD</td><td class="small">5th of month</td><td class="small num">15 / 15</td><td class="r num">₹5,900</td><td class="r small">flat</td></tr>
+                  <tr><td class="strong">Cult.fit</td><td class="small">14th of month</td><td class="small num">11 / 15</td><td class="r num">₹1,901</td><td class="r small">flat</td></tr>
+                  <tr><td class="strong">Broadband</td><td class="small">20th of month</td><td class="small num">15 / 15</td><td class="r num">₹1,499</td><td class="r small neg">+₹250 in Feb</td></tr>
+                  <tr><td class="strong">Phone</td><td class="small">22nd of month</td><td class="small num">15 / 15</td><td class="r num">₹749</td><td class="r small">flat</td></tr>
+                  <tr><td class="strong">Music</td><td class="small">28th of month</td><td class="small num">15 / 15</td><td class="r num">₹199</td><td class="r small">flat</td></tr>
+                </tbody>
+                <tfoot>
+                  <tr><td class="strong">7 commitments</td><td></td><td></td><td class="r num strong">₹84,248</td><td></td></tr>
+                </tfoot>
+              </table>
+            </div>
+          </section>
+
+          <!-- ══ PEOPLE ══ -->
+          <section class="sec enter">
+            <div class="sec-head">
+              <h2 class="sec-title">People</h2>
+              <span class="sub">Shared bills and who still owes what</span>
+              <span class="act"><label class="small"><input type="checkbox" /> Include settled</label></span>
+            </div>
+            <div class="card">
+              <table class="tbl">
+                <thead>
+                  <tr><th>Person</th><th>Open items</th><th class="r">They owe you</th><th class="r">You owe them</th><th class="r">Net</th><th></th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="strong"><span class="people"><span class="avatar">P</span></span> Priya</td>
+                    <td class="small">Goa stay · Zepto · 2 more</td>
+                    <td class="r num">₹6,400</td><td class="r num">₹1,200</td><td class="r num pos">+₹5,200</td>
+                    <td class="r"><button class="btn sm">Settle</button></td>
+                  </tr>
+                  <tr>
+                    <td class="strong"><span class="people"><span class="avatar">A</span></span> Anand</td>
+                    <td class="small">Goa stay</td>
+                    <td class="r num">₹2,100</td><td class="r num">₹0</td><td class="r num pos">+₹2,100</td>
+                    <td class="r"><button class="btn sm">Settle</button></td>
+                  </tr>
+                  <tr>
+                    <td class="strong"><span class="people"><span class="avatar">M</span></span> Meera</td>
+                    <td class="small">Goa stay</td>
+                    <td class="r num">₹1,100</td><td class="r num">₹0</td><td class="r num pos">+₹1,100</td>
+                    <td class="r"><button class="btn sm">Settle</button></td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr><td class="strong">Net position</td><td></td><td class="r num">₹9,600</td><td class="r num">₹1,200</td><td class="r num pos strong">+₹8,400</td><td></td></tr>
+                </tfoot>
+              </table>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+    <nav class="tabbar" data-slot="tabbar" aria-label="Primary"></nav>
+    <script src="shell.js"></script>
+  </body>
+</html>

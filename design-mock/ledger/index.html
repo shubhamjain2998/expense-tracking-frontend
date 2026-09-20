@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Kosh — Ledger mocks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="ledger.css" />
+  </head>
+  <body>
+    <main class="container stack" style="max-width: 820px; padding-top: var(--space-7)">
+      <section>
+        <div style="display: flex; align-items: center; gap: var(--space-2)">
+          <span class="brand-mark" style="width: 32px; height: 32px; font-size: 15px">क</span>
+          <span class="brand-name" style="font-size: 19px">Kosh</span>
+        </div>
+        <h1 class="page-title" style="font-size: 30px; margin-top: var(--space-4)">
+          Ledger — redesign mocks
+        </h1>
+        <p class="small" style="max-width: 62ch; margin-top: var(--space-2); font-size: 14px">
+          Static mocks for the 2026 reset. Space Grotesk + Inter + JetBrains Mono, monochrome ink
+          with a single blue accent, hairlines instead of shadows. Every screen obeys two rules: a
+          number appears in exactly one place, and no two charts answer the same question. Use the
+          sun icon in the top bar of any screen to check dark mode.
+        </p>
+      </section>
+
+      <section class="sec">
+        <div class="sec-head"><h2 class="sec-title">Screens</h2></div>
+        <div class="card">
+          <div class="alerts">
+            <a class="alert" href="dashboard.html">
+              <i class="ico" data-ic="home" data-size="18"></i>
+              <span class="body"><span class="strong">Home</span>
+                <span class="small">Verdict · where it went · committed vs chosen · one trend · needs you</span></span>
+              <i class="act" data-ic="arrowR"></i>
+            </a>
+            <a class="alert" href="transactions.html">
+              <i class="ico" data-ic="list" data-size="18"></i>
+              <span class="body"><span class="strong">Transactions</span>
+                <span class="small">List, filters, bulk edit and the Import menu that replaces the Upload page</span></span>
+              <i class="act" data-ic="arrowR"></i>
+            </a>
+            <a class="alert" href="budget.html">
+              <i class="ico" data-ic="target" data-size="18"></i>
+              <span class="body"><span class="strong">Budget</span>
+                <span class="small">The year meter, the plan table, what sits outside the plan, expected income</span></span>
+              <i class="act" data-ic="arrowR"></i>
+            </a>
+            <a class="alert" href="insights.html">
+              <i class="ico" data-ic="sparkles" data-size="18"></i>
+              <span class="body"><span class="strong">Insights</span>
+                <span class="small">Habits · when it happens · which day · forecast · commitments · people</span></span>
+              <i class="act" data-ic="arrowR"></i>
+            </a>
+            <a class="alert" href="category.html">
+              <i class="ico" data-ic="tag" data-size="18"></i>
+              <span class="body"><span class="strong">Category drill-down</span>
+                <span class="small">Reached by clicking any row in "Where it went"</span></span>
+              <i class="act" data-ic="arrowR"></i>
+            </a>
+            <a class="alert" href="settings.html">
+              <i class="ico" data-ic="settings" data-size="18"></i>
+              <span class="body"><span class="strong">Settings</span>
+                <span class="small">Profile · categories · auto-rules · import history · backup · danger zone</span></span>
+              <i class="act" data-ic="arrowR"></i>
+            </a>
+            <a class="alert" href="login.html">
+              <i class="ico" data-ic="check" data-size="18"></i>
+              <span class="body"><span class="strong">Sign in</span>
+                <span class="small">Email, password, Google</span></span>
+              <i class="act" data-ic="arrowR"></i>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section class="sec">
+        <div class="sec-head"><h2 class="sec-title">What was removed, and where it went</h2></div>
+        <div class="card">
+          <table class="tbl">
+            <thead><tr><th>Was</th><th>Now</th></tr></thead>
+            <tbody>
+              <tr><td class="strong">Income/expense/saved in both the header and a KPI strip</td><td class="small">One money row in the verdict block</td></tr>
+              <tr><td class="strong">Donut + pace bars + deep dive + category stats</td><td class="small">One bar list; the pace is a tick on the same bar; detail is a drill-down</td></tr>
+              <tr><td class="strong">Six-month trend + income trend + seasonality arc</td><td class="small">One trend chart with a 6/12/15-month toggle</td></tr>
+              <tr><td class="strong">YTD cumulative chart + YTD highlights + budget YTD hero</td><td class="small">One year meter on Budget</td></tr>
+              <tr><td class="strong">Daily spend calendar + day-of-week panel</td><td class="small">One weekday panel in Insights</td></tr>
+              <tr><td class="strong">Upload page</td><td class="small">Import menu on Transactions</td></tr>
+              <tr><td class="strong">9 dashboard sections, ~20 cards</td><td class="small">5 blocks, 6 cards</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+    <script src="shell.js"></script>
+  </body>
+</html>

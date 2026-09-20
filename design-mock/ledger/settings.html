@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Kosh — Settings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="ledger.css" />
+  </head>
+  <body data-page="settings" data-title="Settings">
+    <div class="app">
+      <aside class="sidenav" data-slot="sidenav"></aside>
+      <div class="main">
+        <header class="topbar" data-slot="topbar"></header>
+        <div class="container">
+          <div class="setsplit">
+            <nav class="setnav" aria-label="Settings sections">
+              <a href="#profile" aria-current="true">Profile</a>
+              <a href="#categories">Categories</a>
+              <a href="#tags">Tags</a>
+              <a href="#people">People</a>
+              <a href="#rules">Auto-rules</a>
+              <a href="#imports">Import history</a>
+              <a href="#backup">Backup</a>
+              <a href="#danger">Danger zone</a>
+            </nav>
+
+            <div class="stack">
+              <section class="sec enter" id="profile">
+                <div class="sec-head">
+                  <h2 class="sec-title">Profile</h2>
+                  <span class="sub">Only you can see any of this</span>
+                </div>
+                <div class="card">
+                  <div class="panel">
+                    <div class="row" style="flex-direction: row; align-items: center; gap: var(--space-3)">
+                      <span class="avatar" style="width: 40px; height: 40px; font-size: 14px">SJ</span>
+                      <span><span class="strong">Shubham Jain</span><span class="small" style="display: block">jains1801@gmail.com</span></span>
+                      <button class="btn sm" style="margin-left: auto">Change photo</button>
+                    </div>
+                    <div class="row"><label>Display name</label><span class="field"><input value="Shubham Jain" /></span></div>
+                    <div class="row"><label>Currency</label><span class="field">₹ Indian Rupee<i data-ic="chevD" data-size="14"></i></span></div>
+                    <div class="row">
+                      <label>Year mode</label>
+                      <span class="seg" style="align-self: flex-start">
+                        <button aria-pressed="true">Financial year (Apr–Mar)</button>
+                        <button aria-pressed="false">Calendar year</button>
+                      </span>
+                      <span class="small">Changes what "this year" means everywhere, including Budget and Insights.</span>
+                    </div>
+                    <div class="row"><label>Theme</label>
+                      <span class="seg" style="align-self: flex-start">
+                        <button aria-pressed="false">Light</button><button aria-pressed="false">Dark</button><button aria-pressed="true">System</button>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="sec enter" id="categories">
+                <div class="sec-head">
+                  <h2 class="sec-title">Categories</h2>
+                  <span class="sub">9 spending · 3 income</span>
+                  <span class="act"><button class="btn sm"><i data-ic="plus" data-size="14"></i>New</button></span>
+                </div>
+                <div class="card">
+                  <table class="tbl">
+                    <thead><tr><th>Name</th><th>Kind</th><th class="r">Transactions</th><th class="r">Budget / month</th><th></th></tr></thead>
+                    <tbody>
+                      <tr><td class="strong">Housing &amp; rent</td><td><span class="tag">Spending</span></td><td class="r num">15</td><td class="r num">₹62,000</td><td class="r"><button class="btn ghost sm">Edit</button></td></tr>
+                      <tr><td class="strong">Food &amp; dining</td><td><span class="tag">Spending</span></td><td class="r num">184</td><td class="r num">₹26,000</td><td class="r"><button class="btn ghost sm">Edit</button></td></tr>
+                      <tr><td class="strong">Travel</td><td><span class="tag">Spending</span></td><td class="r num">62</td><td class="r num">₹15,000</td><td class="r"><button class="btn ghost sm">Edit</button></td></tr>
+                      <tr><td class="strong">Salary</td><td><span class="tag accent">Income</span></td><td class="r num">15</td><td class="r num">—</td><td class="r"><button class="btn ghost sm">Edit</button></td></tr>
+                    </tbody>
+                  </table>
+                  <div class="alert">
+                    <i class="ico" data-ic="alert" data-size="18"></i>
+                    <span class="body"><span class="strong">Deleting a category never deletes transactions</span>
+                      <span class="small">Its transactions move to Uncategorised and any merchant rules pointing at it are removed.</span></span>
+                  </div>
+                </div>
+              </section>
+
+              <section class="sec enter" id="rules">
+                <div class="sec-head">
+                  <h2 class="sec-title">Auto-rules</h2>
+                  <span class="sub">Learned from how you categorise · applied at import</span>
+                  <span class="act"><button class="btn sm"><i data-ic="plus" data-size="14"></i>New rule</button></span>
+                </div>
+                <div class="card">
+                  <table class="tbl">
+                    <thead><tr><th>When the description contains</th><th>Set category</th><th>Add tags</th><th class="r">Matched</th><th></th></tr></thead>
+                    <tbody>
+                      <tr><td class="num">INDIGO</td><td><span class="tag">Travel</span></td><td><span class="tag">flights</span></td><td class="r num">14</td><td class="r"><button class="btn ghost sm">Edit</button></td></tr>
+                      <tr><td class="num">ZEPTO</td><td><span class="tag">Food &amp; dining</span></td><td><span class="tag">groceries</span></td><td class="r num">96</td><td class="r"><button class="btn ghost sm">Edit</button></td></tr>
+                      <tr><td class="num">ACH-D-LIC</td><td><span class="tag">Insurance</span></td><td><span class="tag">recurring</span></td><td class="r num">15</td><td class="r"><button class="btn ghost sm">Edit</button></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="card card-pad">
+                  <p class="eyebrow" style="margin-bottom: var(--space-2)">Ignore list</p>
+                  <span class="tagset">
+                    <span class="tag">OPENING BALANCE</span><span class="tag">CLOSING BALANCE</span>
+                    <span class="tag">SELF TRANSFER</span><span class="tag">CC PAYMENT</span>
+                    <button class="chip">+ add</button>
+                  </span>
+                  <p class="small" style="margin-top: var(--space-2)">Rows matching these are skipped at import, so internal transfers never count as spending.</p>
+                </div>
+              </section>
+
+              <section class="sec enter" id="imports">
+                <div class="sec-head">
+                  <h2 class="sec-title">Import history</h2>
+                  <span class="sub">Every statement you have brought in</span>
+                  <span class="act"><a class="btn sm" href="transactions.html"><i data-ic="upload" data-size="14"></i>Import</a></span>
+                </div>
+                <div class="card">
+                  <table class="tbl">
+                    <thead><tr><th>File</th><th>Source</th><th class="r">Rows</th><th class="r">Duplicates skipped</th><th>When</th><th></th></tr></thead>
+                    <tbody>
+                      <tr><td class="strong">HDFC-Feb-2026.pdf</td><td class="small">PDF · password protected</td><td class="r num">84</td><td class="r num">0</td><td class="small">2 days ago</td><td class="r"><button class="btn ghost sm">Undo</button></td></tr>
+                      <tr><td class="strong">HDFC-Jan-2026.pdf</td><td class="small">PDF</td><td class="r num">79</td><td class="r num">2</td><td class="small">18 Jan</td><td class="r"><button class="btn ghost sm">Undo</button></td></tr>
+                      <tr><td class="strong">Pasted rows</td><td class="small">Clipboard</td><td class="r num">6</td><td class="r num">1</td><td class="small">04 Jan</td><td class="r"><button class="btn ghost sm">Undo</button></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              <section class="sec enter" id="backup">
+                <div class="sec-head">
+                  <h2 class="sec-title">Backup</h2>
+                  <span class="sub">Your data is yours · plain JSON, no lock-in</span>
+                </div>
+                <div class="grid-2">
+                  <div class="card card-pad" style="display: flex; flex-direction: column; gap: var(--space-3)">
+                    <span class="strong">Export everything</span>
+                    <span class="small">Transactions, categories, tags, people, budgets and rules. 312 rows, about 240 KB.</span>
+                    <button class="btn" style="align-self: flex-start">Download backup</button>
+                  </div>
+                  <div class="card card-pad" style="display: flex; flex-direction: column; gap: var(--space-3)">
+                    <span class="strong">Restore from a backup</span>
+                    <span class="small">You will see a preview of what changes before anything is written.</span>
+                    <button class="btn" style="align-self: flex-start">Choose file</button>
+                  </div>
+                </div>
+              </section>
+
+              <section class="sec enter" id="danger">
+                <div class="sec-head">
+                  <h2 class="sec-title">Danger zone</h2>
+                  <span class="sub">Both of these are permanent</span>
+                </div>
+                <div class="card">
+                  <div class="alerts">
+                    <div class="alert is-neg">
+                      <i class="ico" data-ic="alert" data-size="18"></i>
+                      <span class="body"><span class="strong">Delete all transactions</span>
+                        <span class="small">Keeps categories, tags, people and budgets. 312 rows removed.</span></span>
+                      <button class="btn sm act">Delete</button>
+                    </div>
+                    <div class="alert is-neg">
+                      <i class="ico" data-ic="alert" data-size="18"></i>
+                      <span class="body"><span class="strong">Delete this account</span>
+                        <span class="small">Everything goes, including backups held on the server.</span></span>
+                      <button class="btn sm act">Delete</button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <nav class="tabbar" data-slot="tabbar" aria-label="Primary"></nav>
+    <script src="shell.js"></script>
+  </body>
+</html>

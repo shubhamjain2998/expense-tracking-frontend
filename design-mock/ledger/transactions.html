@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Kosh — Transactions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="ledger.css" />
+  </head>
+  <body data-page="transactions" data-title="Transactions">
+    <div class="app">
+      <aside class="sidenav" data-slot="sidenav"></aside>
+      <div class="main">
+        <header class="topbar" data-slot="topbar"></header>
+
+        <div class="container stack">
+          <!-- ══ toolbar — import lives here, /upload is gone ══ -->
+          <section class="sec enter">
+            <div class="toolbar">
+              <span class="seg">
+                <button aria-pressed="true">All <span class="badge quiet">312</span></button>
+                <button aria-pressed="false">Needs review <span class="badge">12</span></button>
+                <button aria-pressed="false">Split</button>
+              </span>
+              <span class="field grow"
+                ><i data-ic="search"></i
+                ><input placeholder="Search description, amount or tag" />
+              </span>
+              <span class="period">
+                <button aria-label="Previous month"><i data-ic="chevL"></i></button>
+                <span class="lbl">Feb 2026</span>
+                <button aria-label="Next month"><i data-ic="chevR"></i></button>
+              </span>
+              <button class="btn"><i data-ic="filter"></i>Filters <span class="badge">2</span></button>
+              <span class="menu-wrap">
+                <button class="btn" data-menu="importmenu" aria-expanded="false" aria-haspopup="menu">
+                  <i data-ic="upload"></i>Import<i data-ic="chevD" data-size="14"></i>
+                </button>
+                <div class="menu" id="importmenu" role="menu" hidden>
+                  <a class="menu-item" role="menuitem" href="#">
+                    <i data-ic="file" data-size="18"></i>
+                    <span
+                      ><span class="strong">Bank statement PDF</span>
+                      <span class="small">Parsed automatically · password supported</span></span
+                    >
+                  </a>
+                  <a class="menu-item" role="menuitem" href="#">
+                    <i data-ic="clipboard" data-size="18"></i>
+                    <span
+                      ><span class="strong">Paste rows</span>
+                      <span class="small">From a spreadsheet or email</span></span
+                    >
+                  </a>
+                  <a class="menu-item" role="menuitem" href="#">
+                    <i data-ic="pencil" data-size="18"></i>
+                    <span
+                      ><span class="strong">Add one manually</span>
+                      <span class="small">Single transaction</span></span
+                    >
+                  </a>
+                </div>
+              </span>
+              <button class="btn primary"><i data-ic="plus"></i>Add</button>
+            </div>
+            <div class="toolbar" style="margin-top: var(--space-2)">
+              <span class="chip on">Feb 2026 <i data-ic="plus" data-size="11"></i></span>
+              <span class="chip on">Travel <i data-ic="plus" data-size="11"></i></span>
+              <span class="small">312 transactions · ₹1,86,420 out · ₹2,48,000 in</span>
+              <span class="push small">3 selected</span>
+              <button class="btn sm">Categorise</button>
+              <button class="btn sm">Tag</button>
+              <button class="btn sm">Split</button>
+            </div>
+          </section>
+
+          <!-- ══ list + docked editor ══ -->
+          <section class="worksplit enter">
+            <div class="card">
+              <table class="tbl sticky">
+                <thead>
+                  <tr>
+                    <th class="w-chk"><input type="checkbox" aria-label="Select all" /></th>
+                    <th class="w-date">Date</th>
+                    <th>Description</th>
+                    <th class="hide-sm">Category</th>
+                    <th class="hide-sm">Tags</th>
+                    <th class="hide-sm">With</th>
+                    <th class="r w-amt">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="sel">
+                    <td><input type="checkbox" checked aria-label="Select row" /></td>
+                    <td class="num">18 Feb</td>
+                    <td class="strong">Indigo 6E-2184 BLR→DEL</td>
+                    <td class="hide-sm"><span class="tag">Travel</span></td>
+                    <td class="hide-sm"><span class="tagset"><span class="tag">flights</span></span></td>
+                    <td class="hide-sm"></td>
+                    <td class="r num">₹11,480</td>
+                  </tr>
+                  <tr>
+                    <td><input type="checkbox" checked aria-label="Select row" /></td>
+                    <td class="num">17 Feb</td>
+                    <td class="strong">Blue Tokai Coffee</td>
+                    <td class="hide-sm"><span class="tag">Food &amp; dining</span></td>
+                    <td class="hide-sm"><span class="tagset"><span class="tag">eating out</span></span></td>
+                    <td class="hide-sm"></td>
+                    <td class="r num">₹640</td>
+                  </tr>
+                  <tr>
+                    <td><input type="checkbox" checked aria-label="Select row" /></td>
+                    <td class="num">16 Feb</td>
+                    <td class="strong">Zepto</td>
+                    <td class="hide-sm"><span class="tag">Food &amp; dining</span></td>
+                    <td class="hide-sm"><span class="tagset"><span class="tag">groceries</span></span></td>
+                    <td class="hide-sm"><span class="people"><span class="avatar">P</span></span></td>
+                    <td class="r num">₹2,310</td>
+                  </tr>
+                  <tr>
+                    <td><input type="checkbox" aria-label="Select row" /></td>
+                    <td class="num">15 Feb</td>
+                    <td class="strong">UPI/9845XXXX/PAYTM</td>
+                    <td class="hide-sm"><span class="tag accent">Needs a category</span></td>
+                    <td class="hide-sm"></td>
+                    <td class="hide-sm"></td>
+                    <td class="r num">₹1,899</td>
+                  </tr>
+                  <tr>
+                    <td><input type="checkbox" aria-label="Select row" /></td>
+                    <td class="num">14 Feb</td>
+                    <td class="strong">Cult.fit membership</td>
+                    <td class="hide-sm"><span class="tag">Health</span></td>
+                    <td class="hide-sm">
+                      <span class="tagset"
+                        ><span class="tag">fitness</span><span class="tag">recurring</span></span
+                      >
+                    </td>
+                    <td class="hide-sm"></td>
+                    <td class="r num">₹1,901</td>
+                  </tr>
+                  <tr>
+                    <td><input type="checkbox" aria-label="Select row" /></td>
+                    <td class="num">12 Feb</td>
+                    <td class="strong">MakeMyTrip — Goa stay</td>
+                    <td class="hide-sm"><span class="tag">Travel</span></td>
+                    <td class="hide-sm"><span class="tagset"><span class="tag">hotels</span></span></td>
+                    <td class="hide-sm">
+                      <span class="people"
+                        ><span class="avatar">P</span><span class="avatar">A</span
+                        ><span class="avatar">M</span></span
+                      >
+                    </td>
+                    <td class="r num">₹9,600</td>
+                  </tr>
+                  <tr>
+                    <td><input type="checkbox" aria-label="Select row" /></td>
+                    <td class="num">10 Feb</td>
+                    <td class="strong">Amazon — order 402-88</td>
+                    <td class="hide-sm"><span class="tag">Shopping</span></td>
+                    <td class="hide-sm"></td>
+                    <td class="hide-sm"></td>
+                    <td class="r num">₹4,248</td>
+                  </tr>
+                  <tr>
+                    <td><input type="checkbox" aria-label="Select row" /></td>
+                    <td class="num">08 Feb</td>
+                    <td class="strong">Salary — Feb</td>
+                    <td class="hide-sm"><span class="tag">Income</span></td>
+                    <td class="hide-sm"><span class="tagset"><span class="tag">salary</span></span></td>
+                    <td class="hide-sm"></td>
+                    <td class="r num pos">+₹2,48,000</td>
+                  </tr>
+                  <tr>
+                    <td><input type="checkbox" aria-label="Select row" /></td>
+                    <td class="num">05 Feb</td>
+                    <td class="strong">LIC premium RD</td>
+                    <td class="hide-sm"><span class="tag">Insurance</span></td>
+                    <td class="hide-sm"><span class="tagset"><span class="tag">recurring</span></span></td>
+                    <td class="hide-sm"></td>
+                    <td class="r num">₹5,900</td>
+                  </tr>
+                  <tr>
+                    <td><input type="checkbox" aria-label="Select row" /></td>
+                    <td class="num">01 Feb</td>
+                    <td class="strong">Rent — Feb</td>
+                    <td class="hide-sm"><span class="tag">Housing &amp; rent</span></td>
+                    <td class="hide-sm"><span class="tagset"><span class="tag">recurring</span></span></td>
+                    <td class="hide-sm"></td>
+                    <td class="r num">₹62,000</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: var(--space-3);
+                  padding: var(--space-3) var(--space-4);
+                "
+              >
+                <span class="small">Showing 10 of 312</span>
+                <span class="push"></span>
+                <button class="btn sm">Load more</button>
+              </div>
+            </div>
+
+            <!-- docked editor: replaces the old slide-over on desktop -->
+            <aside class="card panel">
+              <div class="card-head">
+                <span class="strong">Edit 3 selected</span>
+                <button class="btn ghost sm act" aria-label="Close">✕</button>
+              </div>
+              <div class="row">
+                <label>Category</label>
+                <span class="field">Travel<i data-ic="chevD" data-size="14"></i></span>
+              </div>
+              <div class="row">
+                <label>Tags</label>
+                <span class="tagset"
+                  ><span class="tag">flights</span><span class="tag">goa trip</span
+                  ><button class="chip">+ add</button></span
+                >
+              </div>
+              <div class="row">
+                <label>Split with</label>
+                <span class="tagset"
+                  ><span class="tag">Priya 50%</span><span class="tag">You 50%</span
+                  ><button class="chip">+ person</button></span
+                >
+                <span class="small">₹5,740 recoverable</span>
+              </div>
+              <div class="row">
+                <label>Note</label>
+                <span class="field"><input placeholder="Optional" /></span>
+              </div>
+              <div class="row" style="flex-direction: row; gap: var(--space-2)">
+                <button class="btn primary" style="flex: 1">Apply to 3</button>
+                <button class="btn">Cancel</button>
+              </div>
+              <div class="row">
+                <span class="small"
+                  >Applying a category here also updates the merchant rule, so future
+                  <span class="strong">Indigo</span> rows land in Travel automatically.</span
+                >
+              </div>
+            </aside>
+          </section>
+        </div>
+      </div>
+    </div>
+    <nav class="tabbar" data-slot="tabbar" aria-label="Primary"></nav>
+    <script src="shell.js"></script>
+  </body>
+</html>

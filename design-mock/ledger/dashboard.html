@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Kosh — Home</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="ledger.css" />
+  </head>
+  <body data-page="home" data-title="Home">
+    <div class="app">
+      <aside class="sidenav" data-slot="sidenav"></aside>
+      <div class="main">
+        <header class="topbar" data-slot="topbar"></header>
+
+        <div class="container stack">
+          <!-- ══ 1 · VERDICT — the only place this month's money figures appear ══ -->
+          <section class="enter">
+            <div class="verdict">
+              <div style="display: flex; flex-direction: column; gap: var(--space-4)">
+                <p class="eyebrow">February 2026 · day 18 of 28</p>
+                <p class="verdict-line">
+                  You're <b>₹14,200 ahead</b> of where February usually is by now — but
+                  <b>eating out</b> has already used <b>120%</b> of its month.
+                </p>
+                <div class="money-row">
+                  <span class="money">
+                    <span class="eyebrow">In</span>
+                    <span class="v pos">₹2,48,000</span>
+                  </span>
+                  <span class="money">
+                    <span class="eyebrow">Out</span>
+                    <span class="v">₹1,86,420</span>
+                  </span>
+                  <span class="money">
+                    <span class="eyebrow">Saved</span>
+                    <span class="v">₹61,580</span>
+                    <span class="small">24.8% of income</span>
+                  </span>
+                  <span class="money">
+                    <span class="eyebrow">Left to spend</span>
+                    <span class="v">₹2,190<span class="small">/day</span></span>
+                    <span class="small">for 10 days</span>
+                  </span>
+                </div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: var(--space-2)">
+                <span class="eyebrow">Period</span>
+                <div class="period">
+                  <button aria-label="Previous month"><i data-ic="chevL"></i></button>
+                  <span class="lbl">Feb 2026</span>
+                  <button aria-label="Next month"><i data-ic="chevR"></i></button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ══ 2 · WHERE IT WENT — bar list doubles as the budget-pace view ══ -->
+          <section class="sec enter">
+            <div class="sec-head">
+              <h2 class="sec-title">Where it went</h2>
+              <span class="sub">9 categories · tick marks today's expected spend</span>
+              <span class="act">
+                <span class="seg">
+                  <button aria-pressed="true">Amount</button>
+                  <button aria-pressed="false">Over budget</button>
+                </span>
+              </span>
+            </div>
+            <div class="card">
+              <div class="bars">
+                <a class="bar-row" href="category.html">
+                  <span class="name">Housing &amp; rent</span>
+                  <span class="track"
+                    ><span class="fill" style="width: 100%"></span
+                    ><span class="tick" style="left: 64.3%" data-label="expected today"></span
+                  ></span>
+                  <span class="amt num">₹62,000</span>
+                  <span class="of">100% of ₹62,000</span>
+                </a>
+                <a class="bar-row" href="category.html">
+                  <span class="name">Food &amp; dining</span>
+                  <span class="track"
+                    ><span class="fill over" style="width: 50.4%"></span
+                    ><span class="tick" style="left: 27%" data-label="expected today"></span
+                  ></span>
+                  <span class="amt num neg">₹31,240</span>
+                  <span class="of">120% of ₹26,000</span>
+                </a>
+                <a class="bar-row" href="category.html">
+                  <span class="name">Travel</span>
+                  <span class="track"
+                    ><span class="fill over" style="width: 40%"></span
+                    ><span class="tick" style="left: 15.6%" data-label="expected today"></span
+                  ></span>
+                  <span class="amt num neg">₹24,800</span>
+                  <span class="of">165% of ₹15,000</span>
+                </a>
+                <a class="bar-row" href="category.html">
+                  <span class="name">Shopping</span>
+                  <span class="track"
+                    ><span class="fill" style="width: 30.6%"></span
+                    ><span class="tick" style="left: 22.8%" data-label="expected today"></span
+                  ></span>
+                  <span class="amt num">₹18,960</span>
+                  <span class="of">86% of ₹22,000</span>
+                </a>
+                <a class="bar-row" href="category.html">
+                  <span class="name">Uncategorised</span>
+                  <span class="track"><span class="fill" style="width: 29.8%"></span></span>
+                  <span class="amt num">₹18,500</span>
+                  <span class="of">no budget</span>
+                </a>
+                <a class="bar-row" href="category.html">
+                  <span class="name">Utilities</span>
+                  <span class="track"
+                    ><span class="fill" style="width: 18.4%"></span
+                    ><span class="tick" style="left: 12.4%" data-label="expected today"></span
+                  ></span>
+                  <span class="amt num">₹11,420</span>
+                  <span class="of">95% of ₹12,000</span>
+                </a>
+                <a class="bar-row" href="category.html">
+                  <span class="name">Health</span>
+                  <span class="track"
+                    ><span class="fill" style="width: 15%"></span
+                    ><span class="tick" style="left: 10.4%" data-label="expected today"></span
+                  ></span>
+                  <span class="amt num">₹9,300</span>
+                  <span class="of">93% of ₹10,000</span>
+                </a>
+                <a class="bar-row" href="category.html">
+                  <span class="name">Subscriptions</span>
+                  <span class="track"
+                    ><span class="fill" style="width: 9.5%"></span
+                    ><span class="tick" style="left: 6.2%" data-label="expected today"></span
+                  ></span>
+                  <span class="amt num">₹5,900</span>
+                  <span class="of">98% of ₹6,000</span>
+                </a>
+                <a class="bar-row" href="category.html">
+                  <span class="name">Transport</span>
+                  <span class="track"
+                    ><span class="fill" style="width: 6.9%"></span
+                    ><span class="tick" style="left: 6.2%" data-label="expected today"></span
+                  ></span>
+                  <span class="amt num">₹4,300</span>
+                  <span class="of">72% of ₹6,000</span>
+                </a>
+              </div>
+            </div>
+          </section>
+
+          <!-- ══ 3 · COMMITTED vs CHOSEN ══ -->
+          <section class="sec enter">
+            <div class="sec-head">
+              <h2 class="sec-title">Committed vs chosen</h2>
+              <span class="sub">What repeats every month, and what you decided this month</span>
+              <span class="act"><a class="btn sm" href="insights.html">All commitments</a></span>
+            </div>
+            <div class="grid-2">
+              <div class="card card-pad" style="display: flex; flex-direction: column; gap: var(--space-4)">
+                <div style="display: flex; gap: var(--space-6)">
+                  <span class="money">
+                    <span class="eyebrow">Committed</span>
+                    <span class="v">₹82,347</span>
+                    <span class="small">44% of spend · 6 charges</span>
+                  </span>
+                  <span class="money">
+                    <span class="eyebrow">Chosen</span>
+                    <span class="v">₹1,04,073</span>
+                    <span class="small">56% of spend</span>
+                  </span>
+                </div>
+                <div>
+                  <div class="meter"><i style="width: 44%"></i></div>
+                  <p class="small" style="margin-top: 6px">
+                    Committed spend has been flat for 9 months. Every rupee of movement this month
+                    came from the chosen side.
+                  </p>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-head">
+                  <i data-ic="repeat"></i><span class="strong">Next 14 days</span>
+                  <span class="act small num">₹21,148 due</span>
+                </div>
+                <div class="alerts">
+                  <div class="alert">
+                    <i class="ico" data-ic="calendar"></i>
+                    <span class="body"
+                      ><span class="strong">SIP — index fund</span>
+                      <span class="small">Every 1st · 14 months running</span></span
+                    >
+                    <span class="act num">₹12,000</span>
+                  </div>
+                  <div class="alert">
+                    <i class="ico" data-ic="calendar"></i>
+                    <span class="body"
+                      ><span class="strong">Insurance RD</span>
+                      <span class="small">Every 5th · median of 15 months</span></span
+                    >
+                    <span class="act num">₹5,900</span>
+                  </div>
+                  <div class="alert is-warn">
+                    <i class="ico" data-ic="trendUp"></i>
+                    <span class="body"
+                      ><span class="strong">Broadband</span>
+                      <span class="small">Rose ₹250 from last month</span></span
+                    >
+                    <span class="act num">₹1,499</span>
+                  </div>
+                  <div class="alert">
+                    <i class="ico" data-ic="calendar"></i>
+                    <span class="body"
+                      ><span class="strong">Phone + Music</span>
+                      <span class="small">2 charges</span></span
+                    >
+                    <span class="act num">₹1,749</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ══ 4 · TREND — the ONE time-series on this page ══ -->
+          <section class="sec enter">
+            <div class="sec-head">
+              <h2 class="sec-title">Trend</h2>
+              <span class="sub">Monthly totals · in vs out</span>
+              <span class="act">
+                <span class="seg">
+                  <button aria-pressed="true">6m</button>
+                  <button aria-pressed="false">12m</button>
+                  <button aria-pressed="false">15m</button>
+                </span>
+              </span>
+            </div>
+            <div class="card card-pad">
+              <div class="chart">
+                <div class="legend">
+                  <span class="small strong" style="color: var(--ink)">
+                    <svg class="lineswatch" width="16" height="8" aria-hidden="true">
+                      <line x1="0" y1="4" x2="16" y2="4" stroke="currentColor" stroke-width="2" />
+                    </svg>
+                    Out
+                  </span>
+                  <span class="small strong" style="color: var(--accent)">
+                    <svg class="lineswatch" width="16" height="8" aria-hidden="true">
+                      <line
+                        x1="0"
+                        y1="4"
+                        x2="16"
+                        y2="4"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-dasharray="4 3"
+                      />
+                    </svg>
+                    In
+                  </span>
+                  <span class="small"
+                    >Out is up <b class="neg">8.6%</b> against your 6-month average</span
+                  >
+                </div>
+                <div class="yax" aria-hidden="true">
+                  <span>3.2L</span><span>2.4L</span><span>1.6L</span><span>0.8L</span><span>0</span>
+                </div>
+                <div class="plot">
+                  <svg
+                    viewBox="0 0 100 100"
+                    preserveAspectRatio="none"
+                    role="img"
+                    aria-label="Money in and out each month, September 2025 to February 2026"
+                  >
+                    <path
+                      class="area"
+                      d="M0,49.3 L20,39.1 L40,33.9 L60,25.3 L80,46.4 L100,41.7 L100,100 L0,100 Z"
+                    />
+                    <path class="s-in" d="M0,22.5 L20,22.5 L40,22.5 L60,3.1 L80,22.5 L100,22.5" />
+                    <path class="s-out" d="M0,49.3 L20,39.1 L40,33.9 L60,25.3 L80,46.4 L100,41.7" />
+                  </svg>
+                  <span class="dot" style="left: 0%; top: 49.3%"></span>
+                  <span class="dot" style="left: 20%; top: 39.1%"></span>
+                  <span class="dot" style="left: 40%; top: 33.9%"></span>
+                  <span class="dot" style="left: 60%; top: 25.3%"></span>
+                  <span class="dot" style="left: 80%; top: 46.4%"></span>
+                  <span class="dot now" style="left: 100%; top: 41.7%"></span>
+                </div>
+                <div class="xax">
+                  <span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span><span>Jan</span
+                  ><b>Feb</b>
+                </div>
+              </div>
+              <table class="sr-only">
+                <caption>
+                  Monthly money in and out
+                </caption>
+                <tr><th>Month</th><th>In</th><th>Out</th></tr>
+                <tr><td>Sep 2025</td><td>₹2,48,000</td><td>₹1,62,300</td></tr>
+                <tr><td>Oct 2025</td><td>₹2,48,000</td><td>₹1,94,800</td></tr>
+                <tr><td>Nov 2025</td><td>₹2,48,000</td><td>₹2,11,500</td></tr>
+                <tr><td>Dec 2025</td><td>₹3,10,000</td><td>₹2,38,900</td></tr>
+                <tr><td>Jan 2026</td><td>₹2,48,000</td><td>₹1,71,600</td></tr>
+                <tr><td>Feb 2026</td><td>₹2,48,000</td><td>₹1,86,420</td></tr>
+              </table>
+            </div>
+          </section>
+
+          <!-- ══ 5 · NEEDS YOU — every open loop, nothing else ══ -->
+          <section class="sec enter">
+            <div class="sec-head">
+              <h2 class="sec-title">Needs you</h2>
+              <span class="sub">4 open items</span>
+            </div>
+            <div class="card">
+              <div class="alerts">
+                <div class="alert is-warn">
+                  <i class="ico" data-ic="alert" data-size="18"></i>
+                  <span class="body">
+                    <span class="strong">12 transactions are still uncategorised</span>
+                    <span class="small">₹18,500 · oldest is 9 days old</span>
+                  </span>
+                  <a class="btn sm act" href="transactions.html">Review</a>
+                </div>
+                <div class="alert is-neg">
+                  <i class="ico" data-ic="trendUp" data-size="18"></i>
+                  <span class="body">
+                    <span class="strong">Travel is 165% of its budget with 10 days left</span>
+                    <span class="small">₹9,800 over · driven by one flight booking on 12 Feb</span>
+                  </span>
+                  <a class="btn sm act" href="category.html">Open</a>
+                </div>
+                <div class="alert">
+                  <i class="ico" data-ic="users" data-size="18"></i>
+                  <span class="body">
+                    <span class="strong">₹8,400 owed to you across 3 splits</span>
+                    <span class="small">Priya ₹5,200 · Anand ₹2,100 · Meera ₹1,100</span>
+                  </span>
+                  <a class="btn sm act" href="insights.html">Settle</a>
+                </div>
+                <div class="alert is-pos">
+                  <i class="ico" data-ic="check" data-size="18"></i>
+                  <span class="body">
+                    <span class="strong">February statement imported · 84 rows, 0 duplicates</span>
+                    <span class="small">HDFC · 2 days ago</span>
+                  </span>
+                  <a class="btn sm act" href="transactions.html">View</a>
+                </div>
+              </div>
+            </div>
+            <p class="small">
+              Habits, seasonality, day-of-week patterns and the year-to-date picture live in
+              <a href="insights.html">Insights</a> — they don't change what you do today.
+            </p>
+          </section>
+        </div>
+      </div>
+    </div>
+    <nav class="tabbar" data-slot="tabbar" aria-label="Primary"></nav>
+    <script src="shell.js"></script>
+  </body>
+</html>

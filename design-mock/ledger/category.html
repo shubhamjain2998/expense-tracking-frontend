@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Kosh — Travel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="ledger.css" />
+  </head>
+  <body data-page="home" data-title="Travel">
+    <div class="app">
+      <aside class="sidenav" data-slot="sidenav"></aside>
+      <div class="main">
+        <header class="topbar" data-slot="topbar"></header>
+        <div class="container stack">
+          <section class="enter">
+            <p class="small" style="margin-bottom: var(--space-3)">
+              <a href="dashboard.html">Home</a> · <span class="muted">Travel</span>
+            </p>
+            <div class="verdict">
+              <div style="display: flex; flex-direction: column; gap: var(--space-4)">
+                <p class="eyebrow">Category · February 2026</p>
+                <span class="hero-num neg">₹24,800</span>
+                <p class="verdict-line">
+                  <b>165%</b> of a ₹15,000 budget, with 10 days left. One booking on 12 Feb is
+                  <b>46%</b> of the total — without it you would be inside the plan.
+                </p>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: var(--space-2)">
+                <span class="eyebrow">Period</span>
+                <div class="period">
+                  <button aria-label="Previous month"><i data-ic="chevL"></i></button>
+                  <span class="lbl">Feb 2026</span>
+                  <button aria-label="Next month"><i data-ic="chevR"></i></button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="sec enter">
+            <div class="sec-head">
+              <h2 class="sec-title">Travel over 15 months</h2>
+              <span class="sub">This category only · the dashboard trend shows every category together</span>
+            </div>
+            <div class="card card-pad">
+              <div class="chart">
+                <div class="yax" aria-hidden="true">
+                  <span>40k</span><span>30k</span><span>20k</span><span>10k</span><span>0</span>
+                </div>
+                <div class="plot">
+                  <svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Travel spend by month over 15 months">
+                    <path class="area" d="M0.0,72.0 L7.14,84.0 L14.29,75.5 L21.43,87.0 L28.57,79.5 L35.71,89.75 L42.86,34.0 L50.0,90.25 L57.14,93.0 L64.29,81.0 L71.43,76.5 L78.57,69.75 L85.71,4.5 L92.86,89.25 L100.0,38.0 L100,100 L0,100 Z" />
+                    <path class="s-out" d="M0.0,72.0 L7.14,84.0 L14.29,75.5 L21.43,87.0 L28.57,79.5 L35.71,89.75 L42.86,34.0 L50.0,90.25 L57.14,93.0 L64.29,81.0 L71.43,76.5 L78.57,69.75 L85.71,4.5 L92.86,89.25 L100.0,38.0" />
+                  </svg>
+                  <span class="dot" style="left: 0.0%; top: 72.0%"></span>
+                  <span class="dot" style="left: 7.14%; top: 84.0%"></span>
+                  <span class="dot" style="left: 14.29%; top: 75.5%"></span>
+                  <span class="dot" style="left: 21.43%; top: 87.0%"></span>
+                  <span class="dot" style="left: 28.57%; top: 79.5%"></span>
+                  <span class="dot" style="left: 35.71%; top: 89.75%"></span>
+                  <span class="dot" style="left: 42.86%; top: 34.0%"></span>
+                  <span class="dot" style="left: 50.0%; top: 90.25%"></span>
+                  <span class="dot" style="left: 57.14%; top: 93.0%"></span>
+                  <span class="dot" style="left: 64.29%; top: 81.0%"></span>
+                  <span class="dot" style="left: 71.43%; top: 76.5%"></span>
+                  <span class="dot" style="left: 78.57%; top: 69.75%"></span>
+                  <span class="dot" style="left: 85.71%; top: 4.5%"></span>
+                  <span class="dot" style="left: 92.86%; top: 89.25%"></span>
+                  <span class="dot now" style="left: 100.0%; top: 38.0%"></span>
+                </div>
+                <div class="xax"><span>Dec</span><span></span><span></span><span>Mar</span><span></span><span></span><span>Jun</span><span></span><span></span><span>Sep</span><span></span><span></span><span>Dec</span><span></span><b>Feb</b></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="stats">
+                <div><span class="eyebrow">Median month</span><span class="v">₹8,200</span><span class="small">15 months</span></div>
+                <div><span class="eyebrow">Biggest month</span><span class="v">₹38,200</span><span class="small">Dec 2025 · year-end trip</span></div>
+                <div><span class="eyebrow">This month</span><span class="v">₹24,800</span><span class="small">3rd highest on record</span></div>
+                <div><span class="eyebrow">Transactions</span><span class="v">7</span><span class="small">median ₹1,240</span></div>
+                <div><span class="eyebrow">Share of spend</span><span class="v">13.3%</span><span class="small">was 2.5% in Jan</span></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="sec enter">
+            <div class="sec-head">
+              <h2 class="sec-title">Where in Travel</h2>
+              <span class="sub">Merchants and tags inside this category, this month</span>
+            </div>
+            <div class="grid-2">
+              <div class="card">
+                <div class="card-head"><span class="strong">Merchants</span></div>
+                <div class="bars">
+                  <span class="bar-row"><span class="name">MakeMyTrip</span>
+                    <span class="track"><span class="fill" style="width: 100%"></span></span>
+                    <span class="amt num">₹11,480</span><span class="of">1 charge</span></span>
+                  <span class="bar-row"><span class="name">Indigo</span>
+                    <span class="track"><span class="fill" style="width: 83.6%"></span></span>
+                    <span class="amt num">₹9,600</span><span class="of">1 charge</span></span>
+                  <span class="bar-row"><span class="name">Uber</span>
+                    <span class="track"><span class="fill" style="width: 18.6%"></span></span>
+                    <span class="amt num">₹2,140</span><span class="of">4 charges</span></span>
+                  <span class="bar-row"><span class="name">IRCTC</span>
+                    <span class="track"><span class="fill" style="width: 13.8%"></span></span>
+                    <span class="amt num">₹1,580</span><span class="of">1 charge</span></span>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-head"><span class="strong">Tags</span></div>
+                <div class="bars">
+                  <span class="bar-row"><span class="name">goa trip</span>
+                    <span class="track"><span class="fill" style="width: 100%"></span></span>
+                    <span class="amt num">₹21,080</span><span class="of">85% of month</span></span>
+                  <span class="bar-row"><span class="name">flights</span>
+                    <span class="track"><span class="fill" style="width: 54.5%"></span></span>
+                    <span class="amt num">₹11,480</span><span class="of">2 charges</span></span>
+                  <span class="bar-row"><span class="name">local travel</span>
+                    <span class="track"><span class="fill" style="width: 17.6%"></span></span>
+                    <span class="amt num">₹3,720</span><span class="of">5 charges</span></span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="sec enter">
+            <div class="sec-head">
+              <h2 class="sec-title">The transactions</h2>
+              <span class="sub">7 in February</span>
+              <span class="act"><a class="btn sm" href="transactions.html">Open in Transactions</a></span>
+            </div>
+            <div class="card">
+              <table class="tbl">
+                <thead><tr><th class="w-date">Date</th><th>Description</th><th class="hide-sm">Tags</th><th class="hide-sm">With</th><th class="r w-amt">Amount</th></tr></thead>
+                <tbody>
+                  <tr><td class="num">18 Feb</td><td class="strong">Indigo 6E-2184 BLR→DEL</td><td class="hide-sm"><span class="tag">flights</span></td><td class="hide-sm"></td><td class="r num">₹11,480</td></tr>
+                  <tr><td class="num">12 Feb</td><td class="strong">MakeMyTrip — Goa stay</td><td class="hide-sm"><span class="tag">hotels</span> <span class="tag">goa trip</span></td>
+                    <td class="hide-sm"><span class="people"><span class="avatar">P</span><span class="avatar">A</span><span class="avatar">M</span></span></td><td class="r num">₹9,600</td></tr>
+                  <tr><td class="num">11 Feb</td><td class="strong">IRCTC — Madgaon</td><td class="hide-sm"><span class="tag">goa trip</span></td><td class="hide-sm"></td><td class="r num">₹1,580</td></tr>
+                  <tr><td class="num">09 Feb</td><td class="strong">Uber trip</td><td class="hide-sm"><span class="tag">local travel</span></td><td class="hide-sm"></td><td class="r num">₹840</td></tr>
+                  <tr><td class="num">07 Feb</td><td class="strong">Uber trip</td><td class="hide-sm"><span class="tag">local travel</span></td><td class="hide-sm"></td><td class="r num">₹610</td></tr>
+                  <tr><td class="num">04 Feb</td><td class="strong">Uber trip</td><td class="hide-sm"><span class="tag">local travel</span></td><td class="hide-sm"></td><td class="r num">₹430</td></tr>
+                  <tr><td class="num">02 Feb</td><td class="strong">Uber trip</td><td class="hide-sm"><span class="tag">local travel</span></td><td class="hide-sm"></td><td class="r num">₹260</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+    <nav class="tabbar" data-slot="tabbar" aria-label="Primary"></nav>
+    <script src="shell.js"></script>
+  </body>
+</html>

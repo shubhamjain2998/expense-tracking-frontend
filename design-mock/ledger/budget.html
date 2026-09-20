@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Kosh — Budget</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="ledger.css" />
+  </head>
+  <body data-page="budget" data-title="Budget">
+    <div class="app">
+      <aside class="sidenav" data-slot="sidenav"></aside>
+      <div class="main">
+        <header class="topbar" data-slot="topbar"></header>
+        <div class="container stack">
+          <!-- ══ 1 · THE YEAR — the only place annual/YTD figures live ══ -->
+          <section class="enter">
+            <div class="verdict">
+              <div style="display:flex;flex-direction:column;gap:var(--space-4)">
+                <p class="eyebrow">FY 2026–27 · 11 of 12 months elapsed</p>
+                <p class="verdict-line">
+                  You've used <b>96.6%</b> of the year's plan with <b>8.3%</b> of the year left.
+                  At this rate you finish <b class="neg">₹95,400 over</b>.
+                </p>
+                <div style="max-width:620px">
+                  <div class="meter" style="height:10px"><i class="over" style="width:96.6%"></i></div>
+                  <div style="display:flex;justify-content:space-between;margin-top:6px">
+                    <span class="small num">₹18,42,600 spent</span>
+                    <span class="small num">₹19,08,000 planned</span>
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+                <span class="eyebrow">Financial year</span>
+                <div class="period">
+                  <button aria-label="Previous year"><i data-ic="chevL"></i></button>
+                  <span class="lbl">2026–27</span>
+                  <button aria-label="Next year"><i data-ic="chevR"></i></button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ══ 2 · THE PLAN ══ -->
+          <section class="sec enter">
+            <div class="sec-head">
+              <h2 class="sec-title">The plan</h2>
+              <span class="sub">Monthly amounts · edit any figure in place</span>
+              <span class="act">
+                <span class="seg"><button aria-pressed="true">Monthly</button><button aria-pressed="false">Annual</button></span>
+                <button class="btn sm"><i data-ic="plus" data-size="14"></i>Category</button>
+              </span>
+            </div>
+            <div class="card">
+              <table class="tbl">
+                <thead><tr>
+                  <th>Category</th><th class="r">Plan / month</th><th class="r">Feb spent</th>
+                  <th class="r">Left</th><th>Against pace</th>
+                </tr></thead>
+                <tbody>
+                  <tr><td class="strong">Housing &amp; rent</td><td class="r num">₹62,000</td><td class="r num">₹62,000</td><td class="r num">₹0</td>
+                    <td><span class="meter" style="width:120px;display:inline-block;vertical-align:middle"><i style="width:100%"></i></span> <span class="small">paid on the 1st</span></td></tr>
+                  <tr><td class="strong">Food &amp; dining</td><td class="r num">₹26,000</td><td class="r num neg">₹31,240</td><td class="r num neg">−₹5,240</td>
+                    <td><span class="meter" style="width:120px;display:inline-block;vertical-align:middle"><i class="over" style="width:100%"></i></span> <span class="small neg">120%</span></td></tr>
+                  <tr><td class="strong">Travel</td><td class="r num">₹15,000</td><td class="r num neg">₹24,800</td><td class="r num neg">−₹9,800</td>
+                    <td><span class="meter" style="width:120px;display:inline-block;vertical-align:middle"><i class="over" style="width:100%"></i></span> <span class="small neg">165%</span></td></tr>
+                  <tr><td class="strong">Shopping</td><td class="r num">₹22,000</td><td class="r num">₹18,960</td><td class="r num">₹3,040</td>
+                    <td><span class="meter" style="width:120px;display:inline-block;vertical-align:middle"><i style="width:86%"></i></span> <span class="small">86%</span></td></tr>
+                  <tr><td class="strong">Utilities</td><td class="r num">₹12,000</td><td class="r num">₹11,420</td><td class="r num">₹580</td>
+                    <td><span class="meter" style="width:120px;display:inline-block;vertical-align:middle"><i style="width:95%"></i></span> <span class="small">95%</span></td></tr>
+                  <tr><td class="strong">Health</td><td class="r num">₹10,000</td><td class="r num">₹9,300</td><td class="r num">₹700</td>
+                    <td><span class="meter" style="width:120px;display:inline-block;vertical-align:middle"><i style="width:93%"></i></span> <span class="small">93%</span></td></tr>
+                  <tr><td class="strong">Subscriptions</td><td class="r num">₹6,000</td><td class="r num">₹5,900</td><td class="r num">₹100</td>
+                    <td><span class="meter" style="width:120px;display:inline-block;vertical-align:middle"><i style="width:98%"></i></span> <span class="small">98%</span></td></tr>
+                  <tr><td class="strong">Transport</td><td class="r num">₹6,000</td><td class="r num">₹4,300</td><td class="r num">₹1,700</td>
+                    <td><span class="meter" style="width:120px;display:inline-block;vertical-align:middle"><i style="width:72%"></i></span> <span class="small">72%</span></td></tr>
+                </tbody>
+                <tfoot><tr>
+                  <td class="strong">Total planned</td><td class="r num strong">₹1,59,000</td>
+                  <td class="r num strong">₹1,67,920</td><td class="r num neg strong">−₹8,920</td><td></td>
+                </tr></tfoot>
+              </table>
+            </div>
+          </section>
+
+          <!-- ══ 3 · OUTSIDE THE PLAN ══ -->
+          <section class="sec enter">
+            <div class="sec-head">
+              <h2 class="sec-title">Outside the plan</h2>
+              <span class="sub">Money that has no budget line yet</span>
+            </div>
+            <div class="card">
+              <div class="alerts">
+                <div class="alert is-warn">
+                  <i class="ico" data-ic="alert" data-size="18"></i>
+                  <span class="body"><span class="strong">Uncategorised — ₹18,500 this month</span>
+                    <span class="small">12 transactions · the biggest single hole in the plan</span></span>
+                  <a class="btn sm act" href="transactions.html">Categorise</a>
+                </div>
+                <div class="alert">
+                  <i class="ico" data-ic="tag" data-size="18"></i>
+                  <span class="body"><span class="strong">Gifts — ₹4,200 across 3 months</span>
+                    <span class="small">Appears often enough to deserve a line</span></span>
+                  <button class="btn sm act">Add budget</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ══ 4 · INCOME PLAN ══ -->
+          <section class="sec enter">
+            <div class="sec-head">
+              <h2 class="sec-title">Expected income</h2>
+              <span class="sub">Used for the savings target, not for spending limits</span>
+            </div>
+            <div class="card">
+              <table class="tbl">
+                <thead><tr><th>Source</th><th class="r">Per month</th><th class="r">Received in Feb</th><th>Note</th></tr></thead>
+                <tbody>
+                  <tr><td class="strong">Salary</td><td class="r num">₹2,48,000</td><td class="r num pos">₹2,48,000</td><td class="small">Credited on the 8th, 14 months running</td></tr>
+                  <tr><td class="strong">Bonus</td><td class="r num">—</td><td class="r num">₹0</td><td class="small">Last seen Dec 2025 · ₹62,000</td></tr>
+                  <tr><td class="strong">Interest &amp; dividends</td><td class="r num">₹3,400</td><td class="r num">₹0</td><td class="small">Quarterly, next due March</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="small">Month-by-month spending patterns live in <a href="insights.html">Insights</a>. This page is the plan, not the history.</p>
+          </section>
+        </div>
+      </div>
+    </div>
+    <nav class="tabbar" data-slot="tabbar" aria-label="Primary"></nav>
+    <script src="shell.js"></script>
+  </body>
+</html>
