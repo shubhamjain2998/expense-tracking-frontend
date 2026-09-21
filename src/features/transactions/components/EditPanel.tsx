@@ -75,6 +75,20 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
     .sort()
     .join(',')
   const currentTagIds = [...selectedTagIds].sort().join(',')
+  // Compares person_id + type + value, not just membership — a share whose
+  // *amount* changed without anyone being added/removed must still count as
+  // dirty (isDirty below, and the send-only-touched-fields guard in
+  // handleSave — see its comment for why that guard exists at all).
+  const initialShareValues = [...txn.shares]
+    .map((s) => `${s.person_id}:${s.share_type}:${s.share_value}`)
+    .sort()
+    .join(',')
+  const currentShareValues = [...shares]
+    .map((s) => `${s.person_id}:${s.share_type}:${s.share_value}`)
+    .sort()
+    .join(',')
+  const sharesDirty =
+    currentShareIds !== initialShareIds || currentShareValues !== initialShareValues
   const isDirty =
     amount !== txn.amount ||
     description !== txn.description ||
@@ -82,7 +96,8 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
     categoryId !== txn.category_id ||
     notes !== (txn.notes ?? '') ||
     currentTagIds !== initialTagIds ||
-    currentShareIds !== initialShareIds
+    sharesDirty ||
+    txnType !== (txn.txn_type ?? 'expense')
 
   async function handleCreatePerson(name: string) {
     const p = await createPerson(name)
@@ -139,16 +154,29 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
       return
     }
     setCategoryError('')
-    editMutation.mutate({
-      amount: n,
-      description: description.trim() || undefined,
-      txn_date: txnDate || undefined,
-      category_id: categoryId,
-      shares,
-      notes: notes.trim() || null,
-      tag_ids: selectedTagIds,
-      txn_type: txnType,
-    })
+
+    // Only send fields the user actually changed in this panel, not the
+    // full local snapshot. `txn` is a copy taken once when the panel opened
+    // (see the settledOverrides comment above) and never refreshed — live
+    // testing found that categorising this same row from elsewhere (the
+    // keyboard 1–9 shortcut, drag-to-categorise, bulk actions) while this
+    // panel sat open, then clicking "Save changes" here with category
+    // untouched, silently reverted the category right back to whatever it
+    // was when the panel opened, clobbering the concurrent change. The
+    // backend's PATCH already applies fields independently
+    // (`if body.field is not None`), so omitting untouched fields here is
+    // enough — no backend change needed.
+    const payload: EditProcessedPayload = {}
+    if (amount !== txn.amount) payload.amount = n
+    if (description !== txn.description) payload.description = description.trim() || undefined
+    if (txnDate !== (txn.txn_date?.slice(0, 10) ?? '')) payload.txn_date = txnDate || undefined
+    if (categoryId !== txn.category_id) payload.category_id = categoryId
+    if (sharesDirty) payload.shares = shares
+    if (notes !== (txn.notes ?? '')) payload.notes = notes.trim() || null
+    if (currentTagIds !== initialTagIds) payload.tag_ids = selectedTagIds
+    if (txnType !== (txn.txn_type ?? 'expense')) payload.txn_type = txnType
+
+    editMutation.mutate(payload)
   }
 
   const isIncomeTxn = txnType === 'income'
