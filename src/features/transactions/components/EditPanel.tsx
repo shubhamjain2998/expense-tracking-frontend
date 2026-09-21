@@ -10,7 +10,7 @@ import { createCategory } from '@/lib/api/categories'
 import { createPerson, getPersons } from '@/lib/api/persons'
 import { getTags } from '@/lib/api/tags'
 import { editProcessedTransaction, patchShareSettled } from '@/lib/api/transactions'
-import { formatCurrency } from '@/lib/format'
+import { formatCurrency, todayIsoDate } from '@/lib/format'
 import { invalidateDomains, qk } from '@/lib/queryKeys'
 import type { Category } from '@/types/settings'
 import type {
@@ -105,6 +105,10 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
   function handleSave() {
     if (!categoryId) {
       setCategoryError('Please select a category')
+      return
+    }
+    if (txnDate && txnDate > todayIsoDate()) {
+      toast.error('Date cannot be in the future')
       return
     }
     const n = Number(amount)
@@ -250,6 +254,7 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
               value={txnDate}
               onChange={(e) => setTxnDate(e.target.value)}
               className="input"
+              max={todayIsoDate()}
             />
           </div>
         </div>

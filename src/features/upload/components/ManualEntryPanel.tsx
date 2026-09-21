@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button'
 import { SearchableSelect } from '@/components/ui/SearchableSelect'
 import { useQuickAdd } from '@/hooks/useQuickAdd'
 import { useToastContext } from '@/hooks/useToastContext'
+import { todayIsoDate } from '@/lib/format'
 import type { TxnType } from '@/types/transaction'
 
 const TXN_TYPE_OPTIONS: { value: TxnType; label: string; color: string }[] = [
@@ -42,6 +43,7 @@ export function ManualEntryPanel() {
     e.preventDefault()
     const errors: Record<string, string> = {}
     if (!manualDate) errors.date = 'Date is required'
+    else if (manualDate > todayIsoDate()) errors.date = 'Date cannot be in the future'
     if (!manualDesc.trim()) errors.desc = 'Description is required'
     const amt = parseFloat(manualAmount)
     if (!manualAmount || isNaN(amt) || amt <= 0) errors.amount = 'Enter a valid positive amount'
@@ -120,6 +122,7 @@ export function ManualEntryPanel() {
             value={manualDate}
             onChange={(e) => setManualDate(e.target.value)}
             className="input"
+            max={todayIsoDate()}
           />
           {manualErrors.date && (
             <p className="mt-1 text-[11px]" style={{ color: 'var(--neg)' }}>

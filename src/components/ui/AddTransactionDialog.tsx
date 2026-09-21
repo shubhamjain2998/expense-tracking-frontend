@@ -46,6 +46,7 @@ export function AddTransactionDialog({ onClose }: AddTransactionDialogProps) {
     e.preventDefault()
     const errs: Record<string, string> = {}
     if (!date) errs.date = 'Required'
+    else if (date > todayIsoDate()) errs.date = 'Date cannot be in the future'
     if (!desc.trim()) errs.desc = 'Required'
     const amt = parseFloat(amount)
     if (!amount || isNaN(amt) || amt <= 0) errs.amount = 'Enter a valid amount'
@@ -179,6 +180,7 @@ export function AddTransactionDialog({ onClose }: AddTransactionDialogProps) {
               value={date}
               onChange={(e) => setDate(e.target.value)}
               className="input"
+              max={todayIsoDate()}
             />
             {errors.date && (
               <p className="mt-1 text-[11px]" style={{ color: 'var(--neg)' }}>
