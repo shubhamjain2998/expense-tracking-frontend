@@ -2493,6 +2493,20 @@ a.bar-row:hover {
 .stats > div:last-child {
   border-right: 0;
 }
+/* Insights' derived-metric strip: same cells as `.stats`, but each carries a
+   sentence of interpretation under the number, so the columns need room to
+   read as prose rather than as a figure. */
+.stats.stats-read {
+  grid-template-columns: repeat(auto-fit, minmax(232px, 1fr));
+  /* The last row's cell border lands on top of the card's own bottom border
+     instead of doubling it — the cell borders exist to separate wrapped
+     rows, and how many rows there are isn't knowable from CSS. */
+  margin-bottom: -1px;
+}
+.stats.stats-read > div {
+  gap: 5px;
+  border-bottom: 1px solid var(--line);
+}
 .stats .v {
   font-family: var(--font-display);
   font-weight: 700;

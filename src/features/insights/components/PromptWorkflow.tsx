@@ -212,7 +212,7 @@ export function PromptWorkflow({ aggregates, onSave, isSaving, onCancel }: Promp
               id="insights-paste-json"
               value={pasteText}
               onChange={(e) => setPasteText(e.target.value)}
-              placeholder='{ "schema_version": 1, "verdict": "…", "findings": […], "charts": […] }'
+              placeholder='{ "schema_version": 2, "verdict": "…", "metrics": […], "findings": […], "patterns": […], "charts": […] }'
               className="textarea num"
               style={{ minHeight: 140, fontSize: 12 }}
               aria-label="LLM insights JSON reply"

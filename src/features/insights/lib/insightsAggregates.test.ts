@@ -48,6 +48,65 @@ describe('computeInsightsAggregates', () => {
     expect(dining?.total).toBe(300)
   })
 
+  it('counts the transactions behind each category-month total', () => {
+    const txns = [
+      txn({ txn_date: '2026-06-01', category: 'Dining', effective_amount: '100' }),
+      txn({ txn_date: '2026-06-15', category: 'Dining', effective_amount: '200' }),
+      txn({ txn_date: '2026-05-15', category: 'Dining', effective_amount: '300' }),
+    ]
+    const agg = computeInsightsAggregates(txns, [], NOW, 15)
+    const june = agg.categoryMonthTotals.find(
+      (r) => r.category === 'Dining' && r.month === '2026-06'
+    )
+    const may = agg.categoryMonthTotals.find(
+      (r) => r.category === 'Dining' && r.month === '2026-05'
+    )
+    // Same category, more spent in May off a single transaction — the count is
+    // what separates "paid more each time" from "paid more often".
+    expect(june).toMatchObject({ total: 300, count: 2 })
+    expect(may).toMatchObject({ total: 300, count: 1 })
+  })
+
+  it('totals income by month as well as by source', () => {
+    const txns = [
+      txn({ txn_type: 'income', txn_date: '2026-05-01', effective_amount: '-40000' }),
+      txn({ txn_type: 'income', txn_date: '2026-06-01', effective_amount: '-50000' }),
+      txn({ txn_type: 'expense', txn_date: '2026-06-02', effective_amount: '900' }),
+    ]
+    const agg = computeInsightsAggregates(txns, [], NOW, 15)
+    expect(agg.incomeByMonth).toEqual([
+      { month: '2026-05', total: 40000 },
+      { month: '2026-06', total: 50000 },
+    ])
+  })
+
+  it('weights expenses by day of week, always all seven days', () => {
+    const txns = [
+      // 2026-06-13 is a Saturday, 2026-06-15 a Monday.
+      txn({ txn_date: '2026-06-13', effective_amount: '1000' }),
+      txn({ txn_date: '2026-06-13', effective_amount: '500' }),
+      txn({ txn_date: '2026-06-15', effective_amount: '200' }),
+      txn({ txn_type: 'income', txn_date: '2026-06-13', effective_amount: '-9000' }),
+    ]
+    const agg = computeInsightsAggregates(txns, [], NOW, 15)
+    expect(agg.weekdayTotals).toHaveLength(7)
+    expect(agg.weekdayTotals.find((w) => w.weekday === 'Sat')).toEqual({
+      weekday: 'Sat',
+      total: 1500,
+      count: 2,
+    })
+    expect(agg.weekdayTotals.find((w) => w.weekday === 'Mon')).toEqual({
+      weekday: 'Mon',
+      total: 200,
+      count: 1,
+    })
+    expect(agg.weekdayTotals.find((w) => w.weekday === 'Tue')).toEqual({
+      weekday: 'Tue',
+      total: 0,
+      count: 0,
+    })
+  })
+
   it('groups income by category, ignoring expenses', () => {
     const txns = [
       txn({ txn_type: 'income', category: 'Salary', effective_amount: '-50000' }),

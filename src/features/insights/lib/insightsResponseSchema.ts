@@ -5,18 +5,35 @@
  * backend's `InsightsPayload` in `backend/app/schemas.py` — the two must be
  * bumped in lockstep.
  *
+ * v2 exists because v1 asked the LLM for little more than the app could
+ * already draw: a verdict, a list of observations and some chart specs. The
+ * LLM understands the data, so v2 asks it for the *interpretation* a normal
+ * user would miss — derived ratios (`metrics`), consequence and next step on
+ * every finding (`so_what` / `action` / `annual_impact`), behavioural
+ * regularities (`patterns`), a forward look (`projection`), a one-line
+ * takeaway per chart, and the things the numbers genuinely can't settle
+ * (`questions`).
+ *
  * Every string here is untrusted, hand-pasted content: the parser only ever
  * hands back plain strings/numbers, never anything the page could render as
  * markup. The page is responsible for rendering it as text (see page.tsx).
  */
 
-export const INSIGHTS_SCHEMA_VERSION = 1
+export const INSIGHTS_SCHEMA_VERSION = 2
 
 export type InsightsSeverity = 'critical' | 'warning' | 'info' | 'good'
 export type InsightsChartType = 'bar' | 'line' | 'pie' | 'area'
+export type InsightsConfidence = 'high' | 'medium' | 'low'
+export type InsightsDirection = 'up' | 'down' | 'flat'
+/** Whether a metric's direction is good or bad news. The app can't know —
+ *  "commitments up" is bad, "savings rate up" is good — so the LLM says. */
+export type InsightsTone = 'positive' | 'negative' | 'neutral'
 
 const SEVERITIES: InsightsSeverity[] = ['critical', 'warning', 'info', 'good']
 const CHART_TYPES: InsightsChartType[] = ['bar', 'line', 'pie', 'area']
+const CONFIDENCES: InsightsConfidence[] = ['high', 'medium', 'low']
+const DIRECTIONS: InsightsDirection[] = ['up', 'down', 'flat']
+const TONES: InsightsTone[] = ['positive', 'negative', 'neutral']
 
 export interface InsightsFigure {
   label: string
@@ -24,12 +41,48 @@ export interface InsightsFigure {
   unit?: string
 }
 
+/** A derived measure the app never computes itself — savings rate, committed
+ *  share of income, spend concentration — with the LLM's reading of it. */
+export interface InsightsMetric {
+  id: string
+  label: string
+  value: number
+  unit?: string
+  direction?: InsightsDirection
+  tone?: InsightsTone
+  detail: string
+}
+
 export interface InsightsFinding {
   id: string
   title: string
   severity: InsightsSeverity
   detail: string
+  /** The consequence — why this matters in money or in months. Required:
+   *  it is the whole reason v2 exists. */
+  so_what: string
+  action?: string
+  /** What acting on this is worth over a year, in the ledger's currency. */
+  annual_impact?: number
+  confidence?: InsightsConfidence
   figure?: InsightsFigure
+}
+
+/** A behavioural regularity — timing, trigger, sequence — that no per-category
+ *  total shows. Distinct from a finding: it needs no decision. */
+export interface InsightsPattern {
+  id: string
+  title: string
+  detail: string
+  evidence?: string
+}
+
+/** A forward look: what the next month or the rest of the year implies. */
+export interface InsightsProjection {
+  label: string
+  value: number
+  unit?: string
+  basis: string
 }
 
 export interface InsightsChartPoint {
@@ -47,14 +100,20 @@ export interface InsightsChart {
   title: string
   type: InsightsChartType
   unit?: string
+  /** One line saying what to actually see in this chart. */
+  takeaway?: string
   series: InsightsChartSeries[]
 }
 
 export interface InsightsPayload {
   schema_version: number
   verdict: string
+  metrics: InsightsMetric[]
   findings: InsightsFinding[]
+  patterns: InsightsPattern[]
+  projection?: InsightsProjection
   charts: InsightsChart[]
+  questions: string[]
 }
 
 export type InsightsParseResult =
@@ -90,6 +149,36 @@ function nonEmptyString(v: unknown): v is string {
   return typeof v === 'string' && v.trim() !== ''
 }
 
+/** Optional plain string: absent is fine, present-but-not-a-string is not. */
+function parseOptionalString(v: unknown, where: string): string | undefined | { error: string } {
+  if (v === undefined || v === null) return undefined
+  if (typeof v !== 'string') return { error: `${where} must be a string` }
+  const trimmed = v.trim()
+  return trimmed === '' ? undefined : trimmed
+}
+
+function parseOptionalEnum<T extends string>(
+  v: unknown,
+  allowed: T[],
+  where: string
+): T | undefined | { error: string } {
+  if (v === undefined || v === null) return undefined
+  if (typeof v !== 'string' || !allowed.includes(v as T)) {
+    return { error: `${where} must be one of ${allowed.join(', ')} (got ${JSON.stringify(v)})` }
+  }
+  return v as T
+}
+
+function parseOptionalNumber(v: unknown, where: string): number | undefined | { error: string } {
+  if (v === undefined || v === null) return undefined
+  if (!isFiniteNumber(v)) return { error: `${where} must be a number` }
+  return v
+}
+
+function isError(v: unknown): v is { error: string } {
+  return isRecord(v) && typeof v.error === 'string'
+}
+
 // ── Field-level parsers (each returns a precise "which field, what was
 //    expected" error so a malformed paste never surfaces a stack trace) ────
 
@@ -104,26 +193,93 @@ function parseFigure(v: unknown, where: string): InsightsFigure | undefined | { 
   return { label: v.label.trim(), value: v.value, unit: v.unit as string | undefined }
 }
 
+function parseMetric(v: unknown, index: number): InsightsMetric | { error: string } {
+  const where = `metrics[${index}]`
+  if (!isRecord(v)) return { error: `${where} must be an object` }
+  if (!nonEmptyString(v.id)) return { error: `${where}.id must be a non-empty string` }
+  if (!nonEmptyString(v.label)) return { error: `${where}.label must be a non-empty string` }
+  if (!isFiniteNumber(v.value)) return { error: `${where}.value must be a number` }
+  if (!nonEmptyString(v.detail)) {
+    return { error: `${where}.detail must be a non-empty string — say what this number means` }
+  }
+  const unit = parseOptionalString(v.unit, `${where}.unit`)
+  if (isError(unit)) return unit
+  const direction = parseOptionalEnum(v.direction, DIRECTIONS, `${where}.direction`)
+  if (isError(direction)) return direction
+  const tone = parseOptionalEnum(v.tone, TONES, `${where}.tone`)
+  if (isError(tone)) return tone
+  return {
+    id: v.id.trim(),
+    label: v.label.trim(),
+    value: v.value,
+    detail: v.detail.trim(),
+    unit,
+    direction,
+    tone,
+  }
+}
+
 function parseFinding(v: unknown, index: number): InsightsFinding | { error: string } {
   const where = `findings[${index}]`
   if (!isRecord(v)) return { error: `${where} must be an object` }
   if (!nonEmptyString(v.id)) return { error: `${where}.id must be a non-empty string` }
   if (!nonEmptyString(v.title)) return { error: `${where}.title must be a non-empty string` }
   if (!nonEmptyString(v.detail)) return { error: `${where}.detail must be a non-empty string` }
+  if (!nonEmptyString(v.so_what)) {
+    return {
+      error: `${where}.so_what must be a non-empty string — say what this costs or changes, not just what happened`,
+    }
+  }
   if (typeof v.severity !== 'string' || !SEVERITIES.includes(v.severity as InsightsSeverity)) {
     return {
       error: `${where}.severity must be one of ${SEVERITIES.join(', ')} (got ${JSON.stringify(v.severity)})`,
     }
   }
+  const action = parseOptionalString(v.action, `${where}.action`)
+  if (isError(action)) return action
+  const annualImpact = parseOptionalNumber(v.annual_impact, `${where}.annual_impact`)
+  if (isError(annualImpact)) return annualImpact
+  const confidence = parseOptionalEnum(v.confidence, CONFIDENCES, `${where}.confidence`)
+  if (isError(confidence)) return confidence
   const figure = parseFigure(v.figure, where)
-  if (figure && 'error' in figure) return figure
+  if (isError(figure)) return figure
   return {
     id: v.id.trim(),
     title: v.title.trim(),
     detail: v.detail.trim(),
+    so_what: v.so_what.trim(),
     severity: v.severity as InsightsSeverity,
+    action,
+    annual_impact: annualImpact,
+    confidence,
     figure,
   }
+}
+
+function parsePattern(v: unknown, index: number): InsightsPattern | { error: string } {
+  const where = `patterns[${index}]`
+  if (!isRecord(v)) return { error: `${where} must be an object` }
+  if (!nonEmptyString(v.id)) return { error: `${where}.id must be a non-empty string` }
+  if (!nonEmptyString(v.title)) return { error: `${where}.title must be a non-empty string` }
+  if (!nonEmptyString(v.detail)) return { error: `${where}.detail must be a non-empty string` }
+  const evidence = parseOptionalString(v.evidence, `${where}.evidence`)
+  if (isError(evidence)) return evidence
+  return { id: v.id.trim(), title: v.title.trim(), detail: v.detail.trim(), evidence }
+}
+
+function parseProjection(v: unknown): InsightsProjection | undefined | { error: string } {
+  if (v === undefined || v === null) return undefined
+  if (!isRecord(v)) return { error: '"projection" must be an object' }
+  if (!nonEmptyString(v.label)) return { error: 'projection.label must be a non-empty string' }
+  if (!isFiniteNumber(v.value)) return { error: 'projection.value must be a number' }
+  if (!nonEmptyString(v.basis)) {
+    return {
+      error: 'projection.basis must be a non-empty string — say what the projection rests on',
+    }
+  }
+  const unit = parseOptionalString(v.unit, 'projection.unit')
+  if (isError(unit)) return unit
+  return { label: v.label.trim(), value: v.value, basis: v.basis.trim(), unit }
 }
 
 function parseChartPoint(v: unknown, where: string): InsightsChartPoint | { error: string } {
@@ -161,6 +317,8 @@ function parseChart(v: unknown, index: number): InsightsChart | { error: string 
   if (v.unit !== undefined && typeof v.unit !== 'string') {
     return { error: `${where}.unit must be a string` }
   }
+  const takeaway = parseOptionalString(v.takeaway, `${where}.takeaway`)
+  if (isError(takeaway)) return takeaway
   if (!Array.isArray(v.series) || v.series.length === 0) {
     return { error: `${where}.series must be a non-empty array` }
   }
@@ -175,6 +333,7 @@ function parseChart(v: unknown, index: number): InsightsChart | { error: string 
     title: v.title.trim(),
     type: v.type as InsightsChartType,
     unit: v.unit as string | undefined,
+    takeaway,
     series,
   }
 }
@@ -184,6 +343,10 @@ function parseChart(v: unknown, index: number): InsightsChart | { error: string 
  * Accepts JSON with or without a ```fence```, tolerates leading/trailing
  * prose around the object, and never throws — every failure path returns a
  * precise "which field, what was expected" message instead of a stack trace.
+ *
+ * `metrics`, `patterns`, `questions` and `charts` may all be omitted or
+ * empty: a reply that skips a whole section still renders. `verdict`,
+ * `findings` and each finding's `so_what` are the floor.
  */
 export function parseInsightsResponse(text: string): InsightsParseResult {
   const fenceStripped = stripFences(text)
@@ -202,7 +365,8 @@ export function parseInsightsResponse(text: string): InsightsParseResult {
   if (!isRecord(parsed)) {
     return {
       ok: false,
-      error: 'Expected a JSON object with "schema_version", "verdict", "findings" and "charts".',
+      error:
+        'Expected a JSON object with "schema_version", "verdict", "metrics", "findings", "patterns" and "charts".',
     }
   }
 
@@ -217,6 +381,17 @@ export function parseInsightsResponse(text: string): InsightsParseResult {
     return { ok: false, error: '"verdict" must be a non-empty string.' }
   }
 
+  const metricsRaw = parsed.metrics ?? []
+  if (!Array.isArray(metricsRaw)) {
+    return { ok: false, error: '"metrics" must be an array (it may be empty).' }
+  }
+  const metrics: InsightsMetric[] = []
+  for (let i = 0; i < metricsRaw.length; i++) {
+    const m = parseMetric(metricsRaw[i], i)
+    if ('error' in m) return { ok: false, error: m.error }
+    metrics.push(m)
+  }
+
   if (!Array.isArray(parsed.findings) || parsed.findings.length === 0) {
     return { ok: false, error: '"findings" must be a non-empty array.' }
   }
@@ -226,6 +401,20 @@ export function parseInsightsResponse(text: string): InsightsParseResult {
     if ('error' in f) return { ok: false, error: f.error }
     findings.push(f)
   }
+
+  const patternsRaw = parsed.patterns ?? []
+  if (!Array.isArray(patternsRaw)) {
+    return { ok: false, error: '"patterns" must be an array (it may be empty).' }
+  }
+  const patterns: InsightsPattern[] = []
+  for (let i = 0; i < patternsRaw.length; i++) {
+    const p = parsePattern(patternsRaw[i], i)
+    if ('error' in p) return { ok: false, error: p.error }
+    patterns.push(p)
+  }
+
+  const projection = parseProjection(parsed.projection)
+  if (isError(projection)) return { ok: false, error: projection.error }
 
   const chartsRaw = parsed.charts ?? []
   if (!Array.isArray(chartsRaw)) {
@@ -238,13 +427,30 @@ export function parseInsightsResponse(text: string): InsightsParseResult {
     charts.push(c)
   }
 
+  const questionsRaw = parsed.questions ?? []
+  if (!Array.isArray(questionsRaw)) {
+    return { ok: false, error: '"questions" must be an array of strings (it may be empty).' }
+  }
+  const questions: string[] = []
+  for (let i = 0; i < questionsRaw.length; i++) {
+    const q = questionsRaw[i]
+    if (!nonEmptyString(q)) {
+      return { ok: false, error: `questions[${i}] must be a non-empty string` }
+    }
+    questions.push(q.trim())
+  }
+
   return {
     ok: true,
     payload: {
       schema_version: INSIGHTS_SCHEMA_VERSION,
       verdict: parsed.verdict.trim(),
+      metrics,
       findings,
+      patterns,
+      projection,
       charts,
+      questions,
     },
   }
 }

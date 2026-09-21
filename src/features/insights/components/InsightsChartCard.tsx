@@ -5,6 +5,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
   Line,
   LineChart,
   Pie,
@@ -29,6 +30,23 @@ function formatChartValue(value: number, unit?: string): string {
   if (!unit || unit.toUpperCase() === 'INR') return formatCompact(value)
   if (unit === '%') return `${value}%`
   return `${value} ${unit}`
+}
+
+/** Two series whose peaks differ by this much cannot share one axis — the
+ *  smaller one flattens onto the baseline and reads as zero. The prompt asks
+ *  the LLM for relationship charts (price vs count, spend vs income), which
+ *  is exactly the case where the two series have different magnitudes. */
+const DUAL_AXIS_RATIO = 8
+
+function seriesPeak(series: InsightsChart['series'][number]): number {
+  return Math.max(...series.data.map((p) => Math.abs(p.value)))
+}
+
+function needsDualAxis(chart: InsightsChart): boolean {
+  if (chart.series.length !== 2) return false
+  const peaks = chart.series.map(seriesPeak)
+  if (peaks.some((p) => !Number.isFinite(p) || p === 0)) return false
+  return Math.max(...peaks) / Math.min(...peaks) >= DUAL_AXIS_RATIO
 }
 
 /** Union every series' labels, in first-seen order, into one row-per-label
@@ -67,10 +85,33 @@ export function InsightsChartCard({ chart, isDark }: InsightsChartCardProps) {
   const tickColor = isDark ? '#9A9A9A' : '#6A6A6B'
   const gridStroke = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
   const rows = toRows(chart)
+  const dualAxis = needsDualAxis(chart)
+  const axisIdFor = (index: number) => (dualAxis && index === 1 ? 'right' : 'left')
+  const showLegend = chart.type !== 'pie' && chart.series.length > 1
+  const legend = showLegend ? (
+    <Legend wrapperStyle={{ fontSize: 11, color: tickColor }} iconSize={9} />
+  ) : null
+  // The second axis carries whatever the first doesn't — usually a count, so
+  // it never takes the chart's (single, money) unit. `formatCompact` prefixes
+  // ₹, which would print an order count as "₹18".
+  const secondaryAxis = dualAxis ? (
+    <YAxis
+      yAxisId="right"
+      orientation="right"
+      axisLine={false}
+      tickLine={false}
+      tick={{ fontSize: 10, fill: tickColor }}
+      tickFormatter={(v) => Number(v).toLocaleString('en-IN')}
+      width={44}
+    />
+  ) : null
 
   return (
     <div className="card">
       <p className="card-title">{chart.title}</p>
+      {chart.takeaway && (
+        <p className="mt-1 text-[12.5px] leading-relaxed text-[var(--ink-3)]">{chart.takeaway}</p>
+      )}
       <div className="mt-3">
         <ResponsiveContainer width="100%" height={220}>
           {chart.type === 'pie' ? (
@@ -101,19 +142,23 @@ export function InsightsChartCard({ chart, isDark }: InsightsChartCardProps) {
                 tick={{ fontSize: 11, fill: tickColor }}
               />
               <YAxis
+                yAxisId="left"
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 10, fill: tickColor }}
                 tickFormatter={(v) => formatChartValue(Number(v), chart.unit)}
                 width={54}
               />
+              {secondaryAxis}
               <Tooltip
                 contentStyle={TOOLTIP_STYLE}
                 formatter={(v) => formatChartValue(Number(v), chart.unit)}
               />
+              {legend}
               {chart.series.map((s, i) => (
                 <Line
                   key={s.name}
+                  yAxisId={axisIdFor(i)}
                   type="monotone"
                   dataKey={s.name}
                   stroke={PIE_COLORS[i % PIE_COLORS.length]}
@@ -133,19 +178,23 @@ export function InsightsChartCard({ chart, isDark }: InsightsChartCardProps) {
                 tick={{ fontSize: 11, fill: tickColor }}
               />
               <YAxis
+                yAxisId="left"
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 10, fill: tickColor }}
                 tickFormatter={(v) => formatChartValue(Number(v), chart.unit)}
                 width={54}
               />
+              {secondaryAxis}
               <Tooltip
                 contentStyle={TOOLTIP_STYLE}
                 formatter={(v) => formatChartValue(Number(v), chart.unit)}
               />
+              {legend}
               {chart.series.map((s, i) => (
                 <Area
                   key={s.name}
+                  yAxisId={axisIdFor(i)}
                   type="monotone"
                   dataKey={s.name}
                   stroke={PIE_COLORS[i % PIE_COLORS.length]}
@@ -165,18 +214,26 @@ export function InsightsChartCard({ chart, isDark }: InsightsChartCardProps) {
                 tick={{ fontSize: 11, fill: tickColor }}
               />
               <YAxis
+                yAxisId="left"
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 10, fill: tickColor }}
                 tickFormatter={(v) => formatChartValue(Number(v), chart.unit)}
                 width={54}
               />
+              {secondaryAxis}
               <Tooltip
                 contentStyle={TOOLTIP_STYLE}
                 formatter={(v) => formatChartValue(Number(v), chart.unit)}
               />
+              {legend}
               {chart.series.map((s, i) => (
-                <Bar key={s.name} dataKey={s.name} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                <Bar
+                  key={s.name}
+                  yAxisId={axisIdFor(i)}
+                  dataKey={s.name}
+                  fill={PIE_COLORS[i % PIE_COLORS.length]}
+                />
               ))}
             </BarChart>
           )}

@@ -5,9 +5,12 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Icon, type IconName } from '@/components/ui/Icon'
 import type { InsightsRunOut } from '@/lib/api/insights'
 
-import type { InsightsSeverity } from '../lib/insightsResponseSchema'
+import { formatInsightsValue } from '../lib/insightsFormat'
+import type { InsightsConfidence, InsightsSeverity } from '../lib/insightsResponseSchema'
 
 import { InsightsChartCard } from './InsightsChartCard'
+import { MetricStrip } from './MetricStrip'
+import { PatternsSection } from './PatternsSection'
 
 interface InsightsRunViewProps {
   run: InsightsRunOut
@@ -22,6 +25,20 @@ const SEVERITY_META: Record<InsightsSeverity, { cls: string; icon: IconName }> =
   warning: { cls: 'is-warn', icon: 'warning' },
   good: { cls: 'is-pos', icon: 'check_circle' },
   info: { cls: '', icon: 'info' },
+}
+
+const CONFIDENCE_LABEL: Record<InsightsConfidence, string> = {
+  high: 'High confidence',
+  medium: 'Medium confidence',
+  low: 'Low confidence',
+}
+
+/** The stored payload arrives from the API, not from the parser, so absent
+ *  optional numbers come back as JSON `null` rather than `undefined` — and
+ *  `null` is not `undefined`, which rendered a bare "₹0 a year" under every
+ *  finding that carried no impact figure. */
+function hasImpact(value: number | null | undefined): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
 }
 
 function formatRunTimestamp(iso: string): string {
@@ -41,6 +58,13 @@ function formatRunTimestamp(iso: string): string {
  * LLM reply, stored as-is (`InsightsRunOut.payload`). Every string is
  * rendered as text — never `dangerouslySetInnerHTML` — since it's untrusted,
  * hand-pasted content (see insightsResponseSchema.ts's docblock).
+ *
+ * Reading order is deliberate and non-overlapping: the one-line verdict, the
+ * ratios that support it, what to decide about (findings), what's simply
+ * true of the behaviour (patterns), what's coming (projection), the charts,
+ * then what the data can't settle. Each section answers a different
+ * question — MASTER.md §8's "no two views answer the same question" applies
+ * to LLM prose as much as to charts.
  */
 export function InsightsRunView({
   run,
@@ -73,6 +97,8 @@ export function InsightsRunView({
         <p className="verdict-line text-[17px]">{payload.verdict}</p>
       </div>
 
+      <MetricStrip metrics={payload.metrics} />
+
       <div className="card card-flush">
         <ul className="alerts">
           {payload.findings.map((f) => {
@@ -84,11 +110,36 @@ export function InsightsRunView({
                 </span>
                 <span className="body">
                   <span className="block font-medium text-[var(--ink)]">{f.title}</span>
-                  <span className="block text-[12.5px] text-[var(--ink-3)]">{f.detail}</span>
-                  {f.figure && (
-                    <span className="num mt-1 block text-[12.5px] font-medium text-[var(--ink-2)]">
-                      {f.figure.label}: {f.figure.value}
-                      {f.figure.unit ? ` ${f.figure.unit}` : ''}
+                  <span className="block text-[12.5px] leading-relaxed text-[var(--ink-3)]">
+                    {f.detail}
+                  </span>
+                  <span className="mt-1.5 block text-[12.5px] leading-relaxed text-[var(--ink-2)]">
+                    {f.so_what}
+                  </span>
+                  {f.action && (
+                    <span className="mt-1.5 flex items-start gap-1.5 text-[12.5px] leading-relaxed text-[var(--ink-2)]">
+                      <Icon
+                        name="arrow_forward"
+                        size={13}
+                        aria-hidden="true"
+                        style={{ marginTop: 2, flexShrink: 0, color: 'var(--accent)' }}
+                      />
+                      <span>{f.action}</span>
+                    </span>
+                  )}
+                  {(f.figure || hasImpact(f.annual_impact) || f.confidence) && (
+                    <span className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[var(--ink-3)]">
+                      {f.figure && (
+                        <span className="num font-medium text-[var(--ink-2)]">
+                          {f.figure.label}: {formatInsightsValue(f.figure.value, f.figure.unit)}
+                        </span>
+                      )}
+                      {hasImpact(f.annual_impact) && (
+                        <span className="num">
+                          {formatInsightsValue(f.annual_impact, 'INR')} a year
+                        </span>
+                      )}
+                      {f.confidence && <span>{CONFIDENCE_LABEL[f.confidence]}</span>}
                     </span>
                   )}
                 </span>
@@ -98,11 +149,51 @@ export function InsightsRunView({
         </ul>
       </div>
 
+      <PatternsSection patterns={payload.patterns} />
+
+      {payload.projection && (
+        <div className="card">
+          <p className="card-title flex items-center gap-1.5">
+            <Icon name="calendar_today" size={14} />
+            {payload.projection.label}
+          </p>
+          <p className="v num mt-2 block">
+            {formatInsightsValue(payload.projection.value, payload.projection.unit)}
+          </p>
+          <p className="mt-1 text-[12.5px] leading-relaxed text-[var(--ink-3)]">
+            {payload.projection.basis}
+          </p>
+        </div>
+      )}
+
       {payload.charts.length > 0 && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {payload.charts.map((chart) => (
             <InsightsChartCard key={chart.id} chart={chart} isDark={isDark} />
           ))}
+        </div>
+      )}
+
+      {payload.questions.length > 0 && (
+        <div className="card">
+          <p className="card-title flex items-center gap-1.5">
+            <Icon name="help_outline" size={14} />
+            Only you can answer these
+          </p>
+          <ul className="mt-2 space-y-2">
+            {payload.questions.map((q) => (
+              <li
+                key={q}
+                className="flex items-start gap-2 text-[12.5px] leading-relaxed text-[var(--ink-2)]"
+              >
+                <span
+                  aria-hidden="true"
+                  className="mt-[7px] h-1 w-1 flex-none rounded-full bg-[var(--ink-4)]"
+                />
+                <span>{q}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

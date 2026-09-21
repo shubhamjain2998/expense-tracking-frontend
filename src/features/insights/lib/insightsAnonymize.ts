@@ -75,10 +75,14 @@ export function mergeAnonymizeMap(
 
 /**
  * Reverse every `MERCHANT_NN` label the LLM echoed back in its reply — the
- * verdict, each finding's title/detail/figure label, and every chart's
- * title/series name/point label — so the page renders real merchant names
- * even though the LLM only ever saw the anonymised ones. A no-op when `map`
- * is null (anonymisation was off for this run).
+ * verdict, every metric, finding, pattern, projection, question and chart
+ * string — so the page renders real merchant names even though the LLM only
+ * ever saw the anonymised ones. A no-op when `map` is null (anonymisation
+ * was off for this run).
+ *
+ * Every user-visible string in `InsightsPayload` must be listed here: a
+ * field added to the schema and forgotten here renders as `MERCHANT_07` on
+ * the page.
  */
 export function deanonymizeInsightsPayload(
   payload: InsightsPayload,
@@ -89,15 +93,37 @@ export function deanonymizeInsightsPayload(
   return {
     ...payload,
     verdict: t(payload.verdict),
+    metrics: payload.metrics.map((m) => ({
+      ...m,
+      label: t(m.label),
+      detail: t(m.detail),
+    })),
     findings: payload.findings.map((f) => ({
       ...f,
       title: t(f.title),
       detail: t(f.detail),
+      so_what: t(f.so_what),
+      action: f.action ? t(f.action) : undefined,
       figure: f.figure ? { ...f.figure, label: t(f.figure.label) } : undefined,
     })),
+    patterns: payload.patterns.map((p) => ({
+      ...p,
+      title: t(p.title),
+      detail: t(p.detail),
+      evidence: p.evidence ? t(p.evidence) : undefined,
+    })),
+    projection: payload.projection
+      ? {
+          ...payload.projection,
+          label: t(payload.projection.label),
+          basis: t(payload.projection.basis),
+        }
+      : undefined,
+    questions: payload.questions.map(t),
     charts: payload.charts.map((c) => ({
       ...c,
       title: t(c.title),
+      takeaway: c.takeaway ? t(c.takeaway) : undefined,
       series: c.series.map((s) => ({
         ...s,
         name: t(s.name),

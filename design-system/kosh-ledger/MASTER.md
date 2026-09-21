@@ -154,13 +154,21 @@ data path, and a `<table class="sr-only">` fallback.
 Home (/)            verdict · where it went · commitments · one trend · needs you
 Transactions        list + filters; Import (PDF · Paste · Manual) is a menu here, not a page
 Budget              plan + pace table
-Insights (/insights) habits · seasonality · day-of-week · forecast · YTD detail
+Insights (/insights) one LLM run: verdict · derived metrics · findings · patterns · projection ·
+                    charts · open questions; plus the people ledger
 Category (/c/:id)   one category: trend, stats, its transactions
 Settings            profile · categories · tags · people · rules · backup
 ```
 
 Nav = 4 destinations (Home, Transactions, Budget, Settings). Insights and Category are
 drill-downs reached from Home, not tabs. `/upload` redirects to `/transactions?import=pdf`.
+
+Insights is the one page the app does not compute. The user copies a prompt built from their own
+numbers into an LLM of their choice and pastes the JSON reply back (schema v2, validated both
+sides). Its sections must each answer a different question — a derived ratio, something to decide
+about, a behavioural regularity, a forward look, a chart, an open question — because the rule that
+one number lives in one place holds for prose as much as for charts. Nothing on this page may
+restate a total Home or Budget already draws.
 
 ## 8. Anti-patterns (from the search + this product)
 

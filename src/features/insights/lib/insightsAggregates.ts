@@ -19,6 +19,23 @@ export interface CategoryMonthTotal {
   category: string
   month: string // YYYY-MM
   total: number // sum of |effective_amount| for expense txns
+  /** How many expenses made up that total. Total alone can't separate "paid
+   *  more each time" from "paid more often" — the count can, and that
+   *  decomposition is the kind of reading the LLM is there to make. */
+  count: number
+}
+
+export interface IncomeMonthTotal {
+  month: string // YYYY-MM
+  total: number
+}
+
+/** Expense weight by day of week, 0 = Sunday. Feeds timing/behaviour reads
+ *  (weekday vs weekend, post-payday bursts) that no category total shows. */
+export interface WeekdayTotal {
+  weekday: string
+  total: number
+  count: number
 }
 
 export interface IncomeSource {
@@ -33,6 +50,11 @@ export interface CommitmentSummary {
   monthlyAmount: number
   medianCharge: number
   monthsSeen: number
+  lastCharged: string
+  /** The recurring engine's own flags (`new`, `changed`, `due-soon`, …) —
+   *  passed through so the LLM can reason about price creep and drop-offs
+   *  instead of re-deriving them. */
+  flags: string[]
 }
 
 export interface SplitLedgerSummary {
@@ -61,6 +83,8 @@ export interface InsightsAggregates {
   monthsCovered: number
   categoryMonthTotals: CategoryMonthTotal[]
   incomeBySource: IncomeSource[]
+  incomeByMonth: IncomeMonthTotal[]
+  weekdayTotals: WeekdayTotal[]
   commitments: CommitmentSummary[]
   splitLedger: SplitLedgerSummary[]
   topTransactions: NotableTransaction[]
@@ -76,6 +100,8 @@ const OUTLIER_MULTIPLE = 2.5
  *  is meaningful enough to flag outliers against. */
 const OUTLIER_MIN_CATEGORY_COUNT = 5
 const OUTLIER_MAX_COUNT = 20
+
+const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 function monthKey(dateStr: string): string {
   const d = new Date(dateStr)
@@ -98,18 +124,24 @@ export function computeInsightsAggregates(
   const inWindow = txns.filter((t) => new Date(t.txn_date) >= windowStart)
 
   // ── Per-category monthly totals (expenses only) ────────────────────────
-  const catMonth = new Map<string, number>()
+  const catMonth = new Map<string, { total: number; count: number }>()
   for (const t of inWindow) {
     if (t.txn_type !== 'expense') continue
     const amt = Math.abs(Number(t.effective_amount))
     if (!Number.isFinite(amt)) continue
     const key = `${t.category}\u0000${monthKey(t.txn_date)}`
-    catMonth.set(key, (catMonth.get(key) ?? 0) + amt)
+    const cell = catMonth.get(key)
+    if (cell) {
+      cell.total += amt
+      cell.count += 1
+    } else {
+      catMonth.set(key, { total: amt, count: 1 })
+    }
   }
   const categoryMonthTotals: CategoryMonthTotal[] = [...catMonth.entries()]
-    .map(([key, total]) => {
+    .map(([key, cell]) => {
       const [category, month] = key.split('\u0000')
-      return { category, month, total }
+      return { category, month, total: cell.total, count: cell.count }
     })
     .sort((a, b) => a.month.localeCompare(b.month) || a.category.localeCompare(b.category))
 
@@ -125,6 +157,32 @@ export function computeInsightsAggregates(
     .map(([category, total]) => ({ category, total }))
     .sort((a, b) => b.total - a.total)
 
+  // ── Income by month (savings rate is a ratio over time, not a total) ────
+  const incomeMonthMap = new Map<string, number>()
+  for (const t of inWindow) {
+    if (t.txn_type !== 'income') continue
+    const amt = Math.abs(Number(t.effective_amount))
+    if (!Number.isFinite(amt)) continue
+    const m = monthKey(t.txn_date)
+    incomeMonthMap.set(m, (incomeMonthMap.get(m) ?? 0) + amt)
+  }
+  const incomeByMonth: IncomeMonthTotal[] = [...incomeMonthMap.entries()]
+    .map(([month, total]) => ({ month, total }))
+    .sort((a, b) => a.month.localeCompare(b.month))
+
+  // ── Expense weight by weekday ──────────────────────────────────────────
+  const weekdayCells = WEEKDAY_NAMES.map((weekday) => ({ weekday, total: 0, count: 0 }))
+  for (const t of inWindow) {
+    if (t.txn_type !== 'expense') continue
+    const amt = Math.abs(Number(t.effective_amount))
+    if (!Number.isFinite(amt)) continue
+    const cell = weekdayCells[new Date(t.txn_date).getUTCDay()]
+    if (!cell) continue
+    cell.total += amt
+    cell.count += 1
+  }
+  const weekdayTotals: WeekdayTotal[] = weekdayCells
+
   // ── Commitments (reuse the one recurring-detection engine) ─────────────
   const recurring = detectRecurring(inWindow, now)
   const commitments: CommitmentSummary[] = recurring.commitments.map((c) => ({
@@ -134,6 +192,8 @@ export function computeInsightsAggregates(
     monthlyAmount: c.monthlyAmount,
     medianCharge: c.medianAmount,
     monthsSeen: c.monthsSeen,
+    lastCharged: c.lastCharged,
+    flags: c.flags,
   }))
 
   // ── Split ledger (they owe you) ─────────────────────────────────────────
@@ -195,6 +255,8 @@ export function computeInsightsAggregates(
     monthsCovered: windowMonths,
     categoryMonthTotals,
     incomeBySource,
+    incomeByMonth,
+    weekdayTotals,
     commitments,
     splitLedger,
     topTransactions,

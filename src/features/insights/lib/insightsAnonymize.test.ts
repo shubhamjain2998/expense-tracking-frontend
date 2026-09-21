@@ -72,22 +72,49 @@ describe('insightsAnonymize', () => {
   describe('deanonymizeInsightsPayload', () => {
     const map = buildAnonymizeMap(['Zomato'])
     const payload: InsightsPayload = {
-      schema_version: 1,
+      schema_version: 2,
       verdict: 'MERCHANT_01 dominates your dining spend.',
+      metrics: [
+        {
+          id: 'm1',
+          label: 'Share of dining at MERCHANT_01',
+          value: 62,
+          unit: '%',
+          detail: 'MERCHANT_01 takes 62% of every rupee you spend on dining.',
+        },
+      ],
       findings: [
         {
           id: 'f1',
           title: 'MERCHANT_01 is your top merchant',
           severity: 'info',
           detail: 'You visited MERCHANT_01 12 times.',
+          so_what: 'MERCHANT_01 alone is ₹48,000 a year.',
+          action: 'Check MERCHANT_01 for a subscription you forgot.',
           figure: { label: 'Spend at MERCHANT_01', value: 4000 },
         },
       ],
+      patterns: [
+        {
+          id: 'p1',
+          title: 'MERCHANT_01 orders cluster on weekends',
+          detail: 'Two thirds of MERCHANT_01 orders land on Sat or Sun.',
+          evidence: 'MERCHANT_01: 8 of 12 orders on a weekend.',
+        },
+      ],
+      projection: {
+        label: 'Projected MERCHANT_01 spend',
+        value: 4200,
+        unit: 'INR',
+        basis: 'The MERCHANT_01 median of the last 6 months.',
+      },
+      questions: ['Is MERCHANT_01 a subscription you still use?'],
       charts: [
         {
           id: 'c1',
           title: 'Spend by merchant',
           type: 'bar',
+          takeaway: 'MERCHANT_01 is twice the next merchant.',
           series: [{ name: 'MERCHANT_01', data: [{ label: 'MERCHANT_01', value: 4000 }] }],
         },
       ],
@@ -101,6 +128,20 @@ describe('insightsAnonymize', () => {
       expect(real.findings[0].figure?.label).toBe('Spend at Zomato')
       expect(real.charts[0].series[0].name).toBe('Zomato')
       expect(real.charts[0].series[0].data[0].label).toBe('Zomato')
+    })
+
+    it('reverses the v2 interpretation fields too, not just the v1 ones', () => {
+      const real = deanonymizeInsightsPayload(payload, map)
+      expect(real.metrics[0].label).toBe('Share of dining at Zomato')
+      expect(real.metrics[0].detail).toContain('Zomato takes 62%')
+      expect(real.findings[0].so_what).toBe('Zomato alone is ₹48,000 a year.')
+      expect(real.findings[0].action).toBe('Check Zomato for a subscription you forgot.')
+      expect(real.patterns[0].title).toBe('Zomato orders cluster on weekends')
+      expect(real.patterns[0].evidence).toContain('Zomato: 8 of 12')
+      expect(real.projection?.label).toBe('Projected Zomato spend')
+      expect(real.projection?.basis).toContain('Zomato median')
+      expect(real.questions[0]).toBe('Is Zomato a subscription you still use?')
+      expect(real.charts[0].takeaway).toBe('Zomato is twice the next merchant.')
     })
 
     it('is a no-op when there is no map (anonymisation was off)', () => {
