@@ -1,4 +1,5 @@
 import { Icon } from '@/components/ui/Icon'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { formatShortDate } from '@/lib/format'
 import type { ProcessedTransactionItem } from '@/types/transaction'
 
@@ -120,9 +121,12 @@ export function TransactionRow({
         {formatShortDate(txn.txn_date)}
       </td>
 
-      {/* Merchant */}
+      {/* Merchant. Both lines truncate with an ellipsis at typical column
+          widths (measured ~720px of text in ~191px of column) with no other
+          way to read the full value — `title` surfaces it on hover/focus. */}
       <td style={{ padding: '11px 12px', minWidth: 0 }}>
         <span
+          title={txn.description}
           style={{
             display: 'block',
             overflow: 'hidden',
@@ -138,6 +142,7 @@ export function TransactionRow({
         </span>
         {txn.notes && (
           <span
+            title={txn.notes}
             style={{
               display: 'block',
               overflow: 'hidden',
@@ -278,33 +283,39 @@ export function TransactionRow({
         style={{ padding: '11px 12px', textAlign: 'center' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          onClick={() => {
-            if (txn.processedOriginal) setEditingTxn(txn.processedOriginal)
-            else if (txn.rawOriginal) setSelectedUid(txn.uid)
-          }}
-          className="btn ghost icon sm"
-          title={split ? `Split ${split.peopleCount} ways — ${split.breakdown}` : 'Add split'}
-          style={{
-            margin: '0 auto',
-            opacity: split ? 1 : 0.3,
-            color: split ? 'var(--accent)' : 'var(--ink-3)',
-          }}
-          disabled={isDeleted}
+        <Tooltip
+          label={split ? `Split ${split.peopleCount} ways — ${split.breakdown}` : 'Add split'}
         >
-          {split ? (
-            <span className="people">
-              <span className="avatar">Y</span>
-              {txn.shares.slice(0, 2).map((s, i) => (
-                <span key={i} className="avatar">
-                  {s.person_name?.[0]?.toUpperCase() ?? '?'}
-                </span>
-              ))}
-            </span>
-          ) : (
-            <Icon name="call_split" size={14} />
-          )}
-        </button>
+          <button
+            onClick={() => {
+              if (txn.processedOriginal) setEditingTxn(txn.processedOriginal)
+              else if (txn.rawOriginal) setSelectedUid(txn.uid)
+            }}
+            className="btn ghost icon sm"
+            aria-label={
+              split ? `Split ${split.peopleCount} ways — ${split.breakdown}` : 'Add split'
+            }
+            style={{
+              margin: '0 auto',
+              opacity: split ? 1 : 0.3,
+              color: split ? 'var(--accent)' : 'var(--ink-3)',
+            }}
+            disabled={isDeleted}
+          >
+            {split ? (
+              <span className="people">
+                <span className="avatar">Y</span>
+                {txn.shares.slice(0, 2).map((s, i) => (
+                  <span key={i} className="avatar">
+                    {s.person_name?.[0]?.toUpperCase() ?? '?'}
+                  </span>
+                ))}
+              </span>
+            ) : (
+              <Icon name="call_split" size={14} />
+            )}
+          </button>
+        </Tooltip>
       </td>
 
       {/* Amount — color and sign derive from txn_type (single source of truth).
@@ -337,17 +348,19 @@ export function TransactionRow({
         {/* Split rows show only the user's share above — the full bill goes
             underneath so it can be quoted to the people they split with. */}
         {split && (
-          <div
-            title={split.breakdown}
-            style={{
-              fontSize: 10.5,
-              fontWeight: 500,
-              color: 'var(--ink-3)',
-              marginTop: 1,
-            }}
-          >
-            of {split.totalDisplay}
-          </div>
+          <Tooltip label={split.breakdown}>
+            <div
+              tabIndex={0}
+              style={{
+                fontSize: 10.5,
+                fontWeight: 500,
+                color: 'var(--ink-3)',
+                marginTop: 1,
+              }}
+            >
+              of {split.totalDisplay}
+            </div>
+          </Tooltip>
         )}
       </td>
 
@@ -371,7 +384,13 @@ export function TransactionRow({
           </button>
         ) : (
           <>
-            <button onClick={onToggleMenu} className="btn ghost icon sm">
+            <button
+              onClick={onToggleMenu}
+              className="btn ghost icon sm"
+              aria-label="More actions"
+              aria-haspopup="menu"
+              aria-expanded={hasMenu}
+            >
               <Icon name="more_horiz" size={14} />
             </button>
             {hasMenu && (

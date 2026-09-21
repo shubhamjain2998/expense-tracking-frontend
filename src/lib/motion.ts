@@ -75,3 +75,16 @@ export const slideByDirection: Variants = {
 
 /** whileInView defaults — reveal once, slightly before fully visible. */
 export const viewportOnce = { once: true, margin: '0px 0px -64px 0px' } as const
+
+/** Tiny floating UI (tooltips, native-`title` replacements). Smaller rise
+    and faster than `fadeUp` — these are transient hints, not content. */
+export const tooltipIn: Variants = {
+  hidden: { opacity: 0, y: 4, scale: 0.98 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: DUR.fast, ease: EASE_OUT_SOFT },
+  },
+  exit: { opacity: 0, transition: { duration: 0.08, ease: 'easeIn' } },
+}
