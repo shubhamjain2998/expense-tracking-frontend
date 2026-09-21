@@ -54,6 +54,12 @@ export function useBudgetData({
   const budgetQuery = useQuery({
     queryKey: qk.budget.byYear(year),
     queryFn: () => getBudget(year),
+    // GET /budget/{year} legitimately 404s for a year with no budget plan
+    // yet (e.g. a brand-new year, or before onboarding creates the first
+    // entry) — retrying 3x just delays `isLoading` settling to false and
+    // leaves the skeleton on screen longer than the empty state needs.
+    retry: false,
+    throwOnError: false,
   })
 
   const summaryQuery = useQuery({

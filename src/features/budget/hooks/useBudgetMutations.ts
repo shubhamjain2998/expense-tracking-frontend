@@ -6,7 +6,6 @@ import {
   createBudget,
   deleteBudgetEntry,
   deleteMonthlyBudgetOverride,
-  setMonthlyBudget,
   updateBudgetEntry,
 } from '@/lib/api/budget'
 import { monthLongLabel } from '@/lib/period'
@@ -28,35 +27,23 @@ export function useBudgetMutations({
   const toast = useToastContext()
   const qc = useQueryClient()
 
-  const updateAnnualMutation = useMutation({
-    mutationFn: ({ id, monthlyAmount }: { id: string; monthlyAmount: number }) =>
-      updateBudgetEntry(id, { allocated_amount: monthlyToAnnual(monthlyAmount) }),
+  // The inline "monthly budget" edit used to PUT
+  // /budget/{year}/{month}/categories/{id} first and fall back to the
+  // annual PUT /budget/{id} on 404/405/422. That per-month-override endpoint
+  // has never existed on the backend (only POST /budget, GET /budget/{year},
+  // PUT/DELETE /budget/{id} are routed — see backend/app/routers/budget.py),
+  // so the first call 404'd on literally every edit and the fallback ran
+  // every single time. Calling the annual PUT directly is identical in
+  // behaviour and drops a guaranteed-failing request per edit.
+  // Tracked for real per-month support: https://github.com/shubhamjain2998/expense-tracking-frontend/issues/37
+  const monthlyOverrideMutation = useMutation({
+    mutationFn: ({ entryId, amount }: { categoryId: string; amount: number; entryId: string }) =>
+      updateBudgetEntry(entryId, { allocated_amount: monthlyToAnnual(amount) }),
     onSuccess: () => {
       invalidateDomains(qc, ['budget', 'dashboard'])
-      toast.success('Annual budget updated')
-    },
-    onError: (err: { detail: string }) => toast.error(err.detail),
-  })
-
-  const monthlyOverrideMutation = useMutation({
-    mutationFn: ({ categoryId, amount }: { categoryId: string; amount: number; entryId: string }) =>
-      setMonthlyBudget(year, month, categoryId, amount),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.budget.overrides(year) })
-      void qc.invalidateQueries({ queryKey: qk.dashboard.summary(year, month, mode) })
       toast.success(`Budget for ${monthLongLabel(month, mode)} updated`)
     },
-    onError: (err: { detail: string; status?: number }, vars) => {
-      if (err.status === 404 || err.status === 405 || err.status === 422) {
-        updateAnnualMutation.mutate({ id: vars.entryId, monthlyAmount: vars.amount })
-        // TODO: wire per-month override once backend adds
-        // PUT /budget/{year}/{month}/categories/{id}
-        // Tracked: https://github.com/shubhamjain2998/expense-tracking-frontend/issues/37
-        toast.warning('Per-month overrides are not yet supported; saved as the annual budget.')
-      } else {
-        toast.error(err.detail)
-      }
-    },
+    onError: (err: { detail: string }) => toast.error(err.detail),
   })
 
   const resetOverrideMutation = useMutation({

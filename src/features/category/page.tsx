@@ -64,10 +64,20 @@ export function CategoryPage() {
   const budgetQuery = useQuery({
     queryKey: qk.budget.byYear(calYear),
     queryFn: () => getBudget(calYear),
+    // GET /budget/{year} legitimately 404s when this category's year has no
+    // budget plan yet — a valid "no budget" response, not a transient
+    // failure. See the sibling overridesQuery fix just below.
+    retry: false,
+    throwOnError: false,
   })
   const overridesQuery = useQuery({
     queryKey: qk.budget.overrides(calYear),
     queryFn: () => getMonthlyBudgetOverrides(calYear),
+    // GET /budget/{year}/monthly-overrides 404s (no backend route yet) —
+    // fail fast instead of react-query's default 3x retry storm on every
+    // category drill-down visit. See useBudgetData.ts for the same fix.
+    retry: false,
+    throwOnError: false,
   })
   const budgetEntry = budgetQuery.data?.find((e) => e.category === category)
   const override = overridesQuery.data?.find((o) => o.category === category && o.month === calMonth)

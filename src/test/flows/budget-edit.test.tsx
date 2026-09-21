@@ -81,14 +81,7 @@ describe('Budget inline edit flow', () => {
       allocated_amount: '1200.00',
     })
 
-    server.use(
-      http.get('http://localhost:8000/budget/:year', () => HttpResponse.json([entry])),
-      // Return 404 so the code falls back to PUT /budget/:id (updateBudgetEntry)
-      http.put(
-        'http://localhost:8000/budget/:year/:month/categories/:categoryId',
-        () => new HttpResponse(null, { status: 404 })
-      )
-    )
+    server.use(http.get('http://localhost:8000/budget/:year', () => HttpResponse.json([entry])))
 
     let capturedBody: unknown = null
     server.use(
@@ -115,5 +108,52 @@ describe('Budget inline edit flow', () => {
     await waitFor(() => {
       expect(capturedBody).toMatchObject({ allocated_amount: 1800 })
     })
+  })
+
+  it('does not call the non-existent per-month-override endpoint on inline edit', async () => {
+    // Regression test — PUT /budget/{year}/{month}/categories/{id} has never
+    // been routed on the backend (only POST /budget, GET /budget/{year},
+    // PUT/DELETE /budget/{id} exist), so `monthlyOverrideMutation` used to
+    // 404 against it on every single inline edit before falling back to the
+    // annual PUT. It should now go straight to PUT /budget/:id.
+    const entry = makeBudgetEntry({
+      id: 'budget-entry-1',
+      category_id: 'cat-1',
+      category: 'Groceries',
+      allocated_amount: '1200.00',
+    })
+
+    server.use(http.get('http://localhost:8000/budget/:year', () => HttpResponse.json([entry])))
+
+    let perMonthCallCount = 0
+    server.use(
+      http.put('http://localhost:8000/budget/:year/:month/categories/:categoryId', () => {
+        perMonthCallCount++
+        return new HttpResponse(null, { status: 404 })
+      })
+    )
+
+    let annualCallCount = 0
+    server.use(
+      http.put('http://localhost:8000/budget/:id', () => {
+        annualCallCount++
+        return HttpResponse.json({ ...entry, allocated_amount: '1800.00' })
+      })
+    )
+
+    const user = userEvent.setup()
+    renderWithProviders(<BudgetPage />, { initialEntries: ['/budget'] })
+
+    const editBtn = await screen.findByTitle('Click to edit monthly budget')
+    await user.click(editBtn)
+    const input = await screen.findByLabelText(/monthly budget for groceries/i)
+    await user.clear(input)
+    await user.type(input, '150')
+    await user.keyboard('{Enter}')
+
+    await waitFor(() => {
+      expect(annualCallCount).toBe(1)
+    })
+    expect(perMonthCallCount).toBe(0)
   })
 })

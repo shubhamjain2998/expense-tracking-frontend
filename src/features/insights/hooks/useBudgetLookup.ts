@@ -30,12 +30,27 @@ export function useBudgetLookup(now: Date): { budgetFor: BudgetLookup; isLoading
     queries: years.map((year) => ({
       queryKey: qk.budget.byYear(year),
       queryFn: () => getBudget(year),
+      // GET /budget/{year} legitimately 404s whenever the user hasn't
+      // budgeted that year yet (e.g. the trailing "last year" this hook
+      // always fetches, for anyone who only set up the current year) — it's
+      // a valid "no budget" response, not a transient failure, so retrying
+      // it 3x on every Insights load is pure wasted latency.
+      retry: false,
+      throwOnError: false,
     })),
   })
   const overrideQueries = useQueries({
     queries: years.map((year) => ({
       queryKey: qk.budget.overrides(year),
       queryFn: () => getMonthlyBudgetOverrides(year),
+      // GET /budget/{year}/monthly-overrides 404s until the backend ships
+      // per-month overrides — react-query's default retry (3x, exponential
+      // backoff) turned every Insights load into up to 8 failing requests
+      // across the two years fetched here. Fail fast; `q.data ?? []` below
+      // already treats "no data" as "no overrides" so behaviour is
+      // unchanged, just without the retry storm.
+      retry: false,
+      throwOnError: false,
     })),
   })
 
