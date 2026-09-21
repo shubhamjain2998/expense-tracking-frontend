@@ -47,6 +47,18 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
   const [txnType, setTxnType] = useState<TxnType>(txn.txn_type ?? 'expense')
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(txn.tags.map((t) => t.id))
   const [categoryError, setCategoryError] = useState('')
+  // `txn` is a snapshot passed down from the transactions list at the moment
+  // this panel opened — it never gets refreshed from the list's own refetch
+  // (TransactionsPage holds it in separate state, see project memory on the
+  // panel architecture). settledMutation's own invalidate refetches that
+  // list, but doesn't update this stale `txn` prop, so reading
+  // `share.settled` straight from `txn.shares` after a successful settle
+  // toggle kept showing the pre-mutation status — the button looked like it
+  // didn't work, and a second click sent the *same* direction again since it
+  // was still computed off the stale value. Track this panel's own view of
+  // what just got confirmed, keyed by person, and prefer it over the stale
+  // prop.
+  const [settledOverrides, setSettledOverrides] = useState<Record<string, boolean>>({})
   const personsQuery = useQuery({ queryKey: qk.persons.all, queryFn: getPersons })
   const tagsQuery = useQuery({ queryKey: qk.tags.all, queryFn: getTags })
 
@@ -98,7 +110,10 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
   const settledMutation = useMutation({
     mutationFn: ({ personId, settled }: { personId: string; settled: boolean }) =>
       patchShareSettled(txn.id, personId, settled),
-    onSuccess: () => invalidateDomains(qc, ['transactions', 'dashboard']),
+    onSuccess: (_data, { personId, settled }) => {
+      setSettledOverrides((prev) => ({ ...prev, [personId]: settled }))
+      invalidateDomains(qc, ['transactions', 'dashboard'])
+    },
     onError: () => toast.error('Failed to update settlement'),
   })
 
@@ -302,26 +317,29 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
           <div>
             <p className="eyebrow mb-1.5">Settlement</p>
             <div className="space-y-1.5">
-              {txn.shares.map((share) => (
-                <div key={share.person_id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-[12.5px]">
-                    <span style={{ color: 'var(--ink)' }}>{share.person_name}</span>
-                    <span className="num" style={{ color: 'var(--ink-3)' }}>
-                      {formatCurrency(Number(share.share_amount), { fractionDigits: 2 })}
-                    </span>
+              {txn.shares.map((share) => {
+                const isSettled = settledOverrides[share.person_id] ?? share.settled
+                return (
+                  <div key={share.person_id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-[12.5px]">
+                      <span style={{ color: 'var(--ink)' }}>{share.person_name}</span>
+                      <span className="num" style={{ color: 'var(--ink-3)' }}>
+                        {formatCurrency(Number(share.share_amount), { fractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() =>
+                        settledMutation.mutate({ personId: share.person_id, settled: !isSettled })
+                      }
+                      className={isSettled ? 'chip pos' : 'chip'}
+                      style={{ cursor: 'pointer', height: 20, padding: '0 8px', fontSize: 10.5 }}
+                      title={isSettled ? 'Mark unsettled' : 'Mark settled'}
+                    >
+                      {isSettled ? 'settled' : 'pending'}
+                    </button>
                   </div>
-                  <button
-                    onClick={() =>
-                      settledMutation.mutate({ personId: share.person_id, settled: !share.settled })
-                    }
-                    className={share.settled ? 'chip pos' : 'chip'}
-                    style={{ cursor: 'pointer', height: 20, padding: '0 8px', fontSize: 10.5 }}
-                    title={share.settled ? 'Mark unsettled' : 'Mark settled'}
-                  >
-                    {share.settled ? 'settled' : 'pending'}
-                  </button>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
