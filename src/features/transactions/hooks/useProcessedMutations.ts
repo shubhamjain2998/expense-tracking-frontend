@@ -17,12 +17,12 @@ export function useProcessedMutations(year: number, month: number, mode: PeriodM
   const deleteProcMutation = useMutation({
     mutationFn: deleteProcessedTransaction,
     onSuccess: () => {
-      // Broad invalidation: the active processed query is keyed with
-      // (year, month, categoryFilter, tagFilter, mode); a narrower key with
-      // undefined slots won't prefix-match because React Query compares
-      // element-wise. Also covers pendingManual (deletion now also soft-
-      // deletes the raw, so the dashboard count needs to refresh) and
-      // dashboard aggregates.
+      // Broad invalidation: also covers pendingManual (deletion now also
+      // soft-deletes the raw, so the dashboard count needs to refresh) and
+      // dashboard aggregates. Narrower invalidations below still pass `mode`
+      // explicitly — React Query compares query keys element-wise, so an
+      // omitted (undefined) slot won't prefix-match a key that has a real
+      // value there, e.g. mode='fy'.
       invalidateDomains(qc, ['transactions', 'dashboard'])
       toast.success('Transaction deleted')
     },
@@ -54,7 +54,9 @@ export function useProcessedMutations(year: number, month: number, mode: PeriodM
       }),
     onSuccess: (_data, variables) => {
       void qc.invalidateQueries({ queryKey: qk.transactions.raw(year, month, mode) })
-      void qc.invalidateQueries({ queryKey: qk.transactions.processed(year, month) })
+      void qc.invalidateQueries({
+        queryKey: qk.transactions.processed(year, month, undefined, undefined, mode),
+      })
       void qc.invalidateQueries({ queryKey: qk.transactions.pendingManual() })
       // A new processed txn changes category totals on the dashboard, and
       // save_mapping=true also creates a new mapping rule.
@@ -78,7 +80,9 @@ export function useProcessedMutations(year: number, month: number, mode: PeriodM
       silent?: boolean
     }) => editProcessedTransaction(procId, { category_id: categoryId, tag_ids }),
     onSuccess: (_data, variables) => {
-      void qc.invalidateQueries({ queryKey: qk.transactions.processed(year, month) })
+      void qc.invalidateQueries({
+        queryKey: qk.transactions.processed(year, month, undefined, undefined, mode),
+      })
       // Reassigns spend from one category bucket to another on the dashboard.
       invalidateDomains(qc, ['dashboard'])
       if (!variables.silent) toast.success('Category updated')

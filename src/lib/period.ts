@@ -56,6 +56,54 @@ export function savePeriodMode(mode: PeriodMode): void {
   window.localStorage.setItem(PERIOD_MODE_STORAGE_KEY, mode)
 }
 
+/**
+ * The one sticky (year, month) selection shared app-wide — see `usePeriod`
+ * in `src/hooks/usePeriod.ts`, the single source of truth this backs.
+ * Distinct from `PERIOD_MODE_STORAGE_KEY` above, which stores the fy/
+ * calendar *mode*, not a specific period.
+ */
+export const PERIOD_STORAGE_KEY = 'period_selection'
+
+export interface StoredPeriod {
+  year: number
+  month: number
+}
+
+/** A period_year is a plain 4-digit-ish year — reject NaN, floats, and junk. */
+export function isValidPeriodYear(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 2000 && value <= 2100
+}
+
+/** A period_month is always 1-12, in whichever mode is active. */
+export function isValidPeriodMonth(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 12
+}
+
+export function loadStoredPeriod(): StoredPeriod | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = window.localStorage.getItem(PERIOD_STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as { year?: unknown; month?: unknown }
+    if (isValidPeriodYear(parsed.year) && isValidPeriodMonth(parsed.month)) {
+      return { year: parsed.year, month: parsed.month }
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+export function saveStoredPeriod(year: number, month: number): void {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(PERIOD_STORAGE_KEY, JSON.stringify({ year, month }))
+  } catch {
+    // localStorage can throw in private-browsing/quota-exceeded contexts —
+    // persistence here is a convenience, not a requirement.
+  }
+}
+
 /** Label for a period_year selector entry. */
 export function formatYearLabel(periodYear: number, mode: PeriodMode): string {
   if (mode === 'fy') {

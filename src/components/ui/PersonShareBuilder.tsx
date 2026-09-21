@@ -57,10 +57,10 @@ export function PersonShareBuilder({
     <div className="space-y-3">
       <MultiSelect
         label="Split with persons"
-        persons={persons}
+        items={persons}
         selectedIds={selectedIds}
         onChange={handlePersonChange}
-        onCreatePerson={onCreatePerson}
+        onCreateItem={onCreatePerson}
         onCreateError={onCreatePersonError}
       />
 

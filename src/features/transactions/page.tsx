@@ -6,12 +6,14 @@ import { AddTransactionDialog } from '@/components/ui/AddTransactionDialog'
 import { Icon } from '@/components/ui/Icon'
 import { IgnoreRulesSection } from '@/features/settings/components/IgnoreRulesSection'
 import { MappingsSection } from '@/features/settings/components/MappingsSection'
+import { usePeriod } from '@/hooks/usePeriod'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { useToastContext } from '@/hooks/useToastContext'
 import { getPendingManual } from '@/lib/api/transactions'
 import { pendingTransactionsUrl } from '@/lib/pendingNav'
-import { calendarToPeriod, getCurrentPeriod, monthLongLabel } from '@/lib/period'
+import { calendarToPeriod, monthLongLabel } from '@/lib/period'
 import { qk } from '@/lib/queryKeys'
+import { getMultiParam } from '@/lib/searchParams'
 import type { ProcessedTransactionItem } from '@/types/transaction'
 
 import { BulkActionsBar } from './components/BulkActionsBar'
@@ -34,40 +36,37 @@ import type { SortCol, SortDir, StatusFilter } from './types'
 export function TransactionsPage() {
   const { mode } = usePeriodMode()
   const [searchParams, setSearchParams] = useSearchParams()
-  // `mode` comes from the server preference (with the localStorage value as a
-  // fallback while /auth/me is in flight), so the default month matches the
-  // mode the rest of the page renders in.
-  const initial = getCurrentPeriod(mode)
-
-  const year = Number(searchParams.get('year')) || initial.year
-  const month = Number(searchParams.get('month')) || initial.month
-
-  function setMonth(m: number) {
-    setSearchParams(
-      (p) => {
-        p.set('month', String(m))
-        return p
-      },
-      { replace: true }
-    )
-  }
+  const { year, month, setPeriod } = usePeriod()
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [search, setSearch] = useState('')
-  // URL-driven like year/month — Category's "Open in Transactions" link can
-  // pre-filter this way (see CategoryPage's openInTransactionsHref).
-  const categoryFilter = searchParams.get('category') ?? ''
-  function setCategoryFilter(v: string) {
+  // URL-driven, multi-value — supports both repeated (`?category=a&category=b`)
+  // and comma-separated (`?category=a,b`) params so an older single-value
+  // link (Category's "Open in Transactions") still pre-filters correctly.
+  // Semantics: OR within a filter type, AND across types — see `filtered`
+  // below.
+  const categoryFilter = getMultiParam(searchParams, 'category')
+  function setCategoryFilter(ids: string[]) {
     setSearchParams(
       (p) => {
-        if (v) p.set('category', v)
-        else p.delete('category')
+        p.delete('category')
+        for (const id of ids) p.append('category', id)
         return p
       },
       { replace: true }
     )
   }
-  const [tagFilter, setTagFilter] = useState('')
+  const tagFilter = getMultiParam(searchParams, 'tag')
+  function setTagFilter(ids: string[]) {
+    setSearchParams(
+      (p) => {
+        p.delete('tag')
+        for (const id of ids) p.append('tag', id)
+        return p
+      },
+      { replace: true }
+    )
+  }
   const [showDeleted, setShowDeleted] = useState(false)
   const [selectedUid, setSelectedUid] = useState<string | null>(null)
   const [editingTxn, setEditingTxn] = useState<ProcessedTransactionItem | null>(null)
@@ -93,11 +92,14 @@ export function TransactionsPage() {
   }
 
   const toast = useToastContext()
+  // Category/tag filtering (single- or multi-value) happens entirely
+  // client-side below — the processed query always fetches the whole month
+  // unfiltered, both because the backend only takes one category_id/tag_id
+  // and because a single shared cache entry per (year, month, mode) is
+  // simpler to keep correctly invalidated (see useProcessedMutations).
   const { rawQuery, processedQuery, categoriesQuery, tagsQuery } = useTransactionsData(
     year,
     month,
-    categoryFilter,
-    tagFilter,
     mode,
     showDeleted
   )
@@ -143,6 +145,13 @@ export function TransactionsPage() {
     if (statusFilter === 'income' && t.txnType !== 'income') return false
     if (statusFilter === 'processed' && t.kind !== 'processed') return false
     if (statusFilter === 'split' && t.shares.length === 0) return false
+    // Multi-value category/tag filters: OR within a filter type (any
+    // selected category/tag matches), AND across types and the other
+    // filters above. Pending rows have neither yet, so they're excluded
+    // whenever either filter is active.
+    if (categoryFilter.length > 0 && (!t.categoryId || !categoryFilter.includes(t.categoryId)))
+      return false
+    if (tagFilter.length > 0 && !t.tags.some((tag) => tagFilter.includes(tag.id))) return false
     return true
   })
 
@@ -180,7 +189,7 @@ export function TransactionsPage() {
   const visibleForHeading = filtered.filter((t) => t.kind !== 'deleted')
   const headingCount = visibleForHeading.length
   const headingTotals = txnTotals(visibleForHeading)
-  const hasActiveFilters = !!(search || categoryFilter || tagFilter)
+  const hasActiveFilters = !!(search || categoryFilter.length > 0 || tagFilter.length > 0)
   const selectedTxn = selectedUid ? filtered.find((t) => t.uid === selectedUid) : null
   const showProcessPanel =
     selectedTxn?.kind === 'pending' && !!selectedTxn.rawOriginal && !editingTxn
@@ -209,16 +218,9 @@ export function TransactionsPage() {
     setEditingTxn(null)
     setCheckedUids(new Set())
     if (month === 1) {
-      setSearchParams(
-        (p) => {
-          p.set('year', String(year - 1))
-          p.set('month', '12')
-          return p
-        },
-        { replace: true }
-      )
+      setPeriod(year - 1, 12)
     } else {
-      setMonth(month - 1)
+      setPeriod(year, month - 1)
     }
   }
   function nextMonth() {
@@ -226,16 +228,9 @@ export function TransactionsPage() {
     setEditingTxn(null)
     setCheckedUids(new Set())
     if (month === 12) {
-      setSearchParams(
-        (p) => {
-          p.set('year', String(year + 1))
-          p.set('month', '1')
-          return p
-        },
-        { replace: true }
-      )
+      setPeriod(year + 1, 1)
     } else {
-      setMonth(month + 1)
+      setPeriod(year, month + 1)
     }
   }
 
@@ -511,8 +506,21 @@ export function TransactionsPage() {
             hasActiveFilters={hasActiveFilters}
             onClearFilters={() => {
               setSearch('')
-              setCategoryFilter('')
-              setTagFilter('')
+              // One combined setSearchParams call, not separate
+              // setCategoryFilter([]) + setTagFilter([]) calls — each of
+              // those independently reads the CURRENT search params and
+              // replaces the URL wholesale, so calling both synchronously
+              // has the second call clobber the first's update instead of
+              // composing (identical hazard to why prevMonth/nextMonth set
+              // year+month together instead of two separate calls).
+              setSearchParams(
+                (p) => {
+                  p.delete('category')
+                  p.delete('tag')
+                  return p
+                },
+                { replace: true }
+              )
             }}
             count={headingCount}
             totals={headingTotals}

@@ -9,8 +9,6 @@ import { qk } from '@/lib/queryKeys'
 export function useTransactionsData(
   year: number,
   month: number,
-  categoryFilter: string,
-  tagFilter: string,
   mode: PeriodMode,
   // showDeleted now controls only client-side visibility (see TransactionsList).
   // The query ALWAYS fetches with include_deleted=true so deletedCount is
@@ -23,22 +21,14 @@ export function useTransactionsData(
     queryFn: () => getRawTransactions(year, month, mode, true),
   })
 
+  // Always fetches the whole month unfiltered — category/tag filtering
+  // (including multi-value) happens client-side in the page, both because
+  // the backend only accepts one category_id/tag_id and so there's a single
+  // cache entry per (year, month, mode) to keep invalidated (see
+  // useProcessedMutations).
   const processedQuery = useQuery({
-    queryKey: qk.transactions.processed(
-      year,
-      month,
-      categoryFilter || undefined,
-      tagFilter || undefined,
-      mode
-    ),
-    queryFn: () =>
-      getProcessedTransactions(
-        year,
-        month,
-        categoryFilter || undefined,
-        tagFilter || undefined,
-        mode
-      ),
+    queryKey: qk.transactions.processed(year, month, undefined, undefined, mode),
+    queryFn: () => getProcessedTransactions(year, month, undefined, undefined, mode),
   })
 
   const categoriesQuery = useQuery({

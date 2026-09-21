@@ -4,9 +4,10 @@ import { Link } from 'react-router-dom'
 
 import { computeHabits, computeTagSpend } from '@/features/dashboard/lib/habits'
 import { detectRecurring } from '@/features/dashboard/lib/recurring'
+import { usePeriod } from '@/hooks/usePeriod'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { getSplitLedger } from '@/lib/api/dashboard'
-import { getCurrentPeriod, resolvePeriodMonth } from '@/lib/period'
+import { resolvePeriodMonth } from '@/lib/period'
 import { qk } from '@/lib/queryKeys'
 
 import { useAllProcessedTransactions } from '../dashboard/hooks/useAllProcessedTransactions'
@@ -78,8 +79,11 @@ export function InsightsPage() {
   const recurring = useMemo(() => detectRecurring(allHistory, now), [allHistory, now])
 
   // ── People (§6) ──────────────────────────────────────────────────────────
+  // Scoped to the app-wide sticky period (usePeriod) — Insights has no
+  // period stepper of its own, but its People section should still reflect
+  // whatever month is selected everywhere else (Home, Transactions, Budget).
   const [includeSettled, setIncludeSettled] = useState(false)
-  const { year: periodYear, month: periodMonth } = getCurrentPeriod(mode, now)
+  const { year: periodYear, month: periodMonth } = usePeriod()
   const { year: calYear, month: calMonth } = resolvePeriodMonth(periodYear, periodMonth, mode)
 
   const ledgerQuery = useQuery({

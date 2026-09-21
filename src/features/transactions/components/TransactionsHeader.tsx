@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { Icon } from '@/components/ui/Icon'
+import { MultiSelect } from '@/components/ui/MultiSelect'
 import { formatYearLabel, monthLongLabel } from '@/lib/period'
 import type { PeriodMode } from '@/lib/period'
 import type { Category, Tag } from '@/types/settings'
@@ -22,11 +23,11 @@ interface TransactionsHeaderProps {
   onPrevMonth: () => void
   onNextMonth: () => void
   categories: Category[]
-  categoryFilter: string
-  onCategoryFilter: (v: string) => void
+  categoryFilter: string[]
+  onCategoryFilter: (ids: string[]) => void
   tags: Tag[]
-  tagFilter: string
-  onTagFilter: (v: string) => void
+  tagFilter: string[]
+  onTagFilter: (ids: string[]) => void
   onAdd: () => void
 }
 
@@ -72,7 +73,8 @@ export function TransactionsHeader({
   }, [showFilters])
 
   const isExtraStatus = statusFilter === 'income' || statusFilter === 'processed'
-  const activeFilterCount = (categoryFilter ? 1 : 0) + (tagFilter ? 1 : 0) + (isExtraStatus ? 1 : 0)
+  // Counts VALUES, not filter types — two categories + one tag = 3, not 2.
+  const activeFilterCount = categoryFilter.length + tagFilter.length + (isExtraStatus ? 1 : 0)
 
   return (
     <div className="toolbar">
@@ -137,49 +139,31 @@ export function TransactionsHeader({
           Filters {activeFilterCount > 0 && <span className="badge">{activeFilterCount}</span>}
         </button>
         {showFilters && (
-          <div className="menu" role="menu" style={{ minWidth: 240 }}>
+          <div className="menu" role="menu" style={{ minWidth: 260 }}>
             <div style={{ padding: '6px 10px' }}>
-              <label className="eyebrow mb-1 block" htmlFor="txn-filter-category">
-                Category
-              </label>
-              <select
-                id="txn-filter-category"
-                value={categoryFilter}
-                onChange={(e) => onCategoryFilter(e.target.value)}
-                className="input"
-                aria-label="Filter by category"
-              >
-                <option value="">All categories</option>
-                {[...categories]
-                  .sort((a, b) => a.name.localeCompare(b.name))
-                  .map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-              </select>
+              <MultiSelect
+                label="Category"
+                items={[...categories].sort((a, b) => a.name.localeCompare(b.name))}
+                selectedIds={categoryFilter}
+                onChange={onCategoryFilter}
+                icon="category"
+                itemIcon="category"
+                placeholder="Search categories…"
+                showInitials={false}
+              />
             </div>
             {tags.length > 0 && (
               <div style={{ padding: '6px 10px' }}>
-                <label className="eyebrow mb-1 block" htmlFor="txn-filter-tag">
-                  Tag
-                </label>
-                <select
-                  id="txn-filter-tag"
-                  value={tagFilter}
-                  onChange={(e) => onTagFilter(e.target.value)}
-                  className="input"
-                  aria-label="Filter by tag"
-                >
-                  <option value="">All tags</option>
-                  {[...tags]
-                    .sort((a, b) => a.name.localeCompare(b.name))
-                    .map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}
-                      </option>
-                    ))}
-                </select>
+                <MultiSelect
+                  label="Tag"
+                  items={[...tags].sort((a, b) => a.name.localeCompare(b.name))}
+                  selectedIds={tagFilter}
+                  onChange={onTagFilter}
+                  icon="tag"
+                  itemIcon="tag"
+                  placeholder="Search tags…"
+                  showInitials={false}
+                />
               </div>
             )}
             <div style={{ padding: '6px 10px', display: 'flex', gap: 6 }}>

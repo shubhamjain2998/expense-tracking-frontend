@@ -2,8 +2,9 @@ import { useState } from 'react'
 
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { SkeletonTable } from '@/components/ui/Skeleton'
+import { usePeriod } from '@/hooks/usePeriod'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
-import { getCurrentPeriod, loadPeriodMode, monthLongLabel } from '@/lib/period'
+import { monthLongLabel } from '@/lib/period'
 
 import { AddBudgetModal } from './components/AddBudgetModal'
 import { BudgetCategoryTable } from './components/BudgetCategoryTable'
@@ -22,11 +23,8 @@ import { useBudgetMutations } from './hooks/useBudgetMutations'
  * Phase 4 — repeating it here would be the same chart twice (MASTER.md §1).
  */
 export function BudgetPage() {
-  const now = new Date()
   const { mode, isExplicitlySet, isLoadingPreference } = usePeriodMode()
-  const initial = getCurrentPeriod(loadPeriodMode(), now)
-  const [year, setYear] = useState(initial.year)
-  const [month, setMonth] = useState(initial.month)
+  const { year, month, setPeriod } = usePeriod()
   const [showAddModal, setShowAddModal] = useState(false)
 
   const data = useBudgetData({ year, month, mode })
@@ -50,18 +48,16 @@ export function BudgetPage() {
   function navigateMonth(dir: -1 | 1) {
     const next = month + dir
     if (next < 1) {
-      setMonth(12)
-      setYear((y) => y - 1)
+      setPeriod(year - 1, 12)
     } else if (next > 12) {
-      setMonth(1)
-      setYear((y) => y + 1)
+      setPeriod(year + 1, 1)
     } else {
-      setMonth(next)
+      setPeriod(year, next)
     }
   }
 
   function navigateYear(dir: -1 | 1) {
-    setYear((y) => y + dir)
+    setPeriod(year + dir, month)
   }
 
   return (

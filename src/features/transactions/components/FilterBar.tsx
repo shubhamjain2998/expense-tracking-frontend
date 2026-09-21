@@ -10,11 +10,11 @@ import type { StatusFilter } from '../types'
 
 interface FilterBarProps {
   categories: Category[]
-  categoryFilter: string
-  onCategoryFilter: (v: string) => void
+  categoryFilter: string[]
+  onCategoryFilter: (ids: string[]) => void
   tags: Tag[]
-  tagFilter: string
-  onTagFilter: (v: string) => void
+  tagFilter: string[]
+  onTagFilter: (ids: string[]) => void
   statusFilter: StatusFilter
   onStatusFilter: (f: StatusFilter) => void
   hasActiveFilters: boolean
@@ -52,38 +52,42 @@ export function FilterBar({
   onShowShortcuts,
   bulkActions,
 }: FilterBarProps) {
-  const category = categoryFilter ? categories.find((c) => c.id === categoryFilter) : undefined
-  const tag = tagFilter ? tags.find((t) => t.id === tagFilter) : undefined
+  const selectedCategories = categoryFilter
+    .map((id) => categories.find((c) => c.id === id))
+    .filter((c): c is Category => !!c)
+  const selectedTags = tagFilter
+    .map((id) => tags.find((t) => t.id === id))
+    .filter((t): t is Tag => !!t)
   const { expenseTotal, incomeTotal } = totals
 
   return (
     <div className="toolbar" style={{ marginTop: 8 }}>
-      {category && (
-        <span className="chip on">
+      {selectedCategories.map((category) => (
+        <span className="chip on" key={category.id}>
           {category.name}
           <button
             type="button"
-            aria-label="Remove category filter"
-            onClick={() => onCategoryFilter('')}
+            aria-label={`Remove category filter: ${category.name}`}
+            onClick={() => onCategoryFilter(categoryFilter.filter((id) => id !== category.id))}
             className="chip-x"
           >
             <Icon name="close" size={11} />
           </button>
         </span>
-      )}
-      {tag && (
-        <span className="chip on">
+      ))}
+      {selectedTags.map((tag) => (
+        <span className="chip on" key={tag.id}>
           {tag.name}
           <button
             type="button"
-            aria-label="Remove tag filter"
-            onClick={() => onTagFilter('')}
+            aria-label={`Remove tag filter: ${tag.name}`}
+            onClick={() => onTagFilter(tagFilter.filter((id) => id !== tag.id))}
             className="chip-x"
           >
             <Icon name="close" size={11} />
           </button>
         </span>
-      )}
+      ))}
       {statusFilter === 'income' && (
         <span className="chip on">
           Income only

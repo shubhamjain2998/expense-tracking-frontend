@@ -1,27 +1,45 @@
 import { useState, useRef, useEffect } from 'react'
 
-import { Icon } from '@/components/ui/Icon'
+import { Icon, type IconName } from '@/components/ui/Icon'
 
 import { getInitials } from '../../lib/strings'
-import type { Person } from '../../types/settings'
 
-interface MultiSelectProps {
-  persons: Person[]
-  selectedIds: string[]
-  onChange: (ids: string[]) => void
-  onCreatePerson?: (name: string) => Promise<Person>
-  onCreateError?: (msg: string) => void
-  label?: string
+export interface MultiSelectItem {
+  id: string
+  name: string
 }
 
-export function MultiSelect({
-  persons,
+interface MultiSelectProps<T extends MultiSelectItem> {
+  items: T[]
+  selectedIds: string[]
+  onChange: (ids: string[]) => void
+  onCreateItem?: (name: string) => Promise<T>
+  onCreateError?: (msg: string) => void
+  label?: string
+  /** Icon in the search field. Defaults to the person-search icon. */
+  icon?: IconName
+  /** Icon shown next to each option in the dropdown. Defaults to `person`. */
+  itemIcon?: IconName
+  placeholder?: string
+  createLabel?: string
+  /** Show the small initials bubble on each selected chip. Off for
+   *  non-person items (categories, tags) where initials don't read well. */
+  showInitials?: boolean
+}
+
+export function MultiSelect<T extends MultiSelectItem>({
+  items,
   selectedIds,
   onChange,
-  onCreatePerson,
+  onCreateItem,
   onCreateError,
   label,
-}: MultiSelectProps) {
+  icon = 'person_search',
+  itemIcon = 'person',
+  placeholder = 'Search or add person…',
+  createLabel = 'Create new person',
+  showInitials = true,
+}: MultiSelectProps<T>) {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
   const [creating, setCreating] = useState(false)
@@ -34,15 +52,15 @@ export function MultiSelect({
     onChangeRef.current = onChange
   })
 
-  const selected = persons.filter((p) => selectedIds.includes(p.id))
+  const selected = items.filter((p) => selectedIds.includes(p.id))
   const trimmed = query.trim()
-  const filtered = persons.filter(
+  const filtered = items.filter(
     (p) => !selectedIds.includes(p.id) && p.name.toLowerCase().includes(trimmed.toLowerCase())
   )
   const isNew =
-    !!onCreatePerson &&
+    !!onCreateItem &&
     trimmed !== '' &&
-    !persons.some((p) => p.name.toLowerCase() === trimmed.toLowerCase())
+    !items.some((p) => p.name.toLowerCase() === trimmed.toLowerCase())
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -68,15 +86,15 @@ export function MultiSelect({
 
   async function handleCreate(e: React.MouseEvent) {
     e.preventDefault()
-    if (!onCreatePerson || !trimmed || creating) return
+    if (!onCreateItem || !trimmed || creating) return
     setCreating(true)
     try {
-      const newPerson = await onCreatePerson(trimmed)
-      onChangeRef.current([...selectedIdsRef.current, newPerson.id])
+      const newItem = await onCreateItem(trimmed)
+      onChangeRef.current([...selectedIdsRef.current, newItem.id])
       setQuery('')
       setOpen(false)
     } catch {
-      onCreateError?.('Failed to create person')
+      onCreateError?.('Failed to create item')
     } finally {
       setCreating(false)
     }
@@ -91,9 +109,11 @@ export function MultiSelect({
         <div className="mb-2 flex flex-wrap gap-1.5">
           {selected.map((p) => (
             <div key={p.id} className="chip h-6 pr-1">
-              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[var(--surface-3)] text-[9px] font-semibold text-[var(--ink-2)]">
-                {getInitials(p.name)}
-              </span>
+              {showInitials && (
+                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[var(--surface-3)] text-[9px] font-semibold text-[var(--ink-2)]">
+                  {getInitials(p.name)}
+                </span>
+              )}
               <span className="text-[var(--ink)]">{p.name}</span>
               <button
                 type="button"
@@ -111,7 +131,7 @@ export function MultiSelect({
       {/* Search input */}
       <div className="relative">
         <Icon
-          name="person_search"
+          name={icon}
           size={14}
           className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-[var(--ink-4)]"
         />
@@ -124,13 +144,13 @@ export function MultiSelect({
             setOpen(true)
           }}
           onFocus={() => setOpen(true)}
-          placeholder="Search or add person…"
+          placeholder={placeholder}
           className="input pl-7"
           autoComplete="off"
         />
       </div>
 
-      {/* Dropdown for existing persons */}
+      {/* Dropdown for existing items */}
       {open && filtered.length > 0 && (
         <ul className="relative z-30 mt-1 max-h-40 w-full overflow-y-auto rounded-[var(--radius-lg)] border border-[var(--line)] bg-[var(--surface)] p-1 shadow-[var(--shadow-pop)]">
           {filtered.map((p) => (
@@ -139,14 +159,14 @@ export function MultiSelect({
               onMouseDown={() => add(p.id)}
               className="flex cursor-pointer items-center gap-2 rounded-[var(--radius-sm)] px-2.5 py-[7px] text-[12.5px] text-[var(--ink-2)] hover:bg-[var(--surface-2)]"
             >
-              <Icon name="person" size={14} className="text-[var(--ink-4)]" />
+              <Icon name={itemIcon} size={14} className="text-[var(--ink-4)]" />
               {p.name}
             </li>
           ))}
         </ul>
       )}
 
-      {/* Create new person card */}
+      {/* Create new item card */}
       {isNew && (
         <div
           onMouseDown={handleCreate}
@@ -160,7 +180,7 @@ export function MultiSelect({
             className="text-[var(--ink-4)]"
           />
           <div className="min-w-0">
-            <span className="eyebrow block">Create new person</span>
+            <span className="eyebrow block">{createLabel}</span>
             <p className="truncate text-[12.5px] font-medium text-[var(--ink)]">
               &ldquo;{trimmed}&rdquo;
             </p>

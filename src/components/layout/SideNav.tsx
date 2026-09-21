@@ -4,17 +4,27 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Icon, type IconName } from '@/components/ui/Icon'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAvatarPrefs } from '@/hooks/useAvatarPrefs'
+import { usePeriod } from '@/hooks/usePeriod'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { useSidebarStats } from '@/hooks/useSidebarStats'
 import { pendingTransactionsUrl } from '@/lib/pendingNav'
-import { formatYearLabel, getCurrentPeriod } from '@/lib/period'
+import { formatYearLabel } from '@/lib/period'
 import { getInitials } from '@/lib/strings'
 
-const NAV: { to: string; label: string; icon: IconName; end: boolean }[] = [
-  { to: '/dashboard', label: 'Home', icon: 'dashboard', end: true },
-  { to: '/transactions', label: 'Transactions', icon: 'receipt_long', end: false },
-  { to: '/budget', label: 'Budget', icon: 'account_balance_wallet', end: false },
-  { to: '/settings', label: 'Settings', icon: 'settings', end: false },
+// `periodAware` destinations carry the app-wide sticky period (`usePeriod`)
+// in their link so navigating between them never drops the selected month —
+// Settings has no period, so it's plain.
+const NAV: { to: string; label: string; icon: IconName; end: boolean; periodAware: boolean }[] = [
+  { to: '/dashboard', label: 'Home', icon: 'dashboard', end: true, periodAware: true },
+  {
+    to: '/transactions',
+    label: 'Transactions',
+    icon: 'receipt_long',
+    end: false,
+    periodAware: true,
+  },
+  { to: '/budget', label: 'Budget', icon: 'account_balance_wallet', end: false, periodAware: true },
+  { to: '/settings', label: 'Settings', icon: 'settings', end: false, periodAware: false },
 ]
 
 /**
@@ -28,17 +38,24 @@ export function SideNav() {
   const { email } = useAuth()
   const { pendingCount, pendingItems } = useSidebarStats()
   const { mode } = usePeriodMode()
+  const { year, month } = usePeriod()
   const { prefs } = useAvatarPrefs()
   const initials = getInitials(email)
   const displayName = localStorage.getItem('pf_display_name') || email.split('@')[0] || ''
-  const { year } = getCurrentPeriod(mode)
   const periodLabel = formatYearLabel(year, mode)
+  const periodQuery = `?year=${year}&month=${month}`
 
-  const txnsTo = pendingCount > 0 ? pendingTransactionsUrl(pendingItems, mode) : '/transactions'
+  // Pending items deliberately override the current period with the month
+  // that actually has them — see pendingTransactionsUrl.
+  const txnsTo =
+    pendingCount > 0 ? pendingTransactionsUrl(pendingItems, mode) : `/transactions${periodQuery}`
+  const homeTo = `/dashboard${periodQuery}`
+  const budgetTo = `/budget${periodQuery}`
+  const insightsTo = `/insights${periodQuery}`
 
   return (
     <aside className="sidenav">
-      <NavLink to="/dashboard" className="brand" style={{ textDecoration: 'none' }}>
+      <NavLink to={homeTo} className="brand" style={{ textDecoration: 'none' }}>
         <span className="brand-mark" aria-hidden="true">
           क
         </span>
@@ -46,8 +63,17 @@ export function SideNav() {
       </NavLink>
 
       <nav className="navlist" aria-label="Primary">
-        {NAV.map(({ to, label, icon, end }) => {
-          const resolvedTo = label === 'Transactions' ? txnsTo : to
+        {NAV.map(({ to, label, icon, end, periodAware }) => {
+          const resolvedTo =
+            label === 'Transactions'
+              ? txnsTo
+              : label === 'Home'
+                ? homeTo
+                : label === 'Budget'
+                  ? budgetTo
+                  : periodAware
+                    ? `${to}${periodQuery}`
+                    : to
           return (
             <NavLink key={to} to={resolvedTo} end={end} className="navlink">
               <Icon name={icon} size={16} />
@@ -66,7 +92,7 @@ export function SideNav() {
         <span className="eyebrow" style={{ display: 'block', padding: '0 8px 8px' }}>
           Explore
         </span>
-        <NavLink to="/insights" className="navlink">
+        <NavLink to={insightsTo} className="navlink">
           <Icon name="sparkles" size={16} />
           <span>Insights</span>
         </NavLink>

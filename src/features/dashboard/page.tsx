@@ -1,15 +1,15 @@
 import { motion } from 'motion/react'
 import { useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
 
 import { GettingStartedChecklist } from '@/components/onboarding/GettingStartedChecklist'
 import { WelcomeModal } from '@/components/onboarding/WelcomeModal'
+import { usePeriod } from '@/hooks/usePeriod'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { useThemeContext } from '@/hooks/useThemeContext'
 import { fadeUp, staggerContainer } from '@/lib/motion'
 import { onboardingStorage } from '@/lib/onboardingStorage'
 import { pendingTransactionsUrl } from '@/lib/pendingNav'
-import { getCurrentPeriod, loadPeriodMode, resolvePeriodMonth } from '@/lib/period'
+import { resolvePeriodMonth } from '@/lib/period'
 
 import { CommittedVsChosen } from './components/CommittedVsChosen'
 import { NeedsYou } from './components/NeedsYou'
@@ -40,38 +40,7 @@ export function DashboardPage() {
   const { mode } = usePeriodMode()
 
   // ── UI state ───────────────────────────────────────────────────────────────────────────────
-  const [searchParams, setSearchParams] = useSearchParams()
-  const initial = getCurrentPeriod(loadPeriodMode(), now)
-  const year = Number(searchParams.get('year')) || initial.year
-  const month = Number(searchParams.get('month')) || initial.month
-  function setYear(y: number) {
-    setSearchParams(
-      (p) => {
-        p.set('year', String(y))
-        return p
-      },
-      { replace: true }
-    )
-  }
-  function setMonth(m: number) {
-    setSearchParams(
-      (p) => {
-        p.set('month', String(m))
-        return p
-      },
-      { replace: true }
-    )
-  }
-  function setPeriod(y: number, m: number) {
-    setSearchParams(
-      (p) => {
-        p.set('year', String(y))
-        p.set('month', String(m))
-        return p
-      },
-      { replace: true }
-    )
-  }
+  const { year, month, setYear, setMonth, setPeriod } = usePeriod()
   const [trendWindow, setTrendWindow] = useState(6)
 
   // ── Onboarding (welcome modal + Getting Started checklist) ─────────────────

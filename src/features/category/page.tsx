@@ -1,22 +1,18 @@
 import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { YearMonthSelector } from '@/components/ui/YearMonthSelector'
 import { useAllProcessedTransactions } from '@/features/dashboard/hooks/useAllProcessedTransactions'
 import { MONTH_LABELS_FULL } from '@/features/dashboard/lib/chartTheme'
+import { usePeriod } from '@/hooks/usePeriod'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { useThemeContext } from '@/hooks/useThemeContext'
 import { getBudget, getMonthlyBudgetOverrides } from '@/lib/api/budget'
 import { formatCurrency } from '@/lib/format'
-import {
-  calendarToPeriod,
-  getCurrentPeriod,
-  loadPeriodMode,
-  resolvePeriodMonth,
-} from '@/lib/period'
+import { calendarToPeriod, resolvePeriodMonth } from '@/lib/period'
 import { qk } from '@/lib/queryKeys'
 
 import { CategoryBreakdown } from './components/CategoryBreakdown'
@@ -53,29 +49,8 @@ export function CategoryPage() {
   const { mode } = usePeriodMode()
   const { transactions: allHistory, isLoading: historyLoading } = useAllProcessedTransactions()
 
-  // ── Period picker — same URL-param pattern as Home ──────────────────────
-  const [searchParams, setSearchParams] = useSearchParams()
-  const initial = getCurrentPeriod(loadPeriodMode(), now)
-  const year = Number(searchParams.get('year')) || initial.year
-  const month = Number(searchParams.get('month')) || initial.month
-  function setYear(y: number) {
-    setSearchParams(
-      (p) => {
-        p.set('year', String(y))
-        return p
-      },
-      { replace: true }
-    )
-  }
-  function setMonth(m: number) {
-    setSearchParams(
-      (p) => {
-        p.set('month', String(m))
-        return p
-      },
-      { replace: true }
-    )
-  }
+  // ── Period picker — the app-wide sticky period (usePeriod) ──────────────
+  const { year, month, setYear, setMonth } = usePeriod()
 
   const { year: calYear, month: calMonth } = resolvePeriodMonth(year, month, mode)
   const isCurrentMonth = calYear === now.getFullYear() && calMonth === now.getMonth() + 1
