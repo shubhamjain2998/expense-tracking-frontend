@@ -53,6 +53,16 @@ export interface InsightsMetric {
   detail: string
 }
 
+/** The before/after pair a finding is about, as numbers rather than prose, so
+ *  the app can draw the change instead of making the reader parse two figures
+ *  out of a sentence. */
+export interface InsightsComparison {
+  label: string
+  from: number
+  to: number
+  unit?: string
+}
+
 export interface InsightsFinding {
   id: string
   title: string
@@ -66,6 +76,7 @@ export interface InsightsFinding {
   annual_impact?: number
   confidence?: InsightsConfidence
   figure?: InsightsFigure
+  comparison?: InsightsComparison
 }
 
 /** A behavioural regularity — timing, trigger, sequence — that no per-category
@@ -193,6 +204,22 @@ function parseFigure(v: unknown, where: string): InsightsFigure | undefined | { 
   return { label: v.label.trim(), value: v.value, unit: v.unit as string | undefined }
 }
 
+function parseComparison(
+  v: unknown,
+  where: string
+): InsightsComparison | undefined | { error: string } {
+  if (v === undefined || v === null) return undefined
+  if (!isRecord(v)) return { error: `${where}.comparison must be an object` }
+  if (!nonEmptyString(v.label)) {
+    return { error: `${where}.comparison.label must be a non-empty string` }
+  }
+  if (!isFiniteNumber(v.from)) return { error: `${where}.comparison.from must be a number` }
+  if (!isFiniteNumber(v.to)) return { error: `${where}.comparison.to must be a number` }
+  const unit = parseOptionalString(v.unit, `${where}.comparison.unit`)
+  if (isError(unit)) return unit
+  return { label: v.label.trim(), from: v.from, to: v.to, unit }
+}
+
 function parseMetric(v: unknown, index: number): InsightsMetric | { error: string } {
   const where = `metrics[${index}]`
   if (!isRecord(v)) return { error: `${where} must be an object` }
@@ -243,6 +270,8 @@ function parseFinding(v: unknown, index: number): InsightsFinding | { error: str
   if (isError(confidence)) return confidence
   const figure = parseFigure(v.figure, where)
   if (isError(figure)) return figure
+  const comparison = parseComparison(v.comparison, where)
+  if (isError(comparison)) return comparison
   return {
     id: v.id.trim(),
     title: v.title.trim(),
@@ -253,6 +282,7 @@ function parseFinding(v: unknown, index: number): InsightsFinding | { error: str
     annual_impact: annualImpact,
     confidence,
     figure,
+    comparison,
   }
 }
 

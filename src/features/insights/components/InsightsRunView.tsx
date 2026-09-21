@@ -1,13 +1,15 @@
-import { useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { Icon, type IconName } from '@/components/ui/Icon'
+import { Icon } from '@/components/ui/Icon'
 import type { InsightsRunOut } from '@/lib/api/insights'
 
+import { toStakeRows } from '../lib/insightsDerive'
 import { formatInsightsValue } from '../lib/insightsFormat'
-import type { InsightsConfidence, InsightsSeverity } from '../lib/insightsResponseSchema'
 
+import { FindingRow } from './FindingRow'
+import { ImpactBars } from './ImpactBars'
 import { InsightsChartCard } from './InsightsChartCard'
 import { MetricStrip } from './MetricStrip'
 import { PatternsSection } from './PatternsSection'
@@ -18,27 +20,6 @@ interface InsightsRunViewProps {
   onRegenerate: () => void
   onDiscard: () => Promise<void>
   isDiscarding: boolean
-}
-
-const SEVERITY_META: Record<InsightsSeverity, { cls: string; icon: IconName }> = {
-  critical: { cls: 'is-neg', icon: 'error' },
-  warning: { cls: 'is-warn', icon: 'warning' },
-  good: { cls: 'is-pos', icon: 'check_circle' },
-  info: { cls: '', icon: 'info' },
-}
-
-const CONFIDENCE_LABEL: Record<InsightsConfidence, string> = {
-  high: 'High confidence',
-  medium: 'Medium confidence',
-  low: 'Low confidence',
-}
-
-/** The stored payload arrives from the API, not from the parser, so absent
- *  optional numbers come back as JSON `null` rather than `undefined` — and
- *  `null` is not `undefined`, which rendered a bare "₹0 a year" under every
- *  finding that carried no impact figure. */
-function hasImpact(value: number | null | undefined): value is number {
-  return typeof value === 'number' && Number.isFinite(value)
 }
 
 function formatRunTimestamp(iso: string): string {
@@ -59,12 +40,16 @@ function formatRunTimestamp(iso: string): string {
  * rendered as text — never `dangerouslySetInnerHTML` — since it's untrusted,
  * hand-pasted content (see insightsResponseSchema.ts's docblock).
  *
- * Reading order is deliberate and non-overlapping: the one-line verdict, the
- * ratios that support it, what to decide about (findings), what's simply
- * true of the behaviour (patterns), what's coming (projection), the charts,
- * then what the data can't settle. Each section answers a different
- * question — MASTER.md §8's "no two views answer the same question" applies
- * to LLM prose as much as to charts.
+ * An LLM writes paragraphs, and eight of them stacked is a page nobody
+ * finishes. So the page shows the shape of the answer first — the verdict,
+ * the ratios, and a ranked bar per finding — and opens the reasoning only
+ * where the reader asks for it. Nothing is dropped; the order is by how much
+ * of it is needed at a glance.
+ *
+ * Reading order stays non-overlapping: verdict, the ratios behind it, what's
+ * at stake, what to decide about, what's simply true of the behaviour, what's
+ * coming, the charts, then what the data can't settle. MASTER.md §8's "no two
+ * views answer the same question" applies to LLM prose as much as to charts.
  */
 export function InsightsRunView({
   run,
@@ -74,7 +59,33 @@ export function InsightsRunView({
   isDiscarding,
 }: InsightsRunViewProps) {
   const [confirmDiscard, setConfirmDiscard] = useState(false)
+  const [showBasis, setShowBasis] = useState(false)
   const { payload } = run
+
+  // The first finding is ranked most important by the LLM, so it opens by
+  // default — a page of closed rows reads as empty.
+  const [openFindings, setOpenFindings] = useState<Set<string>>(
+    () => new Set(payload.findings[0] ? [payload.findings[0].id] : [])
+  )
+  const findingRefs = useRef(new Map<string, HTMLDivElement | null>())
+
+  const stakeRows = useMemo(() => toStakeRows(payload.findings), [payload.findings])
+
+  const toggleFinding = useCallback((id: string) => {
+    setOpenFindings((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
+  /** A bar names a finding, so picking one opens it and moves to it rather
+   *  than leaving the reader to find the row themselves. */
+  const revealFinding = useCallback((id: string) => {
+    setOpenFindings((prev) => new Set(prev).add(id))
+    findingRefs.current.get(id)?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }, [])
 
   return (
     <section className="sec space-y-4">
@@ -99,54 +110,23 @@ export function InsightsRunView({
 
       <MetricStrip metrics={payload.metrics} />
 
+      <ImpactBars rows={stakeRows} onSelect={revealFinding} />
+
       <div className="card card-flush">
-        <ul className="alerts">
-          {payload.findings.map((f) => {
-            const meta = SEVERITY_META[f.severity]
-            return (
-              <li key={f.id} className={`alert ${meta.cls}`}>
-                <span className="ico">
-                  <Icon name={meta.icon} size={16} aria-hidden="true" />
-                </span>
-                <span className="body">
-                  <span className="block font-medium text-[var(--ink)]">{f.title}</span>
-                  <span className="block text-[12.5px] leading-relaxed text-[var(--ink-3)]">
-                    {f.detail}
-                  </span>
-                  <span className="mt-1.5 block text-[12.5px] leading-relaxed text-[var(--ink-2)]">
-                    {f.so_what}
-                  </span>
-                  {f.action && (
-                    <span className="mt-1.5 flex items-start gap-1.5 text-[12.5px] leading-relaxed text-[var(--ink-2)]">
-                      <Icon
-                        name="arrow_forward"
-                        size={13}
-                        aria-hidden="true"
-                        style={{ marginTop: 2, flexShrink: 0, color: 'var(--accent)' }}
-                      />
-                      <span>{f.action}</span>
-                    </span>
-                  )}
-                  {(f.figure || hasImpact(f.annual_impact) || f.confidence) && (
-                    <span className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[var(--ink-3)]">
-                      {f.figure && (
-                        <span className="num font-medium text-[var(--ink-2)]">
-                          {f.figure.label}: {formatInsightsValue(f.figure.value, f.figure.unit)}
-                        </span>
-                      )}
-                      {hasImpact(f.annual_impact) && (
-                        <span className="num">
-                          {formatInsightsValue(f.annual_impact, 'INR')} a year
-                        </span>
-                      )}
-                      {f.confidence && <span>{CONFIDENCE_LABEL[f.confidence]}</span>}
-                    </span>
-                  )}
-                </span>
-              </li>
-            )
-          })}
-        </ul>
+        {payload.findings.map((f) => (
+          <div
+            key={f.id}
+            ref={(node) => {
+              findingRefs.current.set(f.id, node)
+            }}
+          >
+            <FindingRow
+              finding={f}
+              isOpen={openFindings.has(f.id)}
+              onToggle={() => toggleFinding(f.id)}
+            />
+          </div>
+        ))}
       </div>
 
       <PatternsSection patterns={payload.patterns} />
@@ -160,9 +140,14 @@ export function InsightsRunView({
           <p className="v num mt-2 block">
             {formatInsightsValue(payload.projection.value, payload.projection.unit)}
           </p>
-          <p className="mt-1 text-[12.5px] leading-relaxed text-[var(--ink-3)]">
-            {payload.projection.basis}
-          </p>
+          <button
+            type="button"
+            className="metric-read mt-1"
+            onClick={() => setShowBasis((v) => !v)}
+            aria-expanded={showBasis}
+          >
+            {showBasis ? payload.projection.basis : 'What this assumes'}
+          </button>
         </div>
       )}
 

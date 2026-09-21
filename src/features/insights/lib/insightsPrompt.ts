@@ -43,7 +43,7 @@ function fmt(text: string, anonymize: boolean, map: AnonymizeMap | null): string
 
 const EXAMPLE_RESPONSE = `{
   "schema_version": ${INSIGHTS_SCHEMA_VERSION},
-  "verdict": "Your spending didn't rise — your fixed commitments did, and they now eat 3 months of the buffer you used to rebuild each quarter.",
+  "verdict": "Your spending didn't rise — your fixed commitments did, and they now claim 47 paise of every rupee that lands.",
   "metrics": [
     {
       "id": "savings-rate",
@@ -52,7 +52,7 @@ const EXAMPLE_RESPONSE = `{
       "unit": "%",
       "direction": "down",
       "tone": "negative",
-      "detail": "You kept 14% of income over the last 3 months against 23% for the 12 before that. The drop is entirely on the outflow side — income was flat."
+      "detail": "Income was flat, so the entire drop from 23% came from the outflow side."
     },
     {
       "id": "committed-share",
@@ -61,7 +61,7 @@ const EXAMPLE_RESPONSE = `{
       "unit": "%",
       "direction": "up",
       "tone": "negative",
-      "detail": "Rent, SIPs and insurance now claim 47 paise of every rupee you earn, up from 41% a year ago. Below 50% is usually workable; past it, one bad month has nowhere to give."
+      "detail": "Past 50%, one bad month has nowhere left to give."
     }
   ],
   "findings": [
@@ -69,19 +69,20 @@ const EXAMPLE_RESPONSE = `{
       "id": "dining-price-not-frequency",
       "title": "Dining rose on price, not on habit",
       "severity": "warning",
-      "detail": "Dining went from ₹8,200 to ₹9,900 a month, but order count fell from 19 to 16 — your average order climbed from ₹432 to ₹619.",
-      "so_what": "Eating out less has not made it cheaper. At the current average, going back to 19 orders would cost ₹11,760 a month, not the ₹8,200 you'd expect.",
-      "action": "Check whether the jump is a venue change or delivery fees — the fix is different for each.",
+      "detail": "Orders fell from 19 to 16 a month while the average order climbed from 432 to 619.",
+      "so_what": "Eating out less has not made it cheaper, so cutting frequency again will not work.",
+      "action": "Check whether the jump is a venue change or delivery fees.",
       "annual_impact": 20400,
       "confidence": "high",
-      "figure": { "label": "Average order", "value": 619, "unit": "INR" }
+      "figure": { "label": "Average order", "value": 619, "unit": "INR" },
+      "comparison": { "label": "Average order", "from": 432, "to": 619, "unit": "INR" }
     },
     {
       "id": "sip-on-track",
       "title": "SIPs never missed",
       "severity": "good",
       "detail": "Every SIP commitment fired on time for all 15 months in this window.",
-      "so_what": "₹2.4L went in without a single manual top-up — this is the part of your plan that needs no attention at all.",
+      "so_what": "This part of the plan needs no attention at all.",
       "confidence": "high",
       "figure": { "label": "Months on time", "value": 15 }
     }
@@ -89,16 +90,16 @@ const EXAMPLE_RESPONSE = `{
   "patterns": [
     {
       "id": "post-credit-burst",
-      "title": "The three days after money lands are your costliest",
-      "detail": "Discretionary spending in the 3 days after each salary credit runs about 2.4x your daily average for the rest of the month, then falls back.",
-      "evidence": "Days 1-3 after credit: ₹3,180/day average across 15 months, vs ₹1,320/day on days 4-30."
+      "title": "The three days after money lands are the costliest",
+      "detail": "Discretionary spending runs about 2.4x the daily average, then falls back.",
+      "evidence": "Days 1-3: 3,180/day. Days 4-30: 1,320/day."
     }
   ],
   "projection": {
     "label": "Projected spend, next month",
     "value": 84500,
     "unit": "INR",
-    "basis": "Median of the last 6 months (₹79,400) plus the two commitments that repriced in the last quarter, assuming no repeat of June's one-off travel."
+    "basis": "Six-month median plus the two commitments that repriced, assuming June's travel does not repeat."
   },
   "charts": [
     {
@@ -106,7 +107,7 @@ const EXAMPLE_RESPONSE = `{
       "title": "Dining: average order vs order count",
       "type": "line",
       "unit": "INR",
-      "takeaway": "The two lines cross in April — that's the month the habit stopped getting cheaper.",
+      "takeaway": "The lines cross in April — that is when the habit stopped getting cheaper.",
       "series": [
         {
           "name": "Average order",
@@ -115,12 +116,20 @@ const EXAMPLE_RESPONSE = `{
             { "label": "May", "value": 505 },
             { "label": "Jun", "value": 619 }
           ]
+        },
+        {
+          "name": "Orders",
+          "data": [
+            { "label": "Apr", "value": 19 },
+            { "label": "May", "value": 18 },
+            { "label": "Jun", "value": 16 }
+          ]
         }
       ]
     }
   ],
   "questions": [
-    "Was June's ₹41,000 travel charge a one-off, or the first of a series? It changes the projection by ₹30,000."
+    "Was June's 41,000 travel charge a one-off? It moves the projection by 30,000."
   ]
 }`
 
@@ -267,35 +276,57 @@ or after:
 
 ${EXAMPLE_RESPONSE}
 
+Length discipline — this matters as much as the analysis. The page shows headlines first and \
+opens the reasoning only when asked, so every string has a job and a budget:
+
+- "verdict": one sentence, at most 30 words.
+- "detail": ONE sentence, at most 30 words. State the change with its two numbers. No second \
+sentence, no lists of dates, no restating the category totals.
+- "so_what": ONE sentence, at most 25 words. The consequence only — never repeat a number that is \
+already in "detail", "figure", "comparison" or "annual_impact".
+- "action": ONE sentence, at most 20 words, imperative.
+- "evidence": numbers only, at most 15 words. "Fri 3,38,420 over 180 txns, avg 1,880" — not prose.
+- metric "detail" and pattern "detail": ONE sentence, at most 25 words each.
+- "basis": ONE sentence, at most 30 words.
+
+Put figures in the numeric fields, not in sentences. A number that belongs in "comparison", \
+"figure" or "annual_impact" must not also be spelled out in the prose — the app draws those.
+
 Field rules:
 1. "schema_version" must be exactly ${INSIGHTS_SCHEMA_VERSION}.
-2. "verdict" — one sentence, the single most important true thing in this data. Not a summary of \
-the sections below; the one line worth reading if they read nothing else.
-3. "metrics" — 2 to 5 derived ratios, each a number the app does not itself compute. "detail" is \
-one or two sentences interpreting it, including the comparison that makes it mean something \
-(against their own earlier months, not against strangers). "unit" is "%" or "INR" or a short \
-word. "direction" is up/down/flat and "tone" is positive/negative/neutral — tone says whether \
-that direction is good news, which the app cannot know on its own.
-4. "findings" — 3 to 8, ranked most important first. "detail" says what happened with the \
-numbers behind it. "so_what" is required and must add something "detail" does not: the \
-consequence, in money or in months. "action" is one concrete next step where there is one — omit \
-it rather than padding with "monitor this". "annual_impact" is what acting on it is worth over a \
-year, when that is derivable. "confidence" is high/medium/low — use low honestly when the window \
-is short or the pattern thin. "severity" is one of critical, warning, info, good.
-5. "patterns" — 0 to 5 behavioural regularities: timing, sequence, trigger. These are things that \
-need no decision, which is what separates them from findings. Put the supporting numbers in \
-"evidence".
-6. "projection" — optional, one forward-looking number with "basis" stating exactly what it \
-assumes. Omit it if the window is too thin to support one.
-7. "charts" — 1 to 4 specs the app can draw: "type" is bar, line, pie or area; each series point \
+2. "verdict" — the single most important true thing in this data. Not a summary of the sections \
+below; the one line worth reading if they read nothing else.
+3. "metrics" — 2 to 5 derived ratios, each a number the app does not itself compute. "unit" is \
+"%" or "INR" or a short word. "direction" is up/down/flat and "tone" is \
+positive/negative/neutral — tone says whether that direction is good news, which the app cannot \
+know on its own. "detail" is the one sentence that makes the number mean something, comparing \
+them against their own earlier months, never against strangers.
+4. "findings" — 3 to 8, ranked most important first. "severity" is one of critical, warning, \
+info, good. "so_what" is required and must add what "detail" does not: the consequence. "action" \
+is one concrete next step where there is one — omit it rather than padding with "monitor this". \
+"annual_impact" is what this is worth over a year, when derivable; it is what the app ranks by, \
+so give it wherever it is honest to. "confidence" is high/medium/low — use low honestly when the \
+window is short or the pattern thin.
+5. "comparison" — include it on every finding that is about something changing: \
+{"label": "Monthly housing", "from": 19400, "to": 29200, "unit": "INR"}. The app draws the two \
+bars and computes the percentage itself, so the sentence does not have to carry them. Omit it \
+only when the finding is not a before/after at all.
+6. "patterns" — 0 to 5 behavioural regularities: timing, sequence, trigger. These need no \
+decision, which is what separates them from findings. Supporting numbers go in "evidence", not \
+into "detail".
+7. "projection" — optional, one forward-looking number with "basis" stating what it assumes. Omit \
+it if the window is too thin to support one.
+8. "charts" — 1 to 4 specs the app can draw: "type" is bar, line, pie or area; each series point \
 needs a short "label" and numeric "value". "takeaway" is one line naming what to actually see in \
-it. Two series with different magnitudes are fine — the app gives the second one its own axis — so a price-vs-count or spend-vs-income chart renders correctly. Every chart must answer a different question — if two charts would carry the same message, \
-drop one. Prefer a chart that shows a relationship (price vs count, spend vs income) over one \
-that shows a single total by month.
-8. "questions" — 0 to 4 things the numbers genuinely cannot settle and only they can answer, each \
-stating why it matters. Not a survey; only where the answer would change the analysis.
-9. Every string is plain text — no markdown, no HTML, no emoji-as-bullets, no currency symbols \
+it. Two series with different magnitudes are fine — the app gives the second one its own axis — \
+so a price-vs-count or spend-vs-income chart renders correctly. Every chart must answer a \
+different question; if two would carry the same message, drop one. Prefer a chart that shows a \
+relationship (price vs count, spend vs income) over one that shows a single total by month.
+9. "questions" — 0 to 4 things the numbers genuinely cannot settle and only they can answer, each \
+stating why it matters, one sentence each. Not a survey; only where the answer would change the \
+analysis.
+10. Every string is plain text — no markdown, no HTML, no emoji-as-bullets, no currency symbols \
 inside numeric fields.
-10. Do not repeat yourself across sections. A metric, a finding and a chart covering the same \
+11. Do not repeat yourself across sections. A metric, a finding and a chart covering the same \
 ground is one insight printed three times.`
 }
