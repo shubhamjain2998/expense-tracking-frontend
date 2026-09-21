@@ -1,4 +1,4 @@
-import { getRawTransactions } from '@/lib/api/transactions'
+import { getProcessedTransactions, getRawTransactions } from '@/lib/api/transactions'
 import { matchesAnyRule } from '@/lib/ignoreRules'
 import type { PreviewResponse } from '@/types/transaction'
 
@@ -43,10 +43,21 @@ export async function buildPreviewResult(
 
   const existingSigs = new Set<string>()
   try {
-    const results = await Promise.all(
-      monthPairs.map(({ year, month }) => getRawTransactions(year, month))
-    )
-    results.flat().forEach((t) => existingSigs.add(rowSig(t.txn_date, t.description, t.amount)))
+    // Duplicate detection has to check both tables: a transaction imported
+    // and then categorised no longer appears in /transactions/raw (it's
+    // moved to "processed"), so checking raw alone only catches duplicates
+    // against same-month transactions nobody has categorised yet — which is
+    // close to never, since most rows get categorised within the same
+    // session. Re-importing an already-processed month (e.g. pasting the
+    // same statement twice) needs both sources checked.
+    const [rawResults, processedResults] = await Promise.all([
+      Promise.all(monthPairs.map(({ year, month }) => getRawTransactions(year, month))),
+      Promise.all(monthPairs.map(({ year, month }) => getProcessedTransactions(year, month))),
+    ])
+    rawResults.flat().forEach((t) => existingSigs.add(rowSig(t.txn_date, t.description, t.amount)))
+    processedResults
+      .flat()
+      .forEach((t) => existingSigs.add(rowSig(t.txn_date, t.description, t.amount)))
   } catch {
     // best-effort
   }
