@@ -8,11 +8,19 @@ import { getCurrentPeriod, loadPeriodMode, monthLongLabel } from '@/lib/period'
 import { AddBudgetModal } from './components/AddBudgetModal'
 import { BudgetCategoryTable } from './components/BudgetCategoryTable'
 import { BudgetHeader } from './components/BudgetHeader'
-import { HeatmapCard } from './components/HeatmapCard'
+import { IncomeSection } from './components/IncomeSection'
+import { OutsideThePlanSection } from './components/OutsideThePlanSection'
 import { PeriodModePromptCard } from './components/PeriodModePromptCard'
 import { useBudgetData } from './hooks/useBudgetData'
 import { useBudgetMutations } from './hooks/useBudgetMutations'
 
+/**
+ * Budget — "the plan, not the history" (MASTER.md §7). Four sections: the
+ * year (hero, §1 — the only annual/YTD figures anywhere in the app), the
+ * plan (category table, §2), outside the plan (unbudgeted spend, §3), and
+ * expected income (§4). The month-by-month heatmap moved to /insights in
+ * Phase 4 — repeating it here would be the same chart twice (MASTER.md §1).
+ */
 export function BudgetPage() {
   const now = new Date()
   const { mode, isExplicitlySet, isLoadingPreference } = usePeriodMode()
@@ -31,13 +39,8 @@ export function BudgetPage() {
     return (
       <div className="space-y-5">
         <header>
-          <p className="card-eyebrow">Budget</p>
-          <h1
-            className="text-[22px] font-semibold"
-            style={{ color: 'var(--ink)', letterSpacing: '-0.02em' }}
-          >
-            Set up your budget
-          </h1>
+          <p className="eyebrow">Budget</p>
+          <h2 className="sec-title mt-1">Set up your budget</h2>
         </header>
         <PeriodModePromptCard />
       </div>
@@ -57,18 +60,23 @@ export function BudgetPage() {
     }
   }
 
+  function navigateYear(dir: -1 | 1) {
+    setYear((y) => y + dir)
+  }
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
       <BudgetHeader
         year={year}
-        month={month}
         mode={mode}
         isLoading={data.isLoading}
         hasEntries={data.entries.length > 0}
         totalYTDSpent={data.totalYTDSpent}
         totalAnnual={data.totalAnnual}
         paceStatus={data.paceStatus}
-        onNavigateMonth={navigateMonth}
+        monthsElapsed={data.monthsElapsed}
+        yearVerdict={data.yearVerdict}
+        onNavigateYear={navigateYear}
         onAddClick={() => setShowAddModal(true)}
       />
 
@@ -78,18 +86,11 @@ export function BudgetPage() {
         </div>
       ) : (
         <>
-          {data.heatmapData.length > 0 && (
-            <HeatmapCard data={data.heatmapData} selectedMonth={month} onMonthClick={setMonth} />
-          )}
-
           <BudgetCategoryTable
             tableData={data.tableData}
-            unbudgetedData={data.unbudgetedData}
-            totalMonthlyBudget={data.totalMonthlyBudget}
-            totalThisMonth={data.totalThisMonth}
-            totalYTDSpent={data.totalYTDSpent}
-            totalAnnual={data.totalAnnual}
-            totalPct={data.totalPct}
+            month={month}
+            mode={mode}
+            onNavigateMonth={navigateMonth}
             onSaveBudget={(row, amount) =>
               mutations.monthlyOverrideMutation.mutate({
                 categoryId: row.categoryId,
@@ -99,16 +100,22 @@ export function BudgetPage() {
             }
             onResetBudget={(row) => mutations.resetOverrideMutation.mutate(row.categoryId)}
             onDelete={(id) => mutations.setDeleteId(id)}
-            onSetBudget={(categoryId, monthlyAmount) =>
-              mutations.createInlineMutation.mutate({ categoryId, monthlyAmount })
-            }
-            isSavingInline={mutations.createInlineMutation.isPending}
             editHint={
               data.entries.length > 0
                 ? `Click any budget amount to set a custom budget for ${monthLongLabel(month, mode)}.`
                 : undefined
             }
           />
+
+          <OutsideThePlanSection
+            rows={data.unbudgetedData}
+            onSetBudget={(categoryId, monthlyAmount) =>
+              mutations.createInlineMutation.mutate({ categoryId, monthlyAmount })
+            }
+            isSaving={mutations.createInlineMutation.isPending}
+          />
+
+          <IncomeSection rows={data.incomeTableData} month={month} mode={mode} />
         </>
       )}
 

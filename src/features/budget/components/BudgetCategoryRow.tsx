@@ -4,43 +4,35 @@ import { AmountInput } from '@/components/ui/AmountInput'
 import { Icon } from '@/components/ui/Icon'
 import { formatCurrency } from '@/lib/format'
 
-import { CAT_COLORS } from '../lib/heatColor'
 import type { CategoryTableRow } from '../types'
 
-import { ProgressBar } from './ProgressBar'
-
+/**
+ * Budget §2 "The plan" row. Category rename / delete / income-flag moved to
+ * Settings → Categories (one place for category CRUD instead of two); this
+ * row keeps only what belongs to the plan itself: the monthly budget inline
+ * edit (unchanged mutation path) and removing the category from the plan.
+ */
 export function BudgetCategoryRow({
   row,
+  periodView,
   onSaveBudget,
   onResetBudget,
   onDelete,
-  rank,
-  renamingCategoryId,
-  renamingCategoryName,
-  setRenamingCategoryName,
-  setRenamingCategoryId,
-  renameMutation,
-  incomeFlagMutation,
 }: {
   row: CategoryTableRow
+  periodView: 'monthly' | 'annual'
   onSaveBudget: (amount: number) => void
   onResetBudget: () => void
   onDelete: () => void
-  rank: number | null
-  renamingCategoryId: string | null
-  renamingCategoryName: string
-  setRenamingCategoryName: (v: string) => void
-  setRenamingCategoryId: (id: string | null) => void
-  renameMutation: { mutate: (args: { id: string; name: string }) => void; isPending: boolean }
-  incomeFlagMutation: {
-    mutate: (args: { id: string; is_income: boolean }) => void
-    isPending: boolean
-  }
 }) {
   const [editing, setEditing] = useState(false)
   const [editValue, setEditValue] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
-  const isRenaming = renamingCategoryId === row.categoryId
+
+  const plan = periodView === 'monthly' ? row.monthlyBudget : row.annualBudget
+  const spent = periodView === 'monthly' ? row.thisMonthSpent : row.ytdSpent
+  const left = plan - spent
+  const pct = periodView === 'monthly' ? row.pctUsed : plan > 0 ? (spent / plan) * 100 : null
 
   function startEdit() {
     setEditValue(String(Math.round(row.monthlyBudget)))
@@ -59,81 +51,16 @@ export function BudgetCategoryRow({
     setEditing(false)
   }
 
-  const overBudget = row.pctUsed !== null && row.pctUsed >= 100
+  const overBudget = pct !== null && pct >= 100
 
   return (
-    <tr
-      className="group"
-      style={
-        row.pctUsed !== null && row.pctUsed >= 100 && row.monthlyBudget > 0
-          ? { background: 'rgba(248, 113, 113, 0.04)' }
-          : undefined
-      }
-    >
-      {/* Category name — or rename input */}
-      <td>
-        <div className="flex min-w-0 items-center gap-2">
-          {rank !== null && (
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 600,
-                color: 'var(--ink-4)',
-                width: 16,
-                textAlign: 'right',
-                flexShrink: 0,
-                fontVariantNumeric: 'tabular-nums',
-              }}
-            >
-              #{rank}
-            </span>
-          )}
-          <span
-            style={{
-              display: 'inline-block',
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: CAT_COLORS[row.colorIndex],
-              flexShrink: 0,
-            }}
-          />
-          {isRenaming ? (
-            <input
-              value={renamingCategoryName}
-              onChange={(e) => setRenamingCategoryName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter')
-                  renameMutation.mutate({ id: row.categoryId, name: renamingCategoryName })
-                if (e.key === 'Escape') setRenamingCategoryId(null)
-              }}
-              className="input flex-1"
-              style={{ fontSize: 13, height: 26, minWidth: 0 }}
-              maxLength={64}
-              autoFocus
-              aria-label="Rename category"
-            />
-          ) : (
-            <span
-              style={{
-                color: 'var(--ink-2)',
-                fontWeight: 500,
-                overflow: 'hidden',
-                whiteSpace: 'nowrap',
-                textOverflow: 'ellipsis',
-                minWidth: 0,
-              }}
-              title={row.categoryName}
-            >
-              {row.categoryName}
-            </span>
-          )}
-        </div>
-      </td>
+    <tr className="group">
+      <td className="strong">{row.categoryName}</td>
 
-      {/* Monthly Budget — inline editable */}
+      {/* Plan — inline editable (always edits the MONTHLY value; the annual
+          figure it becomes is monthlyToAnnual(x), handled by the mutation). */}
       <td className="num">
-        {editing ? (
+        {periodView === 'monthly' && editing ? (
           <AmountInput
             ref={inputRef}
             value={editValue}
@@ -148,7 +75,7 @@ export function BudgetCategoryRow({
             aria-label={`Monthly budget for ${row.categoryName}`}
           />
         ) : (
-          <span className="flex items-center justify-end gap-1">
+          <span className="inline-flex items-center justify-end gap-1">
             {row.hasOverride && (
               <span
                 title="Custom budget for this month"
@@ -158,35 +85,28 @@ export function BudgetCategoryRow({
                   height: 5,
                   borderRadius: '50%',
                   background: 'var(--accent)',
-                  flexShrink: 0,
                 }}
               />
             )}
-            <button
-              onClick={startEdit}
-              title="Click to edit monthly budget"
-              style={{
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
-                color: 'var(--ink)',
-                fontVariantNumeric: 'tabular-nums',
-                fontFeatureSettings: '"tnum"',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-              }}
-            >
-              <span className="num">{formatCurrency(row.monthlyBudget)}</span>
-              <Icon
-                name="edit"
-                size={12}
-                style={{ color: 'var(--ink-4)' }}
-                className="opacity-0 transition-opacity group-hover:opacity-100 [@media(hover:none)]:opacity-100"
-              />
-            </button>
-            {row.hasOverride && (
+            {periodView === 'monthly' ? (
+              <button
+                onClick={startEdit}
+                title="Click to edit monthly budget"
+                className="num inline-flex items-center gap-1"
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
+              >
+                {formatCurrency(plan)}
+                <Icon
+                  name="edit"
+                  size={12}
+                  style={{ color: 'var(--ink-4)' }}
+                  className="opacity-0 transition-opacity group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+                />
+              </button>
+            ) : (
+              formatCurrency(plan)
+            )}
+            {row.hasOverride && periodView === 'monthly' && (
               <button
                 onClick={onResetBudget}
                 title="Reset to default (annual / 12)"
@@ -197,8 +117,7 @@ export function BudgetCategoryRow({
                   cursor: 'pointer',
                   padding: 0,
                   color: 'var(--ink-4)',
-                  display: 'flex',
-                  alignItems: 'center',
+                  display: 'inline-flex',
                 }}
               >
                 <Icon name="restart_alt" size={12} />
@@ -208,130 +127,42 @@ export function BudgetCategoryRow({
         )}
       </td>
 
-      {/* This Month */}
-      <td className="num" style={{ color: overBudget ? 'var(--neg)' : 'var(--ink)' }}>
-        {formatCurrency(row.thisMonthSpent)}
+      {/* Spent (this month, or YTD in annual view) */}
+      <td className="num" style={{ color: overBudget ? 'var(--neg)' : undefined }}>
+        {formatCurrency(spent)}
       </td>
 
-      {/* Progress bar */}
-      <td style={{ padding: '0 12px' }}>
-        {row.pctUsed !== null ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ flex: 1 }}>
-              <ProgressBar pct={row.pctUsed} />
-            </div>
-            <span
-              style={{
-                fontSize: 10.5,
-                width: 32,
-                textAlign: 'right',
-                flexShrink: 0,
-                fontVariantNumeric: 'tabular-nums',
-                color:
-                  row.pctUsed >= 100
-                    ? 'var(--neg)'
-                    : row.pctUsed >= 80
-                      ? 'var(--warn)'
-                      : 'var(--ink-4)',
-              }}
-            >
-              {Math.round(row.pctUsed)}%
-            </span>
-          </div>
-        ) : (
-          <div
-            style={{
-              height: 4,
-              background: 'var(--line)',
-              borderRadius: 2,
-              position: 'relative',
-              minWidth: 80,
-            }}
-          >
-            <div
-              style={{
-                position: 'absolute',
-                right: 0,
-                top: -2,
-                bottom: -2,
-                width: 1,
-                background: 'var(--line-strong)',
-              }}
-            />
-          </div>
-        )}
+      {/* Left */}
+      <td className="num" style={{ color: left < 0 ? 'var(--neg)' : undefined }}>
+        {formatCurrency(left)}
       </td>
 
-      {/* YTD Spent */}
-      <td
-        className="num"
-        style={{
-          color: row.ytdSpent > row.annualBudget ? 'var(--neg)' : 'var(--ink)',
-          fontWeight: row.ytdSpent > row.annualBudget ? 600 : 400,
-        }}
-      >
-        {formatCurrency(row.ytdSpent)}
-      </td>
-
-      {/* Annual Budget */}
-      <td className="num" style={{ color: 'var(--ink-3)' }}>
-        {formatCurrency(row.annualBudget)}
-      </td>
-
-      {/* Actions */}
+      {/* Against pace */}
       <td>
-        {isRenaming ? (
-          <div className="flex items-center justify-end gap-0.5">
-            <button
-              onClick={() =>
-                renameMutation.mutate({ id: row.categoryId, name: renamingCategoryName })
-              }
-              disabled={renameMutation.isPending}
-              className="btn ghost icon sm"
-              aria-label="Confirm rename"
-            >
-              <Icon name="check" size={13} />
-            </button>
-            <button
-              onClick={() => setRenamingCategoryId(null)}
-              className="btn ghost icon sm"
-              aria-label="Cancel rename"
-            >
-              <Icon name="close" size={13} />
-            </button>
-          </div>
+        {pct !== null ? (
+          <span className="flex items-center gap-2">
+            <span className="meter" style={{ width: 120, display: 'inline-block' }}>
+              <i
+                className={pct >= 100 ? 'over' : undefined}
+                style={{ width: `${Math.min(pct, 100)}%` }}
+              />
+            </span>
+            <span className={pct >= 100 ? 'small neg num' : 'small num'}>{Math.round(pct)}%</span>
+          </span>
         ) : (
-          <div className="flex items-center justify-end gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 [@media(hover:none)]:opacity-100">
-            <button
-              onClick={() => {
-                setRenamingCategoryId(row.categoryId)
-                setRenamingCategoryName(row.categoryName)
-              }}
-              className="btn ghost icon sm"
-              title="Rename category"
-              aria-label={`Rename ${row.categoryName}`}
-            >
-              <Icon name="edit" size={13} />
-            </button>
-            <button
-              onClick={() => incomeFlagMutation.mutate({ id: row.categoryId, is_income: true })}
-              disabled={incomeFlagMutation.isPending}
-              className="btn ghost icon sm"
-              title="Move to income"
-              aria-label={`Move ${row.categoryName} to income`}
-            >
-              <Icon name="trending_up" size={13} style={{ color: 'var(--pos)' }} />
-            </button>
-            <button
-              onClick={onDelete}
-              className="btn ghost icon sm"
-              title="Remove from budget"
-              aria-label={`Delete budget for ${row.categoryName}`}
-            >
-              <Icon name="delete" size={13} />
-            </button>
-          </div>
+          <span className="small">—</span>
         )}
+      </td>
+
+      <td>
+        <button
+          onClick={onDelete}
+          className="btn ghost icon sm opacity-0 transition-opacity group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+          title="Remove from plan"
+          aria-label={`Delete budget for ${row.categoryName}`}
+        >
+          <Icon name="delete" size={13} />
+        </button>
       </td>
     </tr>
   )

@@ -2872,6 +2872,30 @@ a.alert:hover {
   color: var(--ink);
   font-weight: 600;
 }
+/* Below the .setsplit breakpoint the nav is no longer a sidebar next to a
+   sticky-positioned column — it's the first block in a single column, so a
+   sticky position pins it over the content it's supposed to introduce. Lay
+   it out as a static, wrapping row of links instead (this app is `.setnav`'s
+   first consumer, so this case wasn't exercised until now). */
+@media (max-width: 899px) {
+  .setnav {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    padding-bottom: 12px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .setnav a {
+    padding: 4px 0;
+  }
+  .setnav a[aria-current='true'] {
+    border-left: none;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
 
 /* ─── toolbar / filter bar ────────────────────────────────────────────── */
 .toolbar {

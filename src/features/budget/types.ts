@@ -25,4 +25,24 @@ export interface UnbudgetedCategoryRow {
   colorIndex: number
   thisMonthSpent: number
   ytdSpent: number
+  txnCount: number
+}
+
+export interface IncomeTableRow {
+  categoryId: string
+  categoryName: string
+  perMonth: number | null
+  receivedThisMonth: number
+  ytdReceived: number
+}
+
+export interface YearVerdict {
+  /** % of the year's annual budget already spent (YTD / annual). */
+  pctUsed: number | null
+  /** % of the year still remaining, by months elapsed. */
+  pctYearLeft: number
+  /** Linear projection to year-end at the YTD run-rate. */
+  projectedAnnual: number
+  /** projectedAnnual - totalAnnual; positive means projected to finish over. */
+  diff: number
 }

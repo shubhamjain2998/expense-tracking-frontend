@@ -1,182 +1,168 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-import { Icon } from '@/components/ui/Icon'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
+import type { PeriodMode } from '@/lib/period'
 
 import { BackupImportSection } from './components/BackupImportSection'
+import { CategoriesSection } from './components/CategoriesSection'
 import { DangerZoneSection } from './components/DangerZoneSection'
+import { IgnoreRulesSection } from './components/IgnoreRulesSection'
+import { ImportHistorySection } from './components/ImportHistorySection'
+import { MappingsSection } from './components/MappingsSection'
 import { OnboardingResetSection } from './components/OnboardingResetSection'
 import { PersonsSection } from './components/PersonsSection'
 import { ProfileSection } from './components/ProfileSection'
 import { TagsSection } from './components/TagsSection'
 
-const navItems = [
+const SECTIONS = [
   { id: 'profile', label: 'Profile' },
-  { id: 'persons', label: 'Persons' },
+  { id: 'categories', label: 'Categories' },
   { id: 'tags', label: 'Tags' },
-  { id: 'period', label: 'Financial year' },
+  { id: 'people', label: 'People' },
+  { id: 'rules', label: 'Auto-rules' },
+  { id: 'imports', label: 'Import history' },
   { id: 'backup', label: 'Backup' },
-  { id: 'privacy', label: 'Privacy & onboarding' },
   { id: 'danger', label: 'Danger zone' },
 ]
 
+const PERIOD_OPTIONS: { id: PeriodMode; label: string }[] = [
+  { id: 'fy', label: 'Financial year (Apr–Mar)' },
+  { id: 'calendar', label: 'Calendar year' },
+]
+
+/**
+ * Settings — two-column: a sticky left section list (`.setsplit` +
+ * `.setnav`) and every section stacked on the right, scroll-spied so the
+ * nav marks whichever section is in view. Every section component below
+ * keeps its existing behaviour from before this restyle; this page only
+ * changes how they're grouped and how they look.
+ */
 export function SettingsPage() {
-  const [activeNav, setActiveNav] = useState('profile')
   const { mode: periodMode, setMode: setPeriodMode } = usePeriodMode()
+  const [activeId, setActiveId] = useState('profile')
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+    const sections = Array.from(root.querySelectorAll<HTMLElement>('section[id]'))
+    if (sections.length === 0) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
+        if (visible[0]) setActiveId(visible[0].target.id)
+      },
+      { rootMargin: '-15% 0px -70% 0px', threshold: 0 }
+    )
+    sections.forEach((s) => observer.observe(s))
+    return () => observer.disconnect()
+  }, [])
+
+  function handleNavClick(e: React.MouseEvent<HTMLAnchorElement>, id: string) {
+    e.preventDefault()
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setActiveId(id)
+  }
 
   return (
-    <div className="space-y-5">
-      <header>
-        <p className="card-eyebrow">Settings</p>
-        <h1
-          className="text-[22px] font-semibold"
-          style={{ color: 'var(--ink)', letterSpacing: '-0.02em' }}
-        >
-          Workspace settings
-        </h1>
-        <p className="mt-1 text-[13px]" style={{ color: 'var(--ink-3)' }}>
-          Configure your workspace, household members, and automation rules.
-        </p>
-      </header>
+    <div ref={rootRef} className="setsplit">
+      <nav className="setnav" aria-label="Settings sections">
+        {SECTIONS.map((s) => (
+          <a
+            key={s.id}
+            href={`#${s.id}`}
+            aria-current={activeId === s.id ? 'true' : undefined}
+            onClick={(e) => handleNavClick(e, s.id)}
+          >
+            {s.label}
+          </a>
+        ))}
+      </nav>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
-        <nav className="lg:col-span-3" aria-label="Settings navigation">
-          <p className="card-eyebrow mb-2">Sections</p>
-          <ul className="space-y-0.5">
-            {navItems.map((item) => {
-              const isActive = activeNav === item.id
-              const isDanger = item.id === 'danger'
-              return (
-                <li key={item.id}>
-                  <button
-                    onClick={() => setActiveNav(item.id)}
-                    className="flex w-full items-center"
-                    style={{
-                      padding: '7px 10px',
-                      borderRadius: 'var(--radius)',
-                      fontSize: 13,
-                      fontWeight: 500,
-                      background: isActive ? 'var(--surface-2)' : 'transparent',
-                      color: isDanger
-                        ? isActive
-                          ? 'var(--neg)'
-                          : 'var(--neg)'
-                        : isActive
-                          ? 'var(--ink)'
-                          : 'var(--ink-3)',
-                      transition: 'background .1s ease, color .1s ease',
-                    }}
-                  >
-                    {item.label}
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-        </nav>
+      <div className="stack" style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+        <section id="profile" className="sec" style={{ scrollMarginTop: 76 }}>
+          <div className="sec-head">
+            <h2 className="sec-title">Profile</h2>
+            <span className="sub">Only you can see any of this</span>
+          </div>
+          <ProfileSection />
 
-        <div className="space-y-5 lg:col-span-9">
-          {activeNav === 'profile' && <ProfileSection />}
-          {activeNav === 'persons' && <PersonsSection />}
-          {activeNav === 'tags' && <TagsSection />}
-
-          {activeNav === 'period' && (
-            <section className="card">
-              <div className="card-head">
-                <div>
-                  <p className="card-title">Period mode</p>
-                  <p className="card-sub">
-                    How year and month selectors are framed across the dashboard, budgets, and
-                    transactions list.
-                  </p>
-                </div>
-              </div>
-              <div
-                style={{
-                  border: '1px solid var(--line)',
-                  borderRadius: 'var(--radius)',
-                  overflow: 'hidden',
-                }}
-              >
-                {[
-                  {
-                    id: 'fy' as const,
-                    title: 'Indian financial year (Apr–Mar)',
-                    description:
-                      'A year is labelled "FY 25-26" and runs from April to the following March. Default for new users.',
-                  },
-                  {
-                    id: 'calendar' as const,
-                    title: 'Calendar year (Jan–Dec)',
-                    description:
-                      'A year is labelled by its number (e.g. 2025) and runs January to December.',
-                  },
-                ].map((opt, i) => {
-                  const selected = periodMode === opt.id
-                  return (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => setPeriodMode(opt.id)}
-                      className="flex w-full items-start gap-3 text-left"
-                      style={{
-                        padding: '12px 14px',
-                        borderTop: i === 0 ? 'none' : '1px solid var(--line)',
-                        background: selected ? 'var(--surface-2)' : 'transparent',
-                        transition: 'background .12s ease',
-                      }}
-                    >
-                      <Icon
-                        name={selected ? 'radio_button_checked' : 'radio_button_unchecked'}
-                        size={18}
-                        className="shrink-0"
-                        style={{ color: selected ? 'var(--accent)' : 'var(--ink-4)' }}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[13px] font-semibold" style={{ color: 'var(--ink)' }}>
-                          {opt.title}
-                        </p>
-                        <p className="text-[12px]" style={{ color: 'var(--ink-3)', marginTop: 2 }}>
-                          {opt.description}
-                        </p>
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-              <div
-                className="mt-3 text-[12px]"
-                style={{
-                  border: '1px solid var(--line)',
-                  background: 'var(--surface-2)',
-                  borderRadius: 'var(--radius)',
-                  padding: 12,
-                  color: 'var(--ink-2)',
-                }}
-              >
-                <p style={{ fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>
-                  Effect on your existing data
-                </p>
-                <p>
-                  Transactions are unaffected — your stored dates don&rsquo;t change. But a budget
-                  you previously created for &ldquo;year 2025&rdquo; is now treated as the budget
-                  for{' '}
-                  <strong>
-                    {periodMode === 'fy' ? 'FY 25-26 (Apr 2025–Mar 2026)' : 'calendar 2025'}
-                  </strong>
-                  . The numbers stay the same; the period boundaries shift by 3 months when you
-                  switch modes. Spend totals and budget vs actual will reflect the new framing
-                  immediately.
+          <div className="card" style={{ marginTop: 4 }}>
+            <div className="card-head">
+              <div>
+                <p className="card-title">Year mode</p>
+                <p className="card-sub">
+                  Changes what &ldquo;this year&rdquo; means everywhere, including Budget and
+                  Insights.
                 </p>
               </div>
-            </section>
-          )}
+            </div>
+            <span className="seg">
+              {PERIOD_OPTIONS.map((opt) => (
+                <button
+                  key={opt.id}
+                  aria-pressed={periodMode === opt.id}
+                  className={periodMode === opt.id ? 'on' : ''}
+                  onClick={() => setPeriodMode(opt.id)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </span>
+          </div>
 
-          {activeNav === 'backup' && <BackupImportSection />}
+          <OnboardingResetSection />
+        </section>
 
-          {activeNav === 'privacy' && <OnboardingResetSection />}
-          {activeNav === 'danger' && <DangerZoneSection />}
-        </div>
+        <CategoriesSection />
+
+        <section id="tags" className="sec" style={{ scrollMarginTop: 76 }}>
+          <div className="sec-head">
+            <h2 className="sec-title">Tags</h2>
+            <span className="sub">Label and filter transactions across categories</span>
+          </div>
+          <TagsSection />
+        </section>
+
+        <section id="people" className="sec" style={{ scrollMarginTop: 76 }}>
+          <div className="sec-head">
+            <h2 className="sec-title">People</h2>
+            <span className="sub">Track expenses across household members</span>
+          </div>
+          <PersonsSection />
+        </section>
+
+        <section id="rules" className="sec" style={{ scrollMarginTop: 76 }}>
+          <div className="sec-head">
+            <h2 className="sec-title">Auto-rules</h2>
+            <span className="sub">Learned from how you categorise · applied at import</span>
+          </div>
+          <MappingsSection />
+          <IgnoreRulesSection />
+        </section>
+
+        <ImportHistorySection />
+
+        <section id="backup" className="sec" style={{ scrollMarginTop: 76 }}>
+          <div className="sec-head">
+            <h2 className="sec-title">Backup</h2>
+            <span className="sub">Your data is yours · plain JSON, no lock-in</span>
+          </div>
+          <BackupImportSection />
+        </section>
+
+        <section id="danger" className="sec" style={{ scrollMarginTop: 76 }}>
+          <div className="sec-head">
+            <h2 className="sec-title" style={{ color: 'var(--neg)' }}>
+              Danger zone
+            </h2>
+            <span className="sub">Both of these are permanent</span>
+          </div>
+          <DangerZoneSection />
+        </section>
       </div>
     </div>
   )

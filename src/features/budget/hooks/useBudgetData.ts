@@ -8,8 +8,20 @@ import { getCurrentPeriod } from '@/lib/period'
 import type { PeriodMode } from '@/lib/period'
 import { qk } from '@/lib/queryKeys'
 
-import { buildHeatmapRows, buildTableRows, buildUnbudgetedRows } from '../lib/budgetMath'
-import type { CategoryTableRow, HeatmapRowData, UnbudgetedCategoryRow } from '../types'
+import {
+  buildHeatmapRows,
+  buildIncomeRows,
+  buildTableRows,
+  buildUnbudgetedRows,
+  buildYearVerdict,
+} from '../lib/budgetMath'
+import type {
+  CategoryTableRow,
+  HeatmapRowData,
+  IncomeTableRow,
+  UnbudgetedCategoryRow,
+  YearVerdict,
+} from '../types'
 
 export interface BudgetDataResult {
   isLoading: boolean
@@ -18,12 +30,16 @@ export interface BudgetDataResult {
   tableData: CategoryTableRow[]
   heatmapData: HeatmapRowData[]
   unbudgetedData: UnbudgetedCategoryRow[]
+  incomeTableData: IncomeTableRow[]
   totalAnnual: number
   totalMonthlyBudget: number
   totalThisMonth: number
   totalYTDSpent: number
   totalPct: number | null
   paceStatus: 'under' | 'over' | 'on_track' | null
+  /** Months of this financial/calendar year elapsed as of today (0-12). */
+  monthsElapsed: number
+  yearVerdict: YearVerdict
 }
 
 export function useBudgetData({
@@ -117,6 +133,11 @@ export function useBudgetData({
     [allCategories, entries, summary, ytd]
   )
 
+  // Not memoized — a cheap map, and wrapping it in useMemo would only add
+  // another react-hooks/exhaustive-deps warning on the `?? []` fallbacks
+  // above (same as every other derived value in this hook).
+  const incomeTableData = buildIncomeRows(allCategories, entries, summary, ytd)
+
   const totalAnnual = entries.reduce((s, e) => s + Number(e.allocated_amount), 0)
   const totalMonthlyBudget = tableData.reduce((s, r) => s + r.monthlyBudget, 0)
   const totalThisMonth = tableData.reduce((s, r) => s + r.thisMonthSpent, 0)
@@ -135,6 +156,8 @@ export function useBudgetData({
 
   const isLoading = budgetQuery.isLoading || summaryQuery.isLoading || ytdQuery.isLoading
 
+  const yearVerdict = buildYearVerdict(totalYTDSpent, totalAnnual, currentYearMonth)
+
   return {
     isLoading,
     entries,
@@ -142,11 +165,14 @@ export function useBudgetData({
     tableData,
     heatmapData,
     unbudgetedData,
+    incomeTableData,
     totalAnnual,
     totalMonthlyBudget,
     totalThisMonth,
     totalYTDSpent,
     totalPct,
     paceStatus,
+    monthsElapsed: currentYearMonth,
+    yearVerdict,
   }
 }

@@ -2,7 +2,13 @@ import type { BudgetEntry } from '@/types/budget'
 import type { SummaryRow, YTDRow } from '@/types/dashboard'
 import type { Category } from '@/types/settings'
 
-import type { CategoryTableRow, HeatmapRowData, UnbudgetedCategoryRow } from '../types'
+import type {
+  CategoryTableRow,
+  HeatmapRowData,
+  IncomeTableRow,
+  UnbudgetedCategoryRow,
+  YearVerdict,
+} from '../types'
 
 // Backend stores allocated_amount as ANNUAL; UI shows/edits MONTHLY values.
 export const monthlyToAnnual = (m: number): number => m * 12
@@ -113,5 +119,54 @@ export function buildUnbudgetedRows(
       colorIndex: (entries.length + i) % 8,
       thisMonthSpent: Number(summaryByName.get(c.name)?.actual ?? 0),
       ytdSpent: Number(ytdByName.get(c.name)?.actual_ytd ?? 0),
+      txnCount: c.txn_count ?? 0,
     }))
+}
+
+/**
+ * Expected income table rows (Budget §4). Income categories never get a
+ * budget entry through the UI (AddBudgetModal excludes them), so `perMonth`
+ * only appears when one exists anyway (e.g. seeded via backup import).
+ * `actual`/`actual_ytd` are stored negative for income rows — abs() them for
+ * display, matching the YTD income-breakdown convention.
+ */
+export function buildIncomeRows(
+  allCategories: Category[],
+  entries: BudgetEntry[],
+  summary: SummaryRow[],
+  ytd: YTDRow[]
+): IncomeTableRow[] {
+  const entryByCategory = new Map(entries.map((e) => [e.category_id, e]))
+  const summaryByName = new Map(summary.map((s) => [s.category, s]))
+  const ytdByName = new Map(ytd.map((y) => [y.category, y]))
+
+  return allCategories
+    .filter((c) => c.is_income)
+    .map((c) => {
+      const entry = entryByCategory.get(c.id)
+      return {
+        categoryId: c.id,
+        categoryName: c.name,
+        perMonth: entry ? annualToMonthly(Number(entry.allocated_amount)) : null,
+        receivedThisMonth: Math.abs(Number(summaryByName.get(c.name)?.actual ?? 0)),
+        ytdReceived: Math.abs(Number(ytdByName.get(c.name)?.actual_ytd ?? 0)),
+      }
+    })
+}
+
+/**
+ * Budget §1 "The year" verdict — the only place annual/YTD figures appear
+ * anywhere in the app (MASTER.md §1, "one number, one home"). Pure so it's
+ * testable without the query stack.
+ */
+export function buildYearVerdict(
+  totalYTDSpent: number,
+  totalAnnual: number,
+  monthsElapsed: number
+): YearVerdict {
+  const pctUsed = totalAnnual > 0 ? (totalYTDSpent / totalAnnual) * 100 : null
+  const pctYearLeft = Math.max(0, ((12 - monthsElapsed) / 12) * 100)
+  const projectedAnnual = monthsElapsed > 0 ? (totalYTDSpent / monthsElapsed) * 12 : totalAnnual
+  const diff = projectedAnnual - totalAnnual
+  return { pctUsed, pctYearLeft, projectedAnnual, diff }
 }
