@@ -24,7 +24,7 @@ export function Avatar({ initials, prefs, size = 32, className }: AvatarProps) {
         // normal use, since the gradient is fully opaque) so nothing ever
         // renders as literally transparent if a custom color string is
         // ever malformed.
-        backgroundColor: '#3f3f46',
+        backgroundColor: 'var(--ink-2)',
         background: prefs.color,
         display: 'flex',
         alignItems: 'center',

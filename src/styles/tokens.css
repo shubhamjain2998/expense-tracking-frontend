@@ -1,24 +1,35 @@
 /* ─── Ledger design tokens (light) ────────────────────────────────────────
    design-system/kosh-ledger/MASTER.md §2. Greyscale + a single accent;
    green/red carry the sign of money only. Ported from design-mock/ledger/
-   ledger.css — the app uses the `html.dark` class, never `data-theme`. */
+   ledger.css — the app uses the `html.dark` class, never `data-theme`.
+
+   2026-09-21: softened to a "cool slate" ramp per user request — pure
+   black-on-white/white-on-black read as too harsh. Every neutral carries a
+   faint, consistent blue-grey cast (never a desaturated grey) and body
+   text targets ~11:1 instead of the prior ~17:1. See MASTER.md §2 for the
+   measured ratios. */
 :root {
-  --bg: #fafafa;
+  --bg: #f7f8fa;
   --surface: #ffffff;
-  --surface-2: #f4f4f5;
-  --surface-3: #ececee;
-  --line: #e4e4e7;
-  --line-strong: #d4d4d8;
-  --ink: #18181b;
-  --ink-2: #3f3f46;
-  --ink-3: #71717a;
-  --ink-4: #a1a1aa;
+  --surface-2: #eef1f4;
+  --surface-3: #e3e7ec;
+  --line: #d9dee5;
+  --line-strong: #c6ccd6;
+  --ink: #323641;
+  --ink-2: #4a505c;
+  --ink-3: #5f6672;
+  --ink-4: #838b98;
 
   /* Accent — links, active state, focus ring, selected series */
   --accent: #2563eb;
   --accent-hover: #1d4ed8;
   --accent-soft: #eff6ff;
-  --pos: #15803d;
+  /* Darkened from #15803d: the transactions-table footer row sits on
+     --surface-2/--surface-3 (not just --bg/--surface), where #15803d
+     measured 4.42:1 / 4.04:1 — caught live on /transactions. #136429
+     clears 4.5:1 against all four backgrounds (6.43:1 / 5.87:1 on
+     surface-2/3, 6.86:1 / 7.29:1 on bg/surface). */
+  --pos: #136429;
   --pos-soft: #edf7ef;
   --neg: #b91c1c;
   --neg-soft: #fcecec;
@@ -26,24 +37,36 @@
   --warn-soft: #fef9ec;
 
   /* Chart greys — the only palette charts may use, plus --accent for a
-     highlighted/selected series. Largest → smallest. */
-  --d1: #18181b;
-  --d2: #3f3f46;
-  --d3: #71717a;
-  --d4: #a1a1aa;
-  --d5: #d4d4d8;
+     highlighted/selected series. Largest → smallest. Mirrors the ink ramp
+     exactly, same as before the slate re-tune. */
+  --d1: #323641;
+  --d2: #4a505c;
+  --d3: #5f6672;
+  --d4: #838b98;
+  --d5: #c6ccd6;
 
   /* Category palette — retired per MASTER §2 ("no 8-hue category palette
-     any more"). Redefined as the greyscale ramp so nothing renders in the
-     old eight hues; a later phase removes the --cat-* call sites. */
-  --cat-1: var(--d1);
-  --cat-2: var(--d2);
-  --cat-3: var(--d3);
-  --cat-4: var(--d4);
-  --cat-5: var(--d5);
-  --cat-6: var(--d2);
-  --cat-7: var(--d4);
-  --cat-8: var(--d3);
+     any more"). A later phase removes the --cat-* call sites entirely;
+     until then, TransactionRow / TransactionRowMobile use --cat-N directly
+     as TEXT (the category tag/dot) — unlike --d1..--d5, which are chart
+     fills only and never required to clear text contrast.
+     2026-09-21: --cat-* used to alias --d1..--d5 directly. In dark mode the
+     d-ramp is deliberately dimmed a notch below --ink* (so chart fills
+     don't visually compete with text — see the --d1..--d5 comment above),
+     which meant --cat-3/6/8 (→--d3) measured 3.92:1 and --cat-4/5/7
+     (→--d4/--d5) as low as 1.61:1 as text — caught live on /transactions.
+     Fully decoupled from the d-ramp: every slot now cycles the three
+     text-safe ink tokens, which by construction clear 4.5:1 against every
+     surface in both themes (see palette-contrast.test.ts). --d1..--d5
+     themselves are untouched. */
+  --cat-1: var(--ink);
+  --cat-2: var(--ink-2);
+  --cat-3: var(--ink-3);
+  --cat-4: var(--ink);
+  --cat-5: var(--ink-2);
+  --cat-6: var(--ink-3);
+  --cat-7: var(--ink);
+  --cat-8: var(--ink-2);
 
   /* MASTER.md §4 — 4px everywhere, 2px for chips and swatches. */
   --radius-sm: 2px;
@@ -128,32 +151,41 @@
 
 /* ─── Ledger design tokens (dark) ─────────────────────────────────────────── */
 html.dark {
-  --bg: #0b0b0c;
-  --surface: #141416;
-  --surface-2: #1c1c1f;
-  --surface-3: #212124;
-  --line: #27272a;
-  --line-strong: #3f3f46;
-  --ink: #fafafa;
-  --ink-2: #d4d4d8;
-  --ink-3: #a1a1aa;
-  --ink-4: #71717a;
+  --bg: #14161a;
+  --surface: #1c1f25;
+  --surface-2: #22262d;
+  --surface-3: #282d35;
+  --line: #333944;
+  --line-strong: #454c59;
+  --ink: #c7cbd3;
+  --ink-2: #9ca3af;
+  /* Lightened from the light-theme-mirrored #828a98: muted text (toolbar
+     hints, secondary amounts) routinely sits on --surface-2/--surface-3,
+     not just --bg/--surface, and #828a98 dropped to 4.37:1 there — caught
+     live on /transactions. #8e96a4 clears 4.5:1 against all four
+     backgrounds (5.10:1 / 4.65:1 on surface-2/3, 6.08:1 / 5.54:1 on bg/
+     surface). */
+  --ink-3: #8e96a4;
+  --ink-4: #666e7a;
 
   --accent: #60a5fa;
   --accent-hover: #93c5fd;
-  --accent-soft: #12203a;
+  --accent-soft: #182b4a;
   --pos: #4ade80;
-  --pos-soft: #132118;
+  --pos-soft: #16301f;
   --neg: #f87171;
-  --neg-soft: #2a1315;
+  --neg-soft: #3a1b1e;
   --warn: #fbbf24;
-  --warn-soft: #231b06;
+  --warn-soft: #2e2308;
 
-  --d1: #e7e7ea;
-  --d2: #babac0;
-  --d3: #8e8e96;
-  --d4: #63636b;
-  --d5: #3f3f46;
+  /* Dimmed one notch below the ink ramp (same relationship as before the
+     slate re-tune) so chart fills don't visually compete with text; d5
+     lands on --line-strong exactly, as it did before. */
+  --d1: #b9bfc9;
+  --d2: #8b93a0;
+  --d3: #747c8a;
+  --d4: #5a6270;
+  --d5: #454c59;
 
   --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.5), 0 1px 2px rgb(0 0 0 / 0.4);
 }

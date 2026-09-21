@@ -63,7 +63,10 @@ export function TrendBlock({
   isLoading,
   isDark,
 }: TrendBlockProps) {
-  const tickColor = isDark ? '#9A9A9A' : '#6A6A6B'
+  // Matches tokens.css --ink-3 for each theme (recharts sets these as SVG
+  // presentation attributes, not CSS properties, so var(--ink-3) can't be
+  // trusted to resolve — hex literals kept in step with the token by hand).
+  const tickColor = isDark ? '#8E96A4' : '#5F6672'
   const gridStroke = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
 
   const avgExpense =
