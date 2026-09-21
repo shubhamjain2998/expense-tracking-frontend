@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { getBudget, getMonthlyBudgetOverrides } from '@/lib/api/budget'
 import { getCategories } from '@/lib/api/categories'
 import { getDashboardSummary, getYTD } from '@/lib/api/dashboard'
+import { getProcessedTransactions } from '@/lib/api/transactions'
 import { getCurrentPeriod } from '@/lib/period'
 import type { PeriodMode } from '@/lib/period'
 import { qk } from '@/lib/queryKeys'
@@ -84,6 +85,17 @@ export function useBudgetData({
     throwOnError: false,
   })
 
+  // GET /dashboard/summary excludes income server-side (it filters to
+  // expense/refund), so the "Expected income" table's "Received this
+  // month" column can't be sourced from `summaryQuery` — it would always
+  // read 0. Mirror Home's `useDashboardData.incomeByCategory`: fetch the
+  // month's processed transactions and sum txn_type === 'income' rows per
+  // category. Shares a cache entry with Home/Transactions for this month.
+  const monthTxnQuery = useQuery({
+    queryKey: qk.transactions.processed(year, month, undefined, undefined, mode),
+    queryFn: () => getProcessedTransactions(year, month, undefined, undefined, mode),
+  })
+
   const now = new Date()
   const todayPeriod = getCurrentPeriod(mode, now)
   const currentYearMonth =
@@ -139,10 +151,20 @@ export function useBudgetData({
     [allCategories, entries, summary, ytd]
   )
 
+  const incomeByCategory = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const t of monthTxnQuery.data ?? []) {
+      if (t.txn_type !== 'income') continue
+      const amt = Math.abs(Number(t.effective_amount))
+      map.set(t.category, (map.get(t.category) ?? 0) + amt)
+    }
+    return Array.from(map.entries()).map(([category, total]) => ({ category, total }))
+  }, [monthTxnQuery.data])
+
   // Not memoized — a cheap map, and wrapping it in useMemo would only add
   // another react-hooks/exhaustive-deps warning on the `?? []` fallbacks
   // above (same as every other derived value in this hook).
-  const incomeTableData = buildIncomeRows(allCategories, entries, summary, ytd)
+  const incomeTableData = buildIncomeRows(allCategories, entries, incomeByCategory, ytd)
 
   const totalAnnual = entries.reduce((s, e) => s + Number(e.allocated_amount), 0)
   const totalMonthlyBudget = tableData.reduce((s, r) => s + r.monthlyBudget, 0)
@@ -160,7 +182,8 @@ export function useBudgetData({
           ? 'over'
           : 'on_track'
 
-  const isLoading = budgetQuery.isLoading || summaryQuery.isLoading || ytdQuery.isLoading
+  const isLoading =
+    budgetQuery.isLoading || summaryQuery.isLoading || ytdQuery.isLoading || monthTxnQuery.isLoading
 
   const yearVerdict = buildYearVerdict(totalYTDSpent, totalAnnual, currentYearMonth)
 

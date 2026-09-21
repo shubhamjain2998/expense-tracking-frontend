@@ -127,17 +127,26 @@ export function buildUnbudgetedRows(
  * Expected income table rows (Budget §4). Income categories never get a
  * budget entry through the UI (AddBudgetModal excludes them), so `perMonth`
  * only appears when one exists anyway (e.g. seeded via backup import).
- * `actual`/`actual_ytd` are stored negative for income rows — abs() them for
- * display, matching the YTD income-breakdown convention.
+ * `actual_ytd` is stored negative for income rows — abs() it for display,
+ * matching the YTD income-breakdown convention.
+ *
+ * `receivedThisMonth` deliberately does NOT come from `GET
+ * /dashboard/summary` — that endpoint filters to
+ * `txn_type in (expense, refund)` server-side (backend/app/routers/
+ * dashboard.py), so income categories are never present in it and a
+ * summary-based lookup always falls through to 0. Callers must pass the
+ * same per-category income totals Home derives from the month's processed
+ * transactions (`useDashboardData.incomeByCategory`: txn_type === 'income',
+ * abs(effective_amount)) instead.
  */
 export function buildIncomeRows(
   allCategories: Category[],
   entries: BudgetEntry[],
-  summary: SummaryRow[],
+  incomeByCategory: { category: string; total: number }[],
   ytd: YTDRow[]
 ): IncomeTableRow[] {
   const entryByCategory = new Map(entries.map((e) => [e.category_id, e]))
-  const summaryByName = new Map(summary.map((s) => [s.category, s]))
+  const incomeByCategoryName = new Map(incomeByCategory.map((i) => [i.category, i.total]))
   const ytdByName = new Map(ytd.map((y) => [y.category, y]))
 
   return allCategories
@@ -148,7 +157,7 @@ export function buildIncomeRows(
         categoryId: c.id,
         categoryName: c.name,
         perMonth: entry ? annualToMonthly(Number(entry.allocated_amount)) : null,
-        receivedThisMonth: Math.abs(Number(summaryByName.get(c.name)?.actual ?? 0)),
+        receivedThisMonth: Math.abs(Number(incomeByCategoryName.get(c.name) ?? 0)),
         ytdReceived: Math.abs(Number(ytdByName.get(c.name)?.actual_ytd ?? 0)),
       }
     })
