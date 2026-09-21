@@ -849,15 +849,35 @@ select:disabled,
    Transcribed from design-mock/ledger/ledger.css (.app/.sidenav/.brand/
    .navlist/.navlink/.nav-foot) and shell.js. Desktop-only: a fixed-width
    left rail sticks alongside the fluid main column; below 900px it hides
-   entirely and `.bottom-tab-bar` takes over primary navigation. */
+   entirely and `.bottom-tab-bar` takes over primary navigation.
+
+   Phase 9 fix: this used to be a CSS grid (`208px 1fr`) with `.sidenav`
+   `position: sticky`. As a grid item, `.sidenav`'s automatic minimum size
+   (per spec, `min-height: auto` resolves to its content's min-content
+   height for any item with `overflow: visible`, which sticky positioning
+   doesn't change) could exceed its own `height: 100vh` whenever the rail's
+   content (nav links + Explore group + footer) was taller than the
+   viewport. That stretched the grid row — and therefore `.app` — past
+   100vh, so the *window* scrolled too, on top of `main`'s own
+   `overflow-y-auto` (Layout.tsx). Two scroll owners for one page: the
+   sticky rail would ride along with the window scroll until its
+   (now-taller-than-100vh) box ran out, at which point it detached and
+   scrolled away, leaving `.nav-foot` stranded mid-page with a blank band
+   below the content.
+
+   Fix: `.sidenav` is `position: fixed` — genuinely out of flow, sized to
+   exactly one viewport, with its own `overflow-y: auto` so *its* content
+   scrolls internally if it's ever taller than the viewport instead of
+   growing anything else. `.app` no longer needs to lay it out at all; a
+   `padding-left` reserves the rail's width so the content column sits
+   next to it. `main` (Layout.tsx) is now the only page-content scroll
+   owner — the window itself never scrolls. */
 .app {
-  display: grid;
-  grid-template-columns: 208px 1fr;
   min-height: 100vh;
 }
-@media (max-width: 899px) {
+@media (min-width: 900px) {
   .app {
-    grid-template-columns: 1fr;
+    padding-left: 208px;
   }
 }
 
@@ -868,9 +888,12 @@ select:disabled,
   display: flex;
   flex-direction: column;
   gap: 24px;
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  width: 208px;
   height: 100vh;
+  overflow-y: auto;
 }
 @media (max-width: 899px) {
   .sidenav {

@@ -48,6 +48,26 @@ body {
   min-height: 100vh;
 }
 
+/* Phase 9: while the app shell (Layout.tsx) is mounted, `main` is the only
+   element meant to scroll — the sidenav is `position: fixed` with its own
+   internal scroll, and the content column scrolls via `main`'s own
+   `overflow-y: auto`. `document.documentElement.scrollHeight` was still
+   observed to exceed `clientHeight` in some cases even though `.app`
+   itself measures exactly one viewport, which left the *window* still
+   technically scrollable — a wheel gesture over the fixed sidenav (nothing
+   of its own to scroll) would bubble to the document and scroll the window, desyncing
+   the fixed rail from the content and reproducing the "dead space below
+   the content" bug. Belt-and-suspenders: hard-disable window-level scroll
+   while the shell is active (`Layout`'s `useLockWindowScroll`), so `main`
+   is unambiguously the only scroll owner regardless of measurement edge
+   cases. Scoped — login/register/404 render outside `Layout` and may
+   legitimately need the window to scroll on a short/zoomed viewport. */
+html.app-shell-active,
+html.app-shell-active body {
+  height: 100%;
+  overflow: hidden;
+}
+
 /* Text selection carries the accent. */
 ::selection {
   background: color-mix(in oklch, var(--accent) 24%, transparent);
