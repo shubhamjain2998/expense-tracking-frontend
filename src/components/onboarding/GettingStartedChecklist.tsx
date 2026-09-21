@@ -123,7 +123,7 @@ export function GettingStartedChecklist({ onDismiss }: GettingStartedChecklistPr
                   letterSpacing: '-0.005em',
                 }}
               >
-                <span className="mr-1.5 text-[var(--ink-4)]">{i + 1}.</span>
+                <span className="mr-1.5 text-[var(--ink-3)]">{i + 1}.</span>
                 {step.title}
               </p>
               <p className="mt-0.5 text-[12px] leading-[1.5] text-[var(--ink-3)]">{step.helper}</p>

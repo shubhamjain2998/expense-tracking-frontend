@@ -94,7 +94,7 @@ export function DragDropOverlay({
             fontSize: 10,
             textTransform: 'uppercase',
             letterSpacing: '0.07em',
-            color: active ? 'var(--accent)' : 'var(--ink-4)',
+            color: active ? 'var(--accent)' : 'var(--ink-3)',
             fontWeight: 700,
           }}
         >
@@ -177,7 +177,7 @@ export function DragDropOverlay({
                     marginLeft: 2,
                     fontSize: 10,
                     fontVariantNumeric: 'tabular-nums',
-                    color: 'var(--ink-4)',
+                    color: 'var(--ink-3)',
                     fontWeight: 600,
                     flexShrink: 0,
                     pointerEvents: 'none',
@@ -202,7 +202,7 @@ export function DragDropOverlay({
                   fontSize: 10,
                   textTransform: 'uppercase',
                   letterSpacing: '0.07em',
-                  color: 'var(--ink-4)',
+                  color: 'var(--ink-3)',
                   fontWeight: 700,
                   marginBottom: 10,
                 }}
@@ -261,7 +261,7 @@ export function DragDropOverlay({
               onClick={onCancel}
               style={{
                 fontSize: 12,
-                color: 'var(--ink-4)',
+                color: 'var(--ink-3)',
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',

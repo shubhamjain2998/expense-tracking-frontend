@@ -38,7 +38,7 @@ export function Footer() {
             <span className="text-[12px] font-semibold tracking-[-0.005em] text-[var(--ink-2)]">
               Kosh
             </span>
-            <span className="hidden text-[11.5px] text-[var(--ink-4)] sm:inline">
+            <span className="hidden text-[11.5px] text-[var(--ink-3)] sm:inline">
               · privacy-first · local
             </span>
           </div>
@@ -61,10 +61,10 @@ export function Footer() {
         </div>
 
         <div className="mt-4 flex flex-col items-start justify-between gap-1 border-t border-[var(--line)] pt-4 sm:flex-row sm:items-center">
-          <p className="text-[10.5px] text-[var(--ink-4)]">
+          <p className="text-[10.5px] text-[var(--ink-3)]">
             © {year} Kosh · Your data, your rules.
           </p>
-          <p className="text-[10.5px] text-[var(--ink-4)]">
+          <p className="text-[10.5px] text-[var(--ink-3)]">
             Track what you spend. Own what you know.
           </p>
         </div>

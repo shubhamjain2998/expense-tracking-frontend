@@ -102,7 +102,7 @@ export function PdfUploadPanel({
           />
           <div
             className="mt-5 flex flex-wrap items-center justify-center gap-4"
-            style={{ color: 'var(--ink-4)', fontSize: 11.5 }}
+            style={{ color: 'var(--ink-3)', fontSize: 11.5 }}
           >
             <span className="flex items-center gap-1">
               <Icon name="lock" size={12} />

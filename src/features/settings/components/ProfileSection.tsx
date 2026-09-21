@@ -92,7 +92,7 @@ export function ProfileSection() {
           <Avatar initials={initials} prefs={prefs} size={64} />
           <div>
             <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>{displayName}</p>
-            <p style={{ fontSize: 12, color: 'var(--ink-4)', marginTop: 2 }}>{email}</p>
+            <p style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{email}</p>
           </div>
         </div>
 
@@ -119,7 +119,7 @@ export function ProfileSection() {
                 border: 'none',
                 cursor: 'pointer',
                 background: avatarTab === tab ? 'var(--surface)' : 'transparent',
-                color: avatarTab === tab ? 'var(--ink)' : 'var(--ink-4)',
+                color: avatarTab === tab ? 'var(--ink)' : 'var(--ink-3)',
                 boxShadow: avatarTab === tab ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
                 transition: 'background .12s, color .12s',
               }}
@@ -193,7 +193,7 @@ export function ProfileSection() {
           </div>
         )}
 
-        <p style={{ fontSize: 11, color: 'var(--ink-4)', marginTop: 10 }}>
+        <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 10 }}>
           Changes save instantly and are stored on this device.
         </p>
       </section>
@@ -286,7 +286,7 @@ export function ProfileSection() {
             <span
               style={{
                 fontSize: 10,
-                color: 'var(--ink-4)',
+                color: 'var(--ink-3)',
                 background: 'var(--surface-3)',
                 padding: '2px 6px',
                 borderRadius: 4,
@@ -340,7 +340,7 @@ export function ProfileSection() {
               >
                 {value}
               </p>
-              <p style={{ fontSize: 11, color: 'var(--ink-4)', marginTop: 3, fontWeight: 500 }}>
+              <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 3, fontWeight: 500 }}>
                 {label}
               </p>
             </div>

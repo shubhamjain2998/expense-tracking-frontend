@@ -272,7 +272,7 @@ export function TransactionRow({
             ))}
           </div>
         ) : (
-          <span style={{ color: 'var(--ink-4)', fontSize: 14 }}>—</span>
+          <span style={{ color: 'var(--ink-3)', fontSize: 14 }}>—</span>
         )}
       </td>
 

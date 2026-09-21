@@ -185,7 +185,7 @@ export function BulkPastePanel() {
           >
             <p
               className="mb-1.5 text-[11px] font-semibold tracking-wide uppercase"
-              style={{ color: 'var(--ink-4)' }}
+              style={{ color: 'var(--ink-3)' }}
             >
               Expected format
             </p>
@@ -202,7 +202,7 @@ export function BulkPastePanel() {
     }
   ]
 }`}</pre>
-            <p className="mt-1.5 text-[11px]" style={{ color: 'var(--ink-4)' }}>
+            <p className="mt-1.5 text-[11px]" style={{ color: 'var(--ink-3)' }}>
               Positive amount = money out (debit). Negative = money in (credit/refund).
             </p>
           </div>

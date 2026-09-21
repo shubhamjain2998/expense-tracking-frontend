@@ -89,7 +89,7 @@ export function TransactionRowMobile({ txn, isSelected, onTap }: TransactionRowM
         </div>
         <div className="mt-1 flex items-center gap-2 text-[12px] text-[var(--ink-3)]">
           <span className="num shrink-0">{formatShortDate(txn.txn_date)}</span>
-          <span className="text-[var(--ink-4)]">·</span>
+          <span className="text-[var(--ink-3)]">·</span>
           <span
             className="inline-flex items-center gap-1.5 truncate"
             style={{ color: categoryColorRef }}

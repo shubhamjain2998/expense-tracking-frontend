@@ -87,7 +87,7 @@ export function KeyboardShortcutsModal({ onClose }: KeyboardShortcutsModalProps)
               <p
                 className="eyebrow mb-2"
                 style={{
-                  color: 'var(--ink-4)',
+                  color: 'var(--ink-3)',
                   fontSize: 10.5,
                   letterSpacing: '0.06em',
                   textTransform: 'uppercase',
@@ -105,7 +105,7 @@ export function KeyboardShortcutsModal({ onClose }: KeyboardShortcutsModalProps)
                       {s.keys.map((k, ki) => (
                         <span key={ki}>
                           {k === '–' ? (
-                            <span style={{ color: 'var(--ink-4)', fontSize: 12, padding: '0 2px' }}>
+                            <span style={{ color: 'var(--ink-3)', fontSize: 12, padding: '0 2px' }}>
                               –
                             </span>
                           ) : (
@@ -142,7 +142,7 @@ export function KeyboardShortcutsModal({ onClose }: KeyboardShortcutsModalProps)
         {/* Footer */}
         <div
           className="border-t border-[var(--line)] px-5 py-3 text-[11.5px]"
-          style={{ color: 'var(--ink-4)' }}
+          style={{ color: 'var(--ink-3)' }}
         >
           Press{' '}
           <kbd

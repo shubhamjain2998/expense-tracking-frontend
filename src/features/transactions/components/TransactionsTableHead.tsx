@@ -86,7 +86,10 @@ export function TransactionsTableHead({
               style={{
                 ...thBase,
                 textAlign: align,
-                color: active ? 'var(--ink-2)' : 'var(--ink-4)',
+                // was --ink-4 for the resting (non-sorted) state — --ink-4
+                // is non-text only per MASTER.md §2; this inline style was
+                // overriding the already-fixed `.tbl th` CSS color.
+                color: active ? 'var(--ink-2)' : 'var(--ink-3)',
                 fontVariantNumeric: col === 'amount' ? 'tabular-nums' : 'normal',
               }}
             >

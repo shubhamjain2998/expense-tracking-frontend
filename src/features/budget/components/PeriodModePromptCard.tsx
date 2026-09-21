@@ -98,7 +98,7 @@ export function PeriodModePromptCard() {
             Failed to save — please try again.
           </p>
         ) : (
-          <p className="text-[12px]" style={{ color: 'var(--ink-4)' }}>
+          <p className="text-[12px]" style={{ color: 'var(--ink-3)' }}>
             You can change this later from Settings.
           </p>
         )}

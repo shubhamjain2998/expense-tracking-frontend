@@ -248,7 +248,7 @@ export function RegisterPage() {
                 >
                   {title}
                 </p>
-                <p style={{ fontSize: 10.5, color: 'var(--ink-4)', marginTop: 2, lineHeight: 1.3 }}>
+                <p style={{ fontSize: 10.5, color: 'var(--ink-3)', marginTop: 2, lineHeight: 1.3 }}>
                   {sub}
                 </p>
               </div>

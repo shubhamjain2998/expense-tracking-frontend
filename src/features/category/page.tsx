@@ -150,7 +150,7 @@ export function CategoryPage() {
       <div className="space-y-6">
         <p className="text-[12.5px] text-[var(--ink-3)]">
           <Link to="/dashboard">Home</Link> ·{' '}
-          <span className="text-[var(--ink-4)]">{category}</span>
+          <span className="text-[var(--ink-3)]">{category}</span>
         </p>
         <EmptyState
           icon="search"
@@ -169,7 +169,7 @@ export function CategoryPage() {
       <section>
         <p className="mb-3 text-[12.5px] text-[var(--ink-3)]">
           <Link to="/dashboard">Home</Link> ·{' '}
-          <span className="text-[var(--ink-4)]">{category}</span>
+          <span className="text-[var(--ink-3)]">{category}</span>
         </p>
         <div className="verdict">
           <div className="flex min-w-0 flex-col gap-4">
