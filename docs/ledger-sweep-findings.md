@@ -260,3 +260,357 @@ trigger or cosmetic-but-wrong) · **LOW** (nit, no user-visible harm today).
 - Theme toggle: verified mid-session on Transactions with 87 rows and an
   active selection — no state loss, no layout shift beyond the intended
   color change.
+
+---
+
+# Second pass — 2026-09-21
+
+Deeper sweep against `dash-brainstorm@example.com` (June 2026, the account's
+last-active month). Cleared both items the first pass deferred, then tested
+import/split/keyboard/concurrency/adversarial-data with real interaction
+rather than page loads, per the standing "get rid of all those daily-usage
+gaps" request. Chrome driven live against `localhost:5173` / `:8000`, plus
+direct API calls (`curl`) to set up test fixtures and verify server state
+independent of what the UI claimed. All test data created during this pass
+(extra persons, test transactions, a test category) was cleaned up
+afterwards except the 3-way split on "swiggy Ban", left in place as a real
+demonstration of the split/settle flow.
+
+Severity scale matches the first pass: **CRITICAL** / **HIGH** / **MEDIUM** /
+**LOW**.
+
+---
+
+## Fixed
+
+### HIGH — Settings accumulated `?year=&month=` in its URL (first-pass deferred item, cleared)
+- **What I did**: Read `usePeriod.ts`, `SideNav.tsx`, `BottomTabBar.tsx`, and
+  the five pages that actually own a period route.
+- **What happened**: `SideNav`/`BottomTabBar` called the *owning* `usePeriod()`
+  — which backfills the URL with `?year=&month=` whenever a param is
+  missing — just to read the period for building nav links. Since they
+  render on every route including Settings, Settings' URL picked up period
+  params it never reads.
+- **Fix**: Split `usePeriod` into `usePeriodValue()` (pure read, no URL
+  side-effect — used by `SideNav`/`BottomTabBar`) and the existing
+  `usePeriod()` (owning: URL backfill + localStorage mirror — used only by
+  the 5 pages that own a period route). Dropped the already-unused
+  `setYear`/`setMonth` from the owning hook's return value.
+- **Files**: `src/hooks/usePeriod.ts`, `src/components/layout/SideNav.tsx`,
+  `src/components/layout/BottomTabBar.tsx`.
+- **Test**: `src/test/flows/period-persistence.test.tsx` — new case
+  "keeps a clean URL on Settings…", plus all 5 pre-existing cases in that
+  file re-verified green (period still survives navigation/reload/new tab).
+- **Commit**: `f0632a6`.
+
+### HIGH — 24 form inputs had no programmatic label (first-pass deferred item, cleared)
+- **What I did**: Enabled `jsx-a11y/label-has-associated-control` (error) in
+  `eslint.config.js` instead of fixing ad hoc, then fixed every violation it
+  reported.
+- **What happened**: 24 inputs across `AddTransactionDialog`,
+  `CategoryDeleteDialog`, `EditPanel`, `ProcessPanel`, `ManualEntryPanel`,
+  `LoginPage`, `RegisterPage`, and three Settings sections
+  (Ignore rules/Mappings/People/Tags) relied on a visible `<label>` with no
+  `htmlFor`, or an `aria-label` on the input with nothing tying the two
+  together — a screen reader announces these as unlabelled.
+- **Fix**: Real `<label htmlFor>`/`id` pairs (removing the now-redundant
+  standalone `aria-label` where one existed), or a labelled
+  `role="group"` for the Type toggle-button groups that were never a
+  single-control label to begin with. `MappingsSection`'s orphaned
+  "Category" label now passes `label="Category"` to `SearchableSelect`
+  (which already builds its own `<label htmlFor>`), matching every other
+  call site instead of duplicating the label markup.
+- **Files**: 15 component files — see commit for the full list.
+- **Test**: `src/test/flows/a11y-labels.test.tsx` (new), plus label-text
+  assertions added to `login.test.tsx`, `register.test.tsx` and
+  `mappings-crud.test.tsx`.
+- **Commit**: `8fff2d0` (+ `5e39d44` for an unrelated pre-existing
+  `tailwind.config.ts` import-order lint error the 0-errors gate required
+  fixing anyway).
+
+### HIGH — Import duplicate detection only checked unprocessed transactions
+- **What I did**: Pasted a row (`2026-06-12 · Gyftr Via Smartbuy New ·
+  679.15`) matching an existing, already-*categorised* June transaction
+  through Transactions → Import → Paste rows.
+- **What happened**: No duplicate warning — the row imported clean, "1 of 1
+  ready", zero possible-duplicates. Read `buildPreviewResult.ts` (shared by
+  both the PDF and bulk-paste preview): it only called `getRawTransactions`
+  to build the existing-signature set, and a transaction leaves the `raw`
+  table the instant it's categorised. Since almost every transaction gets
+  categorised shortly after import, this made the dedupe safety net nearly
+  useless for the realistic case of re-importing a statement that's already
+  been processed — confirmed by checking `/transactions/raw` for June
+  returned `[]` while `/transactions/processed` had the matching row.
+- **What should happen**: A row matching an already-processed transaction on
+  date+description+amount is flagged and auto-excluded, same as a raw
+  duplicate.
+- **Fix**: `buildPreviewResult` now also fetches `/transactions/processed`
+  for the affected months and folds those signatures into the
+  existing-transaction set. Re-tested live: the same paste now shows
+  "1 of 2 ready · 1 possible duplicate", correctly excluded.
+- **Files**: `src/features/upload/lib/buildPreviewResult.ts`.
+- **Test**: `src/features/upload/lib/buildPreviewResult.test.ts` (new).
+- **Commit**: `da9c048`.
+
+### HIGH — No date-entry surface rejected a transaction dated decades in the future
+- **What I did**: Added a manual transaction dated `2099-06-15` via
+  Transactions → Add one manually.
+- **What happened**: Accepted silently, no warning. Confirmed via
+  `GET /transactions/raw?year=2099&month=6` — the row was there. Since it
+  only surfaces if a user happens to browse to year 2099, a fat-fingered
+  year (`2029` typed as `2099`) would silently misfile a transaction with
+  zero feedback, invisible on every normal monthly view. None of the app's
+  three date-entry surfaces (`AddTransactionDialog`, `ManualEntryPanel`,
+  `EditPanel`) had any upper bound on the date field.
+- **What should happen**: A future date is rejected with a clear message.
+  A past date (e.g. 1970 — a legitimate backdated entry) still works.
+- **Fix**: `max={todayIsoDate()}` on all three date inputs plus an explicit
+  "Date cannot be in the future" check in each submit handler
+  (belt-and-suspenders — `max` alone doesn't stop a value set
+  programmatically or an unclamped browser). Test-transaction cleaned up
+  via the API afterwards.
+- **Files**: `src/components/ui/AddTransactionDialog.tsx`,
+  `src/features/upload/components/ManualEntryPanel.tsx`,
+  `src/features/transactions/components/EditPanel.tsx`.
+- **Test**: `src/test/flows/future-date-validation.test.tsx` (new, 5 cases
+  — future-date rejection on all 3 surfaces + a 1970 date still passing
+  validation on 2 of them).
+- **Commit**: `da2978c`.
+
+### HIGH — EditPanel's settlement toggle showed stale status after its own successful mutation
+- **What I did**: Split a transaction 3 ways (anshul 50% / priya 30% /
+  rahul 20% — created via Settings → People, then a live split through
+  EditPanel) and settled priya's share from the Settlement rows.
+- **What happened**: The `PATCH /transactions/processed/{id}/shares/{personId}`
+  succeeded (200) and the transactions list refetched (confirmed via the
+  network panel), but the *open* panel kept showing "pending" for priya.
+  Confirmed against `/transactions/processed` that the server had it
+  correctly settled the whole time — only the open panel's own view was
+  wrong. Root cause: `txn` is a snapshot `TransactionsPage` passes down
+  once when the panel opens and never refreshes from the list's own
+  refetch (a separate `editingTxn` state, not derived from the query) — see
+  `transactions_page_architecture.md`. The Settlement rows read
+  `share.settled` straight off that stale prop, so a *second* click, still
+  computed as `!share.settled` off the same stale value, always sent the
+  same direction again — a user could never actually unsettle a share from
+  the panel without closing and reopening it first.
+- **Fix**: EditPanel now tracks its own `settledOverrides` map, updated
+  from each `settledMutation`'s `onSuccess` (which already knows the
+  direction that just succeeded), and prefers it over the stale prop for
+  both rendering and computing the next toggle direction. Re-verified live:
+  settle → immediately shows "settled" → unsettle → immediately shows
+  "pending", each confirmed against the server; Home and Insights → People
+  agreed with the panel at every step (₹29.8k → ₹29.7k owed after
+  settling priya's ₹87, back to ₹29.8k after unsettling).
+- **Files**: `src/features/transactions/components/EditPanel.tsx`.
+- **Test**: `src/test/flows/settle-toggle-staleness.test.tsx` (new, 2
+  cases — confirmed to fail without the fix).
+- **Commit**: `e4f6401`.
+
+### HIGH — Dialogs didn't return focus to whatever triggered them
+- **What I did**: Keyboard-only pass — focused the "Show keyboard
+  shortcuts" button, pressed `?` to open the overlay (confirmed via CDP
+  key injection, not just a click — see the deferred item below on why a
+  synthetic-event test of the same key looked like a false negative
+  first), then Escape to close it.
+- **What happened**: Focus landed on `<body>`, not back on the button —
+  confirmed via `document.activeElement`. Checked all five
+  `role="dialog"` components in the app (`AddTransactionDialog`,
+  `KeyboardShortcutsModal`, `ImportDialog`, `PasswordPromptDialog`,
+  `WelcomeModal`): none restored focus on close. A keyboard or
+  screen-reader user has to re-navigate from the top of the page after
+  every single dialog.
+- **Fix**: New `useFocusReturn()` hook, wired into all five. It captures
+  `document.activeElement` during *render*, not inside a `useEffect` —
+  several of these dialogs `autoFocus` their own first field, and React
+  applies `autoFocus` synchronously during the mount commit, before any
+  effect runs; a `useEffect`-based capture reliably grabbed the dialog's
+  own field instead of the real trigger (this is what the first
+  implementation attempt did, and it silently captured the wrong element).
+  The render-phase read uses the one ref-during-render pattern
+  `eslint-plugin-react-hooks`'s newer `react-hooks/refs` rule allows
+  (lazy-init guarded by `ref.current == null`). Re-verified live for both
+  the conditionally-rendered pattern (`AddTransactionDialog`,
+  `KeyboardShortcutsModal`) and the always-mounted `isOpen`-prop pattern
+  the hook also supports (`PasswordPromptDialog`).
+- **Files**: `src/hooks/useFocusReturn.ts` (new),
+  `src/features/transactions/components/KeyboardShortcutsModal.tsx`,
+  `src/features/transactions/components/ImportDialog.tsx`,
+  `src/components/ui/AddTransactionDialog.tsx`,
+  `src/components/ui/PasswordPromptDialog.tsx`,
+  `src/components/onboarding/WelcomeModal.tsx`.
+- **Test**: `src/hooks/useFocusReturn.test.tsx` (new, 2 cases — one per
+  call shape, both include an `autoFocus` field to guard the exact trap
+  above).
+- **Commit**: `d722a27`.
+
+### HIGH — EditPanel's Save silently clobbered a concurrent edit from another surface
+- **What I did**: Opened EditPanel on a "Hungerbox ₹20" row, then —
+  without closing it — pressed the `8` keyboard shortcut to categorise
+  that *same* row (still selected underneath the open panel) to a
+  different category. Confirmed via the network panel and
+  `/transactions/processed` that the category changed correctly
+  server-side. Then clicked "Save changes" in the still-open panel,
+  which had never been touched.
+- **What happened**: The category instantly reverted to whatever it was
+  when the panel opened — confirmed against the server both before and
+  after clicking Save. `handleSave` always PATCHed the panel's *entire*
+  local snapshot (amount, description, date, category, shares, notes,
+  tags, type) regardless of what the user actually edited, so an untouched
+  field always overwrote a change made through any other surface — the
+  keyboard 1–9 shortcut, drag-to-categorise, and bulk actions can all
+  reach the same row while its panel sits open. Same root cause as the
+  settle-toggle bug above (the stale `txn` snapshot prop), but a much
+  larger blast radius: the whole form, not one toggle.
+- **What should happen**: Only fields the user actually changed in this
+  panel are sent; an untouched field leaves the server's current value
+  alone.
+- **Fix**: `handleSave` now builds the PATCH payload from a per-field diff
+  against `txn`'s original values. The backend's
+  `PATCH /transactions/processed/{id}` already applies each field
+  independently (`if body.field is not None: ...`) — confirmed by reading
+  `app/routers/transactions.py` and `app/schemas.py` directly, every field
+  on `PatchProcessedTransactionRequest` is `Optional` with a `None`
+  default — so omitting an untouched field is enough; **no backend
+  change**. `isDirty` picked up the `txn_type` comparison it was missing
+  (needed for the same diff) and a real shares-*value* comparison (it
+  previously only checked which people were included, so editing a share
+  amount with no membership change wasn't flagged dirty either).
+  Re-verified live: category correctly stayed on the keyboard shortcut's
+  value after clicking Save in the untouched panel.
+- **Files**: `src/features/transactions/components/EditPanel.tsx`.
+- **Test**: `src/test/flows/edit-panel-partial-save.test.tsx` (new, 3
+  cases — confirmed 2 of 3 fail without the fix).
+- **Commit**: `c2f4e16`.
+
+### Build-breaking — IntersectionObserver test mock failed `tsc -b`
+- **What happened**: The Settings-clean-URL test (added for the first HIGH
+  fix above) stubbed `window.IntersectionObserver` with a class declared
+  `implements IntersectionObserver`. A DOM-lib update added a required
+  `scrollMargin` member the mock didn't have, so `npm run build` failed —
+  `npm test` stayed green throughout (vitest doesn't typecheck), which let
+  it slip past the gate once already.
+- **Fix**: Dropped the `implements IntersectionObserver` clause (kept the
+  existing `as unknown as` cast) — the mock only needs to satisfy what
+  `SettingsPage`'s usage actually calls, not the full DOM interface, and
+  shouldn't break again on a future DOM-lib bump for a property nothing
+  here touches.
+- **Files**: `src/test/flows/period-persistence.test.tsx`.
+- **Commit**: `c595113`.
+
+---
+
+## Deferred
+
+### MEDIUM — ConfirmDialog, CategoryDeleteDialog and AddBudgetModal have no `role="dialog"` or Escape handling
+- **What I did**: While auditing every `role="dialog"` component for the
+  focus-return fix above, grepped for the same pattern across
+  `src/components/ui` and `src/features/*/components` and found these
+  three render a modal-styled overlay with **no** `role="dialog"`,
+  `aria-modal`, or `Escape`-to-close listener at all — unlike every other
+  modal in the app.
+- **Why deferred**: A real, separate gap (screen readers won't announce
+  these as dialogs; keyboard users can't Escape out of them), but fixing
+  it properly means adding full dialog semantics *and* keyboard handling
+  to three more components — a distinct piece of work from the five
+  dialogs this pass's keyboard sweep was already touching, not a
+  one-line addition to fold in without rushing it.
+- **Needs a decision from the user**: whether this is worth its own
+  follow-up pass, given it's the same shape as the fix already applied to
+  the other five dialogs.
+
+### LOW — "% of income" isn't clamped for pathological values
+- **What I did**: Created a ₹99,99,99,999 (≈₹100 crore) test expense to
+  check the adversarial-amount case, then checked Home.
+- **What happened**: Totals computed correctly with no crash/NaN, proper
+  Indian-locale comma grouping even at 9 figures (`₹1,01,00,95,796`) — but
+  the "% of income" stat rendered `-460422%` verbatim, six digits, no
+  abbreviation or cap.
+- **Why deferred**: Only reachable with a single-transaction amount three
+  orders of magnitude past anything in real usage; the number is at least
+  *correct*, just unabbreviated. Test data removed afterwards, so this
+  isn't reproducible in the account's normal state — noting it in case
+  the actual figure is worth a `formatCompact`-style cap regardless.
+
+### Backend data/logic, not a frontend defect — negative-amount imports classify as `txn_type: "refund"` even into an income category
+- **What I did**: Imported a row with `amount: -500` (credit convention)
+  through bulk-paste, which correctly displayed as `+₹500.00` while
+  pending. Categorised it into "misc income" and re-checked
+  `/transactions/processed`.
+- **What happened**: `amount`/`effective_amount` stayed negative
+  (`-500.00`) and the backend's `classify_txn_type` heuristic assigned
+  `txn_type: "refund"`, not `"income"` — an internally inconsistent pair
+  (an income-labelled category on a "refund"-typed row) that the frontend
+  then faithfully renders as `-₹500.00` in the processed list, sign
+  flipped from how it displayed while pending.
+- **Why not fixed here**: The frontend renders exactly what the backend
+  returns and correctly folds the negative amount into the dashboard
+  totals — no frontend defect found. The classification itself is a
+  backend heuristic (`classify_txn_type`), out of scope per this pass's
+  "no backend changes" rule; documented here with evidence rather than
+  adding a client-side special case for backend-inconsistent data, per
+  the same reasoning the first pass used for the "outside the plan"
+  income-category finding.
+- **Also confirmed working as designed**: `POST /transactions/raw` (the
+  manual-entry endpoint) rejects a negative `amount` outright (422,
+  "amount must be greater than 0") — client and server agree amounts are
+  always positive for manual entry; only the signed-amount import
+  convention (PDF/bulk-paste) differs, by design.
+
+---
+
+## Verified working, no defect found
+
+- **Import — PDF**: uploaded a real generated PDF (bordered table, 3 rows,
+  mixed debit/credit) through Transactions → Import → Bank statement PDF —
+  parsed correctly, correct signs, correct amounts, imported cleanly into
+  the pending queue (`50` → `53` transactions). Uploaded the same file
+  password-protected: `PasswordPromptDialog` appeared, wrong password
+  showed a clear inline retry error (network 422, handled), correct
+  password unlocked and correctly flagged all 3 rows as duplicates of the
+  already-imported unlocked copy ("0 to import").
+- **Import — paste rows**: a malformed row (`"amount": "$50"`) rejected
+  the whole batch with one specific, row-numbered error and no partial
+  import. A row duplicated within the same paste, and a row matching an
+  existing transaction, were both auto-excluded and clearly labelled
+  ("possible duplicate(s)"); cancelling mid-import (closing the dialog
+  without clicking Import) left the transaction count unchanged.
+- **Import — manual entry**: submitting with every field empty showed all
+  three "required"/"valid amount" errors together; a zero amount is
+  correctly rejected ("Enter a valid positive amount" — zero is not a
+  valid transaction amount, this is correct behaviour, not a bug).
+- **Split arithmetic**: a 3-way uneven percentage split (anshul 50% / priya
+  30% / rahul 20% on a ₹290.00 transaction) computed exactly against
+  `src/lib/shareMath.ts` — ₹145.00 / ₹87.00 / ₹58.00, your share ₹0.00 —
+  confirmed via the UI, the split badge's own tooltip, and the raw API
+  response. Settling and unsettling a share (after the staleness fix
+  above) correctly moved the total between Home's "owed" figure and
+  Insights → People, which agreed with each other at every step.
+- **Keyboard — arrow-key row navigation**: `↓`/`↑` on Transactions
+  correctly move the `.row.sel` selection one row at a time; `Escape`
+  correctly deselects.
+- **Keyboard — Escape**: confirmed closing the `?` shortcuts modal, the
+  EditPanel/ProcessPanel side panel (`TxnSidePanel`, shared by desktop
+  side-panel and mobile bottom-sheet), and the Import dialog — all via a
+  real dispatched `Escape` keydown, not just a close-button click.
+- **Keyboard — category shortcut keys (1–9)**: confirmed via a real
+  keypress against a selected row, both for a pending row
+  (`quickCategorize`) and a processed row (`changeCategory`).
+- **Keyboard — visible focus rings**: a single global `:focus-visible`
+  rule in `base.css` (2px accent-halo outline, 2px offset) applies
+  app-wide; spot-checked, not regressed.
+- **Concurrency — mutation survives mid-flight navigation**: fired a
+  category-change keydown and navigated to `/dashboard` in the same tick,
+  before the request could resolve. React Query mutations aren't tied to
+  component lifecycle, so the PATCH completed in the background regardless
+  — confirmed the category change landed server-side. No data loss from
+  interrupted navigation.
+- **Adversarial data**: a 200-character merchant name (renders via the
+  existing `text-overflow: ellipsis` truncation, same as the longest real
+  descriptions already in the account — no layout break); ₹99,99,99,999 —
+  no crash, no NaN, correct Indian-locale grouping even at 9 figures; a
+  category named `🎉 مرحبا party` (emoji + RTL) rendered correctly
+  everywhere it appeared, including Home's insight cards; a transaction
+  dated 1970 passed validation cleanly (only a *future* date is now
+  rejected, per the fix above). All test data cleaned up afterwards via
+  direct API calls.
