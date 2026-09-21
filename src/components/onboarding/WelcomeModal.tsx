@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 
+import { useFocusReturn } from '@/hooks/useFocusReturn'
+
 import { Button } from '../ui/Button'
 import { Icon, type IconName } from '../ui/Icon'
 
@@ -56,6 +58,8 @@ export function WelcomeModal({ onGetStarted, onSkip }: WelcomeModalProps) {
   const step = STEPS[stepIndex]!
   const isFirst = stepIndex === 0
   const isLast = stepIndex === STEPS.length - 1
+
+  useFocusReturn()
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {

@@ -6,6 +6,7 @@ import { ManualEntryPanel } from '@/features/upload/components/ManualEntryPanel'
 import { PdfUploadPanel } from '@/features/upload/components/PdfUploadPanel'
 import { useFileQueue } from '@/features/upload/hooks/useFileQueue'
 import type { UploadMode } from '@/features/upload/types'
+import { useFocusReturn } from '@/hooks/useFocusReturn'
 
 export type ImportTab = Extract<UploadMode, 'pdf' | 'bulk-paste' | 'manual'>
 
@@ -32,6 +33,8 @@ export function ImportDialog({ initialTab, onClose }: ImportDialogProps) {
   // Copied verbatim from the old src/features/upload/page.tsx:26 — the file
   // queue lives in the parent so PdfUploadPanel stays a pure props component.
   const fileQueue = useFileQueue()
+
+  useFocusReturn()
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

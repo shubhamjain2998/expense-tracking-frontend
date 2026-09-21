@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 
 import { Icon } from '@/components/ui/Icon'
+import { useFocusReturn } from '@/hooks/useFocusReturn'
 
 interface KeyboardShortcutsModalProps {
   onClose: () => void
@@ -41,6 +42,8 @@ const GROUPS: ShortcutGroup[] = [
 ]
 
 export function KeyboardShortcutsModal({ onClose }: KeyboardShortcutsModalProps) {
+  useFocusReturn()
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()

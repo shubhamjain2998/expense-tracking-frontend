@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 import { Icon } from '@/components/ui/Icon'
 import { NewTagChip } from '@/features/transactions/components/NewTagChip'
+import { useFocusReturn } from '@/hooks/useFocusReturn'
 import { useQuickAdd } from '@/hooks/useQuickAdd'
 import { useToastContext } from '@/hooks/useToastContext'
 import { todayIsoDate } from '@/lib/format'
@@ -33,6 +34,8 @@ export function AddTransactionDialog({ onClose }: AddTransactionDialogProps) {
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const { mutation, categories, tags, createCategoryInline } = useQuickAdd({ onSuccess: onClose })
+
+  useFocusReturn()
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

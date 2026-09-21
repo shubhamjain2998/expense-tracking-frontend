@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { Icon } from '@/components/ui/Icon'
+import { useFocusReturn } from '@/hooks/useFocusReturn'
 
 import { Button } from './Button'
 
@@ -32,6 +33,8 @@ export function PasswordPromptDialog({
 }: PasswordPromptDialogProps) {
   const [password, setPassword] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+
+  useFocusReturn(isOpen)
 
   // Reset on each open so a previous typed value never bleeds across files.
   useEffect(() => {
