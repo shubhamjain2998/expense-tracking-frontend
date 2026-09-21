@@ -15,6 +15,7 @@ trigger or cosmetic-but-wrong) · **LOW** (nit, no user-visible harm today).
 ## Fixed
 
 ### CRITICAL — Stepping the month across a year boundary silently drops the year
+
 - **What I did**: On Home (and Budget/Category, which share the same
   stepper), set the period to Dec 2025 and clicked "Next month" (also
   reproduced by hand via `YearMonthSelector`'s `<`/`>` buttons on Budget).
@@ -33,7 +34,7 @@ trigger or cosmetic-but-wrong) · **LOW** (nit, no user-visible harm today).
   prop, used by both the stepper and the year `<select>`, which both callers
   (`VerdictBlock` → `DashboardPage`, `CategoryPage`) wire to `usePeriod`'s
   existing combined `setPeriod`. No more split year/month setters anywhere
-  in the period system (grepped for `onYearChange`/`onMonthChange` —  zero
+  in the period system (grepped for `onYearChange`/`onMonthChange` — zero
   hits left).
 - **Files**: `src/components/ui/YearMonthSelector.tsx`,
   `src/features/dashboard/components/VerdictBlock.tsx`,
@@ -41,6 +42,7 @@ trigger or cosmetic-but-wrong) · **LOW** (nit, no user-visible harm today).
 - **Test**: `src/test/flows/period-year-boundary.test.tsx`.
 
 ### HIGH — Every inline budget edit fires a guaranteed-404 request first
+
 - **What I did**: Read `useBudgetMutations`'s `monthlyOverrideMutation` next
   to `backend/app/routers/budget.py`.
 - **What happened**: The mutation always `PUT`s
@@ -63,6 +65,7 @@ trigger or cosmetic-but-wrong) · **LOW** (nit, no user-visible harm today).
 - **Test**: `src/test/flows/budget-edit.test.tsx` (extended).
 
 ### HIGH — Budget/Insights/Category pages retry-storm four 404 endpoints
+
 - **What I did**: Watched the Network tab loading Insights, Budget, and a
   Category drill-down page.
 - **What happened**: `GET /budget/{year}/monthly-overrides` (no such route —
@@ -70,7 +73,7 @@ trigger or cosmetic-but-wrong) · **LOW** (nit, no user-visible harm today).
   (a legitimate 404 the backend returns by design) were both fetched without
   `retry: false`. React Query's default retry (3x, exponential backoff)
   turned each of these into up to 4 requests per query. `useBudgetLookup`
-  (used by Insights' heatmap/forecast) fires both queries for *two* years on
+  (used by Insights' heatmap/forecast) fires both queries for _two_ years on
   every load — up to 16 failing requests on one page visit. One query in
   `useBudgetData.ts` already had the correct `retry: false` pattern; three
   sibling call sites didn't.
@@ -86,12 +89,13 @@ trigger or cosmetic-but-wrong) · **LOW** (nit, no user-visible harm today).
   `src/test/flows/budget-overrides-retry.test.tsx`.
 
 ### MEDIUM — Floating quick-add button covers page content on desktop
+
 - **What I did**: Scrolled Insights → People to its last row at 1440px and
   read the DOM rects of the row's action button and the FAB.
 - **What happened**: The "settle" button in the last People row
   (`x:1334–1405, y:771–798`) sat almost entirely underneath the fixed
   quick-add FAB (`x:1364–1416, y:768–820`) — the FAB is on top (`z-index:
-  40`, `position: fixed`) with no reserved clearance under it on desktop.
+40`, `position: fixed`) with no reserved clearance under it on desktop.
   `.container` already reserves 84px of bottom padding on mobile for
   exactly this reason (FAB + bottom tab bar); the ≥900px breakpoint had no
   equivalent, so any page whose last row lands in the bottom-right corner
@@ -108,6 +112,7 @@ trigger or cosmetic-but-wrong) · **LOW** (nit, no user-visible harm today).
   harness for computed layout in this repo, so no regression test was added.
 
 ### MEDIUM — Segment count badge is low-contrast in the active segment (dark mode)
+
 - **What I did**: Toggled dark mode on Transactions and looked at the "87"
   count inside the active "All" segment.
 - **What happened**: `.badge.quiet` (used for the "All 87" count) keeps its
@@ -119,7 +124,7 @@ trigger or cosmetic-but-wrong) · **LOW** (nit, no user-visible harm today).
   both themes, without becoming an accent/attention colour (only "Needs
   review" should read as urgent, per the existing comment on `.badge.quiet`).
 - **Fix**: Added `.seg button.on .badge.quiet { background: var(--surface-3);
-  color: var(--ink-2); }`.
+color: var(--ink-2); }`.
 - **Files**: `src/styles/components.css`.
 - **Test**: not unit-testable (computed color contrast); verified visually
   in both themes via screenshot.
@@ -129,6 +134,7 @@ trigger or cosmetic-but-wrong) · **LOW** (nit, no user-visible harm today).
 ## Deferred
 
 ### Outside the plan / Expected income treat every income category as unbudgeted spend
+
 - **What I did**: Reproduced the lead on Budget (dividend, equity, fixed
   deposits, misc income, salary all listed under "Outside the plan — no
   budget line yet" with "Set budget" CTAs), then read
@@ -163,11 +169,12 @@ trigger or cosmetic-but-wrong) · **LOW** (nit, no user-visible harm today).
   is regenerated?
 
 ### Settings picks up the sticky period in its URL despite being period-agnostic
+
 - **What I did**: Navigated directly to `/settings` and watched the address
   bar.
 - **What happened**: It became `/settings?year=2026&month=1` even though
   `SettingsPage` never reads `year`/`month`, and `SideNav`'s own `NAV` table
-  has an explicit comment: *"Settings has no period, so it's plain."*
+  has an explicit comment: _"Settings has no period, so it's plain."_
 - **Root cause**: `SideNav` and `BottomTabBar` both call `usePeriod()`
   (to render the FY label / sidebar stats) on every route, including
   Settings. `usePeriod`'s backfill `useEffect` — which exists so a
@@ -185,11 +192,12 @@ trigger or cosmetic-but-wrong) · **LOW** (nit, no user-visible harm today).
   sweep's risk budget; flagged rather than guessed at.
 
 ### Category drag-to-categorise chips render in the old 8-hue palette
+
 - **Lead status: not reproducible.** `src/features/transactions/lib/categoryColor.ts`
   resolves through `--cat-1`…`--cat-8`, and `src/styles/tokens.css` already
   redefines all eight as aliases of the greyscale `--d1`…`--d5` ramp (with
-  an explicit comment: *"retired per MASTER §2 ... redefined as the
-  greyscale ramp so nothing renders in the old eight hues"*). Screenshotted
+  an explicit comment: _"retired per MASTER §2 ... redefined as the
+  greyscale ramp so nothing renders in the old eight hues"_). Screenshotted
   the drag-and-drop category chips on Transactions in both themes — all
   render as grey dots at varying lightness, not hues. This appears to have
   already been fixed by an earlier phase's token change; no code change
@@ -199,6 +207,7 @@ trigger or cosmetic-but-wrong) · **LOW** (nit, no user-visible harm today).
   of scope for a bug sweep.
 
 ### `resetOverrideMutation` ("reset to default monthly budget") always 404s
+
 - **What I did**: Read `BudgetCategoryRow.tsx` — the reset button only
   renders `{row.hasOverride && ...}`.
 - **What happened**: Since per-month overrides can never actually be
@@ -212,6 +221,7 @@ trigger or cosmetic-but-wrong) · **LOW** (nit, no user-visible harm today).
   rather than in isolation.
 
 ### Missing `id`/`name`/`<label>` on several form fields (Chrome DevTools "issue" panel)
+
 - **What I did**: Watched `list_console_messages` (`type: issue`) while
   opening the transaction edit panel, split editor, and the Transactions
   toolbar.
@@ -228,6 +238,7 @@ trigger or cosmetic-but-wrong) · **LOW** (nit, no user-visible harm today).
   piecemeal and missing half of them.
 
 ### TanStack Query Devtools icon overlaps the mobile bottom tab bar
+
 - **What I did**: Emulated 412×915 on Home and saw a colourful round icon
   sitting on top of the "Settings" tab.
 - **What happened**: `tsqd-open-btn-container` (React Query Devtools'
@@ -243,6 +254,7 @@ trigger or cosmetic-but-wrong) · **LOW** (nit, no user-visible harm today).
 ---
 
 ## Verified working, no defect found
+
 - Import menu (PDF / paste / manual), bulk-categorise, auto-categorise,
   drag-to-categorise: functioned correctly in the sweep, greyscale category
   chips, correct counts.
@@ -284,9 +296,10 @@ Severity scale matches the first pass: **CRITICAL** / **HIGH** / **MEDIUM** /
 ## Fixed
 
 ### HIGH — Settings accumulated `?year=&month=` in its URL (first-pass deferred item, cleared)
+
 - **What I did**: Read `usePeriod.ts`, `SideNav.tsx`, `BottomTabBar.tsx`, and
   the five pages that actually own a period route.
-- **What happened**: `SideNav`/`BottomTabBar` called the *owning* `usePeriod()`
+- **What happened**: `SideNav`/`BottomTabBar` called the _owning_ `usePeriod()`
   — which backfills the URL with `?year=&month=` whenever a param is
   missing — just to read the period for building nav links. Since they
   render on every route including Settings, Settings' URL picked up period
@@ -304,6 +317,7 @@ Severity scale matches the first pass: **CRITICAL** / **HIGH** / **MEDIUM** /
 - **Commit**: `f0632a6`.
 
 ### HIGH — 24 form inputs had no programmatic label (first-pass deferred item, cleared)
+
 - **What I did**: Enabled `jsx-a11y/label-has-associated-control` (error) in
   `eslint.config.js` instead of fixing ad hoc, then fixed every violation it
   reported.
@@ -329,8 +343,9 @@ Severity scale matches the first pass: **CRITICAL** / **HIGH** / **MEDIUM** /
   fixing anyway).
 
 ### HIGH — Import duplicate detection only checked unprocessed transactions
+
 - **What I did**: Pasted a row (`2026-06-12 · Gyftr Via Smartbuy New ·
-  679.15`) matching an existing, already-*categorised* June transaction
+679.15`) matching an existing, already-_categorised_ June transaction
   through Transactions → Import → Paste rows.
 - **What happened**: No duplicate warning — the row imported clean, "1 of 1
   ready", zero possible-duplicates. Read `buildPreviewResult.ts` (shared by
@@ -353,6 +368,7 @@ Severity scale matches the first pass: **CRITICAL** / **HIGH** / **MEDIUM** /
 - **Commit**: `da9c048`.
 
 ### HIGH — No date-entry surface rejected a transaction dated decades in the future
+
 - **What I did**: Added a manual transaction dated `2099-06-15` via
   Transactions → Add one manually.
 - **What happened**: Accepted silently, no warning. Confirmed via
@@ -378,19 +394,20 @@ Severity scale matches the first pass: **CRITICAL** / **HIGH** / **MEDIUM** /
 - **Commit**: `da2978c`.
 
 ### HIGH — EditPanel's settlement toggle showed stale status after its own successful mutation
+
 - **What I did**: Split a transaction 3 ways (anshul 50% / priya 30% /
   rahul 20% — created via Settings → People, then a live split through
   EditPanel) and settled priya's share from the Settlement rows.
 - **What happened**: The `PATCH /transactions/processed/{id}/shares/{personId}`
   succeeded (200) and the transactions list refetched (confirmed via the
-  network panel), but the *open* panel kept showing "pending" for priya.
+  network panel), but the _open_ panel kept showing "pending" for priya.
   Confirmed against `/transactions/processed` that the server had it
   correctly settled the whole time — only the open panel's own view was
   wrong. Root cause: `txn` is a snapshot `TransactionsPage` passes down
   once when the panel opens and never refreshes from the list's own
   refetch (a separate `editingTxn` state, not derived from the query) — see
   `transactions_page_architecture.md`. The Settlement rows read
-  `share.settled` straight off that stale prop, so a *second* click, still
+  `share.settled` straight off that stale prop, so a _second_ click, still
   computed as `!share.settled` off the same stale value, always sent the
   same direction again — a user could never actually unsettle a share from
   the panel without closing and reopening it first.
@@ -408,6 +425,7 @@ Severity scale matches the first pass: **CRITICAL** / **HIGH** / **MEDIUM** /
 - **Commit**: `e4f6401`.
 
 ### HIGH — Dialogs didn't return focus to whatever triggered them
+
 - **What I did**: Keyboard-only pass — focused the "Show keyboard
   shortcuts" button, pressed `?` to open the overlay (confirmed via CDP
   key injection, not just a click — see the deferred item below on why a
@@ -421,7 +439,7 @@ Severity scale matches the first pass: **CRITICAL** / **HIGH** / **MEDIUM** /
   screen-reader user has to re-navigate from the top of the page after
   every single dialog.
 - **Fix**: New `useFocusReturn()` hook, wired into all five. It captures
-  `document.activeElement` during *render*, not inside a `useEffect` —
+  `document.activeElement` during _render_, not inside a `useEffect` —
   several of these dialogs `autoFocus` their own first field, and React
   applies `autoFocus` synchronously during the mount commit, before any
   effect runs; a `useEffect`-based capture reliably grabbed the dialog's
@@ -445,16 +463,17 @@ Severity scale matches the first pass: **CRITICAL** / **HIGH** / **MEDIUM** /
 - **Commit**: `d722a27`.
 
 ### HIGH — EditPanel's Save silently clobbered a concurrent edit from another surface
+
 - **What I did**: Opened EditPanel on a "Hungerbox ₹20" row, then —
   without closing it — pressed the `8` keyboard shortcut to categorise
-  that *same* row (still selected underneath the open panel) to a
+  that _same_ row (still selected underneath the open panel) to a
   different category. Confirmed via the network panel and
   `/transactions/processed` that the category changed correctly
   server-side. Then clicked "Save changes" in the still-open panel,
   which had never been touched.
 - **What happened**: The category instantly reverted to whatever it was
   when the panel opened — confirmed against the server both before and
-  after clicking Save. `handleSave` always PATCHed the panel's *entire*
+  after clicking Save. `handleSave` always PATCHed the panel's _entire_
   local snapshot (amount, description, date, category, shares, notes,
   tags, type) regardless of what the user actually edited, so an untouched
   field always overwrote a change made through any other surface — the
@@ -473,7 +492,7 @@ Severity scale matches the first pass: **CRITICAL** / **HIGH** / **MEDIUM** /
   on `PatchProcessedTransactionRequest` is `Optional` with a `None`
   default — so omitting an untouched field is enough; **no backend
   change**. `isDirty` picked up the `txn_type` comparison it was missing
-  (needed for the same diff) and a real shares-*value* comparison (it
+  (needed for the same diff) and a real shares-_value_ comparison (it
   previously only checked which people were included, so editing a share
   amount with no membership change wasn't flagged dirty either).
   Re-verified live: category correctly stayed on the keyboard shortcut's
@@ -484,6 +503,7 @@ Severity scale matches the first pass: **CRITICAL** / **HIGH** / **MEDIUM** /
 - **Commit**: `c2f4e16`.
 
 ### Build-breaking — IntersectionObserver test mock failed `tsc -b`
+
 - **What happened**: The Settings-clean-URL test (added for the first HIGH
   fix above) stubbed `window.IntersectionObserver` with a class declared
   `implements IntersectionObserver`. A DOM-lib update added a required
@@ -503,6 +523,7 @@ Severity scale matches the first pass: **CRITICAL** / **HIGH** / **MEDIUM** /
 ## Deferred
 
 ### MEDIUM — ConfirmDialog, CategoryDeleteDialog and AddBudgetModal have no `role="dialog"` or Escape handling
+
 - **What I did**: While auditing every `role="dialog"` component for the
   focus-return fix above, grepped for the same pattern across
   `src/components/ui` and `src/features/*/components` and found these
@@ -511,7 +532,7 @@ Severity scale matches the first pass: **CRITICAL** / **HIGH** / **MEDIUM** /
   modal in the app.
 - **Why deferred**: A real, separate gap (screen readers won't announce
   these as dialogs; keyboard users can't Escape out of them), but fixing
-  it properly means adding full dialog semantics *and* keyboard handling
+  it properly means adding full dialog semantics _and_ keyboard handling
   to three more components — a distinct piece of work from the five
   dialogs this pass's keyboard sweep was already touching, not a
   one-line addition to fold in without rushing it.
@@ -520,6 +541,7 @@ Severity scale matches the first pass: **CRITICAL** / **HIGH** / **MEDIUM** /
   the other five dialogs.
 
 ### LOW — "% of income" isn't clamped for pathological values
+
 - **What I did**: Created a ₹99,99,99,999 (≈₹100 crore) test expense to
   check the adversarial-amount case, then checked Home.
 - **What happened**: Totals computed correctly with no crash/NaN, proper
@@ -528,11 +550,12 @@ Severity scale matches the first pass: **CRITICAL** / **HIGH** / **MEDIUM** /
   abbreviation or cap.
 - **Why deferred**: Only reachable with a single-transaction amount three
   orders of magnitude past anything in real usage; the number is at least
-  *correct*, just unabbreviated. Test data removed afterwards, so this
+  _correct_, just unabbreviated. Test data removed afterwards, so this
   isn't reproducible in the account's normal state — noting it in case
   the actual figure is worth a `formatCompact`-style cap regardless.
 
 ### Backend data/logic, not a frontend defect — negative-amount imports classify as `txn_type: "refund"` even into an income category
+
 - **What I did**: Imported a row with `amount: -500` (credit convention)
   through bulk-paste, which correctly displayed as `+₹500.00` while
   pending. Categorised it into "misc income" and re-checked
@@ -611,7 +634,7 @@ Severity scale matches the first pass: **CRITICAL** / **HIGH** / **MEDIUM** /
   no crash, no NaN, correct Indian-locale grouping even at 9 figures; a
   category named `🎉 مرحبا party` (emoji + RTL) rendered correctly
   everywhere it appeared, including Home's insight cards; a transaction
-  dated 1970 passed validation cleanly (only a *future* date is now
+  dated 1970 passed validation cleanly (only a _future_ date is now
   rejected, per the fix above). All test data cleaned up afterwards via
   direct API calls.
 
@@ -632,26 +655,27 @@ prior phases: **CRITICAL** / **HIGH** / **MEDIUM** / **LOW**.
 ## Fixed
 
 ### HIGH — Two competing scroll contexts: the side rail detached from the page and left dead space below the content
+
 - **What I did**: Reproduced the user's screenshot live — scrolled Home
   with the console open, and separately measured `document.documentElement
-  .scrollHeight` vs `.clientHeight` and `main.scrollHeight` vs
+.scrollHeight` vs `.clientHeight` and `main.scrollHeight` vs
   `.clientHeight` at every stage of the fix.
 - **What happened**: `.sidenav` was `position: sticky` inside `.app {
-  display: grid; grid-template-columns: 208px 1fr; min-height: 100vh }`,
+display: grid; grid-template-columns: 208px 1fr; min-height: 100vh }`,
   while `main` (Layout.tsx) already had its own `overflow-y: auto`. As a
-  CSS grid item with `overflow: visible`, `.sidenav`'s *automatic minimum
-  size* (per the CSS Sizing spec, min-height:auto resolves to the content's
+  CSS grid item with `overflow: visible`, `.sidenav`'s _automatic minimum
+  size_ (per the CSS Sizing spec, min-height:auto resolves to the content's
   min-content height for any item whose own `overflow` is `visible` — the
   "auto minimum size is 0" carve-out only applies when the item itself sets
   a non-visible `overflow`) could exceed its own `height: 100vh` whenever
   the rail's content (nav + Explore + footer) was taller than the viewport.
-  That stretched the grid row — and therefore `.app` and the *window* —
+  That stretched the grid row — and therefore `.app` and the _window_ —
   past 100vh, on top of `main`'s own independent scroll. Two scroll owners
   for one page: the sticky rail rode with the window scroll until its
   now-taller-than-100vh box ran out, then detached, leaving `.nav-foot`
   stranded mid-page with a blank band below the content — reproduced
   exactly via `window.scrollTo(0, 1000)` even after the primary fix below,
-  and confirmed a mouse-wheel event dispatched *over the sidenav*
+  and confirmed a mouse-wheel event dispatched _over the sidenav_
   (`WheelEvent` with `bubbles: true`) moved `window.scrollY`.
 - **What should happen**: one scroll owner (`main`); the rail is fixed,
   full height, with its own internal scroll if its content is ever taller
@@ -663,19 +687,19 @@ prior phases: **CRITICAL** / **HIGH** / **MEDIUM** / **LOW**.
      mounted (dropping to exactly 900 with `main.style.display = 'none'`)
      — a residual Chrome flex/overflow measurement quirk we could not
      isolate to a specific misconfigured rule in this tree, but the
-     *symptom* (the window itself being technically scrollable) was real
+     _symptom_ (the window itself being technically scrollable) was real
      and reproducible via a wheel gesture over the fixed sidenav, which
      has nothing of its own to scroll and so bubbled the event to the
      document.
 - **Fix**:
   - `.sidenav` is now `position: fixed; top: 0; left: 0; width: 208px;
-    height: 100vh; overflow-y: auto` — genuinely out of flow, with its own
+height: 100vh; overflow-y: auto` — genuinely out of flow, with its own
     internal scroll for tall content. `.app` no longer lays it out via
     grid; `padding-left: 208px` (desktop only) reserves its width instead.
   - Belt-and-suspenders for the residual scroll-height quirk: `Layout.tsx`
     adds an `app-shell-active` class to `<html>` on mount (removed on
     unmount) and `html.app-shell-active, html.app-shell-active body {
-    height: 100%; overflow: hidden }` in `base.css` hard-disables
+height: 100%; overflow: hidden }` in `base.css` hard-disables
     window-level scroll while the shell is mounted. Scoped so
     `/login`, `/register` and the 404 page (rendered outside `Layout`)
     keep normal window scroll on a short/zoomed viewport.
@@ -690,12 +714,13 @@ prior phases: **CRITICAL** / **HIGH** / **MEDIUM** / **LOW**.
 - **Test**: `src/components/layout/Layout.test.tsx`.
 
 ### HIGH — Sticky table header rendered through the empty-state message and the first data row
+
 - **What I did**: Filtered Transactions to zero results, and separately
   confirmed with real data (per the coordinator's note that it reproduces
   there too, not only on the empty state) — measured `<th>`'s and the
   empty-row/first-row `<td>`'s bounding rects.
 - **What happened**: `.tbl.sticky th { top: var(--topbar-h) }` (52px) —
-  double-counted. `.topnav` is a fixed-height *sibling* of `main`
+  double-counted. `.topnav` is a fixed-height _sibling_ of `main`
   (Layout.tsx), not inside `main`'s own scroll container, so `main`'s
   scrollport already starts below the top bar; adding another 52px offset
   pushed the header down into the row beneath it. Traced the sticky
@@ -713,19 +738,20 @@ prior phases: **CRITICAL** / **HIGH** / **MEDIUM** / **LOW**.
 - **Test**: `src/styles/phase9-css.test.ts`.
 
 ### MEDIUM — KPI row numbers didn't share a baseline, and the ₹ glyph collided with the first digit
+
 - **What I did**: Compared Home's In/Out/Saved row pixel-by-pixel at
   1440px and 412px, both themes.
 - **What happened**: `.money-row { display: flex; align-items: flex-end }`
   bottom-aligned each `.money` column's own (label, value[, sub-line])
   stack independently. "Saved" (and "Left to spend") carry an extra
   sub-line ("56% of income") that "In"/"Out" don't, so flex's shared
-  cross-axis alignment lifted the *values* of the single-line columns
+  cross-axis alignment lifted the _values_ of the single-line columns
   relative to the two-line ones. Separately, `.money .v` and `.hero-num`
   used `letter-spacing: -0.02em`/`-0.03em` at 26px/40-64px — tight enough
   that the ₹ glyph (more side-bearing than a digit) visibly touched the
   first digit.
 - **Fix**: `.money-row` is now a 3-row grid (`grid-auto-flow: column;
-  grid-template-rows: repeat(3, auto)`), each `.money` a subgrid item
+grid-template-rows: repeat(3, auto)`), each `.money` a subgrid item
   (`grid-template-rows: subgrid; grid-row: span 3`) — label, value and
   sub-line each get one shared row across every column, so same-row
   content aligns regardless of which columns actually use the third row.
@@ -737,6 +763,7 @@ prior phases: **CRITICAL** / **HIGH** / **MEDIUM** / **LOW**.
 - **Test**: `src/styles/phase9-css.test.ts`.
 
 ### MEDIUM — Split avatars unreadable, and the split tooltip clipped at the viewport edge
+
 - **What I did**: Inspected `.people .avatar` (the "Y A" split chips) and
   the split button's native `title` at 1440px near the right edge of the
   Transactions table.
@@ -763,11 +790,12 @@ prior phases: **CRITICAL** / **HIGH** / **MEDIUM** / **LOW**.
 - **Test**: `src/test/flows/transactions-row-a11y.test.tsx`.
 
 ### HIGH — Budget → "Expected income" always showed ₹0 in "Received in \<month\>"
+
 - **What I did**: Read `buildIncomeRows` (`budgetMath.ts`) next to
   `GET /dashboard/summary`'s backend filter.
 - **What happened**: `receivedThisMonth` was derived from
   `GET /dashboard/summary`, which the backend filters to `txn_type in
-  (expense, refund)` — income categories are never present in it, so the
+(expense, refund)` — income categories are never present in it, so the
   lookup always fell through to 0. `ytdReceived` was correct because it
   comes from the YTD endpoint, which does include income. Invisible until
   now because every category on the seed account was `is_income: false`.
@@ -786,6 +814,7 @@ prior phases: **CRITICAL** / **HIGH** / **MEDIUM** / **LOW**.
   abs() convention.
 
 ### HIGH — `.sr-only` didn't actually hide the chart fallback tables
+
 - **What I did**: Live DOM audit flagged both chart data tables
   (TrendBlock, CategoryTrendChart — MASTER.md §6's screen-reader fallback)
   as visible, ~172x174px, overlapping real content ("Needs you", People
@@ -793,7 +822,7 @@ prior phases: **CRITICAL** / **HIGH** / **MEDIUM** / **LOW**.
   `table.sr-only` returned `{width: 171.6, height: 173.6}` with
   `position: absolute` correctly applied but `width`/`height` not.
 - **What happened**: CSS 2.1's auto table-layout algorithm treats a
-  `<table>`'s specified `width` as a *minimum*, not a cap — the table can
+  `<table>`'s specified `width` as a _minimum_, not a cap — the table can
   still grow to fit its cells' required minimum content width. `.sr-only`'s
   `width: 1px; height: 1px` recipe (correct for any ordinary block element)
   was therefore a no-op on a `<table>` specifically. `table-layout: fixed`
@@ -813,6 +842,7 @@ prior phases: **CRITICAL** / **HIGH** / **MEDIUM** / **LOW**.
 - **Test**: `src/features/dashboard/components/TrendBlock.test.tsx`.
 
 ### HIGH — `--ink-4` (non-text-only per MASTER.md §2) used on real text in several places
+
 - **What I did**: Measured contrast for `.eyebrow`, `.tbl th`, and the
   Transactions keyboard-shortcuts hint against both themes.
 - **What happened**: `.eyebrow` (period labels, KPI labels, section
@@ -825,13 +855,14 @@ prior phases: **CRITICAL** / **HIGH** / **MEDIUM** / **LOW**.
   passes comfortably in both themes). While in `components.css`, swept
   every other `--ink-4`-on-text declaration in that file and fixed the
   same way: `.card-eyebrow`, `.donut-center .lbl`, `.pace-row .pace-amount
-  .of`, and the `.input`/`.textarea`/`.input-field`/`.field input`
+.of`, and the `.input`/`.textarea`/`.input-field`/`.field input`
   placeholder colors (7 more sites).
 - **Files**: `src/styles/components.css`,
   `src/features/transactions/components/FilterBar.tsx`.
 - **Test**: `src/styles/phase9-css.test.ts`.
 
 ### MEDIUM — Segmented-control buttons marginally failed contrast
+
 - **What I did**: Measured `.seg button` (unselected state — "Needs
   review" / "Split" / "By tag" on Transactions, period toggles elsewhere)
   at 11.5px/500.
@@ -842,6 +873,7 @@ prior phases: **CRITICAL** / **HIGH** / **MEDIUM** / **LOW**.
 - **Test**: `src/styles/phase9-css.test.ts`.
 
 ### MEDIUM — Avatar initials near-invisible against the default/gradient colors
+
 - **What I did**: Live DOM audit reported the side-nav/profile avatar as
   white text on `rgba(0, 0, 0, 0)` (1.00:1). Measured directly: `prefs.color`
   is a `linear-gradient(...)` string assigned via the `background`
@@ -865,6 +897,7 @@ prior phases: **CRITICAL** / **HIGH** / **MEDIUM** / **LOW**.
 - **Files**: `src/components/ui/Avatar.tsx`.
 
 ### LOW — Truncated merchant/notes text had no way to read the full value
+
 - **What I did**: Live audit measured 5+ truncated merchant names per page
   (e.g. `scrollWidth: 720` vs `clientWidth: 191` for one UPI description)
   with `text-overflow: ellipsis` and no `title`/`aria-label`.
@@ -873,6 +906,7 @@ prior phases: **CRITICAL** / **HIGH** / **MEDIUM** / **LOW**.
 - **Files**: `src/features/transactions/components/TransactionRow.tsx`.
 
 ### LOW — Transactions row's "more actions" button had no accessible name
+
 - **What I did**: Live audit found 50 instances (one per row) of
   `button.btn.ghost.icon.sm` with no text, `aria-label` or `title` — the
   `⋯` context-menu trigger; its icon is `aria-hidden`.
@@ -882,6 +916,7 @@ prior phases: **CRITICAL** / **HIGH** / **MEDIUM** / **LOW**.
 - **Test**: `src/test/flows/transactions-row-a11y.test.tsx`.
 
 ### MEDIUM — `ConfirmDialog`, `CategoryDeleteDialog`, `AddBudgetModal` had no dialog semantics
+
 - **What I did**: Follow-up on the item the Phase 8c keyboard sweep
   explicitly deferred (see that phase's Deferred section) — the other five
   dialogs in the app (`AddTransactionDialog`, `ImportDialog`,
@@ -905,6 +940,7 @@ prior phases: **CRITICAL** / **HIGH** / **MEDIUM** / **LOW**.
 ## Investigated, not a defect
 
 ### Budget page: chart `<g>`/`<ellipse>` extends 9px past the right viewport edge
+
 - **What I did**: The live audit flagged an SVG element at `x=1449` in a
   1440px viewport on `/budget`. Traced every `<ellipse>` on the page to its
   ancestor chain.
@@ -923,6 +959,7 @@ prior phases: **CRITICAL** / **HIGH** / **MEDIUM** / **LOW**.
 ## Deferred
 
 ### Avatar-color palette: 9 of 12 gradients fail 4.5:1 against white initials
+
 - Computed contrast at each gradient's midpoint (roughly where the
   initials sit) for all of `useAvatarPrefs.AVATAR_COLORS`: Kosh amber
   (the default) 2.69:1, Sapphire 3.54:1, Emerald 3.26:1, Terracotta 3.46:1,
@@ -937,6 +974,7 @@ prior phases: **CRITICAL** / **HIGH** / **MEDIUM** / **LOW**.
   color, or accept the current mitigation.
 
 ### Interactive targets under 24-44px
+
 - Live audit measured: `?` shortcuts button 18×18, Transactions row
   checkboxes 13×13, "Show 5 deleted" 84×18, side-nav "Insights" link
   46×15, Budget's inline edit buttons 60-69×20. MASTER.md's ledger
@@ -951,6 +989,7 @@ prior phases: **CRITICAL** / **HIGH** / **MEDIUM** / **LOW**.
   it's deferred rather than half-fixed.
 
 ### Broader `--ink-4`-on-text sweep across TSX inline styles
+
 - The `components.css` sweep above fixed every `--ink-4`-on-text
   declaration in that stylesheet. A grep across `src/**/*.tsx` for
   `color: 'var(--ink-4)'` / `text-[var(--ink-4)]` turns up ~50 more sites
@@ -964,5 +1003,145 @@ prior phases: **CRITICAL** / **HIGH** / **MEDIUM** / **LOW**.
   didn't have budget for. Flagged here rather than either leaving it
   fully unaudited or making ~50 speculative changes with no live
   verification.
+
+---
+
+## Phase 9 follow-up — 2026-09-21 (final cleanup, all three Deferred items)
+
+The user decided all three items Phase 9 deferred. Verified live against
+`dash-brainstorm@example.com` (June 2026), 1440px and 412px, via Chrome
+DevTools (`evaluate_script`, `take_snapshot`, dispatched clicks) — same
+account/setup as the rest of this doc.
+
+### 1 — Avatar gradient palette darkened (chosen over monochrome/scrim)
+
+Re-tuned all 12 `AVATAR_COLORS` gradients (`src/hooks/useAvatarPrefs.ts`) so
+white initials clear 4.5:1 at **both stops and the midpoint** — Phase 9 had
+only checked the midpoint. Computed with the standard WCAG relative-
+luminance formula (see `src/hooks/useAvatarPrefs.test.ts`), then verified
+against the rounded hex values that actually ship:
+
+| Label      | Old (mid only) | New gradient                          | Worst-case contrast |
+| ---------- | -------------- | ------------------------------------- | ------------------- |
+| Kosh amber | 2.69:1         | `#976e09 → #947016`                   | 4.58:1              |
+| Ruby       | —              | `#c0392b → #e02e1c`                   | 4.59:1              |
+| Violet     | —              | `#8e44ad → #9c5ab6`                   | 4.61:1              |
+| Sapphire   | 3.54:1         | `#2471a3 → #217bb6`                   | 4.59:1              |
+| Emerald    | 3.26:1         | `#1e8449 → #328455`                   | 4.60:1              |
+| Terracotta | 3.46:1         | `#ba4a00 → #b85b1f`                   | 4.61:1              |
+| Midnight   | pass           | `#1a252f → #2c3e50` (unchanged)       | 10.98:1             |
+| Lavender   | 3.59:1         | `#523483 → #8565bb`\*                 | 4.59:1              |
+| Teal       | 2.89:1         | `#117a65 → #268371`                   | 4.60:1              |
+| Caramel    | 3.61:1         | `#784b12 → #a86613`                   | 4.59:1              |
+| Slate      | pass           | `#1c2833 → #6b7878` (unchanged start) | 4.58:1              |
+| Coral      | 4.17:1         | `#924221 → #c94d18`\*                 | 4.61:1              |
+
+\* Lavender and Coral needed a small hue nudge (-20°/+12°), not just
+darkening: maximally darkening a color to the 4.5:1 ceiling is a function
+of hue+saturation alone, and Lavender's light stop shared Violet's
+hue/saturation (only differing in original lightness), so both collapsed
+onto the _same_ final color once capped — likewise Coral's light stop and
+Ruby's. Verified no other collisions via pairwise Euclidean RGB distance
+across all 24 final stops (closest unrelated pair: Terracotta/Coral at
+23.1, comfortably distinct at a glance; the closest pair overall,
+Midnight/Slate's _dark_ stop at 5.4, is unchanged from the original
+palette — both already started from near-identical near-black navy,
+differentiated by their _second_ stop, same as before).
+
+`.people .avatar` (the split-transaction chips) already met the "20px with
+9px text" standard from Phase 9's own fix (22px, 10px text, solid
+`--ink-2`/`--bg` light and `--ink-3`/`--bg` dark backing — 10.0:1 and
+7.7:1 respectively, recomputed and confirmed still correct) — not
+re-touched; added `src/styles/split-avatar-contrast.test.ts` to lock in
+both the size floor and the contrast so it can't silently regress.
+
+**Tests**: `src/hooks/useAvatarPrefs.test.ts` (14 cases — every gradient's
+2 stops + midpoint, ≥4.5:1), `src/styles/split-avatar-contrast.test.ts` (4
+cases). **Commit**: `cf373b1`.
+
+### 2 — Six hit areas expanded to 44×44 (chosen over enlarging controls)
+
+Every control keeps its exact visual box (verified live: `getBoundingClientRect()`
+before/after matched exactly for the visible glyph in every case, and
+side-by-side screenshots at 1440px/412px show no shift). Two techniques:
+
+- **`.hit44-pad`/`.hit44-pad-v`** (`src/styles/components.css`): padding +
+  an equal negative margin, for controls with no chrome of their own.
+- **`.hit44-after`**: an absolutely positioned, transparent `::after`
+  overlay, for controls _with_ chrome — and, unexpectedly, for a
+  checkbox/radio or a table cell too. Live testing found padding is a
+  total no-op on a native `appearance: auto` checkbox in Chrome (computed
+  `padding-top` stayed `0px` no matter the cascade priority — verified by
+  walking `document.styleSheets` to confirm the rule was winning, then
+  checking `getComputedStyle` anyway), and `margin` has no effect on a
+  `display: table-cell` box, so neither of the checkbox fixes could use
+  the padding trick.
+
+| Control                                                                     | Was                                   | Fix                                                                                                                                                                        | Verified                                                                                                   |
+| --------------------------------------------------------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Transactions row checkbox                                                   | 13×13                                 | `<td>` (already owns the click via `onClick`) gets `.hit44-after`, +6px inset → 48×61 clickable                                                                            | Dispatched click 2px inside the `<td>`'s right edge, outside the visible glyph → row's `isChecked` flipped |
+| Transactions header select-all checkbox                                     | 13×13                                 | No ancestor click handler here, so wrapped in a `<label className="hit44-pad">` instead (padding _does_ work on a label; its click natively forwards to the input) → 44×44 | Dispatched click 8px left / 6px above the glyph, still inside the `<label>` → checkbox toggled             |
+| "?" keyboard-shortcuts button                                               | 18×18                                 | `.hit44-after`, default 13px inset → 44×44                                                                                                                                 | Rect unchanged (18×18); overlay confirmed via CSS source math                                              |
+| "Show N deleted" toggle                                                     | 84×18                                 | `.hit44-pad-v` + `.deleted-toggle` (14px) → height 46, width already 84                                                                                                    | Rect confirmed 84×45.8 post-fix                                                                            |
+| Budget inline edit trigger                                                  | 60×20 / 69×20 (varies by amount text) | `.hit44-pad-v` + `.budget-edit-trigger` (12px) → height 44, width already ≥48 across every row                                                                             | Rect confirmed 68.7×20.1 → same visual, class applied                                                      |
+| In-paragraph "Insights" links (Budget's `IncomeSection`, Home's `NeedsYou`) | 46×15                                 | `.inline-insights-link`, asymmetric inset (vertical only, `-14.5px 0`) → height 44, width untouched                                                                        | Rect unchanged (46×15)                                                                                     |
+
+Swept for more under 24px and found two: Settings' ~40 tag/ignore-rule
+chip delete buttons (13×13, `TagsSection.tsx`/`IgnoreRulesSection.tsx`) and
+Insights' "Include settled" checkbox label (105.8×19.4,
+`PeopleSection.tsx`) — both fixed with `.hit44-pad`/`.hit44-pad-v`. For
+the tightly packed, wrapping tag list specifically, checked whether the
+now-overlapping hit boxes between adjacent chips could cause a misclick
+(padded box of one chip's delete button geometrically overlapped the next
+chip's box by ~4.5px): confirmed via `elementFromPoint` at the seam that
+the later chip's own (non-interactive) div wins the hit-test in both the
+horizontal and the row-wrap vertical case, so the overlap is inert, not a
+footgun.
+
+Also swept `?` shortcuts button, checkboxes, and bottom-tab-bar links on
+mobile (412px) — mobile hides the checkbox column entirely (own gesture),
+and the bottom tab bar's existing targets were already 125×65.
+
+**Test**: `src/styles/hit44.test.ts` (17 cases — CSS math per control +
+wired-in class name per component). **Commit**: `03c3165`.
+
+### 3 — Remaining `--ink-4`-on-text sites fixed
+
+Read all ~50 flagged sites in context rather than blindly recoloring: 28
+were genuine text and moved to `--ink-3` (paragraphs, badges, table
+headers, breadcrumbs, numbered-list markers, `·` dividers, kbd-hint text,
+"cancel"/"?" button labels); the rest were confirmed icon strokes
+(`<Icon>` colors, chip delete ×'s, chevrons, a search icon, `restart_alt`)
+and left alone, per MASTER.md §2's non-text exemption.
+
+One of the 28 was a live bug, not just a contrast nit:
+`TransactionsTableHead`'s column-header `color` was inline-styled back to
+`--ink-4` for the resting (unsorted) state, silently re-breaking the exact
+`.tbl th` failure Phase 9's CSS fix had already resolved — the inline
+style was overriding the fixed CSS the whole time.
+
+**Guard test**: `src/test/ink4-text-guard.test.ts` greps
+`src/**/*.{ts,tsx}` for `color:`/Tailwind `text-[...]` uses of `--ink-4`
+and fails on anything not on its reviewed allowlist (the confirmed-icon
+sites). Verified it actually catches a regression by appending a
+throwaway `color: 'var(--ink-4)'` site, confirming the test failed with
+the new file:line, then reverting. **Commit**: `2c4c344`.
+
+### Gate
+
+`npm run build` (tsc + vite, clean), `npm run lint` (0 errors, 24
+warnings — all pre-existing, none introduced), `npm test` — 45 files / 344
+tests (41/308 → 45/344: +4 files, +36 tests), `npx prettier --write src`
+(clean, ran via lint-staged on each commit too).
+
+### Not fixed
+
+Nothing from this pass's three items was left unfixed. Two things outside
+its scope, noted for a future pass: `BudgetCategoryRow`'s
+`resetOverrideMutation` reset-to-default button remains dead code (see
+Phase 8c's second-pass Deferred section — per-month overrides still can't
+be created server-side, so `row.hasOverride` is never true); and the
+`--app-outline`/`background`/`border` non-text uses of `--ink-4` were left
+untouched everywhere, exactly as intended.
 
 ---
