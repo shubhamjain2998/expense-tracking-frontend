@@ -35,7 +35,7 @@ describe('MappingsSection CRUD', () => {
     renderWithProviders(<MappingsSection />)
 
     // Fill in pattern
-    const patternInput = await screen.findByLabelText('New mapping pattern')
+    const patternInput = await screen.findByLabelText('Pattern')
     await user.type(patternInput, 'SWIGGY')
 
     // Pick a category via SearchableSelect

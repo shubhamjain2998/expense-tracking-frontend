@@ -124,6 +124,7 @@ export function CategoryDeleteDialog({
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {/* Option A: Move to another category */}
               <label
+                htmlFor="delete-action-move"
                 style={{
                   display: 'flex',
                   alignItems: 'flex-start',
@@ -137,6 +138,7 @@ export function CategoryDeleteDialog({
                 }}
               >
                 <input
+                  id="delete-action-move"
                   type="radio"
                   name="delete-action"
                   value="move"
@@ -169,6 +171,8 @@ export function CategoryDeleteDialog({
 
               {/* Option B: Return to pending */}
               <label
+                htmlFor="delete-action-pending"
+                aria-label="Return to pending — move all transactions back to the unprocessed queue. Mapping rules will be removed."
                 style={{
                   display: 'flex',
                   alignItems: 'flex-start',
@@ -182,6 +186,7 @@ export function CategoryDeleteDialog({
                 }}
               >
                 <input
+                  id="delete-action-pending"
                   type="radio"
                   name="delete-action"
                   value="pending"

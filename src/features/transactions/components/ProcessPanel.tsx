@@ -269,8 +269,12 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
         )}
 
         <div>
-          <label className="eyebrow mb-1 block">Notes (optional)</label>
+          <label className="eyebrow mb-1 block" htmlFor="process-txn-notes">
+            Notes (optional)
+          </label>
           <textarea
+            id="process-txn-notes"
+            name="notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Add a note…"

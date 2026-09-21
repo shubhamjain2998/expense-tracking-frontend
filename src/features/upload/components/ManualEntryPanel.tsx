@@ -71,8 +71,14 @@ export function ManualEntryPanel() {
       <form onSubmit={handleSubmit} className="max-w-md space-y-3">
         {/* Type */}
         <div>
-          <label className="eyebrow mb-1 block">Type</label>
-          <div style={{ display: 'flex', gap: 6 }}>
+          <p className="eyebrow mb-1 block" id="manual-txn-type-label">
+            Type
+          </p>
+          <div
+            role="group"
+            aria-labelledby="manual-txn-type-label"
+            style={{ display: 'flex', gap: 6 }}
+          >
             {TXN_TYPE_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
@@ -104,13 +110,16 @@ export function ManualEntryPanel() {
 
         {/* Date */}
         <div>
-          <label className="eyebrow mb-1 block">Date</label>
+          <label className="eyebrow mb-1 block" htmlFor="manual-txn-date">
+            Date
+          </label>
           <input
+            id="manual-txn-date"
+            name="date"
             type="date"
             value={manualDate}
             onChange={(e) => setManualDate(e.target.value)}
             className="input"
-            aria-label="Transaction date"
           />
           {manualErrors.date && (
             <p className="mt-1 text-[11px]" style={{ color: 'var(--neg)' }}>
@@ -121,14 +130,17 @@ export function ManualEntryPanel() {
 
         {/* Description */}
         <div>
-          <label className="eyebrow mb-1 block">Description</label>
+          <label className="eyebrow mb-1 block" htmlFor="manual-txn-desc">
+            Description
+          </label>
           <input
+            id="manual-txn-desc"
+            name="description"
             type="text"
             value={manualDesc}
             onChange={(e) => setManualDesc(e.target.value)}
             placeholder="e.g. Blinkit Gurgaon"
             className="input"
-            aria-label="Transaction description"
           />
           {manualErrors.desc && (
             <p className="mt-1 text-[11px]" style={{ color: 'var(--neg)' }}>
@@ -139,8 +151,12 @@ export function ManualEntryPanel() {
 
         {/* Amount */}
         <div>
-          <label className="eyebrow mb-1 block">Amount (₹)</label>
+          <label className="eyebrow mb-1 block" htmlFor="manual-txn-amount">
+            Amount (₹)
+          </label>
           <input
+            id="manual-txn-amount"
+            name="amount"
             type="number"
             value={manualAmount}
             onChange={(e) => setManualAmount(e.target.value)}
@@ -148,7 +164,6 @@ export function ManualEntryPanel() {
             min="0.01"
             step="0.01"
             className="input num"
-            aria-label="Transaction amount"
           />
           {manualErrors.amount && (
             <p className="mt-1 text-[11px]" style={{ color: 'var(--neg)' }}>

@@ -110,8 +110,12 @@ export function PersonsSection() {
           style={{ borderTop: '1px solid var(--line)', paddingTop: 16 }}
         >
           <div className="flex-1">
-            <label className="eyebrow mb-1 block">Add member</label>
+            <label className="eyebrow mb-1 block" htmlFor="person-new-name">
+              Add member
+            </label>
             <input
+              id="person-new-name"
+              name="personName"
               value={newPersonName}
               onChange={(e) => {
                 setNewPersonName(e.target.value)
@@ -120,7 +124,6 @@ export function PersonsSection() {
               placeholder="Full name"
               className="input"
               maxLength={64}
-              aria-label="New person name"
             />
             {personNameError && (
               <p className="mt-1 text-[11px]" style={{ color: 'var(--neg)' }}>

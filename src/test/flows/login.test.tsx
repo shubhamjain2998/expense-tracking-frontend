@@ -34,6 +34,17 @@ describe('Login flow', () => {
     expect(await screen.findByRole('heading', { name: /dashboard/i })).toBeInTheDocument()
   })
 
+  // Regression test for the Phase 8c second-pass a11y sweep: Email/Password
+  // had no programmatic label association (jsx-a11y/label-has-associated-control).
+  it('email and password inputs are reachable by their accessible label', async () => {
+    renderWithProviders(<LoginRoutes />, { initialEntries: ['/login'] })
+
+    expect(await screen.findByLabelText('Email')).toBe(
+      screen.getByPlaceholderText('you@example.com')
+    )
+    expect(screen.getByLabelText('Password')).toBe(screen.getByPlaceholderText('••••••••'))
+  })
+
   it('bad credentials show an error message', async () => {
     server.use(
       http.post('http://localhost:8000/auth/login', () =>

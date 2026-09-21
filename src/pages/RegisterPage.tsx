@@ -125,8 +125,11 @@ export function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="space-y-3.5">
             <div>
-              <label className="eyebrow mb-1 block">Email</label>
+              <label className="eyebrow mb-1 block" htmlFor="register-email">
+                Email
+              </label>
               <input
+                id="register-email"
                 type="email"
                 name="email"
                 value={email}
@@ -140,8 +143,11 @@ export function RegisterPage() {
               />
             </div>
             <div>
-              <label className="eyebrow mb-1 block">Password</label>
+              <label className="eyebrow mb-1 block" htmlFor="register-password">
+                Password
+              </label>
               <input
+                id="register-password"
                 type="password"
                 name="password"
                 value={password}
@@ -160,8 +166,11 @@ export function RegisterPage() {
               )}
             </div>
             <div>
-              <label className="eyebrow mb-1 block">Confirm password</label>
+              <label className="eyebrow mb-1 block" htmlFor="register-confirm">
+                Confirm password
+              </label>
               <input
+                id="register-confirm"
                 type="password"
                 name="confirm"
                 value={confirm}

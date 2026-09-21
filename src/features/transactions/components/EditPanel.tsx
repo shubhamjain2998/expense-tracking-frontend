@@ -179,8 +179,14 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
 
       <div className="flex flex-col gap-4 overflow-y-auto" style={{ padding: 16 }}>
         <div>
-          <p className="eyebrow mb-1.5">Type</p>
-          <div style={{ display: 'flex', gap: 6 }}>
+          <p className="eyebrow mb-1.5" id="edit-txn-type-label">
+            Type
+          </p>
+          <div
+            role="group"
+            aria-labelledby="edit-txn-type-label"
+            style={{ display: 'flex', gap: 6 }}
+          >
             {TXN_TYPE_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
@@ -217,8 +223,12 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
         </div>
         <div className="flex gap-2">
           <div className="flex-1">
-            <label className="eyebrow mb-1 block">Amount</label>
+            <label className="eyebrow mb-1 block" htmlFor="edit-txn-amount">
+              Amount
+            </label>
             <input
+              id="edit-txn-amount"
+              name="amount"
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -230,8 +240,12 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
             />
           </div>
           <div className="flex-1">
-            <label className="eyebrow mb-1 block">Date</label>
+            <label className="eyebrow mb-1 block" htmlFor="edit-txn-date">
+              Date
+            </label>
             <input
+              id="edit-txn-date"
+              name="date"
               type="date"
               value={txnDate}
               onChange={(e) => setTxnDate(e.target.value)}
@@ -241,8 +255,12 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
         </div>
 
         <div>
-          <label className="eyebrow mb-1 block">Description</label>
+          <label className="eyebrow mb-1 block" htmlFor="edit-txn-desc">
+            Description
+          </label>
           <input
+            id="edit-txn-desc"
+            name="description"
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -304,8 +322,12 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
         )}
 
         <div>
-          <label className="eyebrow mb-1 block">Notes (optional)</label>
+          <label className="eyebrow mb-1 block" htmlFor="edit-txn-notes">
+            Notes (optional)
+          </label>
           <textarea
+            id="edit-txn-notes"
+            name="notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Add a note…"

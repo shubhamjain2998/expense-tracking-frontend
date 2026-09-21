@@ -21,6 +21,19 @@ describe('Register flow', () => {
     expect(await screen.findByRole('heading', { name: /create account/i })).toBeInTheDocument()
   })
 
+  // Regression test for the Phase 8c second-pass a11y sweep: Email/Password/
+  // Confirm password had no programmatic label association
+  // (jsx-a11y/label-has-associated-control).
+  it('email, password and confirm inputs are reachable by their accessible label', async () => {
+    renderWithProviders(<RegisterRoutes />, { initialEntries: ['/register'] })
+
+    expect(await screen.findByLabelText('Email')).toBe(
+      screen.getByPlaceholderText('you@example.com')
+    )
+    expect(screen.getByLabelText('Password')).toBeInTheDocument()
+    expect(screen.getByLabelText('Confirm password')).toBeInTheDocument()
+  })
+
   it('mismatched passwords show "Passwords do not match"', async () => {
     const user = userEvent.setup()
     renderWithProviders(<RegisterRoutes />, { initialEntries: ['/register'] })

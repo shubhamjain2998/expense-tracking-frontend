@@ -33,6 +33,10 @@ export default tseslint.config(
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
       'jsx-a11y/anchor-is-valid': 'error',
+      // MASTER.md §9: every interactive input needs a programmatic label
+      // (a real <label for>, or aria-label/aria-labelledby). Enabled as
+      // part of the Phase 8c second-pass a11y sweep.
+      'jsx-a11y/label-has-associated-control': 'error',
       // Promote to 'error' once modal/drag-drop a11y is fixed (task #28: focus management).
       'jsx-a11y/click-events-have-key-events': 'warn',
       'jsx-a11y/no-static-element-interactions': 'warn',
@@ -46,7 +50,10 @@ export default tseslint.config(
         },
       ],
       '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
       '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
       'no-console': ['warn', { allow: ['error', 'warn'] }],
       eqeqeq: ['error', 'always', { null: 'ignore' }],

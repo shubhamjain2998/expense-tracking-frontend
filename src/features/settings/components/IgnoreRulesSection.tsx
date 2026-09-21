@@ -70,8 +70,12 @@ export function IgnoreRulesSection() {
         style={{ borderTop: '1px solid var(--line)', paddingTop: 16 }}
       >
         <div className="flex-1">
-          <label className="eyebrow mb-1 block">Add keyword</label>
+          <label className="eyebrow mb-1 block" htmlFor="ignore-rule-keyword">
+            Add keyword
+          </label>
           <input
+            id="ignore-rule-keyword"
+            name="ignoreKeyword"
             value={newIgnoreKeyword}
             onChange={(e) => {
               setNewIgnoreKeyword(e.target.value)
@@ -80,7 +84,6 @@ export function IgnoreRulesSection() {
             onKeyDown={(e) => e.key === 'Enter' && handleAddIgnoreRule()}
             placeholder="e.g. salary, refund, transfer"
             className="input mono"
-            aria-label="New ignore keyword"
           />
           {ignoreKeywordError && (
             <p className="mt-1 text-[11px]" style={{ color: 'var(--neg)' }}>

@@ -131,8 +131,14 @@ export function AddTransactionDialog({ onClose }: AddTransactionDialogProps) {
           className="space-y-3.5"
         >
           <div>
-            <label className="eyebrow mb-1 block">Type</label>
-            <div style={{ display: 'flex', gap: 6 }}>
+            <p className="eyebrow mb-1 block" id="add-txn-type-label">
+              Type
+            </p>
+            <div
+              role="group"
+              aria-labelledby="add-txn-type-label"
+              style={{ display: 'flex', gap: 6 }}
+            >
               {TXN_TYPE_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
@@ -163,13 +169,16 @@ export function AddTransactionDialog({ onClose }: AddTransactionDialogProps) {
           </div>
 
           <div>
-            <label className="eyebrow mb-1 block">Date</label>
+            <label className="eyebrow mb-1 block" htmlFor="add-txn-date">
+              Date
+            </label>
             <input
+              id="add-txn-date"
+              name="date"
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
               className="input"
-              aria-label="Transaction date"
             />
             {errors.date && (
               <p className="mt-1 text-[11px]" style={{ color: 'var(--neg)' }}>
@@ -179,15 +188,18 @@ export function AddTransactionDialog({ onClose }: AddTransactionDialogProps) {
           </div>
 
           <div>
-            <label className="eyebrow mb-1 block">Description</label>
+            <label className="eyebrow mb-1 block" htmlFor="add-txn-desc">
+              Description
+            </label>
             <input
+              id="add-txn-desc"
+              name="description"
               type="text"
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
               placeholder="e.g. Blinkit Gurgaon"
               className="input"
               autoFocus
-              aria-label="Transaction description"
             />
             {errors.desc && (
               <p className="mt-1 text-[11px]" style={{ color: 'var(--neg)' }}>
@@ -197,8 +209,12 @@ export function AddTransactionDialog({ onClose }: AddTransactionDialogProps) {
           </div>
 
           <div>
-            <label className="eyebrow mb-1 block">Amount (₹)</label>
+            <label className="eyebrow mb-1 block" htmlFor="add-txn-amount">
+              Amount (₹)
+            </label>
             <input
+              id="add-txn-amount"
+              name="amount"
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -206,7 +222,6 @@ export function AddTransactionDialog({ onClose }: AddTransactionDialogProps) {
               min="0.01"
               step="0.01"
               className="input num"
-              aria-label="Transaction amount"
             />
             {errors.amount && (
               <p className="mt-1 text-[11px]" style={{ color: 'var(--neg)' }}>

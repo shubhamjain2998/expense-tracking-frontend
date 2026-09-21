@@ -303,20 +303,23 @@ export function MappingsSection() {
           style={{ borderTop: '1px solid var(--line)', padding: '16px 20px' }}
         >
           <div className="flex-1">
-            <label className="eyebrow mb-1 block">Pattern</label>
+            <label className="eyebrow mb-1 block" htmlFor="mapping-new-pattern">
+              Pattern
+            </label>
             <input
+              id="mapping-new-pattern"
+              name="pattern"
               value={newPattern}
               onChange={(e) => setNewPattern(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
               placeholder="e.g. SWIGGY"
               className="input mono"
               maxLength={500}
-              aria-label="New mapping pattern"
             />
           </div>
           <div style={{ minWidth: 180 }}>
-            <label className="eyebrow mb-1 block">Category</label>
             <SearchableSelect
+              label="Category"
               options={categoryOptions}
               value={newCategoryId}
               onChange={setNewCategoryId}

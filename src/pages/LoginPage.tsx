@@ -119,8 +119,11 @@ export function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-3.5">
             <div>
-              <label className="eyebrow mb-1 block">Email</label>
+              <label className="eyebrow mb-1 block" htmlFor="login-email">
+                Email
+              </label>
               <input
+                id="login-email"
                 type="email"
                 name="email"
                 value={email}
@@ -134,8 +137,11 @@ export function LoginPage() {
               />
             </div>
             <div>
-              <label className="eyebrow mb-1 block">Password</label>
+              <label className="eyebrow mb-1 block" htmlFor="login-password">
+                Password
+              </label>
               <input
+                id="login-password"
                 type="password"
                 name="password"
                 value={password}

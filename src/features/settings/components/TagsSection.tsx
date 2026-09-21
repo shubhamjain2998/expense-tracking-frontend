@@ -56,8 +56,12 @@ export function TagsSection() {
           style={{ borderTop: '1px solid var(--line)', paddingTop: 16 }}
         >
           <div className="flex-1">
-            <label className="eyebrow mb-1 block">Create tag</label>
+            <label className="eyebrow mb-1 block" htmlFor="tag-new-name">
+              Create tag
+            </label>
             <input
+              id="tag-new-name"
+              name="tagName"
               value={newTagName}
               onChange={(e) => setNewTagName(e.target.value)}
               onKeyDown={(e) => {
@@ -66,7 +70,6 @@ export function TagsSection() {
               placeholder="Tag name"
               className="input"
               maxLength={64}
-              aria-label="New tag name"
             />
           </div>
           <Button
