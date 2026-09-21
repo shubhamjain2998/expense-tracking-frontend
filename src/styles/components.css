@@ -1889,9 +1889,15 @@ html.dark .auth-seal {
    (same cubic-bezier, app's existing name). The mock's --space-1..7 scale
    isn't part of this phase's token additions, so spacing is inlined here
    as literal px (4 8 12 16 24 32 48) rather than introducing a new scale.
-   `.panel`/`.setnav` stick below a topbar; the mock's --topbar-h isn't an
-   app token, so they fall back to the real .topnav height (52px) via
-   var(--topbar-h, 52px) until a later phase defines that token for real.
+   `.panel`/`.setnav` stick with a 24px gap from the top of their own
+   scroll container. Phase 9: these used to add `var(--topbar-h, 52px)` on
+   top of that gap, on the assumption the whole page (including .topnav)
+   shared one scroll context. It doesn't — `.topnav` is a fixed-height
+   sibling of `main` (Layout.tsx), not inside `main`'s own
+   `overflow-y-auto`, so `main`'s scrollport already starts below it. The
+   extra 52px was double-counting the topbar and drove every sticky panel
+   (and `.tbl.sticky th`, below) further down than intended — see
+   `.tbl.sticky th` for the table-header instance of the same bug.
    ════════════════════════════════════════════════════════════════════════ */
 
 /* ─── money sign colour utilities ────────────────────────────────────── */
@@ -1914,12 +1920,18 @@ html.dark .auth-seal {
 /* Genuinely missing: Home's VerdictBlock uses the smaller `.money .v` KPI
    size for its four figures, but the category drill-down (/c/:categoryId)
    shows ONE amount at true hero scale — MASTER.md §3's "Hero number" row.
-   Compose with `.pos`/`.neg` for the sign. */
+   Compose with `.pos`/`.neg` for the sign.
+   Phase 9: -0.03em tracking at 40-64px pulls the ₹ glyph into the first
+   digit (the rupee sign has more inherent side-bearing than a digit, so
+   uniform negative tracking reads as a collision there specifically, even
+   though the digit-to-digit spacing looks intentionally tight and fine).
+   Halved to -0.015em — still visibly tight/display-numeral in character,
+   just short of overlapping the symbol. */
 .hero-num {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: clamp(40px, 6vw, 64px);
-  letter-spacing: -0.03em;
+  letter-spacing: -0.015em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
@@ -1942,22 +1954,40 @@ html.dark .auth-seal {
   color: var(--ink-2);
   max-width: 54ch;
 }
+/* Phase 9: was `display: flex; align-items: flex-end` — every `.money`
+   column bottom-aligned its own (label, value[, sub-line]) stack. "Saved"
+   (and "Left to spend") carry an extra sub-line ("35% of income") that
+   "In"/"Out" don't, so flex's shared cross-axis alignment pushed the two-
+   line columns' *values* higher than the single-line columns' values —
+   the row's numbers never sat on one baseline. A 3-row grid with each
+   `.money` as a subgrid gives every column the same label row, value row
+   and sub-line row, so same-row content aligns across columns regardless
+   of which columns actually use the third row. Deliberately not wrapped
+   (unlike the old flex-wrap) — subgrid needs one shared row group, and at
+   this width all four columns already fit; `overflow-x: auto` is a safety
+   net rather than the primary mobile layout. */
 .money-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 32px;
-  align-items: flex-end;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  grid-template-rows: repeat(3, auto);
+  column-gap: 32px;
+  overflow-x: auto;
 }
 .money {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span 3;
+  row-gap: 2px;
+  align-items: start;
 }
 .money .v {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 26px;
-  letter-spacing: -0.02em;
+  /* Phase 9: was -0.02em — collided the ₹ glyph with the first digit at
+     this size (same class of fix as .hero-num above). */
+  letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
 }
 @media (max-width: 899px) {
@@ -1967,7 +1997,7 @@ html.dark .auth-seal {
     gap: 16px;
   }
   .money-row {
-    gap: 24px;
+    column-gap: 24px;
   }
 }
 
