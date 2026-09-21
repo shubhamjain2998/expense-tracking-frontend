@@ -81,10 +81,15 @@ export function InsightsRunView({
   }, [])
 
   /** A bar names a finding, so picking one opens it and moves to it rather
-   *  than leaving the reader to find the row themselves. */
+   *  than leaving the reader to find the row themselves. The scroll is
+   *  feature-checked: `scrollIntoView` does not exist in jsdom, and opening
+   *  the row is the part that must not depend on it. */
   const revealFinding = useCallback((id: string) => {
     setOpenFindings((prev) => new Set(prev).add(id))
-    findingRefs.current.get(id)?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    const node = findingRefs.current.get(id)
+    if (typeof node?.scrollIntoView === 'function') {
+      node.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    }
   }, [])
 
   return (
