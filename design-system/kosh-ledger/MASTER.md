@@ -28,53 +28,69 @@ Tailwind v4 `@theme inline` mapping) and the tabular-numerals rule.
 Data greys `--d1..--d5` are the **only** palette charts may use, plus `--accent` for a
 highlighted/selected series. There is no 8-hue category palette any more.
 
+**2026-09-21: softened to a "cool slate" ramp** at the user's request — flat black-on-white /
+white-on-black read as too harsh. Every neutral now carries a faint, consistent blue-grey cast
+(never a desaturated grey), and primary text targets ~11:1 instead of the previous ~17:1.
+Secondary text targets >=6:1, muted text/labels >=4.5:1 (the WCAG AA floor, no exceptions), and
+non-text tokens (`--ink-4`) >=3:1. Ratios below are measured against both `--card` and `--paper`
+from the actual hex values (see `src/styles/palette-contrast.test.ts`, which locks these floors
+in as a regression guard).
+
 ### Light
 
-| Token            | Value                                     | Use                                                  |
-| ---------------- | ----------------------------------------- | ---------------------------------------------------- |
-| `--paper`        | `#FAFAFA`                                 | app background                                       |
-| `--card`         | `#FFFFFF`                                 | card / table surface                                 |
-| `--card-2`       | `#F4F4F5`                                 | nested surface, zebra row, input                     |
-| `--ink`          | `#18181B`                                 | primary text, strongest bar                          |
-| `--ink-2`        | `#3F3F46`                                 | secondary text                                       |
-| `--ink-3`        | `#71717A`                                 | labels, captions (4.6:1 — the lightest text allowed) |
-| `--ink-4`        | `#A1A1AA`                                 | **non-text only**: hairline emphasis, disabled glyph |
-| `--line`         | `#E4E4E7`                                 | default 1px rule                                     |
-| `--line-2`       | `#D4D4D8`                                 | emphasised rule, input border                        |
-| `--accent`       | `#2563EB`                                 | links, active state, focus ring, selected series     |
-| `--accent-hover` | `#1D4ED8`                                 | hover/pressed accent                                 |
-| `--accent-soft`  | `#EFF6FF`                                 | selected row, active chip fill                       |
-| `--pos`          | `#15803D`                                 | money in / under budget                              |
-| `--neg`          | `#B91C1C`                                 | money out / over budget                              |
-| `--warn`         | `#A16207`                                 | pace warning                                         |
-| `--warn-soft`    | `#FEF9EC`                                 | warning row fill                                     |
-| `--d1..--d5`     | `#18181B #3F3F46 #71717A #A1A1AA #D4D4D8` | chart ramp, largest→smallest                         |
+| Token            | Value      | Use                                                              |
+| ----------------- | ---------- | ------------------------------------------------------------------ |
+| `--paper`         | `#F7F8FA` | app background                                                     |
+| `--card`          | `#FFFFFF` | card / table surface                                               |
+| `--card-2`        | `#EEF1F4` | nested surface, zebra row, input                                   |
+| `--ink`           | `#323641` | primary text, strongest bar (12.1:1 card / 11.4:1 paper)           |
+| `--ink-2`         | `#4A505C` | secondary text (8.1:1 / 7.6:1)                                     |
+| `--ink-3`         | `#5F6672` | labels, captions (5.8:1 / 5.4:1 — the lightest text allowed)       |
+| `--ink-4`         | `#838B98` | **non-text only**: hairline emphasis, disabled glyph               |
+| `--line`          | `#D9DEE5` | default 1px rule                                                   |
+| `--line-2`        | `#C6CCD6` | emphasised rule, input border                                      |
+| `--accent`        | `#2563EB` | links, active state, focus ring, selected series (5.2:1 / 4.9:1)   |
+| `--accent-hover`  | `#1D4ED8` | hover/pressed accent                                               |
+| `--accent-soft`   | `#EFF6FF` | selected row, active chip fill                                     |
+| `--pos`           | `#136429` | money in / under budget (7.3:1 / 6.9:1)                            |
+| `--neg`           | `#B91C1C` | money out / over budget (6.5:1 / 6.1:1)                            |
+| `--warn`          | `#A16207` | pace warning (4.9:1 / 4.6:1)                                       |
+| `--warn-soft`     | `#FEF9EC` | warning row fill                                                   |
+| `--d1..--d5`      | `#323641 #4A505C #5F6672 #838B98 #C6CCD6` | chart ramp, largest→smallest (mirrors the ink ramp) |
 
 ### Dark
 
-| Token            | Value                                     |
-| ---------------- | ----------------------------------------- |
-| `--paper`        | `#0B0B0C`                                 |
-| `--card`         | `#141416`                                 |
-| `--card-2`       | `#1C1C1F`                                 |
-| `--ink`          | `#FAFAFA`                                 |
-| `--ink-2`        | `#D4D4D8`                                 |
-| `--ink-3`        | `#A1A1AA`                                 |
-| `--ink-4`        | `#71717A`                                 |
-| `--line`         | `#27272A`                                 |
-| `--line-2`       | `#3F3F46`                                 |
-| `--accent`       | `#60A5FA`                                 |
-| `--accent-hover` | `#93C5FD`                                 |
-| `--accent-soft`  | `#12203A`                                 |
-| `--pos`          | `#4ADE80`                                 |
-| `--neg`          | `#F87171`                                 |
-| `--warn`         | `#FBBF24`                                 |
-| `--warn-soft`    | `#231B06`                                 |
-| `--d1..--d5`     | `#FAFAFA #D4D4D8 #A1A1AA #71717A #3F3F46` |
+| Token            | Value      |
+| ----------------- | ---------- |
+| `--paper`         | `#14161A` |
+| `--card`          | `#1C1F25` |
+| `--card-2`        | `#22262D` |
+| `--ink`           | `#C7CBD3` |
+| `--ink-2`         | `#9CA3AF` |
+| `--ink-3`         | `#8E96A4` |
+| `--ink-4`         | `#666E7A` |
+| `--line`          | `#333944` |
+| `--line-2`        | `#454C59` |
+| `--accent`        | `#60A5FA` |
+| `--accent-hover`  | `#93C5FD` |
+| `--accent-soft`   | `#182B4A` |
+| `--pos`           | `#4ADE80` |
+| `--neg`           | `#F87171` |
+| `--warn`          | `#FBBF24` |
+| `--warn-soft`     | `#2E2308` |
+| `--d1..--d5`      | `#B9BFC9 #8B93A0 #747C8A #5A6270 #454C59` — dimmed one notch below `--ink*`; d5 = `--line-2` |
 
-Verified contrast on card: accent 5.2:1 (light) / 7.4:1 (dark); pos 4.9 / 10.1;
-neg 6.4 / 6.5; warn 4.6 / 9.8; ink-3 4.6 / 7.0. `--ink-4` fails text contrast **by design** —
-lint rule: never use it on text.
+Verified contrast on card / paper: ink 12.1 / 11.4 (light), 10.2 / 11.1 (dark); ink-2 8.1 / 7.6
+(light), 6.5 / 7.1 (dark); ink-3 5.8 / 5.4 (light), 5.5 / 6.1 (dark); accent 5.2 / 4.9 (light),
+6.5 / 7.1 (dark); pos 7.3 / 6.9 (light), 9.5 / 10.4 (dark); neg 6.5 / 6.1 (light), 6.0 / 6.6
+(dark); warn 4.9 / 4.6 (light), 9.9 / 10.9 (dark). `--ink-4` fails text contrast **by design** —
+lint rule: never use it on text (`src/test/ink4-text-guard.test.ts`).
+
+`--d1..--d5` are chart fills only, never text — in dark mode they're deliberately dimmed a notch
+below the `--ink*` ramp so bars don't visually compete with text, which means `--d4`/`--d5` (and
+`--d3` in dark) fall under 4.5:1 and must never be reused as a text/label colour (the `--cat-*`
+category-tag aliases learned this the hard way in the 2026-09-21 pass — they now point at
+`--ink`/`--ink-2`/`--ink-3` instead of the d-ramp).
 
 ## 3. Typography
 
