@@ -10,8 +10,7 @@ import { formatYearLabel, monthShortLabel } from '../../lib/period'
 interface YearMonthSelectorProps {
   year: number
   month: number
-  onYearChange: (y: number) => void
-  onMonthChange: (m: number) => void
+  onPeriodChange: (y: number, m: number) => void
 }
 
 /**
@@ -19,13 +18,15 @@ interface YearMonthSelectorProps {
  *
  * Stepping the month wraps the year at boundaries (Mar→Apr crosses periods).
  * `month` is 1-12 in the active period mode (FY mode → 1=April … 12=March).
+ *
+ * Both the stepper and the year dropdown go through the single
+ * `onPeriodChange(y, m)` callback — never two separate year/month setters.
+ * React Router's `setSearchParams` reads a memoized snapshot per call, so
+ * two calls in the same handler (e.g. "set year" then "set month" when a
+ * step crosses a year boundary) race and the second clobbers the first,
+ * silently dropping the year change. One combined call keeps it atomic.
  */
-export function YearMonthSelector({
-  year,
-  month,
-  onYearChange,
-  onMonthChange,
-}: YearMonthSelectorProps) {
+export function YearMonthSelector({ year, month, onPeriodChange }: YearMonthSelectorProps) {
   const { mode } = usePeriodMode()
   // Last step direction (+1 next / -1 prev) drives the label slide.
   const [direction, setDirection] = useState(0)
@@ -34,13 +35,11 @@ export function YearMonthSelector({
     setDirection(delta)
     const next = month + delta
     if (next < 1) {
-      onYearChange(year - 1)
-      onMonthChange(12)
+      onPeriodChange(year - 1, 12)
     } else if (next > 12) {
-      onYearChange(year + 1)
-      onMonthChange(1)
+      onPeriodChange(year + 1, 1)
     } else {
-      onMonthChange(next)
+      onPeriodChange(year, next)
     }
   }
 
@@ -73,7 +72,7 @@ export function YearMonthSelector({
       </div>
       <select
         value={year}
-        onChange={(e) => onYearChange(Number(e.target.value))}
+        onChange={(e) => onPeriodChange(Number(e.target.value), month)}
         aria-label={mode === 'fy' ? 'Select fiscal year' : 'Select year'}
         className="ym-year num"
       >

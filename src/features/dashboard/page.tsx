@@ -40,7 +40,7 @@ export function DashboardPage() {
   const { mode } = usePeriodMode()
 
   // ── UI state ───────────────────────────────────────────────────────────────────────────────
-  const { year, month, setYear, setMonth, setPeriod } = usePeriod()
+  const { year, month, setPeriod } = usePeriod()
   const [trendWindow, setTrendWindow] = useState(6)
 
   // ── Onboarding (welcome modal + Getting Started checklist) ─────────────────
@@ -159,8 +159,7 @@ export function DashboardPage() {
           displayYear={calYear}
           selectorYear={year}
           selectorMonth={month}
-          onYearChange={setYear}
-          onMonthChange={setMonth}
+          onPeriodChange={setPeriod}
           onPeriodJump={setPeriod}
           isLoading={data.summaryLoading}
           lastActiveMonthHint={data.lastActiveMonthHint}

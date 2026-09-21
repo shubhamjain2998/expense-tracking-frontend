@@ -25,8 +25,7 @@ interface VerdictBlockProps {
   displayYear: number
   selectorYear: number
   selectorMonth: number
-  onYearChange: (y: number) => void
-  onMonthChange: (m: number) => void
+  onPeriodChange: (year: number, month: number) => void
   onPeriodJump: (year: number, month: number) => void
   isLoading: boolean
   lastActiveMonthHint: LastActiveMonthHint | null
@@ -50,8 +49,7 @@ export function VerdictBlock({
   displayYear,
   selectorYear,
   selectorMonth,
-  onYearChange,
-  onMonthChange,
+  onPeriodChange,
   onPeriodJump,
   isLoading,
   lastActiveMonthHint,
@@ -158,8 +156,7 @@ export function VerdictBlock({
           <YearMonthSelector
             year={selectorYear}
             month={selectorMonth}
-            onYearChange={onYearChange}
-            onMonthChange={onMonthChange}
+            onPeriodChange={onPeriodChange}
           />
         </div>
       </div>

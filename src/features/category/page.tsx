@@ -50,7 +50,7 @@ export function CategoryPage() {
   const { transactions: allHistory, isLoading: historyLoading } = useAllProcessedTransactions()
 
   // ── Period picker — the app-wide sticky period (usePeriod) ──────────────
-  const { year, month, setYear, setMonth } = usePeriod()
+  const { year, month, setPeriod } = usePeriod()
 
   const { year: calYear, month: calMonth } = resolvePeriodMonth(year, month, mode)
   const isCurrentMonth = calYear === now.getFullYear() && calMonth === now.getMonth() + 1
@@ -203,12 +203,7 @@ export function CategoryPage() {
           </div>
           <div className="flex shrink-0 flex-col items-end gap-2">
             <span className="eyebrow">Period</span>
-            <YearMonthSelector
-              year={year}
-              month={month}
-              onYearChange={setYear}
-              onMonthChange={setMonth}
-            />
+            <YearMonthSelector year={year} month={month} onPeriodChange={setPeriod} />
           </div>
         </div>
       </section>
