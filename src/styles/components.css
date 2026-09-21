@@ -64,13 +64,17 @@
   color: var(--ink);
 }
 
-/* Eyebrow / uppercase section label */
+/* Eyebrow / uppercase section label. Phase 9: was `--ink-4`, which
+   MASTER.md §2 reserves for non-text use only — measured 2.46:1 (light) /
+   4.07:1 (dark) against 4.5:1 required for this text size/weight. `--ink-3`
+   passes in both themes; every eyebrow in the app (period labels, KPI
+   labels, section eyebrows, side-nav "Explore") inherits the fix. */
 .eyebrow {
   font-size: 10.5px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink-4);
+  color: var(--ink-3);
 }
 
 /* Card — the primary grouping primitive. Ledger uses hairlines, not
@@ -109,7 +113,7 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink-4);
+  color: var(--ink-3);
   margin-bottom: 4px;
 }
 
@@ -219,7 +223,7 @@
     border-color: var(--accent);
   }
   .input::placeholder {
-    color: var(--ink-4);
+    color: var(--ink-3);
   }
   /* Only show invalid styling after user interaction, not on initial load. */
   .input:user-invalid {
@@ -250,7 +254,7 @@
   border-color: var(--accent);
 }
 .textarea::placeholder {
-  color: var(--ink-4);
+  color: var(--ink-3);
 }
 
 /* Legacy input-field (bottom-bar style from Material design) — re-skinned
@@ -275,7 +279,7 @@
   box-shadow: none;
 }
 .input-field::placeholder {
-  color: var(--ink-4);
+  color: var(--ink-3);
 }
 
 textarea.input-field {
@@ -367,7 +371,9 @@ button.chip:active {
   border-radius: var(--radius-sm);
   font-size: 11.5px;
   font-weight: 500;
-  color: var(--ink-3);
+  /* Phase 9: was --ink-3, which measured 4.40:1 at this size/weight — just
+     under the 4.5:1 text threshold. --ink-2 clears it comfortably. */
+  color: var(--ink-2);
   cursor: pointer;
   transition:
     background 0.1s ease,
@@ -375,7 +381,7 @@ button.chip:active {
   font-family: inherit;
 }
 .seg button:hover {
-  color: var(--ink-2);
+  color: var(--ink);
 }
 .seg button.on {
   background: var(--surface);
@@ -430,7 +436,10 @@ button.chip:active {
   font-size: 10.5px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--ink-4);
+  /* Phase 9: was --ink-4 (non-text only per MASTER.md §2) — measured
+     2.56:1 light / 3.81:1 dark, below the 4.5:1 text threshold on every
+     table header in the app. --ink-3 passes both themes. */
+  color: var(--ink-3);
   font-weight: 600;
   text-align: left;
   padding: 10px 10px;
@@ -1681,7 +1690,7 @@ html.dark .topnav {
   cursor: help;
 }
 .pace-row .pace-amount .of {
-  color: var(--ink-4);
+  color: var(--ink-3);
 }
 .pace-row .pace-amount.over {
   color: var(--neg);
@@ -1702,7 +1711,7 @@ html.dark .topnav {
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--ink-4);
+  color: var(--ink-3);
   margin-bottom: 4px;
 }
 .donut-center .val {
@@ -2682,7 +2691,7 @@ html.dark .people .avatar {
   min-width: 0;
 }
 .field input::placeholder {
-  color: var(--ink-4);
+  color: var(--ink-3);
 }
 
 /* ─── small / strong text utilities (ledger mock) ──────────────────────── */

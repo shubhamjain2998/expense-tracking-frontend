@@ -146,10 +146,12 @@ export function FilterBar({
 
       <span className="push" />
 
-      {/* Shortcuts hint — desktop only since mobile has no keyboard */}
+      {/* Shortcuts hint — desktop only since mobile has no keyboard.
+          Phase 9: was --ink-4 (measured 2.46:1, below the 4.5:1 text
+          threshold) — --ink-4 is non-text only per MASTER.md §2. */}
       <span
         className="hidden items-center gap-1 text-[11px] md:inline-flex"
-        style={{ color: 'var(--ink-4)', userSelect: 'none' }}
+        style={{ color: 'var(--ink-3)', userSelect: 'none' }}
       >
         <Icon name="keyboard" size={12} />
         1–9 categorize · ↑↓ navigate ·{' '}
