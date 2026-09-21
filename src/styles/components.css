@@ -2511,7 +2511,7 @@ a.alert:hover {
 }
 .panel {
   position: sticky;
-  top: calc(var(--topbar-h, 52px) + 24px);
+  top: 24px;
   display: flex;
   flex-direction: column;
 }
@@ -2547,7 +2547,7 @@ a.alert:hover {
 }
 .setnav {
   position: sticky;
-  top: calc(var(--topbar-h, 52px) + 24px);
+  top: 24px;
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -2698,9 +2698,18 @@ a.alert:hover {
 /* Sticky table header — only meaningful once the table scrolls under a
    fixed topbar; collapses to static on narrow viewports (see mobile block
    below) since the whole page scrolls there instead. */
+/* Phase 9: was `top: var(--topbar-h)` (52px) — double-counted the top bar.
+   `.topnav` is a fixed-height sibling of `main` (Layout.tsx), not inside
+   `main`'s own `overflow-y-auto` scroll container, so this table's actual
+   scroll container (`main`) already starts *below* the top bar. Adding
+   another 52px of offset stuck the header 52px lower than the container's
+   real top — on the empty state that drove it down into the single empty-
+   state row (with data, into the first data row: `th "Date"` measured
+   over `td "25 Jun"`). The correct offset is flush with the scroll
+   container's own top. */
 .tbl.sticky th {
   position: sticky;
-  top: var(--topbar-h);
+  top: 0;
   z-index: 2;
 }
 
