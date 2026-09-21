@@ -9,15 +9,23 @@
  */
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, useLocation } from 'react-router-dom'
 
 import { Layout } from '@/components/layout/Layout'
 import { PERIOD_STORAGE_KEY } from '@/lib/period'
 import { BudgetPage } from '@/pages/BudgetPage'
 import { DashboardPage } from '@/pages/DashboardPage'
+import { SettingsPage } from '@/pages/SettingsPage'
 import { TransactionsPage } from '@/pages/TransactionsPage'
 
 import { renderWithProviders } from '../renderWithProviders'
+
+// Exposes the current router location's search string so tests can assert
+// on it without reaching into MemoryRouter internals.
+function LocationProbe() {
+  const location = useLocation()
+  return <div data-testid="location-search">{location.search}</div>
+}
 
 // jsdom has no matchMedia implementation; DashboardPage's useCountUp hook
 // (via VerdictBlock) reads it for prefers-reduced-motion. Stub it once for
@@ -34,6 +42,23 @@ beforeAll(() => {
     removeEventListener: () => {},
     dispatchEvent: () => false,
   })) as unknown as typeof window.matchMedia
+})
+
+// jsdom has no IntersectionObserver; SettingsPage's section-scrollspy effect
+// reads it. Stub it once for this file — the first test file here to render
+// SettingsPage.
+beforeAll(() => {
+  if (typeof window.IntersectionObserver === 'function') return
+  class MockIntersectionObserver implements IntersectionObserver {
+    readonly root = null
+    readonly rootMargin = ''
+    readonly thresholds: ReadonlyArray<number> = []
+    observe = () => {}
+    unobserve = () => {}
+    disconnect = () => {}
+    takeRecords = () => []
+  }
+  window.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver
 })
 
 describe('sticky period persistence', () => {
@@ -133,6 +158,46 @@ describe('sticky period persistence', () => {
     expect(budgetLinks.length).toBeGreaterThanOrEqual(2)
     for (const link of budgetLinks) {
       expect(link.getAttribute('href')).toBe('/budget?year=2026&month=6')
+    }
+  })
+
+  // Regression test for the "Settings picks up the sticky period in its URL"
+  // defect (Phase 8c second pass): SideNav/BottomTabBar used to call the
+  // owning `usePeriod()` just to build link hrefs, so its URL-backfill
+  // effect fired on every route — including period-agnostic Settings — and
+  // wrote `?year=&month=` onto a page that never reads those params. Fixed
+  // by splitting `usePeriod` into a read-only `usePeriodValue` (used by
+  // SideNav/BottomTabBar) and the owning `usePeriod` (used only by pages
+  // that actually own a period route).
+  it('keeps a clean URL on Settings even though SideNav/BottomTabBar read the sticky period', async () => {
+    renderWithProviders(
+      <Routes>
+        <Route element={<Layout />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route
+            path="/settings"
+            element={
+              <>
+                <LocationProbe />
+                <SettingsPage />
+              </>
+            }
+          />
+        </Route>
+      </Routes>,
+      { initialEntries: ['/settings'] }
+    )
+
+    // Give any stray effects a tick to run, then assert the URL never
+    // picked up year/month params.
+    await screen.findByTestId('location-search')
+    expect(screen.getByTestId('location-search').textContent).toBe('')
+
+    // Also confirm the SideNav's own "Settings" link stays plain (no query
+    // string), matching its explicit `periodAware: false`.
+    const settingsLinks = screen.getAllByRole('link', { name: 'Settings' })
+    for (const link of settingsLinks) {
+      expect(link.getAttribute('href')).toBe('/settings')
     }
   })
 })

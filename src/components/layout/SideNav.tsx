@@ -4,7 +4,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Icon, type IconName } from '@/components/ui/Icon'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAvatarPrefs } from '@/hooks/useAvatarPrefs'
-import { usePeriod } from '@/hooks/usePeriod'
+import { usePeriodValue } from '@/hooks/usePeriod'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { useSidebarStats } from '@/hooks/useSidebarStats'
 import { pendingTransactionsUrl } from '@/lib/pendingNav'
@@ -38,7 +38,7 @@ export function SideNav() {
   const { email } = useAuth()
   const { pendingCount, pendingItems } = useSidebarStats()
   const { mode } = usePeriodMode()
-  const { year, month } = usePeriod()
+  const { year, month } = usePeriodValue()
   const { prefs } = useAvatarPrefs()
   const initials = getInitials(email)
   const displayName = localStorage.getItem('pf_display_name') || email.split('@')[0] || ''

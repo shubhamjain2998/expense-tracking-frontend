@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 
 import { Icon, type IconName } from '@/components/ui/Icon'
-import { usePeriod } from '@/hooks/usePeriod'
+import { usePeriodValue } from '@/hooks/usePeriod'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { useSidebarStats } from '@/hooks/useSidebarStats'
 import { pendingTransactionsUrl } from '@/lib/pendingNav'
@@ -24,7 +24,7 @@ const TABS: { to: string; icon: IconName; label: string; key: string; periodAwar
 export function BottomTabBar() {
   const { pendingCount, pendingItems } = useSidebarStats()
   const { mode } = usePeriodMode()
-  const { year, month } = usePeriod()
+  const { year, month } = usePeriodValue()
   const periodQuery = `?year=${year}&month=${month}`
   // Pending items deliberately override the current period with the month
   // that actually has them — see pendingTransactionsUrl.
