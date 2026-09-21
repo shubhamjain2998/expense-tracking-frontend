@@ -1,0 +1,562 @@
+/* ─── Dimension layer ──────────────────────────────────────────────────────
+   2026-09-22. The Ledger system (design-system/kosh-ledger/MASTER.md §1.4)
+   builds structure out of hairlines and whitespace, which reads correct but
+   inert. This layer adds the missing third dimension WITHOUT touching the
+   palette, the type scale, the spacing rhythm or the hairline grammar:
+
+     1. A slow aurora field behind the whole app, drawn only from palette
+        hues (--accent / --warn / --pos) at single-digit alpha, plus a
+        static grain plate. It never sits above content (z-index below
+        #root), so nothing it does can affect text contrast.
+     2. Surfaces become slightly translucent so that field bleeds through,
+        and carry a specular top edge + an ambient shadow ramp. Deliberately
+        NO backdrop-filter on .card: a filtered element becomes the
+        containing block for fixed descendants, and cards host dialogs,
+        popovers and sticky table headers. The aurora is already blurred at
+        source, so a second blur would buy nothing for that risk.
+     3. An opt-in .tilt / .sheen pair that tracks the pointer (see
+        src/lib/useTilt.ts) for the one hero surface per page.
+
+   MASTER.md §1.4 is amended, not discarded: a hairline still draws every
+   boundary. The shadow underneath it only says how far off the page the
+   boundary is.
+
+   Every animation here is disabled under prefers-reduced-motion, and every
+   effect degrades to the previous flat rendering if color-mix() is absent.
+   ───────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Specular edges. Light mode gets a real white highlight on the top edge
+     and a faint occlusion line on the bottom — the two cues that read as
+     "this surface has thickness". */
+  --edge-hi: rgb(255 255 255 / 0.9);
+  --edge-lo: rgb(28 32 44 / 0.055);
+  --sheen: rgb(255 255 255 / 0.5);
+
+  /* Elevation ramp. Three layers each: a 1px contact shadow, a mid
+     penumbra, and a wide ambient. Tinted with the slate cast of the ink
+     ramp rather than pure black, so shadows sit in the same colour family
+     as everything else. */
+  --elev-1:
+    0 1px 1px rgb(28 32 44 / 0.05), 0 2px 6px rgb(28 32 44 / 0.05), 0 8px 18px rgb(28 32 44 / 0.06);
+  --elev-2:
+    0 1px 2px rgb(28 32 44 / 0.06), 0 6px 12px rgb(28 32 44 / 0.07),
+    0 18px 36px rgb(28 32 44 / 0.09);
+  --elev-3:
+    0 2px 4px rgb(28 32 44 / 0.07), 0 12px 24px rgb(28 32 44 / 0.1),
+    0 36px 64px rgb(28 32 44 / 0.14);
+
+  /* How much of the aurora a surface lets through. */
+  --glass: color-mix(in oklch, var(--surface) 82%, transparent);
+  --glass-2: color-mix(in oklch, var(--surface-2) 84%, transparent);
+  --aurora-opacity: 0.8;
+  --grain-opacity: 0.035;
+}
+
+html.dark {
+  /* Dark surfaces can't take a white gloss at light-mode strength — it
+     turns milky. A tenth of the alpha still reads as a lit edge. */
+  --edge-hi: rgb(255 255 255 / 0.07);
+  --edge-lo: rgb(0 0 0 / 0.3);
+  --sheen: rgb(255 255 255 / 0.09);
+
+  --elev-1: 0 1px 1px rgb(0 0 0 / 0.3), 0 2px 6px rgb(0 0 0 / 0.3), 0 8px 18px rgb(0 0 0 / 0.32);
+  --elev-2:
+    0 1px 2px rgb(0 0 0 / 0.36), 0 6px 14px rgb(0 0 0 / 0.36), 0 18px 36px rgb(0 0 0 / 0.42);
+  --elev-3:
+    0 2px 4px rgb(0 0 0 / 0.4), 0 12px 24px rgb(0 0 0 / 0.44), 0 36px 64px rgb(0 0 0 / 0.55);
+
+  --glass: color-mix(in oklch, var(--surface) 82%, transparent);
+  --glass-2: color-mix(in oklch, var(--surface-2) 80%, transparent);
+  --aurora-opacity: 0.62;
+  --grain-opacity: 0.05;
+}
+
+/* ─── The field ────────────────────────────────────────────────────────────
+   Two fixed plates behind #root. `inset: -25vmax` gives the drift animation
+   room to move without ever exposing an edge. Both are pointer-events:none
+   and sit at negative z-index, so they are unreachable and unclickable. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  opacity: var(--aurora-opacity);
+  /* Positions are viewport-relative (`inset: 0`), deliberately. An earlier
+     pass oversized this plate (`inset: -25vmax`) to give the drift room to
+     move; percentage gradient positions then resolved against the *plate*,
+     which pushed every light source off-screen and left the field
+     invisible. The plate now matches the viewport and the drift is a
+     scale/translate small enough that the gradients — all of which fade to
+     transparent well inside the box — never expose an edge. */
+  background-image:
+    radial-gradient(
+      52vmax 42vmax at 18% 12%,
+      color-mix(in oklch, var(--accent) 26%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      44vmax 36vmax at 88% 18%,
+      color-mix(in oklch, var(--warn) 20%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      58vmax 44vmax at 72% 88%,
+      color-mix(in oklch, var(--pos) 16%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      42vmax 36vmax at 22% 78%,
+      color-mix(in oklch, var(--accent) 20%, transparent),
+      transparent 58%
+    );
+  filter: blur(30px);
+  animation: aurora-drift 54s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+/* Dark mode gets its own mix. Three hues at single-digit alpha over a
+   near-black canvas average out to a muddy brown — caught live on /. Blue
+   carries the field on its own here, with one cool green wash at the far
+   corner for the same "the light has a direction" cue the light theme gets
+   from four. */
+html.dark body::before {
+  background-image:
+    radial-gradient(
+      52vmax 42vmax at 16% 10%,
+      color-mix(in oklch, var(--accent) 30%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      44vmax 36vmax at 90% 16%,
+      color-mix(in oklch, var(--accent) 16%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      58vmax 44vmax at 74% 90%,
+      color-mix(in oklch, var(--pos) 12%, transparent),
+      transparent 60%
+    );
+}
+
+/* Grain plate. feTurbulence tiled at 180px — enough structure to kill the
+   banding a four-stop gradient field otherwise shows on a wide display, and
+   it gives the background the paper tooth the flat fill never had. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+/* Vignette — a separate fixed plate rather than a second layer on the grain
+   pseudo-element, because the two need different opacities and the grain is
+   tiled while this must not be. Without it the aurora reads as flat
+   wallpaper instead of as light falling across a page. */
+#root::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    120% 90% at 50% 40%,
+    transparent 40%,
+    color-mix(in oklch, var(--ink) 7%, transparent) 100%
+  );
+}
+html.dark #root::before {
+  background: radial-gradient(120% 90% at 50% 40%, transparent 38%, rgb(0 0 0 / 0.45) 100%);
+}
+
+@keyframes aurora-drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(3vmax, -2vmax, 0) scale(1.06);
+  }
+  100% {
+    transform: translate3d(-2vmax, 3vmax, 0) scale(1.03);
+  }
+}
+
+/* ─── Surfaces ─────────────────────────────────────────────────────────────
+   One recipe, applied everywhere a surface sits on the field: translucent
+   fill, a top-down gloss wash, a hairline that keeps drawing the boundary,
+   and an elevation. The `inset` shadows are part of the same box-shadow
+   list as the elevation so a component that overrides one overrides all of
+   it deliberately rather than half-inheriting. */
+.card {
+  background-color: var(--glass);
+  background-image: linear-gradient(180deg, var(--sheen), transparent 46%);
+  border-color: color-mix(in oklch, var(--line) 82%, transparent);
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    inset 0 -1px 0 var(--edge-lo),
+    var(--elev-1);
+  transition:
+    box-shadow var(--dur-2) var(--ease-out-soft),
+    transform var(--dur-2) var(--ease-out-soft),
+    border-color var(--dur-2) var(--ease-out-soft);
+}
+
+/* Only cards that are themselves a link/button target lift on hover —
+   a static card that rises under the pointer reads as broken affordance. */
+a > .card:hover,
+button > .card:hover,
+.card.interactive:hover,
+.card[role='button']:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    inset 0 -1px 0 var(--edge-lo),
+    var(--elev-2);
+}
+
+.card.subtle {
+  background-color: var(--glass-2);
+  background-image: linear-gradient(180deg, var(--sheen), transparent 40%);
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    inset 0 -1px 0 var(--edge-lo),
+    var(--elev-1);
+}
+
+.card.elevated {
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    inset 0 -1px 0 var(--edge-lo),
+    var(--elev-3);
+}
+
+.card.hero {
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    inset 0 -1px 0 var(--edge-lo),
+    var(--elev-2);
+}
+
+/* ─── Slab — the one raised surface per page ───────────────────────────────
+   For a hero block that previously had no container at all (the dashboard
+   verdict was a bare grid with a 2px bottom rule). Thicker gloss, a wider
+   radius than the 4px card, and elevation 3. */
+.slab {
+  position: relative;
+  border-radius: var(--radius-xl);
+  border: 1px solid color-mix(in oklch, var(--line) 82%, transparent);
+  background-color: var(--glass);
+  /* Two washes, not one: the white gloss down the top edge, plus a faint
+     accent bloom out of the top-left corner so the slab picks up the
+     field's key light instead of sitting on it as a flat white plate. */
+  background-image:
+    radial-gradient(
+      70% 120% at 0% 0%,
+      color-mix(in oklch, var(--accent) 7%, transparent),
+      transparent 70%
+    ),
+    linear-gradient(
+      168deg,
+      var(--sheen),
+      transparent 38%,
+      color-mix(in oklch, var(--ink) 4%, transparent)
+    );
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    inset 0 -1px 0 var(--edge-lo),
+    var(--elev-3);
+  padding: 28px;
+}
+@media (max-width: 899px) {
+  .slab {
+    padding: 20px 18px;
+  }
+}
+
+/* ─── Pointer-tracked tilt + specular sheen ────────────────────────────────
+   .tilt is the perspective host; .tilt-body is what actually rotates. Both
+   custom properties are written by useTilt() and default to a flat, unlit
+   surface so the markup renders identically with JS disabled. */
+.tilt {
+  perspective: 1100px;
+}
+.tilt-body {
+  transform: rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg)) translate3d(0, 0, 0);
+  transform-style: preserve-3d;
+  transition: transform 360ms var(--ease-out-soft);
+  will-change: transform;
+}
+
+/* The moving highlight, and the one place the two themes need genuinely
+   different physics. A white/`screen` highlight is the classic gloss, but
+   on a near-white light surface `screen` is a no-op — nothing is brighter
+   than the surface already is. So light mode paints a faint accent wash at
+   normal blend (visible because it is a *tint*, not a *lift*), and dark
+   mode uses `plus-lighter`, where the surface really does have headroom. */
+.sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    300px circle at var(--tilt-mx, 50%) var(--tilt-my, 0%),
+    color-mix(in oklch, var(--accent) 11%, transparent),
+    transparent 65%
+  );
+  opacity: var(--tilt-lit, 0);
+  transition: opacity var(--dur-3) var(--ease-out-soft);
+}
+html.dark .sheen::after {
+  background: radial-gradient(
+    300px circle at var(--tilt-mx, 50%) var(--tilt-my, 0%),
+    color-mix(in oklch, var(--accent) 16%, transparent),
+    transparent 65%
+  );
+  mix-blend-mode: plus-lighter;
+}
+
+/* ─── Chrome: nav rails and bars ───────────────────────────────────────────
+   These already had glass (.topnav, .bottom-tab-bar); the rail did not, and
+   an opaque 208px column against a moving field looked like a cut-out. */
+.sidenav {
+  background-color: color-mix(in oklch, var(--surface) 78%, transparent);
+  background-image: linear-gradient(180deg, var(--sheen), transparent 22%);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border-right-color: color-mix(in oklch, var(--line) 80%, transparent);
+  box-shadow: 1px 0 0 var(--edge-hi) inset;
+}
+
+.topnav {
+  background: color-mix(in oklch, var(--surface) 76%, transparent);
+  backdrop-filter: blur(18px) saturate(1.5);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    0 1px 0 color-mix(in oklch, var(--line) 80%, transparent),
+    0 6px 20px rgb(28 32 44 / 0.05);
+}
+html.dark .topnav {
+  background: color-mix(in oklch, var(--surface) 72%, transparent);
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    0 1px 0 rgb(255 255 255 / 0.06),
+    0 8px 24px rgb(0 0 0 / 0.45);
+}
+
+.bottom-tab-bar {
+  background: color-mix(in oklch, var(--surface) 78%, transparent);
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    0 -8px 24px rgb(28 32 44 / 0.06);
+}
+html.dark .bottom-tab-bar {
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    0 -8px 24px rgb(0 0 0 / 0.5);
+}
+
+/* ─── Controls ─────────────────────────────────────────────────────────────
+   A button is the smallest surface in the system, so it gets the same three
+   cues at a smaller amplitude: gloss wash, lit top edge, contact shadow —
+   and on :active the shadow inverts to an inset, which is what makes a
+   press read as a press rather than a scale tween. */
+.btn {
+  background-image: linear-gradient(180deg, var(--sheen), transparent 52%);
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    var(--elev-1);
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.12s var(--ease-out-soft);
+}
+.btn:hover:not(:disabled) {
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    var(--elev-2);
+  transform: translateY(-1px);
+}
+.btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+  box-shadow:
+    inset 0 2px 4px rgb(28 32 44 / 0.14),
+    inset 0 1px 0 rgb(28 32 44 / 0.06);
+}
+html.dark .btn:active:not(:disabled) {
+  box-shadow:
+    inset 0 2px 5px rgb(0 0 0 / 0.55),
+    inset 0 1px 0 rgb(0 0 0 / 0.4);
+}
+.btn:disabled {
+  box-shadow: none;
+}
+
+/* The primary button is ink-on-paper, so its gloss is a light wash across
+   a dark fill plus an accent glow that only appears on hover. */
+.btn.primary {
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0) 55%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.18),
+    var(--elev-2);
+}
+.btn.primary:hover:not(:disabled) {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.22),
+    var(--elev-2),
+    0 6px 20px color-mix(in oklch, var(--accent) 28%, transparent);
+}
+.btn.ghost {
+  background-image: none;
+  box-shadow: none;
+}
+.btn.ghost:hover:not(:disabled) {
+  box-shadow: inset 0 1px 0 var(--edge-hi);
+  transform: none;
+}
+
+.fab {
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0) 60%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.22),
+    var(--elev-3);
+}
+.fab:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.26),
+    var(--elev-3),
+    0 10px 30px color-mix(in oklch, var(--accent) 34%, transparent);
+}
+
+/* Inputs read as recessed — the inverse of a button, which is the whole
+   point of the metaphor. */
+.input,
+.input-field,
+.textarea {
+  /* Opaque, unlike every other surface here. A translucent field picks up
+     whatever the field happens to be sitting over — on /login the warm blob
+     bottom-right tinted the password box a faint red, which reads as an
+     error state. A form control must never take its colour from the
+     background behind it. */
+  background-color: var(--surface);
+  box-shadow: inset 0 1px 2px rgb(28 32 44 / 0.06);
+}
+html.dark .input,
+html.dark .input-field,
+html.dark .textarea {
+  box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.38);
+}
+.input:focus,
+.input-field:focus,
+.textarea:focus {
+  box-shadow:
+    inset 0 1px 2px rgb(28 32 44 / 0.05),
+    0 0 0 3px color-mix(in oklch, var(--accent) 16%, transparent);
+}
+
+.chip {
+  background-image: linear-gradient(180deg, var(--sheen), transparent 60%);
+  box-shadow: inset 0 1px 0 var(--edge-hi);
+}
+
+/* The segmented control's thumb is the one element allowed to float above
+   its own track. */
+.seg {
+  background-color: var(--glass-2);
+  box-shadow: inset 0 1px 3px rgb(28 32 44 / 0.07);
+}
+html.dark .seg {
+  box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.4);
+}
+.seg button.on {
+  background-image: linear-gradient(180deg, var(--sheen), transparent 55%);
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    var(--elev-1);
+}
+
+/* ─── Data marks ───────────────────────────────────────────────────────────
+   A bar is a solid block of one colour, which is exactly where a gloss reads
+   loudest for the least ink: a highlight down the top third and a contact
+   shadow at the base turn the fill into an extruded bar without changing its
+   hue, its length or what it measures. The track gets the matching inset so
+   the bar looks like it sits *in* a channel. */
+.bbar {
+  box-shadow: inset 0 1px 2px rgb(28 32 44 / 0.07);
+  border-radius: 3px;
+}
+html.dark .bbar {
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.4);
+}
+.bbar .fill {
+  background-image: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.3),
+    rgb(255 255 255 / 0.04) 48%,
+    rgb(0 0 0 / 0.08)
+  );
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.28),
+    0 1px 2px rgb(28 32 44 / 0.18);
+}
+
+/* ─── Navigation ───────────────────────────────────────────────────────────
+   The active rail item is the only nav element that lifts. Hover stays flat
+   — a rail where every row jumps under the pointer reads as noise. */
+.navlink[aria-current='page'] {
+  background-image: linear-gradient(180deg, var(--sheen), transparent 60%);
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    var(--elev-1);
+}
+
+.tab-item.on,
+.bottom-tab-bar .tab-item.on {
+  text-shadow: 0 0 18px color-mix(in oklch, var(--accent) 35%, transparent);
+}
+
+/* ─── Rows ─────────────────────────────────────────────────────────────────
+   Table and list rows get depth only on hover, and only as a lift of the
+   surface colour plus a hairline shadow — no transform. Rows are dense and
+   adjacent; moving one shifts the reading position of its neighbours. */
+.list-row:hover,
+.tbl tr.row:hover td {
+  box-shadow: inset 0 1px 0 var(--edge-hi);
+}
+
+/* ─── Reduced motion ───────────────────────────────────────────────────────
+   The depth cues are static, so they stay. Everything that moves on its own
+   or under the pointer stops. */
+@media (prefers-reduced-motion: reduce) {
+  body::before {
+    animation: none;
+  }
+  .tilt-body {
+    transform: none;
+    transition: none;
+  }
+  .sheen::after {
+    display: none;
+  }
+  .card,
+  .btn {
+    transition: none;
+  }
+  a > .card:hover,
+  button > .card:hover,
+  .card.interactive:hover,
+  .card[role='button']:hover,
+  .btn:hover:not(:disabled),
+  .fab:hover {
+    transform: none;
+  }
+}

@@ -2,6 +2,7 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { YearMonthSelector } from '@/components/ui/YearMonthSelector'
 import { useCountUp } from '@/hooks/useCountUp'
 import { formatCurrency } from '@/lib/format'
+import { useTilt } from '@/lib/useTilt'
 
 import type { LastActiveMonthHint } from '../hooks/useDashboardData'
 import type { Verdict } from '../lib/contracts'
@@ -72,9 +73,23 @@ export function VerdictBlock({
   const animSaved = useCountUp(saved, { duration: 750 })
   const animAllowance = useCountUp(Math.round(verdict.allowancePerDay), { duration: 750 })
 
+  // The one raised surface on Home. 3deg is deliberately small: the slab
+  // is ~1200px wide, so anything larger throws the far edge far enough
+  // that the headline visibly skews.
+  const {
+    ref: tiltRef,
+    onPointerMove: onTiltMove,
+    onPointerLeave: onTiltLeave,
+  } = useTilt<HTMLDivElement>({ max: 3 })
+
   return (
-    <section>
-      <div className="verdict">
+    <section className="tilt">
+      <div
+        ref={tiltRef}
+        onPointerMove={onTiltMove}
+        onPointerLeave={onTiltLeave}
+        className="verdict slab sheen tilt-body"
+      >
         <div className="flex min-w-0 flex-col gap-4">
           <p className="eyebrow">
             {currentMonthLabel} {displayYear} · day {Math.min(dayOfMonth, daysInMonth)} of{' '}

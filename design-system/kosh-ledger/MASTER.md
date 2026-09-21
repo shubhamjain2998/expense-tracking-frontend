@@ -18,8 +18,11 @@ Tailwind v4 `@theme inline` mapping) and the tabular-numerals rule.
    answers. Two charts drawn from the same series are a bug.
 3. **Colour is meaning, not decoration.** Greyscale carries magnitude; the single accent carries
    interactivity; green/red carry the sign of money. Nothing else is coloured.
-4. **Hairlines, not shadows.** Structure comes from 1px rules and whitespace. No drop shadows
-   except on genuinely floating layers (menus, sheets, toasts).
+4. **Hairlines draw the boundary; depth says how far off the page it is.** Every edge is still
+   a 1px rule — a shadow never replaces one. Since 2026-09-22 a rule may sit on an elevation as
+   well (see §4a, the Dimension layer). Amended from the original "hairlines, not shadows": the
+   flat rendering was correct but inert, and the fix was to add a light model, not to redraw the
+   structure.
 5. **Depth by navigation, not by stacking.** The landing screen answers; detail lives one click
    away at a real URL.
 
@@ -38,47 +41,47 @@ in as a regression guard).
 
 ### Light
 
-| Token            | Value      | Use                                                              |
-| ----------------- | ---------- | ------------------------------------------------------------------ |
-| `--paper`         | `#F7F8FA` | app background                                                     |
-| `--card`          | `#FFFFFF` | card / table surface                                               |
-| `--card-2`        | `#EEF1F4` | nested surface, zebra row, input                                   |
-| `--ink`           | `#323641` | primary text, strongest bar (12.1:1 card / 11.4:1 paper)           |
-| `--ink-2`         | `#4A505C` | secondary text (8.1:1 / 7.6:1)                                     |
-| `--ink-3`         | `#5F6672` | labels, captions (5.8:1 / 5.4:1 — the lightest text allowed)       |
-| `--ink-4`         | `#838B98` | **non-text only**: hairline emphasis, disabled glyph               |
-| `--line`          | `#D9DEE5` | default 1px rule                                                   |
-| `--line-2`        | `#C6CCD6` | emphasised rule, input border                                      |
-| `--accent`        | `#2563EB` | links, active state, focus ring, selected series (5.2:1 / 4.9:1)   |
-| `--accent-hover`  | `#1D4ED8` | hover/pressed accent                                               |
-| `--accent-soft`   | `#EFF6FF` | selected row, active chip fill                                     |
-| `--pos`           | `#136429` | money in / under budget (7.3:1 / 6.9:1)                            |
-| `--neg`           | `#B91C1C` | money out / over budget (6.5:1 / 6.1:1)                            |
-| `--warn`          | `#A16207` | pace warning (4.9:1 / 4.6:1)                                       |
-| `--warn-soft`     | `#FEF9EC` | warning row fill                                                   |
-| `--d1..--d5`      | `#323641 #4A505C #5F6672 #838B98 #C6CCD6` | chart ramp, largest→smallest (mirrors the ink ramp) |
+| Token            | Value                                     | Use                                                              |
+| ---------------- | ----------------------------------------- | ---------------------------------------------------------------- |
+| `--paper`        | `#F7F8FA`                                 | app background                                                   |
+| `--card`         | `#FFFFFF`                                 | card / table surface                                             |
+| `--card-2`       | `#EEF1F4`                                 | nested surface, zebra row, input                                 |
+| `--ink`          | `#323641`                                 | primary text, strongest bar (12.1:1 card / 11.4:1 paper)         |
+| `--ink-2`        | `#4A505C`                                 | secondary text (8.1:1 / 7.6:1)                                   |
+| `--ink-3`        | `#5F6672`                                 | labels, captions (5.8:1 / 5.4:1 — the lightest text allowed)     |
+| `--ink-4`        | `#838B98`                                 | **non-text only**: hairline emphasis, disabled glyph             |
+| `--line`         | `#D9DEE5`                                 | default 1px rule                                                 |
+| `--line-2`       | `#C6CCD6`                                 | emphasised rule, input border                                    |
+| `--accent`       | `#2563EB`                                 | links, active state, focus ring, selected series (5.2:1 / 4.9:1) |
+| `--accent-hover` | `#1D4ED8`                                 | hover/pressed accent                                             |
+| `--accent-soft`  | `#EFF6FF`                                 | selected row, active chip fill                                   |
+| `--pos`          | `#136429`                                 | money in / under budget (7.3:1 / 6.9:1)                          |
+| `--neg`          | `#B91C1C`                                 | money out / over budget (6.5:1 / 6.1:1)                          |
+| `--warn`         | `#A16207`                                 | pace warning (4.9:1 / 4.6:1)                                     |
+| `--warn-soft`    | `#FEF9EC`                                 | warning row fill                                                 |
+| `--d1..--d5`     | `#323641 #4A505C #5F6672 #838B98 #C6CCD6` | chart ramp, largest→smallest (mirrors the ink ramp)              |
 
 ### Dark
 
-| Token            | Value      |
-| ----------------- | ---------- |
-| `--paper`         | `#14161A` |
-| `--card`          | `#1C1F25` |
-| `--card-2`        | `#22262D` |
-| `--ink`           | `#C7CBD3` |
-| `--ink-2`         | `#9CA3AF` |
-| `--ink-3`         | `#8E96A4` |
-| `--ink-4`         | `#666E7A` |
-| `--line`          | `#333944` |
-| `--line-2`        | `#454C59` |
-| `--accent`        | `#60A5FA` |
-| `--accent-hover`  | `#93C5FD` |
-| `--accent-soft`   | `#182B4A` |
-| `--pos`           | `#4ADE80` |
-| `--neg`           | `#F87171` |
-| `--warn`          | `#FBBF24` |
-| `--warn-soft`     | `#2E2308` |
-| `--d1..--d5`      | `#B9BFC9 #8B93A0 #747C8A #5A6270 #454C59` — dimmed one notch below `--ink*`; d5 = `--line-2` |
+| Token            | Value                                                                                        |
+| ---------------- | -------------------------------------------------------------------------------------------- |
+| `--paper`        | `#14161A`                                                                                    |
+| `--card`         | `#1C1F25`                                                                                    |
+| `--card-2`       | `#22262D`                                                                                    |
+| `--ink`          | `#C7CBD3`                                                                                    |
+| `--ink-2`        | `#9CA3AF`                                                                                    |
+| `--ink-3`        | `#8E96A4`                                                                                    |
+| `--ink-4`        | `#666E7A`                                                                                    |
+| `--line`         | `#333944`                                                                                    |
+| `--line-2`       | `#454C59`                                                                                    |
+| `--accent`       | `#60A5FA`                                                                                    |
+| `--accent-hover` | `#93C5FD`                                                                                    |
+| `--accent-soft`  | `#182B4A`                                                                                    |
+| `--pos`          | `#4ADE80`                                                                                    |
+| `--neg`          | `#F87171`                                                                                    |
+| `--warn`         | `#FBBF24`                                                                                    |
+| `--warn-soft`    | `#2E2308`                                                                                    |
+| `--d1..--d5`     | `#B9BFC9 #8B93A0 #747C8A #5A6270 #454C59` — dimmed one notch below `--ink*`; d5 = `--line-2` |
 
 Verified contrast on card / paper: ink 12.1 / 11.4 (light), 10.2 / 11.1 (dark); ink-2 8.1 / 7.6
 (light), 6.5 / 7.1 (dark); ink-3 5.8 / 5.4 (light), 5.5 / 6.1 (dark); accent 5.2 / 4.9 (light),
@@ -119,9 +122,48 @@ Mobile bumps: body 15px, small 13px, input 16px (kills iOS zoom).
 - Radius: `--radius: 4px` (cards, inputs, buttons), `--radius-sm: 2px` (chips, swatches),
   `--radius-full` for avatars only. No 12px+ pills except the FAB.
 - Container: `max-width: 1280px`, gutter 24px desktop / 16px mobile.
-- Card = `background: var(--card); border: 1px solid var(--line); border-radius: 4px`. **No shadow.**
-- Floating layers only (`--shadow-pop: 0 8px 24px rgb(0 0 0 / .10), 0 1px 2px rgb(0 0 0 / .06)`).
+- Card = `background: var(--glass); border: 1px solid var(--line); border-radius: 4px`, plus the
+  §4a elevation. Before 2026-09-22 this was an opaque fill with no shadow at all.
+- Floating layers (`--shadow-pop: 0 8px 24px rgb(0 0 0 / .10), 0 1px 2px rgb(0 0 0 / .06)`).
 - Section separation is a 1px `--line` rule + 32px space, not a gap between floating boxes.
+
+## 4a. Dimension layer (2026-09-22)
+
+Lives entirely in `src/styles/depth.css`, imported after `components.css`. It adds a light model
+on top of the structure above and changes no palette value, type size, spacing step or radius.
+
+**The field.** `body::before` is a fixed, viewport-sized plate carrying four radial gradients
+drawn only from `--accent` / `--warn` / `--pos` at 11–26% alpha, blurred 30px and drifting over
+54s. `body::after` is a tiled `feTurbulence` grain at 3.5% (5% dark). `#root::before` is a
+vignette. All three sit at negative `z-index`, behind every piece of content, so nothing they do
+can move a text contrast ratio. Dark mode overrides the mix to blue + one green: three hues at
+low alpha over a near-black canvas average to brown.
+
+**Surfaces.** `--glass` (82% surface over the field) + a top-down `--sheen` wash + `inset 0 1px 0
+--edge-hi` (lit top edge) + `inset 0 -1px 0 --edge-lo` (occluded bottom) + an elevation. Cards
+deliberately carry **no `backdrop-filter`** — a filtered element becomes the containing block for
+its fixed descendants, and cards host dialogs, popovers and sticky headers. Only the nav chrome
+(`.topnav`, `.sidenav`, `.bottom-tab-bar`), which hosts none, is genuinely frosted.
+
+**Elevation ramp.** `--elev-1` (cards) / `--elev-2` (hover, hero) / `--elev-3` (slab, FAB,
+floating). Three layers each — contact, penumbra, ambient — tinted with the slate cast of the ink
+ramp, never pure black.
+
+**`.slab`.** One per page, for a hero block that has no container of its own (the Home verdict).
+8px radius, `--elev-3`, and an accent bloom out of the top-left corner so it picks up the field's
+key light.
+
+**Pointer tracking.** `useTilt()` (`src/lib/useTilt.ts`) writes `--tilt-rx/ry/mx/my/lit` inside
+rAF; `.tilt` is the perspective host, `.tilt-body` rotates, `.sheen::after` is the highlight. All
+five properties have flat defaults in CSS, so the markup renders correctly with no JS. Skipped
+outright on coarse pointers and under `prefers-reduced-motion`.
+
+**Controls.** Buttons are convex (gloss + lit edge + contact shadow, inverting to an inset on
+`:active`); inputs are concave (inset shadow) and stay **opaque** — a translucent field takes its
+colour from whatever sits behind it, which on `/login` tinted the password box red.
+
+**Reduced motion.** The static depth cues stay; the drift, the tilt, the sheen and every hover
+transform stop. Locked by `src/styles/depth-css.test.ts`.
 
 ## 5. Motion (subtle, tier 3/10)
 

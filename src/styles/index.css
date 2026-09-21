@@ -2,4 +2,5 @@
 @import './base.css';
 @import 'tailwindcss';
 @import './components.css';
+@import './depth.css';
 @import './utilities.css';
