@@ -62,6 +62,10 @@ export const qk = {
     processedAll: () => ['transactions', 'processedAll'] as const,
     pendingManual: () => ['transactions', 'pendingManual'] as const,
   },
+  insights: {
+    all: ['insights'] as const,
+    latestRun: () => ['insights', 'latestRun'] as const,
+  },
 } as const
 
 /**
@@ -81,6 +85,7 @@ const domainKeys = {
   budget: [qk.budget.all, ['budgetOverrides']],
   dashboard: [qk.dashboard.all],
   transactions: [qk.transactions.all],
+  insights: [qk.insights.all],
 } satisfies Record<string, readonly QueryKey[]>
 
 export type QueryDomain = keyof typeof domainKeys
