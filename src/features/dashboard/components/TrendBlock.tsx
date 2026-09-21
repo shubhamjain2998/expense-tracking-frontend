@@ -14,6 +14,21 @@ import { formatCurrency } from '@/lib/format'
 import { TOOLTIP_STYLE } from '../lib/chartTheme'
 import type { IncomeExpenseTrendPoint } from '../types'
 
+const SHORT_MONTHS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+]
+
 interface TrendBlockProps {
   incomeTrendData: IncomeExpenseTrendPoint[]
   trendWindow: number
@@ -26,6 +41,20 @@ const WINDOW_OPTIONS = [6, 12, 15] as const
 
 /** 5 evenly-spaced "nice" ticks (0, step, 2·step, 3·step, 4·step) so the
  *  axis never lands on odd values like ₹65.0k between round lakh steps. */
+/** "2026-05" → "May". The axis stays short; the tooltip carries the year. */
+function monthLabel(key: string): string {
+  const [, month] = key.split('-')
+  return SHORT_MONTHS[Number(month) - 1] ?? key
+}
+
+/** "2026-05" → "May 2026", for the tooltip and the screen-reader table, where
+ *  two identically-named months must be told apart. */
+function monthAndYearLabel(key: string): string {
+  const [year, month] = key.split('-')
+  const name = SHORT_MONTHS[Number(month) - 1]
+  return name ? `${name} ${year}` : key
+}
+
 function niceAxisTicks(maxValue: number): number[] {
   if (maxValue <= 0) return [0]
   const rawStep = maxValue / 4
@@ -141,12 +170,17 @@ export function TrendBlock({
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={incomeTrendData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
                 <CartesianGrid vertical={false} stroke={gridStroke} strokeDasharray="4 4" />
+                {/* Keyed on `key` (YYYY-MM), not on the month name: past 12
+                    months the name repeats, and Recharts resolves a repeated
+                    category to its first occurrence, so the tooltip showed the
+                    older month's figures. Ticks stay short via the formatter. */}
                 <XAxis
-                  dataKey="month"
+                  dataKey="key"
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 11, fill: tickColor }}
                   padding={{ left: 8, right: 8 }}
+                  tickFormatter={(v) => monthLabel(String(v))}
                 />
                 <YAxis
                   axisLine={false}
@@ -160,6 +194,7 @@ export function TrendBlock({
                 <Tooltip
                   cursor={{ stroke: tickColor, strokeDasharray: '3 4', strokeOpacity: 0.5 }}
                   contentStyle={TOOLTIP_STYLE}
+                  labelFormatter={(v) => monthAndYearLabel(String(v))}
                   formatter={(v, name) => [
                     formatCurrency(Number(v)),
                     name === 'income' ? 'In' : 'Out',
@@ -209,8 +244,8 @@ export function TrendBlock({
                 </thead>
                 <tbody>
                   {incomeTrendData.map((p) => (
-                    <tr key={p.month}>
-                      <td>{p.month}</td>
+                    <tr key={p.key}>
+                      <td>{monthAndYearLabel(p.key)}</td>
                       <td>{formatCurrency(p.income)}</td>
                       <td>{formatCurrency(p.expense)}</td>
                     </tr>

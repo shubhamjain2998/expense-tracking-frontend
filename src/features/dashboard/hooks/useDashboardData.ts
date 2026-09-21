@@ -271,7 +271,13 @@ export function useDashboardData({
       const item = items.find((d) => d.year === m.year && d.month === m.month)
       const income = item ? Number(item.income_total) : 0
       const expense = item ? Number(item.expense_total) : 0
-      return { month: m.label, income, expense, savings: income - expense }
+      return {
+        key: `${m.year}-${String(m.month).padStart(2, '0')}`,
+        month: m.label,
+        income,
+        expense,
+        savings: income - expense,
+      }
     })
   }, [incomeWindowQuery.data, trendMonths])
 

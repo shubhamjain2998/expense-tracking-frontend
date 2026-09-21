@@ -6,7 +6,7 @@
  * by 8x or more. It carries plain numbers: the chart's unit belongs to the
  * money series, and an order count printed as "₹18" is wrong.
  */
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 
 import type { InsightsChart } from '../lib/insightsResponseSchema'
 
@@ -59,5 +59,36 @@ describe('InsightsChartCard', () => {
     const single = chart({ series: [chart().series[0]] })
     render(<InsightsChartCard chart={single} isDark={false} />)
     expect(screen.getByRole('table')).toHaveTextContent('Average order')
+  })
+})
+
+describe('InsightsChartCard with repeated labels', () => {
+  it('keeps both months when a window spans a year boundary', () => {
+    render(
+      <InsightsChartCard
+        chart={chart({
+          id: 'c2',
+          title: 'Spend by month',
+          series: [
+            {
+              name: 'Spend',
+              data: [
+                { label: 'Aug', value: 44900 },
+                { label: 'Sep', value: 35900 },
+                { label: 'Aug', value: 75000 },
+              ],
+            },
+          ],
+        })}
+        isDark={false}
+      />
+    )
+
+    // Matching on the bare label merged the two Augusts into one row and
+    // silently dropped a point.
+    const table = screen.getByRole('table')
+    expect(within(table).getAllByRole('row')).toHaveLength(4) // header + 3
+    expect(table).toHaveTextContent('₹44.9k')
+    expect(table).toHaveTextContent('₹75.0k')
   })
 })

@@ -49,26 +49,49 @@ function needsDualAxis(chart: InsightsChart): boolean {
   return Math.max(...peaks) / Math.min(...peaks) >= DUAL_AXIS_RATIO
 }
 
-/** Union every series' labels, in first-seen order, into one row-per-label
- *  table — what Bar/Line/Area need. A label missing from a given series is
- *  simply left undefined for that series' key (Recharts draws a gap). */
+/**
+ * Union every series' labels into one row-per-position table — what
+ * Bar/Line/Area need. A label missing from a given series is simply left
+ * undefined for that series' key (Recharts draws a gap).
+ *
+ * Rows are keyed by the label's *occurrence*, not the label itself: a
+ * 15-month series legitimately says "Aug" twice, and matching on the bare
+ * label would merge those two months into one row and silently drop a
+ * point. The axis still shows the plain label via a formatter, and the
+ * repeated occurrences stay distinct rows.
+ */
 function toRows(chart: InsightsChart): Record<string, number | string>[] {
-  const labels: string[] = []
-  const seen = new Set<string>()
-  for (const s of chart.series) {
+  const occurrenceKey = (label: string, index: number) => `${label}\u0000${index}`
+
+  /** Per series: occurrence key → value, so "Aug" the second time is its own
+   *  entry rather than overwriting the first. */
+  const valuesBySeries = chart.series.map((s) => {
+    const seenCount = new Map<string, number>()
+    const values = new Map<string, number>()
     for (const p of s.data) {
-      if (!seen.has(p.label)) {
-        seen.add(p.label)
-        labels.push(p.label)
-      }
+      const index = seenCount.get(p.label) ?? 0
+      seenCount.set(p.label, index + 1)
+      values.set(occurrenceKey(p.label, index), p.value)
+    }
+    return values
+  })
+
+  const keys: string[] = []
+  const labelForKey = new Map<string, string>()
+  for (const values of valuesBySeries) {
+    for (const key of values.keys()) {
+      if (labelForKey.has(key)) continue
+      labelForKey.set(key, key.split('\u0000')[0])
+      keys.push(key)
     }
   }
-  return labels.map((label) => {
-    const row: Record<string, number | string> = { label }
-    for (const s of chart.series) {
-      const point = s.data.find((p) => p.label === label)
-      if (point) row[s.name] = point.value
-    }
+
+  return keys.map((key) => {
+    const row: Record<string, number | string> = { key, label: labelForKey.get(key) ?? key }
+    chart.series.forEach((s, seriesIndex) => {
+      const value = valuesBySeries[seriesIndex].get(key)
+      if (value !== undefined) row[s.name] = value
+    })
     return row
   })
 }
@@ -119,6 +142,7 @@ export function InsightsChartCard({ chart, isDark }: InsightsChartCardProps) {
               <Tooltip
                 contentStyle={TOOLTIP_STYLE}
                 formatter={(v) => formatChartValue(Number(v), chart.unit)}
+                labelFormatter={(v) => String(v).split('\u0000')[0]}
               />
               <Pie
                 data={chart.series[0]?.data.map((p) => ({ name: p.label, value: p.value })) ?? []}
@@ -136,7 +160,8 @@ export function InsightsChartCard({ chart, isDark }: InsightsChartCardProps) {
             <LineChart data={rows} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
               <CartesianGrid vertical={false} stroke={gridStroke} strokeDasharray="4 4" />
               <XAxis
-                dataKey="label"
+                dataKey="key"
+                tickFormatter={(v) => String(v).split('\u0000')[0]}
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 11, fill: tickColor }}
@@ -153,6 +178,7 @@ export function InsightsChartCard({ chart, isDark }: InsightsChartCardProps) {
               <Tooltip
                 contentStyle={TOOLTIP_STYLE}
                 formatter={(v) => formatChartValue(Number(v), chart.unit)}
+                labelFormatter={(v) => String(v).split('\u0000')[0]}
               />
               {legend}
               {chart.series.map((s, i) => (
@@ -172,7 +198,8 @@ export function InsightsChartCard({ chart, isDark }: InsightsChartCardProps) {
             <AreaChart data={rows} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
               <CartesianGrid vertical={false} stroke={gridStroke} strokeDasharray="4 4" />
               <XAxis
-                dataKey="label"
+                dataKey="key"
+                tickFormatter={(v) => String(v).split('\u0000')[0]}
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 11, fill: tickColor }}
@@ -189,6 +216,7 @@ export function InsightsChartCard({ chart, isDark }: InsightsChartCardProps) {
               <Tooltip
                 contentStyle={TOOLTIP_STYLE}
                 formatter={(v) => formatChartValue(Number(v), chart.unit)}
+                labelFormatter={(v) => String(v).split('\u0000')[0]}
               />
               {legend}
               {chart.series.map((s, i) => (
@@ -208,7 +236,8 @@ export function InsightsChartCard({ chart, isDark }: InsightsChartCardProps) {
             <BarChart data={rows} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
               <CartesianGrid vertical={false} stroke={gridStroke} strokeDasharray="4 4" />
               <XAxis
-                dataKey="label"
+                dataKey="key"
+                tickFormatter={(v) => String(v).split('\u0000')[0]}
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 11, fill: tickColor }}
@@ -225,6 +254,7 @@ export function InsightsChartCard({ chart, isDark }: InsightsChartCardProps) {
               <Tooltip
                 contentStyle={TOOLTIP_STYLE}
                 formatter={(v) => formatChartValue(Number(v), chart.unit)}
+                labelFormatter={(v) => String(v).split('\u0000')[0]}
               />
               {legend}
               {chart.series.map((s, i) => (

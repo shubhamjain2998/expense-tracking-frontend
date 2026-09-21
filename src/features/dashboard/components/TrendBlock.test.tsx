@@ -17,7 +17,9 @@ describe('TrendBlock sr-only fallback table', () => {
   it('wraps the table in a .sr-only div rather than classing the table itself', () => {
     render(
       <TrendBlock
-        incomeTrendData={[{ month: 'Jan', income: 1000, expense: 500, savings: 500 }]}
+        incomeTrendData={[
+          { key: '2026-01', month: 'Jan', income: 1000, expense: 500, savings: 500 },
+        ]}
         trendWindow={6}
         onTrendWindowChange={() => {}}
         isLoading={false}

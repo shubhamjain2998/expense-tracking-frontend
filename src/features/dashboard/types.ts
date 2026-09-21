@@ -23,6 +23,11 @@ export interface YtdDataPoint {
 }
 
 export interface IncomeExpenseTrendPoint {
+  /** Unique `YYYY-MM` identity for the point. The chart's x-axis keys on
+   *  this, never on `month`: at windows longer than a year the short month
+   *  name repeats, and Recharts resolves a repeated category to its first
+   *  occurrence — hovering May 2026 showed May 2025's value. */
+  key: string
   month: string
   income: number
   expense: number

@@ -14,6 +14,13 @@ import { formatCurrency } from '@/lib/format'
 
 import type { CategoryMonthPoint } from '../lib/categoryStats'
 
+/** `YYYY-MM` — a unique x identity per point. The month name alone repeats
+ *  over a 15-month window, and Recharts resolves a repeated category to its
+ *  first occurrence, so hovering May 2026 reported May 2025's amount. */
+function pointKey(p: CategoryMonthPoint): string {
+  return `${p.year}-${String(p.month).padStart(2, '0')}`
+}
+
 interface CategoryTrendChartProps {
   category: string
   series: CategoryMonthPoint[]
@@ -64,6 +71,10 @@ export function CategoryTrendChart({
   const tickColor = isDark ? '#8E96A4' : '#5F6672'
   const gridStroke = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
 
+  const rows = series.map((p) => ({ ...p, key: pointKey(p) }))
+  const labelByKey = new Map(rows.map((p) => [p.key, p.label]))
+  const yearByKey = new Map(rows.map((p) => [p.key, p.year]))
+
   const maxValue = series.reduce((m, p) => Math.max(m, p.amount), 0)
   const yTicks = niceAxisTicks(maxValue)
   const yDomainMax = yTicks[yTicks.length - 1] || 1
@@ -86,15 +97,16 @@ export function CategoryTrendChart({
         ) : (
           <>
             <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={series} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+              <LineChart data={rows} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
                 <CartesianGrid vertical={false} stroke={gridStroke} strokeDasharray="4 4" />
                 <XAxis
-                  dataKey="label"
+                  dataKey="key"
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 11, fill: tickColor }}
                   padding={{ left: 8, right: 8 }}
                   interval="preserveStartEnd"
+                  tickFormatter={(v) => labelByKey.get(String(v)) ?? String(v)}
                 />
                 <YAxis
                   axisLine={false}
@@ -109,6 +121,11 @@ export function CategoryTrendChart({
                   cursor={{ stroke: tickColor, strokeDasharray: '3 4', strokeOpacity: 0.5 }}
                   contentStyle={TOOLTIP_STYLE}
                   formatter={(v) => [formatCurrency(Number(v)), category]}
+                  labelFormatter={(v) => {
+                    const key = String(v)
+                    const label = labelByKey.get(key)
+                    return label ? `${label} ${yearByKey.get(key)}` : key
+                  }}
                 />
                 <Line
                   type="monotone"
