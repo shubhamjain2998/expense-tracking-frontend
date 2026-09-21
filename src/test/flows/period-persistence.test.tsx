@@ -49,7 +49,11 @@ beforeAll(() => {
 // SettingsPage.
 beforeAll(() => {
   if (typeof window.IntersectionObserver === 'function') return
-  class MockIntersectionObserver implements IntersectionObserver {
+  // Deliberately not `implements IntersectionObserver` — that interface picks
+  // up new required members (e.g. `scrollMargin`) as TypeScript's DOM lib
+  // updates, which would break this mock on every such bump for properties
+  // SettingsPage's usage never touches. Cast instead.
+  class MockIntersectionObserver {
     readonly root = null
     readonly rootMargin = ''
     readonly thresholds: ReadonlyArray<number> = []
