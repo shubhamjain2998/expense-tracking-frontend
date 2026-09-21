@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 
 import { Button } from '@/components/ui/Button'
 import { Icon } from '@/components/ui/Icon'
 import { SearchableSelect } from '@/components/ui/SearchableSelect'
+import { useFocusReturn } from '@/hooks/useFocusReturn'
 import type { Category } from '@/types/settings'
 
 interface Props {
@@ -28,8 +29,25 @@ export function CategoryDeleteDialog({
 }: Props) {
   const [action, setAction] = useState<'pending' | 'move' | null>(null)
   const [targetCategoryId, setTargetCategoryId] = useState('')
+  const titleId = useId()
+  const open = isOpen && !!categoryId
 
-  if (!isOpen || !categoryId) return null
+  useFocusReturn(open)
+
+  // Phase 9: brings this dialog up to the same role="dialog"/Escape/focus-
+  // return standard as the other five dialogs in the app — see
+  // docs/ledger-sweep-findings.md.
+  useEffect(() => {
+    if (!open) return
+    function handler(e: KeyboardEvent) {
+      if (e.key === 'Escape') handleCancel()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- handleCancel is a stable function declaration, hoisted below
+  }, [open])
+
+  if (!open) return null
 
   // Determine if the category being deleted is income, so we can filter picker options
   const deletingCat = categories.find((c) => c.id === categoryId)
@@ -67,8 +85,18 @@ export function CategoryDeleteDialog({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 16,
+        // Phase 9: this dialog had no enter animation at all — every other
+        // overlay in the app (ConfirmDialog, PasswordPromptDialog,
+        // AddTransactionDialog, ImportDialog) fades its backdrop in with
+        // the same shared `fade-up`/`pop` keyframes (utilities.css); this
+        // just extends that existing vocabulary rather than adding a new
+        // one.
+        animation: 'fade-up .15s ease',
       }}
       onClick={(e) => e.target === e.currentTarget && handleCancel()}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
     >
       <div
         style={{
@@ -79,6 +107,7 @@ export function CategoryDeleteDialog({
           width: '100%',
           maxWidth: 440,
           boxShadow: '0 8px 32px rgba(0,0,0,0.24)',
+          animation: 'pop .18s ease',
         }}
       >
         {/* Header */}
@@ -98,7 +127,7 @@ export function CategoryDeleteDialog({
             >
               <Icon name="delete" size={16} style={{ color: 'var(--neg)' }} />
             </span>
-            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>
+            <span id={titleId} style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>
               Delete &ldquo;{categoryName}&rdquo;
             </span>
           </div>

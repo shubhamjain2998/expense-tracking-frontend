@@ -1,10 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 
 import { AmountInput } from '@/components/ui/AmountInput'
 import { Button } from '@/components/ui/Button'
 import { Icon } from '@/components/ui/Icon'
 import { SearchableSelect } from '@/components/ui/SearchableSelect'
+import { useFocusReturn } from '@/hooks/useFocusReturn'
 import { useToastContext } from '@/hooks/useToastContext'
 import { createBudget } from '@/lib/api/budget'
 import { createCategory } from '@/lib/api/categories'
@@ -28,6 +29,22 @@ export function AddBudgetModal({
 }) {
   const toast = useToastContext()
   const qc = useQueryClient()
+  const titleId = useId()
+
+  useFocusReturn()
+
+  // Phase 9: brings this dialog up to the same role="dialog"/Escape/focus-
+  // return standard as the other five dialogs in the app — see
+  // docs/ledger-sweep-findings.md. Conditionally mounted by BudgetPage (no
+  // `isOpen` prop), so this mirrors ImportDialog/AddTransactionDialog's
+  // pattern rather than ConfirmDialog's `isOpen`-gated one.
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
   const [rows, setRows] = useState([{ id: 0, categoryId: '', amount: '' }])
   const [period, setPeriod] = useState<'annual' | 'monthly'>('annual')
 
@@ -82,18 +99,28 @@ export function AddBudgetModal({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 16,
+        // Phase 9: the panel already used .animate-scale-in, but the
+        // backdrop itself had no fade — extends the same shared
+        // fade-up/pop vocabulary the other dialogs use.
+        animation: 'fade-up .15s ease',
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
     >
       <div
         className="card animate-scale-in"
         style={{ width: '100%', maxWidth: 460, maxHeight: '85vh', overflow: 'auto' }}
+        onKeyDown={(e) => e.key === 'Escape' && onClose()}
       >
         <div className="flex items-start justify-between" style={{ marginBottom: 20 }}>
           <div>
-            <p className="card-title">Add budget entries</p>
+            <p id={titleId} className="card-title">
+              Add budget entries
+            </p>
             <p className="card-sub" style={{ marginTop: 2 }}>
               Set {period} budgets for new categories in {year}.
             </p>

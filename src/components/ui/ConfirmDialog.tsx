@@ -1,3 +1,7 @@
+import { useEffect, useId } from 'react'
+
+import { useFocusReturn } from '@/hooks/useFocusReturn'
+
 import { Button } from './Button'
 
 interface ConfirmDialogProps {
@@ -23,6 +27,24 @@ export function ConfirmDialog({
   loading = false,
   danger = false,
 }: ConfirmDialogProps) {
+  const titleId = useId()
+
+  useFocusReturn(isOpen)
+
+  // Phase 9: this dialog (along with CategoryDeleteDialog and
+  // AddBudgetModal) was left out of the role="dialog"/Escape/focus-return
+  // pass that brought the other five dialogs in the app up to standard —
+  // see docs/ledger-sweep-findings.md. Same pattern as ImportDialog /
+  // AddTransactionDialog: a window keydown listener, gated on `isOpen`.
+  useEffect(() => {
+    if (!isOpen) return
+    function handler(e: KeyboardEvent) {
+      if (e.key === 'Escape') onCancel()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [isOpen, onCancel])
+
   if (!isOpen) return null
 
   return (
@@ -32,6 +54,9 @@ export function ConfirmDialog({
         background: 'color-mix(in oklch, var(--bg) 60%, transparent)',
         animation: 'fade-up .15s ease',
       }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
     >
       <div className="absolute inset-0" onClick={onCancel} />
       <div
@@ -39,7 +64,10 @@ export function ConfirmDialog({
         style={{ animation: 'pop .18s ease' }}
       >
         <div className="border-b border-[var(--line)] px-5 pt-[18px] pb-3">
-          <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--ink)]">
+          <h2
+            id={titleId}
+            className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--ink)]"
+          >
             {title}
           </h2>
         </div>
