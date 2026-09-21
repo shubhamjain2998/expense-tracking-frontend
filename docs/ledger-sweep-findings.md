@@ -614,3 +614,355 @@ Severity scale matches the first pass: **CRITICAL** / **HIGH** / **MEDIUM** /
   dated 1970 passed validation cleanly (only a *future* date is now
   rejected, per the fix above). All test data cleaned up afterwards via
   direct API calls.
+
+---
+
+# Phase 9 — 2026-09-21 (visual glitch sweep + motion polish)
+
+Combined live-driven sweep (Chrome, 1440px and 412px, light and dark,
+`dash-brainstorm@example.com`, June 2026) of the four defects the user
+reported directly, plus a measured DOM audit (computed-style contrast
+ratios, bounding-box overlap detection, overflow/clip detection, target-size
+checks) across `/dashboard`, `/transactions`, `/insights` and `/budget`, plus
+a follow-up income-figure defect reported separately. Severity scale matches
+prior phases: **CRITICAL** / **HIGH** / **MEDIUM** / **LOW**.
+
+---
+
+## Fixed
+
+### HIGH — Two competing scroll contexts: the side rail detached from the page and left dead space below the content
+- **What I did**: Reproduced the user's screenshot live — scrolled Home
+  with the console open, and separately measured `document.documentElement
+  .scrollHeight` vs `.clientHeight` and `main.scrollHeight` vs
+  `.clientHeight` at every stage of the fix.
+- **What happened**: `.sidenav` was `position: sticky` inside `.app {
+  display: grid; grid-template-columns: 208px 1fr; min-height: 100vh }`,
+  while `main` (Layout.tsx) already had its own `overflow-y: auto`. As a
+  CSS grid item with `overflow: visible`, `.sidenav`'s *automatic minimum
+  size* (per the CSS Sizing spec, min-height:auto resolves to the content's
+  min-content height for any item whose own `overflow` is `visible` — the
+  "auto minimum size is 0" carve-out only applies when the item itself sets
+  a non-visible `overflow`) could exceed its own `height: 100vh` whenever
+  the rail's content (nav + Explore + footer) was taller than the viewport.
+  That stretched the grid row — and therefore `.app` and the *window* —
+  past 100vh, on top of `main`'s own independent scroll. Two scroll owners
+  for one page: the sticky rail rode with the window scroll until its
+  now-taller-than-100vh box ran out, then detached, leaving `.nav-foot`
+  stranded mid-page with a blank band below the content — reproduced
+  exactly via `window.scrollTo(0, 1000)` even after the primary fix below,
+  and confirmed a mouse-wheel event dispatched *over the sidenav*
+  (`WheelEvent` with `bubbles: true`) moved `window.scrollY`.
+- **What should happen**: one scroll owner (`main`); the rail is fixed,
+  full height, with its own internal scroll if its content is ever taller
+  than the viewport.
+- **Root cause, two layers**:
+  1. `.sidenav`'s grid-item auto-min-size stretching `.app` past 100vh.
+  2. Even after fixing (1), `document.documentElement.scrollHeight`
+     measured up to ~1617px against a 900px `clientHeight` with `main`
+     mounted (dropping to exactly 900 with `main.style.display = 'none'`)
+     — a residual Chrome flex/overflow measurement quirk we could not
+     isolate to a specific misconfigured rule in this tree, but the
+     *symptom* (the window itself being technically scrollable) was real
+     and reproducible via a wheel gesture over the fixed sidenav, which
+     has nothing of its own to scroll and so bubbled the event to the
+     document.
+- **Fix**:
+  - `.sidenav` is now `position: fixed; top: 0; left: 0; width: 208px;
+    height: 100vh; overflow-y: auto` — genuinely out of flow, with its own
+    internal scroll for tall content. `.app` no longer lays it out via
+    grid; `padding-left: 208px` (desktop only) reserves its width instead.
+  - Belt-and-suspenders for the residual scroll-height quirk: `Layout.tsx`
+    adds an `app-shell-active` class to `<html>` on mount (removed on
+    unmount) and `html.app-shell-active, html.app-shell-active body {
+    height: 100%; overflow: hidden }` in `base.css` hard-disables
+    window-level scroll while the shell is mounted. Scoped so
+    `/login`, `/register` and the 404 page (rendered outside `Layout`)
+    keep normal window scroll on a short/zoomed viewport.
+  - Verified: `window.scrollTo` no longer moves anything, a dispatched
+    wheel event over the sidenav no longer moves `window.scrollY`, and
+    `main` scrolls through its full content (confirmed by scrolling to the
+    bottom and screenshotting — Trend/"Needs you" sections render with no
+    dead space, sidenav stays pinned with its footer visible throughout).
+- **Files**: `src/styles/components.css` (`.app`, `.sidenav`),
+  `src/styles/base.css` (`html.app-shell-active`),
+  `src/components/layout/Layout.tsx` (`useLockWindowScroll`).
+- **Test**: `src/components/layout/Layout.test.tsx`.
+
+### HIGH — Sticky table header rendered through the empty-state message and the first data row
+- **What I did**: Filtered Transactions to zero results, and separately
+  confirmed with real data (per the coordinator's note that it reproduces
+  there too, not only on the empty state) — measured `<th>`'s and the
+  empty-row/first-row `<td>`'s bounding rects.
+- **What happened**: `.tbl.sticky th { top: var(--topbar-h) }` (52px) —
+  double-counted. `.topnav` is a fixed-height *sibling* of `main`
+  (Layout.tsx), not inside `main`'s own scroll container, so `main`'s
+  scrollport already starts below the top bar; adding another 52px offset
+  pushed the header down into the row beneath it. Traced the sticky
+  containing block further: `.card:has(>.tbl) { overflow-x: auto }` forces
+  `overflow-y` to also compute to `auto` per the CSS overflow computed-
+  value adjustment (one non-visible axis makes both non-visible), so
+  `.card` — not `main` — is `.tbl.sticky th`'s actual sticky containing
+  block; its `top` offset was therefore a permanent 52px push, not a
+  scroll-triggered one, which is why it reproduced even with the table
+  nowhere near needing to scroll. `.panel` and `.setnav` had the identical
+  `calc(var(--topbar-h, 52px) + 24px)` double-count.
+- **Fix**: `.tbl.sticky th { top: 0 }`; `.panel`/`.setnav { top: 24px }`
+  (the container's own padding, with the erroneous topbar term removed).
+- **Files**: `src/styles/components.css`.
+- **Test**: `src/styles/phase9-css.test.ts`.
+
+### MEDIUM — KPI row numbers didn't share a baseline, and the ₹ glyph collided with the first digit
+- **What I did**: Compared Home's In/Out/Saved row pixel-by-pixel at
+  1440px and 412px, both themes.
+- **What happened**: `.money-row { display: flex; align-items: flex-end }`
+  bottom-aligned each `.money` column's own (label, value[, sub-line])
+  stack independently. "Saved" (and "Left to spend") carry an extra
+  sub-line ("56% of income") that "In"/"Out" don't, so flex's shared
+  cross-axis alignment lifted the *values* of the single-line columns
+  relative to the two-line ones. Separately, `.money .v` and `.hero-num`
+  used `letter-spacing: -0.02em`/`-0.03em` at 26px/40-64px — tight enough
+  that the ₹ glyph (more side-bearing than a digit) visibly touched the
+  first digit.
+- **Fix**: `.money-row` is now a 3-row grid (`grid-auto-flow: column;
+  grid-template-rows: repeat(3, auto)`), each `.money` a subgrid item
+  (`grid-template-rows: subgrid; grid-row: span 3`) — label, value and
+  sub-line each get one shared row across every column, so same-row
+  content aligns regardless of which columns actually use the third row.
+  Not wrapped (unlike the old flex-wrap) since subgrid needs one shared
+  row group; `overflow-x: auto` is a safety net, not the primary mobile
+  layout — verified all 4 columns still fit at 412px with no scroll
+  needed. Letter-spacing halved (`-0.01em` / `-0.015em`) on both.
+- **Files**: `src/styles/components.css`.
+- **Test**: `src/styles/phase9-css.test.ts`.
+
+### MEDIUM — Split avatars unreadable, and the split tooltip clipped at the viewport edge
+- **What I did**: Inspected `.people .avatar` (the "Y A" split chips) and
+  the split button's native `title` at 1440px near the right edge of the
+  Transactions table.
+- **What happened**: `.people .avatar` had no `border-radius` at all
+  (rendered as squares, not chips) at 20px/9px text with an inherited text
+  color — measured under both the 4.5:1 text and 3:1 non-text thresholds
+  depending on theme/ancestor color. The "Split N ways — Total ₹X · you
+  ₹Y…" hint was a native `title` attribute, which can't be clamped or
+  flipped and got cut off at the right viewport edge, and can't escape an
+  ancestor's `overflow` clip.
+- **Fix**: `.people .avatar` is now 22px, `border-radius: 50%`, with an
+  explicit background/text pair per theme (light: `--ink-2`/`--bg` =
+  10.4:1; dark: `--ink-3`/`--bg` = 7.7:1 — both computed and verified
+  against the actual token hex values). Replaced the native `title` with a
+  new `Tooltip` component (`src/components/ui/Tooltip.tsx`): positions via
+  `getBoundingClientRect` into a `document.body` portal (escapes any
+  ancestor clip by construction), flips above the trigger when there's no
+  room below, and clamps horizontally so it never runs off either edge.
+  `role="tooltip"`, wired via `aria-describedby`. Applied to both the
+  split-avatars button and the "of ₹X" sub-line in `TransactionRow`.
+- **Files**: `src/styles/components.css`, `src/components/ui/Tooltip.tsx`,
+  `src/features/transactions/components/TransactionRow.tsx`,
+  `src/lib/motion.ts` (`tooltipIn` variant).
+- **Test**: `src/test/flows/transactions-row-a11y.test.tsx`.
+
+### HIGH — Budget → "Expected income" always showed ₹0 in "Received in \<month\>"
+- **What I did**: Read `buildIncomeRows` (`budgetMath.ts`) next to
+  `GET /dashboard/summary`'s backend filter.
+- **What happened**: `receivedThisMonth` was derived from
+  `GET /dashboard/summary`, which the backend filters to `txn_type in
+  (expense, refund)` — income categories are never present in it, so the
+  lookup always fell through to 0. `ytdReceived` was correct because it
+  comes from the YTD endpoint, which does include income. Invisible until
+  now because every category on the seed account was `is_income: false`.
+- **Fix (frontend only, no backend change)**: `useBudgetData` now fetches
+  the selected month's processed transactions
+  (`qk.transactions.processed(year, month, ..., mode)`, shared cache key
+  with Home/Transactions) and derives `incomeByCategory` the same way
+  `useDashboardData` does (`txn_type === 'income'`, `abs(effective_amount)`
+  summed per category). `buildIncomeRows` now takes that instead of the
+  expense summary; `ytdReceived`'s abs()-of-negative convention is
+  unchanged.
+- **Files**: `src/features/budget/lib/budgetMath.ts`,
+  `src/features/budget/hooks/useBudgetData.ts`.
+- **Test**: `src/features/budget/lib/budgetMath.test.ts` — income category
+  with activity, one without (reads 0, not NaN), and the negative-amount
+  abs() convention.
+
+### HIGH — `.sr-only` didn't actually hide the chart fallback tables
+- **What I did**: Live DOM audit flagged both chart data tables
+  (TrendBlock, CategoryTrendChart — MASTER.md §6's screen-reader fallback)
+  as visible, ~172x174px, overlapping real content ("Needs you", People
+  rows). Measured directly: `getBoundingClientRect()` on
+  `table.sr-only` returned `{width: 171.6, height: 173.6}` with
+  `position: absolute` correctly applied but `width`/`height` not.
+- **What happened**: CSS 2.1's auto table-layout algorithm treats a
+  `<table>`'s specified `width` as a *minimum*, not a cap — the table can
+  still grow to fit its cells' required minimum content width. `.sr-only`'s
+  `width: 1px; height: 1px` recipe (correct for any ordinary block element)
+  was therefore a no-op on a `<table>` specifically. `table-layout: fixed`
+  did not reliably resolve it either.
+- **Fix**: defined `.sr-only` explicitly and authoritatively in
+  `utilities.css` (this stylesheet is `@import`ed after `tailwindcss` with
+  no `@layer` wrapper, so it's emitted unlayered — unlayered CSS always
+  wins the cascade over any `@layer`-nested rule regardless of source
+  order or specificity, so this definition can't be shadowed by anything).
+  For the two chart tables specifically, moved the `sr-only` class off the
+  `<table>` onto a wrapping `<div>` instead — a plain block box has none
+  of a table's sizing quirks. Verified live: `div.sr-only`'s
+  `getBoundingClientRect()` is now exactly `{width: 1, height: 1}`.
+- **Files**: `src/styles/utilities.css`,
+  `src/features/dashboard/components/TrendBlock.tsx`,
+  `src/features/category/components/CategoryTrendChart.tsx`.
+- **Test**: `src/features/dashboard/components/TrendBlock.test.tsx`.
+
+### HIGH — `--ink-4` (non-text-only per MASTER.md §2) used on real text in several places
+- **What I did**: Measured contrast for `.eyebrow`, `.tbl th`, and the
+  Transactions keyboard-shortcuts hint against both themes.
+- **What happened**: `.eyebrow` (period labels, KPI labels, section
+  eyebrows, side-nav "Explore") measured 2.46:1 light / 4.07:1 dark.
+  `.tbl th` (every table header app-wide) measured 2.56:1 / 3.81:1. The
+  "1–9 categorize · ↑↓ navigate" hint measured 2.46:1. All below the
+  4.5:1 text threshold; `--ink-4` is reserved non-text (borders,
+  dividers, disabled icons) by design.
+- **Fix**: all three moved to `--ink-3` (light: 4.8:1+, dark: 7.2:1+ —
+  passes comfortably in both themes). While in `components.css`, swept
+  every other `--ink-4`-on-text declaration in that file and fixed the
+  same way: `.card-eyebrow`, `.donut-center .lbl`, `.pace-row .pace-amount
+  .of`, and the `.input`/`.textarea`/`.input-field`/`.field input`
+  placeholder colors (7 more sites).
+- **Files**: `src/styles/components.css`,
+  `src/features/transactions/components/FilterBar.tsx`.
+- **Test**: `src/styles/phase9-css.test.ts`.
+
+### MEDIUM — Segmented-control buttons marginally failed contrast
+- **What I did**: Measured `.seg button` (unselected state — "Needs
+  review" / "Split" / "By tag" on Transactions, period toggles elsewhere)
+  at 11.5px/500.
+- **What happened**: 4.40:1 — just under the 4.5:1 threshold.
+- **Fix**: `--ink-3` → `--ink-2` for the resting state (comfortably passes
+  at any size); hover bumped `--ink-2` → `--ink` to keep a visible step.
+- **Files**: `src/styles/components.css`.
+- **Test**: `src/styles/phase9-css.test.ts`.
+
+### MEDIUM — Avatar initials near-invisible against the default/gradient colors
+- **What I did**: Live DOM audit reported the side-nav/profile avatar as
+  white text on `rgba(0, 0, 0, 0)` (1.00:1). Measured directly: `prefs.color`
+  is a `linear-gradient(...)` string assigned via the `background`
+  shorthand, which only ever sets `background-image` — `background-color`
+  stays at its initial `transparent`. A contrast tool reading only
+  `background-color` (not `background-image`) reports exactly this false
+  1.00:1. Screenshotted the live avatar to confirm it's visually legible,
+  not literally invisible — so the finding was a real-but-smaller issue,
+  not the dramatic one first reported. Computed actual contrast for all 12
+  `AVATAR_COLORS` gradients at their midpoint (roughly where the initials
+  sit) against white text: 9 of 12 fall under 4.5:1 (worst: Teal 2.89:1,
+  Kosh amber — the default — 2.69:1).
+- **Fix (mitigation, not a full repaint)**: `Avatar.tsx` now sets an
+  explicit solid `backgroundColor` fallback underneath the gradient (so
+  `background-color` is never literally transparent, closing the tool's
+  false positive) and a `text-shadow` on the initials for real legibility
+  across the whole gradient range without changing the palette.
+- **Deferred**: rewriting the 12-gradient palette so every stop clears
+  4.5:1 against white is a genuine design change (this is a user-facing
+  personalization feature, not incidental chrome) — see Deferred below.
+- **Files**: `src/components/ui/Avatar.tsx`.
+
+### LOW — Truncated merchant/notes text had no way to read the full value
+- **What I did**: Live audit measured 5+ truncated merchant names per page
+  (e.g. `scrollWidth: 720` vs `clientWidth: 191` for one UPI description)
+  with `text-overflow: ellipsis` and no `title`/`aria-label`.
+- **Fix**: added `title={txn.description}` / `title={txn.notes}` to
+  `TransactionRow`'s merchant/notes cells.
+- **Files**: `src/features/transactions/components/TransactionRow.tsx`.
+
+### LOW — Transactions row's "more actions" button had no accessible name
+- **What I did**: Live audit found 50 instances (one per row) of
+  `button.btn.ghost.icon.sm` with no text, `aria-label` or `title` — the
+  `⋯` context-menu trigger; its icon is `aria-hidden`.
+- **Fix**: `aria-label="More actions"`, `aria-haspopup="menu"`,
+  `aria-expanded={hasMenu}`.
+- **Files**: `src/features/transactions/components/TransactionRow.tsx`.
+- **Test**: `src/test/flows/transactions-row-a11y.test.tsx`.
+
+### MEDIUM — `ConfirmDialog`, `CategoryDeleteDialog`, `AddBudgetModal` had no dialog semantics
+- **What I did**: Follow-up on the item the Phase 8c keyboard sweep
+  explicitly deferred (see that phase's Deferred section) — the other five
+  dialogs in the app (`AddTransactionDialog`, `ImportDialog`,
+  `KeyboardShortcutsModal`, `PasswordPromptDialog`, `WelcomeModal`) already
+  had `role="dialog"`, `aria-modal`, Escape handling and `useFocusReturn`;
+  these three didn't.
+- **Fix**: all three now have `role="dialog"`, `aria-modal="true"`,
+  `aria-labelledby` pointing at their heading, a window-level Escape
+  listener gated on open state (matching `ImportDialog`'s exact pattern),
+  and `useFocusReturn`. `CategoryDeleteDialog` and `AddBudgetModal` also
+  had no enter animation at all (or an incomplete one) — both backdrops
+  now fade in with the same shared `fade-up`/`pop` keyframes every other
+  dialog uses, rather than a new one-off.
+- **Files**: `src/components/ui/ConfirmDialog.tsx`,
+  `src/features/budget/components/CategoryDeleteDialog.tsx`,
+  `src/features/budget/components/AddBudgetModal.tsx`.
+- **Test**: `src/test/flows/dialog-a11y-parity.test.tsx`.
+
+---
+
+## Investigated, not a defect
+
+### Budget page: chart `<g>`/`<ellipse>` extends 9px past the right viewport edge
+- **What I did**: The live audit flagged an SVG element at `x=1449` in a
+  1440px viewport on `/budget`. Traced every `<ellipse>` on the page to its
+  ancestor chain.
+- **What I found**: every one belongs to `tsqd-open-btn-container` —
+  TanStack Query Devtools' own floating toggle widget
+  (`{IS_DEV && <ReactQueryDevtools .../>}` in `App.tsx`), not app code.
+  Confirmed the same class of finding already logged in the Phase 8c
+  second pass ("TanStack Query Devtools icon overlaps the mobile bottom
+  tab bar") — dev-only tooling, stripped entirely from the production
+  build (verified by building and serving `dist/` directly: no devtools
+  widget, no stray SVG). Not fixed; noted so it isn't rediscovered as a
+  mystery overflow in a future sweep.
+
+---
+
+## Deferred
+
+### Avatar-color palette: 9 of 12 gradients fail 4.5:1 against white initials
+- Computed contrast at each gradient's midpoint (roughly where the
+  initials sit) for all of `useAvatarPrefs.AVATAR_COLORS`: Kosh amber
+  (the default) 2.69:1, Sapphire 3.54:1, Emerald 3.26:1, Terracotta 3.46:1,
+  Lavender 3.59:1, Teal 2.89:1, Caramel 3.61:1, Coral 4.17:1, Ruby/Violet/
+  Midnight/Slate pass. This is a user-facing personalization feature — the
+  colors are a deliberate design choice a user picks for themselves, not
+  incidental UI chrome — so rewriting the palette to guarantee 4.5:1 on
+  every stop is a design decision, not a pure bug fix, and is out of scope
+  for a "no redesign" bug-fix pass. Mitigated in the meantime with a
+  text-shadow (see Fixed, above). Needs the user to decide whether to
+  darken the palette, add a fixed dark scrim behind initials regardless of
+  color, or accept the current mitigation.
+
+### Interactive targets under 24-44px
+- Live audit measured: `?` shortcuts button 18×18, Transactions row
+  checkboxes 13×13, "Show 5 deleted" 84×18, side-nav "Insights" link
+  46×15, Budget's inline edit buttons 60-69×20. MASTER.md's ledger
+  aesthetic is deliberately dense (hairline borders, compact tables,
+  small controls throughout); WCAG's 44×44 (AAA) or even 24×24 (AA,
+  2.5.8) minimum genuinely conflicts with that density at several of these
+  sites — a checkbox or inline edit button inside a dense table row can't
+  grow to 44px without changing row height and therefore the whole table's
+  proportions. This needs a design decision (expand hit areas via
+  invisible padding without growing the visible control, vs. accepting the
+  density trade-off for a power-user table), not a blind size bump, so
+  it's deferred rather than half-fixed.
+
+### Broader `--ink-4`-on-text sweep across TSX inline styles
+- The `components.css` sweep above fixed every `--ink-4`-on-text
+  declaration in that stylesheet. A grep across `src/**/*.tsx` for
+  `color: 'var(--ink-4)'` / `text-[var(--ink-4)]` turns up ~50 more sites
+  (placeholders, dividers like "·", numbered-list markers, disabled-state
+  icons, secondary metadata lines) spread across Settings, Upload, Budget,
+  the shared `MultiSelect`/`SearchableSelect`/`Toast`/`EmptyState`
+  components, and both auth pages. Several of these are genuinely
+  non-text (icon `color` props, which fall under the 3:1 non-text
+  threshold, not 4.5:1) and some are decorative punctuation rather than
+  meaningful text — a correct fix requires per-instance judgment this pass
+  didn't have budget for. Flagged here rather than either leaving it
+  fully unaudited or making ~50 speculative changes with no live
+  verification.
+
+---
