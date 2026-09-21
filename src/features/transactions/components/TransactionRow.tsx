@@ -76,7 +76,7 @@ export function TransactionRow({
       {/* Checkbox — always visible so the column is stable and bulk selection
           is a first-class gesture (no hover-discovery needed). */}
       <td
-        className="txn-col-check"
+        className="txn-col-check hit44-after txn-check-cell"
         style={{ padding: '0 0 0 10px' }}
         onClick={(e) => {
           e.stopPropagation()

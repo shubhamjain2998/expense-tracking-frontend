@@ -40,7 +40,7 @@ export function TagsSection() {
                 <span style={{ color: 'var(--ink)' }}>{tag.name}</span>
                 <button
                   onClick={() => setDeleteTagId(tag.id)}
-                  className="ml-0.5 inline-flex items-center"
+                  className="hit44-pad ml-0.5 inline-flex items-center"
                   style={{ color: 'var(--ink-4)' }}
                   aria-label={`Delete ${tag.name}`}
                 >

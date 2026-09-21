@@ -157,7 +157,7 @@ export function FilterBar({
         1–9 categorize · ↑↓ navigate ·{' '}
         <button
           onClick={onShowShortcuts}
-          className="btn ghost"
+          className="btn ghost hit44-after"
           style={{
             padding: '1px 5px',
             fontSize: 10,

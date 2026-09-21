@@ -92,8 +92,14 @@ export function BudgetCategoryRow({
               <button
                 onClick={startEdit}
                 title="Click to edit monthly budget"
-                className="num inline-flex items-center gap-1"
-                style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
+                className="num hit44-pad-v budget-edit-trigger inline-flex items-center gap-1"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  paddingLeft: 0,
+                  paddingRight: 0,
+                }}
               >
                 {formatCurrency(plan)}
                 <Icon

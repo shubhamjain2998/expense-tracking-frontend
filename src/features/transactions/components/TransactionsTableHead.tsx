@@ -51,15 +51,27 @@ export function TransactionsTableHead({
       <tr style={{ borderBottom: '1px solid var(--line)' }}>
         <th className="txn-col-check" style={{ padding: '8px 0 8px 10px', width: 36 }}>
           {visibleFiltered.length > 0 && (
-            <input
-              type="checkbox"
-              style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
-              checked={checkedUids.size > 0 && visibleFiltered.every((t) => checkedUids.has(t.uid))}
-              onChange={(e) => {
-                if (e.target.checked) setCheckedUids(new Set(visibleFiltered.map((t) => t.uid)))
-                else setCheckedUids(new Set())
-              }}
-            />
+            // A <label> (not just padding on the checkbox itself) is the fix
+            // here: Chrome ignores `padding` on a native `appearance: auto`
+            // checkbox entirely (verified live — computed padding stayed
+            // 0px), so the only way to grow its clickable area without an
+            // ancestor click-delegation handler (there is none here, unlike
+            // TransactionRow's <td>) is a wrapping label, whose own box
+            // *does* respect padding and whose click natively forwards to
+            // its associated control.
+            <label className="hit44-pad" aria-label="Select all visible rows">
+              <input
+                type="checkbox"
+                style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
+                checked={
+                  checkedUids.size > 0 && visibleFiltered.every((t) => checkedUids.has(t.uid))
+                }
+                onChange={(e) => {
+                  if (e.target.checked) setCheckedUids(new Set(visibleFiltered.map((t) => t.uid)))
+                  else setCheckedUids(new Set())
+                }}
+              />
+            </label>
           )}
         </th>
         <th className="txn-col-drag" style={{ padding: '8px 0 8px 4px' }} />

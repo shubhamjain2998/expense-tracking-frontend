@@ -268,7 +268,10 @@ export function NeedsYou({
 
       <p className="mt-3 text-[12.5px] text-[var(--ink-3)]">
         Habits, seasonality, day-of-week patterns and the year-to-date picture live in{' '}
-        <Link to="/insights">Insights</Link> — they don&rsquo;t change what you do today.
+        <Link to="/insights" className="inline-insights-link">
+          Insights
+        </Link>{' '}
+        — they don&rsquo;t change what you do today.
       </p>
     </section>
   )

@@ -1,5 +1,80 @@
 /* ─── Personal Finance utility helpers ────────────────────────────────────── */
 
+/* ─── Hit-area expansion (WCAG 2.5.5) ─────────────────────────────────────
+   MASTER's ledger aesthetic is deliberately dense — small controls stay
+   visually small. These grow only the *clickable/tappable* box to >=44px;
+   nothing here changes what renders. Sizes are baked into each class (not
+   passed via inline `style`, since `csstype`/React's CSSProperties type
+   doesn't recognise arbitrary custom properties and the build gate
+   typechecks) — a control that needs a size other than the default pairs
+   the base class with a small modifier class that overrides the variable
+   from CSS, e.g. `className="hit44-pad-v deleted-toggle"`.
+
+   .hit44-pad: for a control with NO visible chrome of its own (background:
+   none / transparent, no border) — padding pushes the box out, an equal
+   negative margin pulls the LAYOUT footprint back to the original size, so
+   nothing reflows. Safe because the padding is invisible; there's no
+   background to visibly grow into. Symmetric (13px box -> 44px). Does NOT
+   work on a native `appearance: auto` control (checkboxes/radios ignore
+   author `padding` entirely — verified live, computed padding stays 0px
+   regardless of the cascade) or on a table cell (`margin` has no effect on
+   `display: table-cell` boxes) — use `.hit44-after` there instead.
+   .hit44-pad-v: the vertical-only version, for a control that's already
+   >=44px wide (a wide text button/link that's only too short).
+
+   .hit44-after: for a control WITH visible chrome (a border/background
+   that padding would stretch), a checkbox/radio, or a table cell — an
+   absolutely positioned, fully transparent ::after overlay that extends
+   `--hit44-inset` past the control's own box on every side, centered over
+   it. Needs `position: relative` on the control (added by the rule
+   itself) and a click handler ON THAT SAME ELEMENT (generated-content
+   clicks are attributed to their host element, not to a descendant, so
+   this only helps a checkbox if something wraps it — see
+   TransactionsTableHead's <label>, or TransactionRow's <td>, which already
+   owns the click). Default inset (13px) takes an ~18px square to 44px. */
+.hit44-after {
+  position: relative;
+}
+.hit44-after::after {
+  content: '';
+  position: absolute;
+  inset: calc(-1 * var(--hit44-inset, 13px));
+}
+
+.hit44-pad {
+  padding: var(--hit44-pad, 15.5px);
+  margin: calc(-1 * var(--hit44-pad, 15.5px));
+}
+.hit44-pad-v {
+  padding-top: var(--hit44-pad-v, 13px);
+  padding-bottom: var(--hit44-pad-v, 13px);
+  margin-top: calc(-1 * var(--hit44-pad-v, 13px));
+  margin-bottom: calc(-1 * var(--hit44-pad-v, 13px));
+}
+
+/* Modifiers — override the base class's default size for one specific
+   control whose own box isn't the default ~13-18px. */
+.deleted-toggle {
+  --hit44-pad-v: 14px; /* "Show N deleted" is 84x18 — only needs height */
+}
+.budget-edit-trigger {
+  --hit44-pad-v: 12px; /* Budget's inline edit buttons are ~50-70x20 */
+}
+.txn-check-cell {
+  --hit44-inset: 6px; /* the row/header checkbox <td>/<th> is 36xrow-height */
+}
+.inline-insights-link {
+  position: relative;
+}
+.inline-insights-link::after {
+  /* In-paragraph "Insights" links (IncomeSection, NeedsYou) are ~46x15 —
+     width already clears 44px; grow height only so the overlay doesn't
+     reach further into the surrounding sentence than it has to. */
+  content: '';
+  position: absolute;
+  inset: -14.5px 0;
+}
+
 /* Tabular numerals — every currency / compare-digit-by-digit cell should use this. */
 .num {
   font-variant-numeric: tabular-nums;

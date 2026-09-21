@@ -51,8 +51,11 @@ export function IncomeSection({
         </div>
       )}
       <p className="small">
-        Month-by-month spending patterns live in <Link to="/insights">Insights</Link>. This page is
-        the plan, not the history.
+        Month-by-month spending patterns live in{' '}
+        <Link to="/insights" className="inline-insights-link">
+          Insights
+        </Link>
+        . This page is the plan, not the history.
       </p>
     </div>
   )

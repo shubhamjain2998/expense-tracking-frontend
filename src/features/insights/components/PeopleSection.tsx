@@ -41,7 +41,7 @@ export function PeopleSection({
         <h2 className="sec-title">People</h2>
         <span className="sub">Shared bills and who still owes what</span>
         <span className="act">
-          <label className="flex cursor-pointer items-center gap-1.5 text-[12.5px] text-[var(--ink-3)]">
+          <label className="hit44-pad-v flex cursor-pointer items-center gap-1.5 text-[12.5px] text-[var(--ink-3)]">
             <input type="checkbox" checked={includeSettled} onChange={onToggleSettled} />
             Include settled
           </label>

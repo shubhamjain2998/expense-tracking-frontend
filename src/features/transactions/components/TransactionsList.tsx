@@ -358,13 +358,17 @@ export function TransactionsList({
               {deletedCount > 0 && (
                 <button
                   onClick={() => setShowDeleted((v) => !v)}
+                  className="hit44-pad-v deleted-toggle"
                   style={{
                     background: 'none',
                     border: 'none',
                     cursor: 'pointer',
                     fontSize: 11.5,
-                    color: showDeleted ? 'var(--ink-2)' : 'var(--ink-4)',
-                    padding: 0,
+                    // was --ink-4 (measured 2.46:1) — --ink-4 is non-text
+                    // only per MASTER.md §2.
+                    color: showDeleted ? 'var(--ink-2)' : 'var(--ink-3)',
+                    paddingLeft: 0,
+                    paddingRight: 0,
                     textDecoration: 'underline',
                     textDecorationStyle: 'dotted',
                   }}

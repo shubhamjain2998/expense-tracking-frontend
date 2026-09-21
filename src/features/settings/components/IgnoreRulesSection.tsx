@@ -54,7 +54,7 @@ export function IgnoreRulesSection() {
               </span>
               <button
                 onClick={() => handleRemoveIgnoreRule(keyword)}
-                className="ml-0.5 inline-flex items-center"
+                className="hit44-pad ml-0.5 inline-flex items-center"
                 style={{ color: 'var(--ink-4)' }}
                 aria-label={`Remove rule ${keyword}`}
               >
