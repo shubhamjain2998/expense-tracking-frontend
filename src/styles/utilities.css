@@ -172,3 +172,36 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Screen-reader-only content — the chart data tables required by
+   MASTER.md §6 (CategoryTrendChart, TrendBlock: `<table className="sr-
+   only">` sibling to the visual chart) rely on this exact shape to stay
+   out of the visible layout entirely (`position: absolute` off the normal
+   flow, collapsed to a 1px box, clipped) while remaining in the
+   accessibility tree. Tailwind v4 already ships an equivalent utility
+   inside `@layer utilities`, but this file's rules are emitted unlayered
+   (this stylesheet is `@import`ed after `tailwindcss` in index.css without
+   its own `@layer`), which always wins the cascade over ANY layered rule
+   regardless of source order or specificity — so this is the authoritative
+   definition project-wide; nothing needs to out-rank it. Kept explicit and
+   local rather than relying on Tailwind's generation picking the class up
+   from these two chart files. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+}
+/* `<table>` boxes fight this recipe — CSS 2.1's auto table-layout
+   algorithm treats a specified `width` as a *minimum*, not a cap, so
+   `width: 1px` was a no-op when this class sat directly on the chart
+   fallback `<table>`s in TrendBlock/CategoryTrendChart (measured
+   ~172x174px live; `table-layout: fixed` didn't reliably fix it either).
+   Both now wrap the table in a `.sr-only` `<div>` instead of classing the
+   table itself — a plain block box has none of a table's sizing quirks. */

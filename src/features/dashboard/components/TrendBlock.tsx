@@ -186,25 +186,35 @@ export function TrendBlock({
               </LineChart>
             </ResponsiveContainer>
 
-            <table className="sr-only">
-              <caption>Monthly money in and out</caption>
-              <thead>
-                <tr>
-                  <th>Month</th>
-                  <th>In</th>
-                  <th>Out</th>
-                </tr>
-              </thead>
-              <tbody>
-                {incomeTrendData.map((p) => (
-                  <tr key={p.month}>
-                    <td>{p.month}</td>
-                    <td>{formatCurrency(p.income)}</td>
-                    <td>{formatCurrency(p.expense)}</td>
+            {/* Phase 9: `.sr-only` on the `<table>` itself didn't visually
+                hide it — CSS 2.1's auto table-layout algorithm treats a
+                specified `width` as a *minimum*, so `width: 1px` couldn't
+                shrink it (measured ~172x174px live, `table-layout: fixed`
+                didn't fix it either since the browser was still sizing
+                from cell content in practice). A plain `<div>` doesn't have
+                that table-sizing quirk, so the sr-only treatment moves to
+                a wrapper instead of the table itself. */}
+            <div className="sr-only">
+              <table>
+                <caption>Monthly money in and out</caption>
+                <thead>
+                  <tr>
+                    <th>Month</th>
+                    <th>In</th>
+                    <th>Out</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {incomeTrendData.map((p) => (
+                    <tr key={p.month}>
+                      <td>{p.month}</td>
+                      <td>{formatCurrency(p.income)}</td>
+                      <td>{formatCurrency(p.expense)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </>
         )}
       </div>

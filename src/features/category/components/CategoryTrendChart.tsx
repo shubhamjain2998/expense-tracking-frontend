@@ -119,25 +119,30 @@ export function CategoryTrendChart({
               </LineChart>
             </ResponsiveContainer>
 
-            <table className="sr-only">
-              <caption>{category} spend by month</caption>
-              <thead>
-                <tr>
-                  <th>Month</th>
-                  <th>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {series.map((p) => (
-                  <tr key={`${p.year}-${p.month}`}>
-                    <td>
-                      {p.label} {p.year}
-                    </td>
-                    <td>{formatCurrency(p.amount)}</td>
+            {/* Phase 9: sr-only moved to a wrapper div — see the matching
+                comment in TrendBlock.tsx for why `.sr-only` on the
+                `<table>` itself didn't visually hide it. */}
+            <div className="sr-only">
+              <table>
+                <caption>{category} spend by month</caption>
+                <thead>
+                  <tr>
+                    <th>Month</th>
+                    <th>Amount</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {series.map((p) => (
+                    <tr key={`${p.year}-${p.month}`}>
+                      <td>
+                        {p.label} {p.year}
+                      </td>
+                      <td>{formatCurrency(p.amount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </>
         )}
       </div>
