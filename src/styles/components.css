@@ -893,6 +893,16 @@ select:disabled,
     padding: 16px 16px 84px;
   }
 }
+/* Desktop reserves the same kind of clearance mobile already gets — the
+   fixed FAB (.fab, bottom:24px/right:24px, 52px tall) otherwise sits
+   directly over whatever a page's last row renders in that corner (e.g.
+   Insights § People's row actions), covering it. Bug: the FAB was
+   unconditionally on top of in-page content with no reserved space. */
+@media (min-width: 900px) {
+  .container {
+    padding-bottom: 96px;
+  }
+}
 
 .brand {
   display: flex;
@@ -2621,6 +2631,15 @@ a.alert:hover {
 .badge.quiet {
   background: var(--surface-2);
   color: var(--ink-3);
+}
+/* Inside the active (.on) segment, .badge.quiet's own surface-2/ink-3 pair
+   sits on the segment's own --surface background instead of the page
+   background it was tuned for, which reads as low-contrast in dark mode
+   (both are near-black). Bump it to the next step up so the count stays
+   legible without turning it into an accent/attention color. */
+.seg button.on .badge.quiet {
+  background: var(--surface-3);
+  color: var(--ink-2);
 }
 
 /* Sticky table header — only meaningful once the table scrolls under a
