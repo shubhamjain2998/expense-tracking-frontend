@@ -51,7 +51,7 @@ export function Layout() {
       <SideNav />
       <div className="flex h-screen min-w-0 flex-col overflow-hidden bg-transparent">
         <TopNav />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto">
+        <main className="app-scroll flex-1 overflow-x-hidden overflow-y-auto">
           {/* MASTER.md §4: 1280px max-width, 24px gutter (16px mobile) — see
               .container in components.css. */}
           <div className="container">

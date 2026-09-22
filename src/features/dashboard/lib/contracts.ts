@@ -81,9 +81,13 @@ export interface RecurringCommitment {
    *  (e.g. several SIPs in one month) and drifting amounts (rent hikes). */
   monthlyAmount: number
   monthsSeen: number
+  /** Decided per calendar month, not per gap between charges: a commitment
+   *  billed once a month can post several charges days apart. */
   cadence: Cadence
   lastCharged: string // ISO yyyy-mm-dd
-  nextExpected: string // ISO yyyy-mm-dd
+  /** ISO yyyy-mm-dd. Always AFTER `now` — for a monthly commitment it is the
+   *  next occurrence of its typical billing day, not lastCharged + 30 days. */
+  nextExpected: string
   flags: RecurringFlag[]
 }
 

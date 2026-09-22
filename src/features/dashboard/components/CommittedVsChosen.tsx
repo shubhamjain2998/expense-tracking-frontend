@@ -22,6 +22,15 @@ function daysUntil(iso: string, now: Date): number {
   return (d.getTime() - now.getTime()) / DAY_MS
 }
 
+/**
+ * What to expect on the next date. A monthly commitment can bill as several
+ * charges within its month (three GOOGLEPLAY debits on the 15th), so the single
+ * median charge understates it — the monthly total is what actually lands.
+ */
+function expectedAmount(c: RecurringCommitment): number {
+  return c.cadence === 'monthly' ? c.monthlyAmount : c.medianAmount
+}
+
 function formatNextExpected(iso: string): string {
   const d = new Date(iso.slice(0, 10) + 'T00:00:00')
   if (Number.isNaN(d.getTime())) return ''
@@ -47,14 +56,18 @@ export function CommittedVsChosen({
   const committedPct = spendTotal > 0 ? Math.round((committed / spendTotal) * 100) : 0
   const chosenPct = spendTotal > 0 ? 100 - committedPct : 0
 
+  // Only commitments with a real cadence get a predicted date. An 'irregular'
+  // one has no billing day to predict from, so listing it under "due" would be
+  // a guess presented as a fact.
   const upcoming: RecurringCommitment[] = recurring.commitments
     .filter((c) => {
+      if (c.cadence === 'irregular') return false
       const days = daysUntil(c.nextExpected, now)
-      return days >= -1 && days <= WINDOW_DAYS
+      return days >= 0 && days <= WINDOW_DAYS
     })
     .sort((a, b) => a.nextExpected.localeCompare(b.nextExpected))
     .slice(0, 6)
-  const upcomingTotal = upcoming.reduce((s, c) => s + c.medianAmount, 0)
+  const upcomingTotal = upcoming.reduce((s, c) => s + expectedAmount(c), 0)
 
   return (
     <section className="sec">
@@ -81,7 +94,7 @@ export function CommittedVsChosen({
                 <span className="eyebrow">Committed</span>
                 <span className="v">{formatCurrency(committed)}</span>
                 <span className="text-[12.5px] text-[var(--ink-3)]">
-                  {committedPct}% of spend · {recurring.commitments.length} charge
+                  {committedPct}% of spend · {recurring.commitments.length} commitment
                   {recurring.commitments.length === 1 ? '' : 's'}
                 </span>
               </span>
@@ -138,7 +151,7 @@ export function CommittedVsChosen({
                         {formatNextExpected(c.nextExpected)} · {c.cadence}
                       </span>
                     </span>
-                    <span className="act num">{formatCurrency(c.medianAmount)}</span>
+                    <span className="act num">{formatCurrency(expectedAmount(c))}</span>
                   </div>
                 ))}
               </div>

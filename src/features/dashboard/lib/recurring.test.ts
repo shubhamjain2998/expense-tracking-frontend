@@ -35,6 +35,8 @@ function txn(
 
 const NOW = new Date('2026-06-14T00:00:00Z')
 
+const toISO = (d: Date) => d.toISOString().slice(0, 10)
+
 describe('normalizeDescription', () => {
   it('collapses drifted rent descriptions to the same key', () => {
     const a = normalizeDescription('Rent')
@@ -316,5 +318,100 @@ describe('detectRecurring', () => {
       })
     )
     expect(detectRecurring(txns, NOW).commitments).toHaveLength(0)
+  })
+})
+
+describe('detectRecurring — cadence and next expected date', () => {
+  it('calls a once-a-month commitment monthly even when it posts several charges that day', () => {
+    // GOOGLEPLAY: billed on the 15th, but it lands as three separate debits.
+    // The median gap between charges is ~1 day, which used to read "weekly".
+    const months = ['2025-12', '2026-01', '2026-02', '2026-03', '2026-04', '2026-05']
+    const txns = months.flatMap((ym) =>
+      ['15', '15', '16'].map((day) =>
+        txn({
+          txn_date: `${ym}-${day}`,
+          effective_amount: '70',
+          description: 'GOOGLEPLAY',
+          category: 'Subscriptions',
+        })
+      )
+    )
+    const result = detectRecurring(txns, NOW)
+    expect(result.commitments).toHaveLength(1)
+    const play = result.commitments[0]
+    expect(play.cadence).toBe('monthly')
+    // Next billing day, not last charge + a one-day gap.
+    expect(play.nextExpected).toBe('2026-06-15')
+    // The month's total is what actually lands, not one ₹70 debit.
+    expect(play.monthlyAmount).toBe(210)
+  })
+
+  it('still calls a genuinely weekly commitment weekly', () => {
+    const txns: ReturnType<typeof txn>[] = []
+    for (let i = 0; i < 26; i++) {
+      const d = new Date(Date.UTC(2025, 11, 2) + i * 7 * 86_400_000)
+      txns.push(
+        txn({
+          txn_date: d.toISOString().slice(0, 10),
+          effective_amount: '400',
+          description: 'Weekly groceries',
+          category: 'Food',
+        })
+      )
+    }
+    expect(detectRecurring(txns, NOW).commitments[0].cadence).toBe('weekly')
+  })
+
+  it('predicts the typical billing day, not lastCharged + 30 days', () => {
+    // Rent paid at the start of each month; the latest charge landed early,
+    // on 30 May. lastCharged + 30d would say "29 June" — wrong twice over.
+    const dates = [
+      '2025-12-01',
+      '2026-01-02',
+      '2026-02-01',
+      '2026-03-01',
+      '2026-04-01',
+      '2026-05-30',
+    ]
+    const txns = dates.map((date) =>
+      txn({ txn_date: date, effective_amount: '17973', description: 'Rent' })
+    )
+    const rent = detectRecurring(txns, NOW).commitments[0]
+    expect(rent.cadence).toBe('monthly')
+    expect(rent.nextExpected).toBe('2026-07-01')
+  })
+
+  it('never returns a nextExpected in the past', () => {
+    const dates = [
+      '2025-08-10',
+      '2025-09-10',
+      '2025-10-10',
+      '2025-11-10',
+      '2025-12-10',
+      '2026-01-10',
+    ]
+    const txns = dates.map((date) =>
+      txn({ txn_date: date, effective_amount: '999', description: 'Dormant gym' })
+    )
+    const gym = detectRecurring(txns, NOW).commitments[0]
+    expect(gym.nextExpected > toISO(NOW)).toBe(true)
+    // Unseen for months → missing, even though the next date is in the future.
+    expect(gym.flags).toContain('missing')
+  })
+
+  it('clamps the billing day to short months', () => {
+    const dates = [
+      '2025-08-31',
+      '2025-09-30',
+      '2025-10-31',
+      '2025-11-30',
+      '2025-12-31',
+      '2026-01-31',
+    ]
+    const txns = dates.map((date) =>
+      txn({ txn_date: date, effective_amount: '1200', description: 'Card bill sweep' })
+    )
+    const c = detectRecurring(txns, NOW).commitments[0]
+    expect(c.nextExpected).toBe('2026-06-30')
   })
 })

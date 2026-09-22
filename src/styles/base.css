@@ -95,6 +95,22 @@ html.app-shell-active body {
   background-color: var(--ink-4);
 }
 
+/* …except the page's own scroll owner. `main` (Layout.tsx) scrolls the whole
+   content column, so on a system set to "always show scrollbars" its 10px
+   gutter ran the full height of the window right beside the content card —
+   a permanent grey rail framing every page. Hiding it costs only thumb
+   dragging (wheel, trackpad, keyboard and scroll-into-view all still work)
+   and it also stops the gutter appearing/disappearing as pages change
+   height. Inner scrollports (side panel, dialogs, the sidenav) keep the
+   styled scrollbar above — there the bar marks a boundary worth seeing. */
+.app-scroll {
+  scrollbar-width: none;
+}
+.app-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
 /* One focus ring everywhere — accent halo, offset so it never clips. */
 :focus-visible {
   outline: 2px solid color-mix(in oklch, var(--accent) 65%, transparent);

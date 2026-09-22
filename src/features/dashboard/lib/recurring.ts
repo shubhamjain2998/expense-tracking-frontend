@@ -24,6 +24,13 @@ const STABILITY_PCT = 0.15 // ±15% of median
 const STABILITY_FRACTION = 0.6 // ≥60% of charges within ±15%
 const NEW_WINDOW_DAYS = 60
 const DUE_WINDOW_DAYS = 3
+/** A month with this many charges or more, in nearly every month, reads weekly. */
+const WEEKLY_CHARGES_PER_MONTH = 3.5
+const WEEKLY_COVERAGE = 0.75
+/** Share of the spanned months a commitment must appear in to count as monthly. */
+const MONTHLY_COVERAGE = 0.6
+/** A monthly commitment unseen for this long is treated as missing. */
+const MISSING_AFTER_DAYS = 45
 const CHANGED_PCT = 0.25 // last month's total must move >25% to flag "changed"
 
 /**
@@ -174,6 +181,17 @@ function daysBetween(a: Date, b: Date): number {
   return Math.abs(a.getTime() - b.getTime()) / 86_400_000
 }
 
+/** UTC date for (year, monthIndex, day), clamping day to the month's length. */
+function utcDate(year: number, monthIndex: number, day: number): Date {
+  const daysInMonth = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate()
+  return new Date(Date.UTC(year, monthIndex, Math.min(Math.max(day, 1), daysInMonth)))
+}
+
+/** Calendar months from a to b, inclusive of both ends (a <= b). */
+function monthSpan(a: Date, b: Date): number {
+  return (b.getUTCFullYear() - a.getUTCFullYear()) * 12 + (b.getUTCMonth() - a.getUTCMonth()) + 1
+}
+
 interface Charge {
   amount: number
   date: Date
@@ -274,11 +292,54 @@ export function detectRecurring(txns: ProcessedTransactionItem[], now: Date): Re
     }
     const medGap = gaps.length > 0 ? median(gaps) : 30
 
-    const cadence: Cadence = medGap <= 10 ? 'weekly' : medGap <= 45 ? 'monthly' : 'irregular'
-
     const lastDate = dates[dates.length - 1]
     const firstDate = dates[0]
-    const nextDate = new Date(lastDate.getTime() + medGap * 86_400_000)
+
+    // Cadence is decided per CALENDAR MONTH, not by the raw gap between
+    // consecutive charges. A commitment billed once a month often lands as
+    // several charges a few days apart (e.g. three GOOGLEPLAY debits on the
+    // 15th), which makes the median gap tiny and used to mislabel it "weekly".
+    // What actually separates the two: a weekly charge hits many times in
+    // (nearly) every month; a monthly one covers most months but only a few
+    // times within each.
+    const coverage = monthsSet.size / Math.max(1, monthSpan(firstDate, lastDate))
+    const chargesPerActiveMonth = charges.length / monthsSet.size
+    const cadence: Cadence =
+      chargesPerActiveMonth >= WEEKLY_CHARGES_PER_MONTH && coverage >= WEEKLY_COVERAGE
+        ? 'weekly'
+        : coverage >= MONTHLY_COVERAGE
+          ? 'monthly'
+          : 'irregular'
+
+    // Typical billing day = median day-of-month of each month's FIRST charge.
+    const monthAnchors = new Map<string, Date>()
+    for (const d of dates) {
+      const mk = monthKey(toISODate(d))
+      if (!monthAnchors.has(mk)) monthAnchors.set(mk, d)
+    }
+    const typicalDay = Math.round(median([...monthAnchors.values()].map((d) => d.getUTCDate())))
+
+    // Next expected date. It is ALWAYS in the future: a date already behind us
+    // is not something to warn about, and the old `lastCharged + medianGap`
+    // drifted off the real billing day (30-day steps, so a rent paid on the 1st
+    // crept to the 29th of the previous month).
+    let nextDate: Date
+    if (cadence === 'monthly') {
+      nextDate = utcDate(lastDate.getUTCFullYear(), lastDate.getUTCMonth(), typicalDay)
+      let guard = 0
+      while (nextDate.getTime() <= now.getTime() && guard < 240) {
+        nextDate = utcDate(nextDate.getUTCFullYear(), nextDate.getUTCMonth() + 1, typicalDay)
+        guard += 1
+      }
+    } else {
+      const step = Math.max(1, medGap)
+      nextDate = new Date(lastDate.getTime() + step * 86_400_000)
+      let guard = 0
+      while (nextDate.getTime() <= now.getTime() && guard < 1000) {
+        nextDate = new Date(nextDate.getTime() + step * 86_400_000)
+        guard += 1
+      }
+    }
 
     // Display name: most common original description, else title-cased key.
     const cleanKey = key.replace(/^(tag|desc):/, '')
@@ -299,8 +360,14 @@ export function detectRecurring(txns: ProcessedTransactionItem[], now: Date): Re
       flags.push('due')
     }
 
-    // missing: monthly cadence and nextExpected already overdue (before now).
-    if (cadence === 'monthly' && nextDate.getTime() < now.getTime()) {
+    // missing: a monthly commitment that has not been charged for well over a
+    // month. (nextExpected is always in the future now, so "overdue next date"
+    // can no longer be the signal.)
+    if (
+      cadence === 'monthly' &&
+      daysBetween(lastDate, now) > MISSING_AFTER_DAYS &&
+      lastDate <= now
+    ) {
       flags.push('missing')
     }
 
