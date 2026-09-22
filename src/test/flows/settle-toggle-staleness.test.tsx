@@ -64,7 +64,13 @@ describe('EditPanel settlement toggle reflects its own mutation immediately', ()
     const user = userEvent.setup()
     const txn = txnWithShares()
     renderWithProviders(
-      <EditPanel txn={txn} categories={[]} onClose={() => {}} onSaved={() => {}} />
+      <EditPanel
+        txn={txn}
+        categories={[]}
+        onClose={() => {}}
+        onSaved={() => {}}
+        onCopy={() => {}}
+      />
     )
 
     // Both rows start "pending".
@@ -95,7 +101,13 @@ describe('EditPanel settlement toggle reflects its own mutation immediately', ()
     const user = userEvent.setup()
     const txn = txnWithShares()
     renderWithProviders(
-      <EditPanel txn={txn} categories={[]} onClose={() => {}} onSaved={() => {}} />
+      <EditPanel
+        txn={txn}
+        categories={[]}
+        onClose={() => {}}
+        onSaved={() => {}}
+        onCopy={() => {}}
+      />
     )
 
     const buttons = await screen.findAllByRole('button', { name: 'pending' })

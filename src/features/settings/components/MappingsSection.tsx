@@ -272,7 +272,7 @@ export function MappingsSection() {
               >
                 Save rule
               </Button>
-              <Button variant="ghost" size="sm" onClick={cancelEdit}>
+              <Button variant="tertiary" size="sm" onClick={cancelEdit}>
                 Cancel
               </Button>
             </div>
@@ -368,7 +368,7 @@ export function MappingsSection() {
             </p>
           </div>
           <Button
-            variant={showCreate ? 'ghost' : 'secondary'}
+            variant={showCreate ? 'tertiary' : 'secondary'}
             size="sm"
             onClick={() => setShowCreate((v) => !v)}
           >

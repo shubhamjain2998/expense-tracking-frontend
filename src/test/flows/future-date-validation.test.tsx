@@ -102,7 +102,13 @@ describe('future-dated transactions are rejected, past dates still work', () => 
   it('EditPanel: date input carries max=today, and saving a future date is blocked with a toast', async () => {
     const txn = makeProcessedTransaction()
     renderWithProviders(
-      <EditPanel txn={txn} categories={[]} onClose={() => {}} onSaved={() => {}} />
+      <EditPanel
+        txn={txn}
+        categories={[]}
+        onClose={() => {}}
+        onSaved={() => {}}
+        onCopy={() => {}}
+      />
     )
 
     const dateInput = await screen.findByLabelText('Date')

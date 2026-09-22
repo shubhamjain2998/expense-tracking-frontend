@@ -55,7 +55,13 @@ describe('EditPanel Save only sends fields the user actually touched', () => {
     const user = userEvent.setup()
     const txn = makeProcessedTransaction({ category_id: 'cat-food', notes: null })
     renderWithProviders(
-      <EditPanel txn={txn} categories={categories} onClose={() => {}} onSaved={() => {}} />
+      <EditPanel
+        txn={txn}
+        categories={categories}
+        onClose={() => {}}
+        onSaved={() => {}}
+        onCopy={() => {}}
+      />
     )
 
     const notesField = await screen.findByLabelText('Notes (optional)')
@@ -74,7 +80,13 @@ describe('EditPanel Save only sends fields the user actually touched', () => {
     const user = userEvent.setup()
     const txn = makeProcessedTransaction({ category_id: 'cat-food' })
     renderWithProviders(
-      <EditPanel txn={txn} categories={categories} onClose={() => {}} onSaved={() => {}} />
+      <EditPanel
+        txn={txn}
+        categories={categories}
+        onClose={() => {}}
+        onSaved={() => {}}
+        onCopy={() => {}}
+      />
     )
 
     const categoryInput = await screen.findByPlaceholderText('Search categories…')
@@ -96,7 +108,13 @@ describe('EditPanel Save only sends fields the user actually touched', () => {
     const user = userEvent.setup()
     const txn = makeProcessedTransaction({ category_id: 'cat-food', description: 'Hungerbox' })
     renderWithProviders(
-      <EditPanel txn={txn} categories={categories} onClose={() => {}} onSaved={() => {}} />
+      <EditPanel
+        txn={txn}
+        categories={categories}
+        onClose={() => {}}
+        onSaved={() => {}}
+        onCopy={() => {}}
+      />
     )
 
     // User only touches the description — never the category field.
@@ -117,7 +135,13 @@ describe('EditPanel "Save as rule"', () => {
     const user = userEvent.setup()
     const txn = makeProcessedTransaction({ category_id: 'cat-food', notes: null })
     renderWithProviders(
-      <EditPanel txn={txn} categories={categories} onClose={() => {}} onSaved={() => {}} />
+      <EditPanel
+        txn={txn}
+        categories={categories}
+        onClose={() => {}}
+        onSaved={() => {}}
+        onCopy={() => {}}
+      />
     )
 
     await user.type(screen.getByLabelText(/notes/i), 'one-off')
@@ -133,7 +157,13 @@ describe('EditPanel "Save as rule"', () => {
     const user = userEvent.setup()
     const txn = makeProcessedTransaction({ category_id: 'cat-food', notes: null })
     renderWithProviders(
-      <EditPanel txn={txn} categories={categories} onClose={() => {}} onSaved={() => {}} />
+      <EditPanel
+        txn={txn}
+        categories={categories}
+        onClose={() => {}}
+        onSaved={() => {}}
+        onCopy={() => {}}
+      />
     )
 
     await user.click(screen.getByRole('button', { name: /save as rule/i }))
