@@ -4,11 +4,13 @@ import { useToastContext } from '@/hooks/useToastContext'
 import {
   deleteProcessedTransaction,
   editProcessedTransaction,
+  mergeTransactions,
   processTransaction,
+  unprocessTransaction,
 } from '@/lib/api/transactions'
 import type { PeriodMode } from '@/lib/period'
 import { invalidateDomains, qk } from '@/lib/queryKeys'
-import type { PersonShareIn } from '@/types/transaction'
+import type { MergeTransactionsPayload, PersonShareIn } from '@/types/transaction'
 
 export function useProcessedMutations(year: number, month: number, mode: PeriodMode) {
   const qc = useQueryClient()
@@ -92,5 +94,32 @@ export function useProcessedMutations(year: number, month: number, mode: PeriodM
     },
   })
 
-  return { deleteProcMutation, quickCategorizeMutation, changeCategoryMutation }
+  const unprocessMutation = useMutation({
+    mutationFn: unprocessTransaction,
+    onSuccess: () => {
+      // The row moves from the processed table back to the pending one, so
+      // both lists and every aggregate that counted it have to refetch.
+      invalidateDomains(qc, ['transactions', 'dashboard'])
+      toast.success('Moved back to review')
+    },
+    onError: (err: { detail?: string }) =>
+      toast.error(err.detail ?? 'Failed to move back to review'),
+  })
+
+  const mergeMutation = useMutation({
+    mutationFn: (payload: MergeTransactionsPayload) => mergeTransactions(payload),
+    onSuccess: (result) => {
+      invalidateDomains(qc, ['transactions', 'dashboard'])
+      toast.success(`Merged ${result.merged_count} transactions`)
+    },
+    onError: (err: { detail?: string }) => toast.error(err.detail ?? 'Failed to merge'),
+  })
+
+  return {
+    deleteProcMutation,
+    quickCategorizeMutation,
+    changeCategoryMutation,
+    unprocessMutation,
+    mergeMutation,
+  }
 }

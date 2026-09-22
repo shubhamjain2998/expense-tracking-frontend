@@ -11,6 +11,9 @@ interface BulkActionsBarProps {
   onAutoCategorise: () => void
   autoCategoriseLoading: boolean
   onCategorise: (categoryId: string) => Promise<void>
+  /** Opens the merge dialog. Only offered for 2+ rows — merging one row into
+   *  itself is meaningless. */
+  onMerge: () => void
   onDelete: () => void
   onClear: () => void
 }
@@ -22,6 +25,7 @@ export function BulkActionsBar({
   onAutoCategorise,
   autoCategoriseLoading,
   onCategorise,
+  onMerge,
   onDelete,
   onClear,
 }: BulkActionsBarProps) {
@@ -181,6 +185,28 @@ export function BulkActionsBar({
           }}
         >
           {autoCategoriseLoading ? 'Categorising…' : `Auto-categorise ${pendingCount}`}
+        </button>
+      )}
+      {count > 1 && (
+        <button
+          onClick={onMerge}
+          title="Club these rows into one transaction"
+          style={{
+            fontSize: 12,
+            fontWeight: 600,
+            padding: '4px 12px',
+            borderRadius: 'var(--radius)',
+            background: 'var(--surface)',
+            color: 'var(--ink-2)',
+            border: '1px solid var(--line)',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
+          }}
+        >
+          <Icon name="merge" size={12} />
+          Merge
         </button>
       )}
       <button

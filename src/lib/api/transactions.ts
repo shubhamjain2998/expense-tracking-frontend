@@ -2,6 +2,8 @@ import type {
   AutoCategoriseResponse,
   CreateRawTransactionPayload,
   EditProcessedPayload,
+  MergeTransactionsPayload,
+  MergeTransactionsResult,
   PendingManualTransaction,
   ProcessedTransaction,
   ProcessedTransactionItem,
@@ -100,6 +102,28 @@ export async function bulkTagTransactions(
 
 export async function deleteProcessedTransaction(id: string): Promise<void> {
   await client.delete(`/transactions/processed/${id}`)
+}
+
+/**
+ * Send a processed transaction back to Needs review. Unlike
+ * `deleteProcessedTransaction`, the statement line survives: the raw row
+ * returns to `pending` with its amount and description intact.
+ */
+export async function unprocessTransaction(id: string): Promise<RawTransaction> {
+  const { data } = await client.post<RawTransaction>(`/transactions/processed/${id}/unprocess`)
+  return data
+}
+
+/**
+ * Club several rows for one real-world payment into a single row. The base
+ * keeps its date/description (and category, tags and splits when it is a
+ * processed row); the sources hand over their amounts and are soft-deleted.
+ */
+export async function mergeTransactions(
+  payload: MergeTransactionsPayload
+): Promise<MergeTransactionsResult> {
+  const { data } = await client.post<MergeTransactionsResult>('/transactions/merge', payload)
+  return data
 }
 
 export async function editProcessedTransaction(

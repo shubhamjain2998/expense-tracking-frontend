@@ -17,6 +17,7 @@ interface TransactionRowProps {
   isChecked: boolean
   onProcess: () => void
   onEdit: () => void
+  onUnprocess: () => void
   onDelete: () => void
   onRestore: () => void
   onToggleCheck: () => void
@@ -36,6 +37,7 @@ export function TransactionRow({
   isChecked,
   onProcess,
   onEdit,
+  onUnprocess,
   onDelete,
   onRestore,
   onToggleCheck,
@@ -398,6 +400,7 @@ export function TransactionRow({
                 txn={txn}
                 onProcess={onProcess}
                 onEdit={onEdit}
+                onUnprocess={onUnprocess}
                 onDelete={onDelete}
                 onRestore={onRestore}
               />

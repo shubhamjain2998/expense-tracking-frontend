@@ -20,6 +20,7 @@ import { BulkActionsBar } from './components/BulkActionsBar'
 import { DragDropOverlay } from './components/DragDropOverlay'
 import { FilterBar } from './components/FilterBar'
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal'
+import { MergeDialog } from './components/MergeDialog'
 import { TransactionsHeader } from './components/TransactionsHeader'
 import { TransactionsList } from './components/TransactionsList'
 import { TransactionsTabs } from './components/TransactionsTabs'
@@ -32,6 +33,26 @@ import { useTransactionsData } from './hooks/useTransactionsData'
 import { buildUnified } from './lib/buildUnified'
 import { formatAmount, txnTotals } from './lib/txnFormat'
 import type { SortCol, SortDir, StatusFilter } from './types'
+
+/**
+ * Per-row failures in a bulk action are reported with the server's own
+ * reason, not just a count. The rows are dispatched in parallel and their
+ * toasts suppressed, so without this the user is told "Failed to categorise
+ * 1 transaction" and has nothing to act on.
+ */
+function bulkFailureMessage(
+  verb: string,
+  failed: number,
+  results: PromiseSettledResult<unknown>[]
+): string {
+  const base = `Failed to ${verb} ${failed} transaction${failed === 1 ? '' : 's'}`
+  const first = results.find((r) => r.status === 'rejected')
+  const detail =
+    first && first.status === 'rejected'
+      ? ((first.reason as { detail?: string } | undefined)?.detail ?? '')
+      : ''
+  return detail ? `${base} — ${detail}` : base
+}
 
 export function TransactionsPage() {
   const { mode } = usePeriodMode()
@@ -72,6 +93,7 @@ export function TransactionsPage() {
   const [editingTxn, setEditingTxn] = useState<ProcessedTransactionItem | null>(null)
   const [showManualEntry, setShowManualEntry] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
+  const [showMerge, setShowMerge] = useState(false)
   const [dragOverCatId, setDragOverCatId] = useState<string | null>(null)
   const [draggingUids, setDraggingUids] = useState<Set<string>>(new Set())
   const [openMenuUid, setOpenMenuUid] = useState<string | null>(null)
@@ -110,8 +132,13 @@ export function TransactionsPage() {
     selectedUid,
     setSelectedUid
   )
-  const { deleteProcMutation, quickCategorizeMutation, changeCategoryMutation } =
-    useProcessedMutations(year, month, mode)
+  const {
+    deleteProcMutation,
+    quickCategorizeMutation,
+    changeCategoryMutation,
+    unprocessMutation,
+    mergeMutation,
+  } = useProcessedMutations(year, month, mode)
   const { autoMutation } = useAutoCategorise()
 
   // Global pending count — same query key as useSidebarStats, so it's served
@@ -191,6 +218,9 @@ export function TransactionsPage() {
   const headingTotals = txnTotals(visibleForHeading)
   const hasActiveFilters = !!(search || categoryFilter.length > 0 || tagFilter.length > 0)
   const selectedTxn = selectedUid ? filtered.find((t) => t.uid === selectedUid) : null
+  // The checked rows, in list order, for the merge dialog. Deleted rows are
+  // dropped — there is nothing to club into a live row.
+  const mergeCandidates = sorted.filter((t) => checkedUids.has(t.uid) && t.kind !== 'deleted')
   const showProcessPanel =
     selectedTxn?.kind === 'pending' && !!selectedTxn.rawOriginal && !editingTxn
   const showEditPanel = !!editingTxn
@@ -379,8 +409,7 @@ export function TransactionsPage() {
     const failed = results.length - succeeded
     if (succeeded > 0)
       toast.success(`Categorized ${succeeded} transaction${succeeded === 1 ? '' : 's'}`)
-    if (failed > 0)
-      toast.error(`Failed to categorize ${failed} transaction${failed === 1 ? '' : 's'}`)
+    if (failed > 0) toast.error(bulkFailureMessage('categorize', failed, results))
     if (succeeded > 0) setCheckedUids(new Set())
   }
 
@@ -445,8 +474,7 @@ export function TransactionsPage() {
         toast.success(`Categorised ${succeeded} transaction${succeeded === 1 ? '' : 's'}`)
         setCheckedUids(new Set())
       }
-      if (failed > 0)
-        toast.error(`Failed to categorise ${failed} transaction${failed === 1 ? '' : 's'}`)
+      if (failed > 0) toast.error(bulkFailureMessage('categorise', failed, results))
     }
 
     bulkActionsNode = (
@@ -459,6 +487,7 @@ export function TransactionsPage() {
           autoMutation.mutate(pendingRawIds, { onSettled: () => setCheckedUids(new Set()) })
         }
         onCategorise={handleBulkCategorise}
+        onMerge={() => setShowMerge(true)}
         onDelete={() => void handleBulkDelete(filtered, checkedUids, setCheckedUids)}
         onClear={() => setCheckedUids(new Set())}
       />
@@ -607,10 +636,28 @@ export function TransactionsPage() {
             deleteRawMutation={deleteRawMutation}
             restoreRawMutation={restoreRawMutation}
             deleteProcMutation={deleteProcMutation}
+            unprocessMutation={unprocessMutation}
             showProcessPanel={showProcessPanel}
             showEditPanel={showEditPanel}
             selectedTxn={selectedTxn}
           />
+          {showMerge && mergeCandidates.length > 1 && (
+            <MergeDialog
+              txns={mergeCandidates}
+              loading={mergeMutation.isPending}
+              onCancel={() => setShowMerge(false)}
+              onMerge={(payload) =>
+                mergeMutation.mutate(payload, {
+                  onSuccess: () => {
+                    setShowMerge(false)
+                    setCheckedUids(new Set())
+                    setSelectedUid(null)
+                    setEditingTxn(null)
+                  },
+                })
+              }
+            />
+          )}
           {showManualEntry && <AddTransactionDialog onClose={() => setShowManualEntry(false)} />}
           {showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}
         </>

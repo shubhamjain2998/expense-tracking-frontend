@@ -7,7 +7,7 @@ import { Icon } from '@/components/ui/Icon'
 import { SkeletonTable } from '@/components/ui/Skeleton'
 import { formatCurrency } from '@/lib/format'
 import type { Category } from '@/types/settings'
-import type { ProcessedTransactionItem } from '@/types/transaction'
+import type { ProcessedTransactionItem, RawTransaction } from '@/types/transaction'
 
 import { txnTotals } from '../lib/txnFormat'
 import type { SortCol, SortDir, UnifiedTxn } from '../types'
@@ -45,6 +45,9 @@ interface TransactionsListProps {
   deleteRawMutation: UseMutationResult<void, Error, string>
   restoreRawMutation: UseMutationResult<void, Error, string>
   deleteProcMutation: UseMutationResult<void, Error, string>
+  // The API layer rejects with the FastAPI error body, not an Error — same
+  // shape the hook's onError reads.
+  unprocessMutation: UseMutationResult<RawTransaction, { detail?: string }, string>
   showProcessPanel: boolean
   showEditPanel: boolean
   selectedTxn: UnifiedTxn | null | undefined
@@ -76,6 +79,7 @@ export function TransactionsList({
   deleteRawMutation,
   restoreRawMutation,
   deleteProcMutation,
+  unprocessMutation,
   showProcessPanel,
   showEditPanel,
   selectedTxn,
@@ -238,6 +242,12 @@ export function TransactionsList({
                         onEdit={() => {
                           setEditingTxn(txn.processedOriginal!)
                           setOpenMenuUid(null)
+                        }}
+                        onUnprocess={() => {
+                          if (txn.processedId) unprocessMutation.mutate(txn.processedId)
+                          setOpenMenuUid(null)
+                          setEditingTxn(null)
+                          setSelectedUid(null)
                         }}
                         onDelete={() => {
                           if (txn.kind === 'pending' && txn.rawId)

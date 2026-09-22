@@ -6,6 +6,8 @@ interface TxnContextMenuProps {
   txn: UnifiedTxn
   onProcess: () => void
   onEdit: () => void
+  /** Send a processed row back to Needs review, keeping the statement line. */
+  onUnprocess: () => void
   onDelete: () => void
   onRestore: () => void
 }
@@ -51,6 +53,7 @@ export function TxnContextMenu({
   txn,
   onProcess,
   onEdit,
+  onUnprocess,
   onDelete,
   onRestore,
 }: TxnContextMenuProps) {
@@ -67,7 +70,7 @@ export function TxnContextMenu({
         border: '1px solid var(--line)',
         borderRadius: 'var(--radius)',
         boxShadow: 'var(--shadow-pop)',
-        minWidth: 140,
+        minWidth: 176,
         padding: '4px 0',
       }}
     >
@@ -75,7 +78,10 @@ export function TxnContextMenu({
         <MenuItem icon="receipt_long" label="Process" onClick={onProcess} />
       )}
       {txn.kind === 'processed' && txn.processedOriginal && (
-        <MenuItem icon="edit" label="Edit" onClick={onEdit} />
+        <>
+          <MenuItem icon="edit" label="Edit" onClick={onEdit} />
+          <MenuItem icon="undo" label="Move back to review" onClick={onUnprocess} />
+        </>
       )}
       {isDeleted ? (
         <MenuItem icon="undo" label="Restore" color="var(--accent)" onClick={onRestore} />

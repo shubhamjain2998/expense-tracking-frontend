@@ -127,3 +127,25 @@ export interface CreateRawTransactionPayload {
   // being overwritten by the amount-sign heuristic.
   txn_type?: TxnType
 }
+
+/** One row taking part in a merge, addressed the way the list shows it. */
+export interface MergeMember {
+  kind: 'pending' | 'processed'
+  id: string
+}
+
+export interface MergeTransactionsPayload {
+  /** Keeps its date and description — and its category, tags, notes and
+   *  splits when it is a processed row. */
+  base: MergeMember
+  /** Hand over their amounts, then move to the deleted bucket. */
+  sources: MergeMember[]
+}
+
+export interface MergeTransactionsResult {
+  kind: 'pending' | 'processed'
+  raw_txn_id: string
+  processed_id: string | null
+  amount: string
+  merged_count: number
+}
