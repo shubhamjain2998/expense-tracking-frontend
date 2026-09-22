@@ -20,13 +20,6 @@ export function TagsSection() {
   return (
     <>
       <section className="card">
-        <div className="card-head">
-          <div>
-            <p className="card-title">Tags</p>
-            <p className="card-sub">Label and filter transactions across categories.</p>
-          </div>
-        </div>
-
         {query.isLoading ? (
           <SkeletonTable rows={3} />
         ) : !query.data?.length ? (

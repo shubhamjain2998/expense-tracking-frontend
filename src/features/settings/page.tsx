@@ -6,9 +6,6 @@ import type { PeriodMode } from '@/lib/period'
 import { BackupImportSection } from './components/BackupImportSection'
 import { CategoriesSection } from './components/CategoriesSection'
 import { DangerZoneSection } from './components/DangerZoneSection'
-import { IgnoreRulesSection } from './components/IgnoreRulesSection'
-import { ImportHistorySection } from './components/ImportHistorySection'
-import { MappingsSection } from './components/MappingsSection'
 import { OnboardingResetSection } from './components/OnboardingResetSection'
 import { PersonsSection } from './components/PersonsSection'
 import { ProfileSection } from './components/ProfileSection'
@@ -16,12 +13,11 @@ import { TagsSection } from './components/TagsSection'
 
 const SECTIONS = [
   { id: 'profile', label: 'Profile' },
+  { id: 'preferences', label: 'Preferences' },
   { id: 'categories', label: 'Categories' },
   { id: 'tags', label: 'Tags' },
   { id: 'people', label: 'People' },
-  { id: 'rules', label: 'Auto-rules' },
-  { id: 'imports', label: 'Import history' },
-  { id: 'backup', label: 'Backup' },
+  { id: 'data', label: 'Your data' },
   { id: 'danger', label: 'Danger zone' },
 ]
 
@@ -33,9 +29,13 @@ const PERIOD_OPTIONS: { id: PeriodMode; label: string }[] = [
 /**
  * Settings — two-column: a sticky left section list (`.setsplit` +
  * `.setnav`) and every section stacked on the right, scroll-spied so the
- * nav marks whichever section is in view. Every section component below
- * keeps its existing behaviour from before this restyle; this page only
- * changes how they're grouped and how they look.
+ * nav marks whichever section is in view.
+ *
+ * Scope rule: this page owns only what no other destination owns. Auto-rules
+ * (mappings + ignore rules) live on Transactions, which is where they are
+ * created and where their effect is visible, so they are NOT mirrored here.
+ * Import history was an empty state for an endpoint that doesn't exist — the
+ * only real import fact (the most recent one) is in "Your data" below.
  */
 export function SettingsPage() {
   const { mode: periodMode, setMode: setPeriodMode } = usePeriodMode()
@@ -89,8 +89,15 @@ export function SettingsPage() {
             <span className="sub">Only you can see any of this</span>
           </div>
           <ProfileSection />
+        </section>
 
-          <div className="card" style={{ marginTop: 4 }}>
+        <section id="preferences" className="sec" style={{ scrollMarginTop: 76 }}>
+          <div className="sec-head">
+            <h2 className="sec-title">Preferences</h2>
+            <span className="sub">How Kosh behaves for you</span>
+          </div>
+
+          <div className="card">
             <div className="card-head">
               <div>
                 <p className="card-title">Year mode</p>
@@ -135,21 +142,10 @@ export function SettingsPage() {
           <PersonsSection />
         </section>
 
-        <section id="rules" className="sec" style={{ scrollMarginTop: 76 }}>
+        <section id="data" className="sec" style={{ scrollMarginTop: 76 }}>
           <div className="sec-head">
-            <h2 className="sec-title">Auto-rules</h2>
-            <span className="sub">Learned from how you categorise · applied at import</span>
-          </div>
-          <MappingsSection />
-          <IgnoreRulesSection />
-        </section>
-
-        <ImportHistorySection />
-
-        <section id="backup" className="sec" style={{ scrollMarginTop: 76 }}>
-          <div className="sec-head">
-            <h2 className="sec-title">Backup</h2>
-            <span className="sub">Your data is yours · plain JSON, no lock-in</span>
+            <h2 className="sec-title">Your data</h2>
+            <span className="sub">Plain JSON, no lock-in · export, import, last import</span>
           </div>
           <BackupImportSection />
         </section>
@@ -159,7 +155,7 @@ export function SettingsPage() {
             <h2 className="sec-title" style={{ color: 'var(--neg)' }}>
               Danger zone
             </h2>
-            <span className="sub">Both of these are permanent</span>
+            <span className="sub">Permanent · none of these can be undone</span>
           </div>
           <DangerZoneSection />
         </section>

@@ -165,14 +165,6 @@ export function DangerZoneSection() {
   return (
     <>
       <section className="card">
-        <div className="card-head">
-          <div>
-            <p className="card-title" style={{ color: 'var(--neg)' }}>
-              Danger zone
-            </p>
-            <p className="card-sub">Permanently delete data. These actions cannot be undone.</p>
-          </div>
-        </div>
         <div className="space-y-3">
           {Object.entries(dangerActions).map(([key, action]) => {
             const strong = action.emphasis === 'strong'

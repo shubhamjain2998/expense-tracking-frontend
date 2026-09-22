@@ -80,13 +80,6 @@ export function PersonsSection() {
   return (
     <>
       <section className="card">
-        <div className="card-head">
-          <div>
-            <p className="card-title">Persons</p>
-            <p className="card-sub">Track expenses across household members.</p>
-          </div>
-        </div>
-
         {query.isLoading ? (
           <div className="flex flex-wrap gap-3">
             {[1, 2, 3].map((i) => (

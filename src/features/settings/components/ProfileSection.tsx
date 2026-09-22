@@ -1,5 +1,5 @@
 // src/features/settings/components/ProfileSection.tsx
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import { Avatar } from '@/components/ui/Avatar'
@@ -9,8 +9,7 @@ import { AVATAR_COLORS, AVATAR_EMOJI, useAvatarPrefs } from '@/hooks/useAvatarPr
 import { useMe } from '@/hooks/useMe'
 import { useToastContext } from '@/hooks/useToastContext'
 import type { ApiError } from '@/lib/api/client'
-import { changePassword, getMyStats } from '@/lib/api/profile'
-import { qk } from '@/lib/queryKeys'
+import { changePassword } from '@/lib/api/profile'
 import { getInitials } from '@/lib/strings'
 
 type AvatarTab = 'color' | 'emoji'
@@ -36,13 +35,6 @@ export function ProfileSection() {
   // Password form
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' })
   const [pwError, setPwError] = useState('')
-
-  // Account stats
-  const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: qk.auth.stats,
-    queryFn: getMyStats,
-    staleTime: 5 * 60 * 1000,
-  })
 
   const passwordMutation = useMutation({
     mutationFn: () => changePassword(pwForm.current, pwForm.next),
@@ -298,54 +290,14 @@ export function ProfileSection() {
             </span>
           </div>
         </div>
-      </section>
 
-      {/* ── Stats card ── */}
-      <section className="card">
-        <div className="card-head">
-          <div>
-            <p className="card-title">Account stats</p>
-            <p className="card-sub">A snapshot of your Kosh account</p>
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
-          {[
-            { label: 'Member since', value: memberSince },
-            {
-              label: 'Transactions',
-              value: statsLoading ? '—' : (stats?.transaction_count ?? 0).toLocaleString('en-IN'),
-            },
-            {
-              label: 'Total tracked',
-              value: statsLoading ? '—' : `₹${((stats?.total_spend ?? 0) / 100000).toFixed(1)}L`,
-            },
-          ].map(({ label, value }) => (
-            <div
-              key={label}
-              style={{
-                background: 'var(--surface-2)',
-                borderRadius: 8,
-                padding: '14px 12px',
-                textAlign: 'center',
-              }}
-            >
-              <p
-                style={{
-                  fontSize: 20,
-                  fontWeight: 700,
-                  color: 'var(--ink)',
-                  letterSpacing: '-0.03em',
-                }}
-              >
-                {value}
-              </p>
-              <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 3, fontWeight: 500 }}>
-                {label}
-              </p>
-            </div>
-          ))}
-        </div>
+        {/* Member since — the one account fact that lives nowhere else.
+            Transaction count and total spend used to sit here in a stats
+            card; both are already the subject of Home and Insights, so they
+            are not repeated. */}
+        <p style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 10 }}>
+          Member since {memberSince}
+        </p>
       </section>
 
       {/* ── Change password card ── */}
