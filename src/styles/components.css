@@ -2765,16 +2765,14 @@ html.dark .people .avatar {
 }
 
 /* ─── work split: list + docked panel ────────────────────────────────── */
+/* One column by default. The 328px panel column is added only when a panel
+   is actually docked (see the >=1200px block below) — reserving it while
+   nothing is selected left a blank slab inside the card. */
 .worksplit {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 328px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   align-items: start;
-}
-@media (max-width: 1199px) {
-  .worksplit {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 .panel {
   position: sticky;
@@ -2986,11 +2984,8 @@ html.dark .people .avatar {
    rules above. At >=1200px we lay the list and the panel out side by side as
    a fixed-width docked column, ledger-mock style, instead of an overlay. */
 @media (min-width: 1200px) {
-  .worksplit {
-    display: grid;
+  .worksplit:has(> .txn-side-panel) {
     grid-template-columns: minmax(0, 1fr) 328px;
-    gap: 16px;
-    align-items: start;
   }
   .worksplit > .txn-side-panel {
     position: static;
