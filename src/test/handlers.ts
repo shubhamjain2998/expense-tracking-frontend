@@ -33,8 +33,13 @@ export const handlers = [
       makeCategory({ id: 'cat-2', name: 'Transport', txn_count: 0 }),
     ])
   ),
-  http.get(`${BASE}/tags`, () => HttpResponse.json([])),
-  http.get(`${BASE}/persons`, () => HttpResponse.json([])),
+  http.get(`${BASE}/tags`, () =>
+    HttpResponse.json([
+      { id: 'tag-1', name: 'eating out' },
+      { id: 'tag-2', name: 'weekend' },
+    ])
+  ),
+  http.get(`${BASE}/persons`, () => HttpResponse.json([{ id: 'per-1', name: 'flatmate' }])),
   http.get(`${BASE}/category-mappings`, () => HttpResponse.json([])),
   http.post(`${BASE}/category-mappings`, () =>
     HttpResponse.json(
@@ -45,6 +50,8 @@ export const handlers = [
         category: 'Groceries',
         match_count: 0,
         last_used: null,
+        tags: [],
+        shares: [],
       },
       { status: 201 }
     )
@@ -57,6 +64,8 @@ export const handlers = [
       category: 'Groceries',
       match_count: 0,
       last_used: null,
+      tags: [],
+      shares: [],
     })
   ),
   http.delete(`${BASE}/category-mappings/:id`, () => new HttpResponse(null, { status: 204 })),

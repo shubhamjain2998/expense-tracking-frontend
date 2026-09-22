@@ -22,6 +22,8 @@ export function makeCategoryMapping(overrides: Partial<CategoryMapping> = {}): C
     category: 'Groceries',
     match_count: 0,
     last_used: null,
+    tags: [],
+    shares: [],
     ...overrides,
   }
 }

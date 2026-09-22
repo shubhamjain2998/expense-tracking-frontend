@@ -18,6 +18,7 @@ interface TransactionRowProps {
   onProcess: () => void
   onEdit: () => void
   onUnprocess: () => void
+  onCopy: () => void
   onDelete: () => void
   onRestore: () => void
   onToggleCheck: () => void
@@ -38,6 +39,7 @@ export function TransactionRow({
   onProcess,
   onEdit,
   onUnprocess,
+  onCopy,
   onDelete,
   onRestore,
   onToggleCheck,
@@ -401,6 +403,7 @@ export function TransactionRow({
                 onProcess={onProcess}
                 onEdit={onEdit}
                 onUnprocess={onUnprocess}
+                onCopy={onCopy}
                 onDelete={onDelete}
                 onRestore={onRestore}
               />

@@ -9,6 +9,7 @@ import { MappingsSection } from '@/features/settings/components/MappingsSection'
 import { usePeriod } from '@/hooks/usePeriod'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { useToastContext } from '@/hooks/useToastContext'
+import { getCategoryMappings } from '@/lib/api/categories'
 import { getPendingManual } from '@/lib/api/transactions'
 import { pendingTransactionsUrl } from '@/lib/pendingNav'
 import { calendarToPeriod, monthLongLabel } from '@/lib/period'
@@ -17,6 +18,7 @@ import { getMultiParam } from '@/lib/searchParams'
 import type { ProcessedTransactionItem } from '@/types/transaction'
 
 import { BulkActionsBar } from './components/BulkActionsBar'
+import { CopyToMonthDialog } from './components/CopyToMonthDialog'
 import { DragDropOverlay } from './components/DragDropOverlay'
 import { FilterBar } from './components/FilterBar'
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal'
@@ -26,13 +28,14 @@ import { TransactionsList } from './components/TransactionsList'
 import { TransactionsTabs } from './components/TransactionsTabs'
 import type { TxnTab } from './components/TransactionsTabs'
 import { useAutoCategorise } from './hooks/useAutoCategorise'
+import { useCopyTransaction } from './hooks/useCopyTransaction'
 import { useProcessedMutations } from './hooks/useProcessedMutations'
 import { useRawMutations } from './hooks/useRawMutations'
 import { useTransactionKeyboard } from './hooks/useTransactionKeyboard'
 import { useTransactionsData } from './hooks/useTransactionsData'
 import { buildUnified } from './lib/buildUnified'
 import { formatAmount, txnTotals } from './lib/txnFormat'
-import type { SortCol, SortDir, StatusFilter } from './types'
+import type { SortCol, SortDir, StatusFilter, UnifiedTxn } from './types'
 
 /**
  * Per-row failures in a bulk action are reported with the server's own
@@ -94,6 +97,7 @@ export function TransactionsPage() {
   const [showManualEntry, setShowManualEntry] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [showMerge, setShowMerge] = useState(false)
+  const [copyingTxn, setCopyingTxn] = useState<UnifiedTxn | null>(null)
   const [dragOverCatId, setDragOverCatId] = useState<string | null>(null)
   const [draggingUids, setDraggingUids] = useState<Set<string>>(new Set())
   const [openMenuUid, setOpenMenuUid] = useState<string | null>(null)
@@ -125,6 +129,12 @@ export function TransactionsPage() {
     mode,
     showDeleted
   )
+  // Rules, for the context a drag-to-category applies. Small list, cached
+  // across the app under the same key the settings page uses.
+  const mappingsQuery = useQuery({
+    queryKey: qk.categoryMappings.all,
+    queryFn: getCategoryMappings,
+  })
   const { deleteRawMutation, restoreRawMutation, handleBulkDelete } = useRawMutations(
     year,
     month,
@@ -140,6 +150,18 @@ export function TransactionsPage() {
     mergeMutation,
   } = useProcessedMutations(year, month, mode)
   const { autoMutation } = useAutoCategorise()
+  // A copy usually lands in a month the user is not looking at, so the toast
+  // offers to go there. `txn_date` is a calendar date; the period selector
+  // speaks period units, which differ under FY mode.
+  const copyMutation = useCopyTransaction({
+    onViewMonth: (calYear, calMonth) => {
+      const p = calendarToPeriod(calYear, calMonth, mode)
+      setSelectedUid(null)
+      setEditingTxn(null)
+      setCheckedUids(new Set())
+      setPeriod(p.year, p.month)
+    },
+  })
 
   // Global pending count — same query key as useSidebarStats, so it's served
   // from cache on most page loads (zero extra network requests).
@@ -264,19 +286,24 @@ export function TransactionsPage() {
     }
   }
 
+  // The saved rule for a description, if there is one. This used to guess at
+  // context by scanning whichever processed transactions happened to be in
+  // the cache, so dragging the same row gave different results depending on
+  // which month was open. Rules are the one place that context lives now, and
+  // they are what auto-categorise reads too.
   function findBaseContext(description: string) {
-    const base = (processedQuery.data ?? [])
-      .filter((p) => p.description === description)
-      .sort((a, b) => b.txn_date.localeCompare(a.txn_date))[0]
-    if (!base) return {}
+    const pattern = description.trim().toLowerCase()
+    const rule = (mappingsQuery.data ?? []).find(
+      (m) => m.description_pattern.trim().toLowerCase() === pattern
+    )
+    if (!rule) return {}
     return {
-      shares: base.shares.map((s) => ({
+      shares: rule.shares.map((s) => ({
         person_id: s.person_id,
-        share_type: s.share_type as 'percentage' | 'amount',
+        share_type: s.share_type,
         share_value: Number(s.share_value),
       })),
-      notes: base.notes ?? undefined,
-      tag_ids: base.tags.map((t) => t.id),
+      tag_ids: rule.tags.map((t) => t.id),
     }
   }
 
@@ -363,7 +390,6 @@ export function TransactionsPage() {
           rawId: txn.rawId,
           categoryId,
           shares: baseCtx.shares,
-          notes: baseCtx.notes,
           tag_ids: tagIds.length > 0 ? tagIds : baseCtx.tag_ids,
         })
       else if (txn.kind === 'processed' && txn.processedId)
@@ -387,7 +413,6 @@ export function TransactionsPage() {
             rawId: txn.rawId,
             categoryId,
             shares: baseCtx.shares,
-            notes: baseCtx.notes,
             tag_ids: tagIds.length > 0 ? tagIds : baseCtx.tag_ids,
             silent: true,
           })
@@ -637,10 +662,24 @@ export function TransactionsPage() {
             restoreRawMutation={restoreRawMutation}
             deleteProcMutation={deleteProcMutation}
             unprocessMutation={unprocessMutation}
+            onCopyTxn={setCopyingTxn}
             showProcessPanel={showProcessPanel}
             showEditPanel={showEditPanel}
             selectedTxn={selectedTxn}
           />
+          {copyingTxn && (
+            <CopyToMonthDialog
+              txn={copyingTxn}
+              loading={copyMutation.isPending}
+              onCancel={() => setCopyingTxn(null)}
+              onCopy={(txnDate) =>
+                copyMutation.mutate(
+                  { source: copyingTxn, txnDate },
+                  { onSuccess: () => setCopyingTxn(null) }
+                )
+              }
+            />
+          )}
           {showMerge && mergeCandidates.length > 1 && (
             <MergeDialog
               txns={mergeCandidates}

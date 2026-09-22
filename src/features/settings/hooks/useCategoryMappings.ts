@@ -9,68 +9,88 @@ import {
   updateCategoryMapping,
 } from '@/lib/api/categories'
 import { invalidateDomains, qk } from '@/lib/queryKeys'
-import type { CategoryMapping } from '@/types/settings'
+import type { CategoryMapping, MappingSharePayload } from '@/types/settings'
+
+/** The three things a rule carries, as the edit form holds them. */
+export interface RuleDraft {
+  pattern: string
+  categoryId: string
+  tagIds: string[]
+  shares: MappingSharePayload[]
+}
+
+export const emptyDraft: RuleDraft = {
+  pattern: '',
+  categoryId: '',
+  tagIds: [],
+  shares: [],
+}
+
+export function draftFrom(mapping: CategoryMapping): RuleDraft {
+  return {
+    pattern: mapping.description_pattern,
+    categoryId: mapping.category_id,
+    tagIds: mapping.tags.map((t) => t.id),
+    shares: mapping.shares.map((s) => ({
+      person_id: s.person_id,
+      share_type: s.share_type,
+      share_value: Number(s.share_value),
+    })),
+  }
+}
 
 export function useCategoryMappings() {
   const toast = useToastContext()
   const qc = useQueryClient()
 
-  // Delete state
   const [deleteMappingId, setDeleteMappingId] = useState<string | null>(null)
-
-  // Create form state
-  const [newPattern, setNewPattern] = useState('')
-  const [newCategoryId, setNewCategoryId] = useState('')
-
-  // Edit (inline) state: tracks which row is being edited + working copies
+  const [newDraft, setNewDraft] = useState<RuleDraft>(emptyDraft)
   const [editingMappingId, setEditingMappingId] = useState<string | null>(null)
-  const [editPattern, setEditPattern] = useState('')
-  const [editCategoryId, setEditCategoryId] = useState('')
+  const [editDraft, setEditDraft] = useState<RuleDraft>(emptyDraft)
 
   const query = useQuery({ queryKey: qk.categoryMappings.all, queryFn: getCategoryMappings })
 
-  // Invalidate the same domains that the delete mutation and the Process/Edit
-  // panel "Save as rule" flow (ProcessPanel.tsx, EditPanel.tsx,
-  // useProcessedMutations.ts, useQuickAdd.ts) all invalidate.
+  // Editing a rule changes what future auto-categorise runs produce, so the
+  // transactions views are invalidated alongside the rules list.
   function invalidate() {
     invalidateDomains(qc, ['categoryMappings'])
   }
 
   const createMutation = useMutation({
-    mutationFn: ({ pattern, categoryId }: { pattern: string; categoryId: string }) =>
-      createCategoryMapping(pattern, categoryId),
+    mutationFn: (draft: RuleDraft) =>
+      createCategoryMapping(draft.pattern, draft.categoryId, {
+        tag_ids: draft.tagIds,
+        shares: draft.shares,
+      }),
     onSuccess: (result: CategoryMapping) => {
       invalidate()
-      setNewPattern('')
-      setNewCategoryId('')
+      setNewDraft(emptyDraft)
       // Backend upserts on duplicate pattern — surface that honestly
       const existing = query.data?.find(
         (m) => m.description_pattern === result.description_pattern && m.id !== result.id
       )
-      toast.success(existing ? 'Mapping updated (pattern already existed)' : 'Mapping created')
+      toast.success(existing ? 'Rule updated (pattern already existed)' : 'Rule created')
     },
     onError: (err: { detail?: string }) => {
-      toast.error(err.detail ?? 'Could not create mapping')
+      toast.error(err.detail ?? 'Could not create rule')
     },
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({
-      id,
-      pattern,
-      categoryId,
-    }: {
-      id: string
-      pattern: string
-      categoryId: string
-    }) => updateCategoryMapping(id, { description_pattern: pattern, category_id: categoryId }),
+    mutationFn: ({ id, draft }: { id: string; draft: RuleDraft }) =>
+      updateCategoryMapping(id, {
+        description_pattern: draft.pattern,
+        category_id: draft.categoryId,
+        tag_ids: draft.tagIds,
+        shares: draft.shares,
+      }),
     onSuccess: () => {
       invalidate()
-      toast.success('Mapping updated')
+      toast.success('Rule updated')
       setEditingMappingId(null)
     },
     onError: (err: { detail?: string }) => {
-      toast.error(err.detail ?? 'Could not update mapping')
+      toast.error(err.detail ?? 'Could not update rule')
     },
   })
 
@@ -78,7 +98,7 @@ export function useCategoryMappings() {
     mutationFn: deleteCategoryMapping,
     onSuccess: () => {
       invalidate()
-      toast.success('Mapping deleted')
+      toast.success('Rule deleted')
       setDeleteMappingId(null)
     },
     onError: (err: { detail: string }) => {
@@ -89,8 +109,7 @@ export function useCategoryMappings() {
 
   function startEdit(mapping: CategoryMapping) {
     setEditingMappingId(mapping.id)
-    setEditPattern(mapping.description_pattern)
-    setEditCategoryId(mapping.category_id)
+    setEditDraft(draftFrom(mapping))
   }
 
   function cancelEdit() {
@@ -99,22 +118,15 @@ export function useCategoryMappings() {
 
   return {
     query,
-    // delete
     deleteMappingId,
     setDeleteMappingId,
     deleteMutation,
-    // create
-    newPattern,
-    setNewPattern,
-    newCategoryId,
-    setNewCategoryId,
+    newDraft,
+    setNewDraft,
     createMutation,
-    // edit
     editingMappingId,
-    editPattern,
-    setEditPattern,
-    editCategoryId,
-    setEditCategoryId,
+    editDraft,
+    setEditDraft,
     updateMutation,
     startEdit,
     cancelEdit,

@@ -74,20 +74,14 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
       const amountChanged =
         !isNaN(parsedAmount) && parsedAmount !== 0 && parsedAmount !== Number(txn.amount)
       const dateChanged = !!txnDate && txnDate !== txn.txn_date?.slice(0, 10)
-      if (
-        amountChanged ||
-        dateChanged ||
-        selectedTagIds.length > 0 ||
-        shares.length > 0 ||
-        notes.trim()
-      ) {
+      // Tags, shares and notes go in the process call itself, which is also
+      // what teaches the rule when save_mapping is on. Only the two fields
+      // POST /process cannot set — a corrected amount or date — need a patch.
+      if (amountChanged || dateChanged) {
         try {
           await editProcessedTransaction(data.id, {
             ...(amountChanged ? { amount: parsedAmount } : {}),
             ...(dateChanged ? { txn_date: txnDate } : {}),
-            tag_ids: selectedTagIds,
-            shares,
-            notes: notes.trim() || null,
           })
         } catch {
           /* ignore */
@@ -248,7 +242,7 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
           onClick={() => setSaveMapping((v) => !v)}
           className={`flex w-full items-center justify-between ${saveMapping ? 'chip accent' : 'chip'}`}
           style={{ cursor: 'pointer', padding: '8px 12px', fontSize: 12.5 }}
-          title="Auto-categorise future transactions from this merchant"
+          title="Teach the rule for this merchant: category, tags and split"
         >
           <span className="flex items-center gap-2">
             <Icon name="rule" size={14} />

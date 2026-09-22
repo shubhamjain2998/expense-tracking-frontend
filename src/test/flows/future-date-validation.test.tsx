@@ -109,7 +109,7 @@ describe('future-dated transactions are rejected, past dates still work', () => 
     expect(dateInput).toHaveAttribute('max', todayIsoDate())
 
     fireEvent.change(dateInput, { target: { value: futureDate() } })
-    fireEvent.click(screen.getByRole('button', { name: /save/i }))
+    fireEvent.click(screen.getByRole('button', { name: /save changes/i }))
 
     expect(await screen.findByText('Date cannot be in the future')).toBeInTheDocument()
   })

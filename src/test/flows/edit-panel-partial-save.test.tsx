@@ -60,7 +60,7 @@ describe('EditPanel Save only sends fields the user actually touched', () => {
 
     const notesField = await screen.findByLabelText('Notes (optional)')
     await user.type(notesField, 'left a note')
-    await user.click(screen.getByRole('button', { name: /save/i }))
+    await user.click(screen.getByRole('button', { name: /save changes/i }))
 
     expect(bodies).toHaveLength(1)
     expect(bodies[0]).not.toHaveProperty('category_id')
@@ -81,7 +81,7 @@ describe('EditPanel Save only sends fields the user actually touched', () => {
     await user.clear(categoryInput)
     await user.type(categoryInput, 'health')
     await user.click(await screen.findByRole('option', { name: 'health' }))
-    await user.click(screen.getByRole('button', { name: /save/i }))
+    await user.click(screen.getByRole('button', { name: /save changes/i }))
 
     expect(bodies).toHaveLength(1)
     expect(bodies[0].category_id).toBe('cat-health')
@@ -103,10 +103,45 @@ describe('EditPanel Save only sends fields the user actually touched', () => {
     const descField = await screen.findByLabelText('Description')
     await user.clear(descField)
     await user.type(descField, 'Hungerbox lunch')
-    await user.click(screen.getByRole('button', { name: /save/i }))
+    await user.click(screen.getByRole('button', { name: /save changes/i }))
 
     expect(bodies).toHaveLength(1)
     expect(bodies[0]).not.toHaveProperty('category_id')
     expect(bodies[0].description).toBe('Hungerbox lunch')
+  })
+})
+
+describe('EditPanel "Save as rule"', () => {
+  it('is off by default, so a one-off correction does not rewrite the rule', async () => {
+    const bodies = capturePatchBody()
+    const user = userEvent.setup()
+    const txn = makeProcessedTransaction({ category_id: 'cat-food', notes: null })
+    renderWithProviders(
+      <EditPanel txn={txn} categories={categories} onClose={() => {}} onSaved={() => {}} />
+    )
+
+    await user.type(screen.getByLabelText(/notes/i), 'one-off')
+    await user.click(screen.getByRole('button', { name: /save changes/i }))
+
+    await screen.findByText(/transaction updated/i)
+    expect(bodies).toHaveLength(1)
+    expect(bodies[0].save_mapping).toBeUndefined()
+  })
+
+  it('sends save_mapping when the toggle is on, letting the backend teach the rule', async () => {
+    const bodies = capturePatchBody()
+    const user = userEvent.setup()
+    const txn = makeProcessedTransaction({ category_id: 'cat-food', notes: null })
+    renderWithProviders(
+      <EditPanel txn={txn} categories={categories} onClose={() => {}} onSaved={() => {}} />
+    )
+
+    await user.click(screen.getByRole('button', { name: /save as rule/i }))
+    await user.type(screen.getByLabelText(/notes/i), 'from now on')
+    await user.click(screen.getByRole('button', { name: /save changes/i }))
+
+    await screen.findByText(/transaction updated/i)
+    expect(bodies).toHaveLength(1)
+    expect(bodies[0].save_mapping).toBe(true)
   })
 })

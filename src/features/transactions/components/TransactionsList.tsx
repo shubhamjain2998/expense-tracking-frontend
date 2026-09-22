@@ -9,6 +9,7 @@ import { formatCurrency } from '@/lib/format'
 import type { Category } from '@/types/settings'
 import type { ProcessedTransactionItem, RawTransaction } from '@/types/transaction'
 
+import { buildUnified } from '../lib/buildUnified'
 import { txnTotals } from '../lib/txnFormat'
 import type { SortCol, SortDir, UnifiedTxn } from '../types'
 
@@ -48,6 +49,8 @@ interface TransactionsListProps {
   // The API layer rejects with the FastAPI error body, not an Error — same
   // shape the hook's onError reads.
   unprocessMutation: UseMutationResult<RawTransaction, { detail?: string }, string>
+  /** Opens the copy-to-month dialog for one row (owned by the page). */
+  onCopyTxn: (txn: UnifiedTxn) => void
   showProcessPanel: boolean
   showEditPanel: boolean
   selectedTxn: UnifiedTxn | null | undefined
@@ -80,6 +83,7 @@ export function TransactionsList({
   restoreRawMutation,
   deleteProcMutation,
   unprocessMutation,
+  onCopyTxn,
   showProcessPanel,
   showEditPanel,
   selectedTxn,
@@ -249,6 +253,10 @@ export function TransactionsList({
                           setEditingTxn(null)
                           setSelectedUid(null)
                         }}
+                        onCopy={() => {
+                          onCopyTxn(txn)
+                          setOpenMenuUid(null)
+                        }}
                         onDelete={() => {
                           if (txn.kind === 'pending' && txn.rawId)
                             deleteRawMutation.mutate(txn.rawId)
@@ -409,6 +417,13 @@ export function TransactionsList({
                 categories={categories}
                 onClose={() => setEditingTxn(null)}
                 onSaved={() => setEditingTxn(null)}
+                onCopy={() => {
+                  // The panel holds a ProcessedTransactionItem snapshot; the
+                  // copy dialog speaks the list's unified row, so convert with
+                  // the same function that builds the list itself.
+                  const unified = buildUnified([], [editingTxn])[0]
+                  if (unified) onCopyTxn(unified)
+                }}
               />
             </TxnSidePanel>
           )}

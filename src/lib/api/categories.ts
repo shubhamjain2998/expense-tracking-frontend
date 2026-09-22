@@ -1,4 +1,4 @@
-import type { Category, CategoryMapping } from '../../types/settings'
+import type { Category, CategoryMapping, MappingSharePayload } from '../../types/settings'
 
 import { client } from './client'
 
@@ -37,23 +37,34 @@ export async function setCategoryIncomeFlag(id: string, isIncome: boolean): Prom
 
 export async function getCategoryMappings(): Promise<CategoryMapping[]> {
   const { data } = await client.get<CategoryMapping[]>('/category-mappings')
-  return data
+  // tags and shares arrived with the rule redesign. Default them here rather
+  // than guarding at every read site, so a response from an older backend
+  // renders as a category-only rule instead of crashing the page.
+  return data.map((m) => ({ ...m, tags: m.tags ?? [], shares: m.shares ?? [] }))
 }
 
 export async function createCategoryMapping(
   descriptionPattern: string,
-  categoryId: string
+  categoryId: string,
+  context: { tag_ids?: string[]; shares?: MappingSharePayload[] } = {}
 ): Promise<CategoryMapping> {
   const { data } = await client.post<CategoryMapping>('/category-mappings', {
     description_pattern: descriptionPattern,
     category_id: categoryId,
+    ...context,
   })
   return data
 }
 
 export async function updateCategoryMapping(
   id: string,
-  fields: { description_pattern?: string; category_id?: string }
+  // Omitting tag_ids / shares leaves that facet alone; passing [] clears it.
+  fields: {
+    description_pattern?: string
+    category_id?: string
+    tag_ids?: string[]
+    shares?: MappingSharePayload[]
+  }
 ): Promise<CategoryMapping> {
   const { data } = await client.patch<CategoryMapping>(`/category-mappings/${id}`, fields)
   return data

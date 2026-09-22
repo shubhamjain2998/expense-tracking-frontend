@@ -8,6 +8,8 @@ interface TxnContextMenuProps {
   onEdit: () => void
   /** Send a processed row back to Needs review, keeping the statement line. */
   onUnprocess: () => void
+  /** Repeat this row in another month — rent, a SIP, anything no import brings in. */
+  onCopy: () => void
   onDelete: () => void
   onRestore: () => void
 }
@@ -54,6 +56,7 @@ export function TxnContextMenu({
   onProcess,
   onEdit,
   onUnprocess,
+  onCopy,
   onDelete,
   onRestore,
 }: TxnContextMenuProps) {
@@ -83,6 +86,7 @@ export function TxnContextMenu({
           <MenuItem icon="undo" label="Move back to review" onClick={onUnprocess} />
         </>
       )}
+      {!isDeleted && <MenuItem icon="content_copy" label="Copy to month…" onClick={onCopy} />}
       {isDeleted ? (
         <MenuItem icon="undo" label="Restore" color="var(--accent)" onClick={onRestore} />
       ) : (

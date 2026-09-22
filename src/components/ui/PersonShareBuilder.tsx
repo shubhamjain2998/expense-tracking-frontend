@@ -12,6 +12,14 @@ interface PersonShareBuilderProps {
   totalAmount: number
   onCreatePerson?: (name: string) => Promise<Person>
   onCreatePersonError?: (msg: string) => void
+  /**
+   * Hide every rupee figure. A category rule holds a split with no bill
+   * attached — the amounts only exist once a transaction matches it — so
+   * showing money there would be inventing a number.
+   */
+  hideAmounts?: boolean
+  /** Replaces the "Split with persons" label on the picker. */
+  label?: string
 }
 
 const fmt = (n: number) => formatCurrency(n, { fractionDigits: 2 })
@@ -23,6 +31,8 @@ export function PersonShareBuilder({
   totalAmount,
   onCreatePerson,
   onCreatePersonError,
+  hideAmounts = false,
+  label = 'Split with persons',
 }: PersonShareBuilderProps) {
   const selectedIds = shares.map((s) => s.person_id)
 
@@ -56,7 +66,7 @@ export function PersonShareBuilder({
   return (
     <div className="space-y-3">
       <MultiSelect
-        label="Split with persons"
+        label={label}
         items={persons}
         selectedIds={selectedIds}
         onChange={handlePersonChange}
@@ -113,14 +123,16 @@ export function PersonShareBuilder({
                   aria-label={`${name} share value`}
                 />
 
-                <span
-                  className="num ml-auto shrink-0 text-[11.5px]"
-                  style={{ color: 'var(--ink-3)' }}
-                >
-                  {share.share_type === 'percentage'
-                    ? fmt(totalAmount * (share.share_value / 100))
-                    : fmt(share.share_value)}
-                </span>
+                {!hideAmounts && (
+                  <span
+                    className="num ml-auto shrink-0 text-[11.5px]"
+                    style={{ color: 'var(--ink-3)' }}
+                  >
+                    {share.share_type === 'percentage'
+                      ? fmt(totalAmount * (share.share_value / 100))
+                      : fmt(share.share_value)}
+                  </span>
+                )}
               </div>
             )
           })}
@@ -133,7 +145,7 @@ export function PersonShareBuilder({
         </p>
       )}
 
-      {shares.length > 0 && (
+      {shares.length > 0 && !hideAmounts && (
         <div
           className="space-y-1"
           style={{

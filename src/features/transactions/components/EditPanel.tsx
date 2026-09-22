@@ -27,9 +27,12 @@ interface EditPanelProps {
   categories: Category[]
   onClose: () => void
   onSaved: () => void
+  /** Opens the copy-to-month dialog for this row. The only route to it on a
+   *  phone, where rows have no context menu. */
+  onCopy: () => void
 }
 
-export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps) {
+export function EditPanel({ txn, categories, onClose, onSaved, onCopy }: EditPanelProps) {
   const toast = useToastContext()
   const qc = useQueryClient()
   const [amount, setAmount] = useState(txn.amount)
@@ -99,6 +102,10 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
     sharesDirty ||
     txnType !== (txn.txn_type ?? 'expense')
 
+  // Off by default: an edit here is usually a correction to one row, and a
+  // rule rewrite would quietly change every future transaction that matches.
+  const [saveMapping, setSaveMapping] = useState(false)
+
   async function handleCreatePerson(name: string) {
     const p = await createPerson(name)
     invalidateDomains(qc, ['persons'])
@@ -115,7 +122,7 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
     onSuccess: () => {
       // Amount / category / date / shares edits all roll up into dashboard
       // aggregates and the sidebar's split ledger.
-      invalidateDomains(qc, ['transactions', 'dashboard'])
+      invalidateDomains(qc, ['transactions', 'dashboard', 'categoryMappings'])
       toast.success('Transaction updated')
       onSaved()
     },
@@ -175,6 +182,9 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
     if (notes !== (txn.notes ?? '')) payload.notes = notes.trim() || null
     if (currentTagIds !== initialTagIds) payload.tag_ids = selectedTagIds
     if (txnType !== (txn.txn_type ?? 'expense')) payload.txn_type = txnType
+    // The backend builds the rule from the row's final state, so this needs
+    // no other fields — the same contract POST /transactions/process honours.
+    if (saveMapping) payload.save_mapping = true
 
     editMutation.mutate(payload)
   }
@@ -330,6 +340,20 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
           onCreateError={(msg) => toast.error(msg)}
         />
 
+        <button
+          type="button"
+          onClick={() => setSaveMapping((v) => !v)}
+          className={`flex w-full items-center justify-between ${saveMapping ? 'chip accent' : 'chip'}`}
+          style={{ cursor: 'pointer', padding: '8px 12px', fontSize: 12.5 }}
+          title="Teach the rule for this merchant: category, tags and split"
+        >
+          <span className="flex items-center gap-2">
+            <Icon name="rule" size={14} />
+            Save as rule
+          </span>
+          <Icon name={saveMapping ? 'toggle_on' : 'toggle_off'} size={16} />
+        </button>
+
         {personsQuery.data && (
           <PersonShareBuilder
             persons={personsQuery.data}
@@ -419,6 +443,11 @@ export function EditPanel({ txn, categories, onClose, onSaved }: EditPanelProps)
           loading={editMutation.isPending}
         >
           Save changes
+        </Button>
+
+        <Button variant="secondary" className="w-full" onClick={onCopy} style={{ gap: 6 }}>
+          <Icon name="content_copy" size={14} />
+          Copy to another month
         </Button>
       </div>
     </div>
