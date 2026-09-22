@@ -57,16 +57,23 @@ export function savePeriodMode(mode: PeriodMode): void {
 }
 
 /**
- * The one sticky (year, month) selection shared app-wide — see `usePeriod`
- * in `src/hooks/usePeriod.ts`, the single source of truth this backs.
+ * The one sticky selection shared app-wide — see `usePeriod` in
+ * `src/hooks/usePeriod.ts`, the single source of truth this backs.
  * Distinct from `PERIOD_MODE_STORAGE_KEY` above, which stores the fy/
  * calendar *mode*, not a specific period.
+ *
+ * The value is stored in CALENDAR units (`calYear`/`calMonth`), never in
+ * period units. Period units are meaningless without the mode that produced
+ * them: period_month 9 is September in calendar mode and December in FY
+ * mode, so a value written under one mode and read back under the other
+ * silently lands the whole app three months away. Storing the calendar month
+ * makes the value mode-independent; `usePeriod` converts on read/write.
  */
 export const PERIOD_STORAGE_KEY = 'period_selection'
 
 export interface StoredPeriod {
-  year: number
-  month: number
+  calYear: number
+  calMonth: number
 }
 
 /** A period_year is a plain 4-digit-ish year — reject NaN, floats, and junk. */
@@ -79,14 +86,20 @@ export function isValidPeriodMonth(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 12
 }
 
+/**
+ * Reads the stored calendar (year, month). Values written by the pre-calendar
+ * format (`{ year, month }`, in period units) fail validation and are treated
+ * as absent — deliberately: there is no way to tell which mode wrote them, so
+ * resuming on today beats resuming three months off.
+ */
 export function loadStoredPeriod(): StoredPeriod | null {
   if (typeof window === 'undefined') return null
   try {
     const raw = window.localStorage.getItem(PERIOD_STORAGE_KEY)
     if (!raw) return null
-    const parsed = JSON.parse(raw) as { year?: unknown; month?: unknown }
-    if (isValidPeriodYear(parsed.year) && isValidPeriodMonth(parsed.month)) {
-      return { year: parsed.year, month: parsed.month }
+    const parsed = JSON.parse(raw) as { calYear?: unknown; calMonth?: unknown }
+    if (isValidPeriodYear(parsed.calYear) && isValidPeriodMonth(parsed.calMonth)) {
+      return { calYear: parsed.calYear, calMonth: parsed.calMonth }
     }
     return null
   } catch {
@@ -94,10 +107,10 @@ export function loadStoredPeriod(): StoredPeriod | null {
   }
 }
 
-export function saveStoredPeriod(year: number, month: number): void {
+export function saveStoredPeriod(calYear: number, calMonth: number): void {
   if (typeof window === 'undefined') return
   try {
-    window.localStorage.setItem(PERIOD_STORAGE_KEY, JSON.stringify({ year, month }))
+    window.localStorage.setItem(PERIOD_STORAGE_KEY, JSON.stringify({ calYear, calMonth }))
   } catch {
     // localStorage can throw in private-browsing/quota-exceeded contexts —
     // persistence here is a convenience, not a requirement.

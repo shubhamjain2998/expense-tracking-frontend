@@ -7,7 +7,7 @@
  * navigating to Transactions/Budget/Insights/Category — most visibly,
  * Budget ignored the `?month=` URL param entirely.
  */
-import { screen } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes, useLocation } from 'react-router-dom'
 
@@ -108,7 +108,8 @@ describe('sticky period persistence', () => {
   })
 
   it('resumes the last period from localStorage on a fresh mount with no URL params', async () => {
-    localStorage.setItem(PERIOD_STORAGE_KEY, JSON.stringify({ year: 2025, month: 5 }))
+    // Stored in calendar units — the format is mode-independent on purpose.
+    localStorage.setItem(PERIOD_STORAGE_KEY, JSON.stringify({ calYear: 2025, calMonth: 5 }))
 
     renderWithProviders(<BudgetPage />, { initialEntries: ['/budget'] })
 
@@ -140,10 +141,14 @@ describe('sticky period persistence', () => {
       { selector: 'p.eyebrow' }
     )
 
-    // The stored period should now be 2025/3 — Insights (no stepper of its
-    // own) reads the same sticky period on its next mount.
-    const stored = JSON.parse(localStorage.getItem(PERIOD_STORAGE_KEY) ?? '{}')
-    expect(stored).toEqual({ year: 2025, month: 3 })
+    // The stored period should now be calendar 2025/3 — Insights (no stepper
+    // of its own) reads the same sticky period on its next mount. Poll: the
+    // mirror deliberately waits for /auth/me so it never persists a period
+    // derived from the bootstrap's guessed mode.
+    await waitFor(() => {
+      const stored = JSON.parse(localStorage.getItem(PERIOD_STORAGE_KEY) ?? '{}')
+      expect(stored).toEqual({ calYear: 2025, calMonth: 3 })
+    })
   })
 
   it('both the sidenav and the bottom tab bar carry the period', async () => {

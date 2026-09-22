@@ -1,14 +1,18 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
 import {
+  type PeriodMode,
+  calendarToPeriod,
   getCurrentPeriod,
   isValidPeriodMonth,
   isValidPeriodYear,
-  loadPeriodMode,
   loadStoredPeriod,
+  resolvePeriodMonth,
   saveStoredPeriod,
 } from '@/lib/period'
+
+import { usePeriodMode } from './usePeriodMode'
 
 export interface UsePeriodResult {
   year: number
@@ -32,19 +36,22 @@ function parseIntParam(v: string | null): number | undefined {
  * shared by both `usePeriod` and `usePeriodValue` below so there is exactly
  * one precedence rule (URL → localStorage → current calendar period) no
  * matter which hook a component uses.
+ *
+ * `mode` is the active period mode. Everything this returns is in that mode's
+ * period units; the stored value is in calendar units and is converted here,
+ * so a mode change re-resolves to the same real month instead of shifting the
+ * app three months (period_month 9 = September in calendar mode, December in
+ * FY mode).
  */
-function resolvePeriod(searchParams: URLSearchParams) {
+function resolvePeriod(searchParams: URLSearchParams, mode: PeriodMode) {
   const urlYear = parseIntParam(searchParams.get('year'))
   const urlMonth = parseIntParam(searchParams.get('month'))
   const urlYearValid = isValidPeriodYear(urlYear)
   const urlMonthValid = isValidPeriodMonth(urlMonth)
 
-  const stored = loadStoredPeriod()
-  // The bootstrap fallback reads the period MODE synchronously from
-  // localStorage rather than the async server preference (usePeriodMode) —
-  // same reasoning the old per-page bootstraps used: /auth/me hasn't
-  // resolved yet on first paint, so this is the only value available.
-  const current = getCurrentPeriod(loadPeriodMode())
+  const storedCal = loadStoredPeriod()
+  const stored = storedCal ? calendarToPeriod(storedCal.calYear, storedCal.calMonth, mode) : null
+  const current = getCurrentPeriod(mode)
 
   const year = urlYearValid ? (urlYear as number) : (stored?.year ?? current.year)
   const month = urlMonthValid ? (urlMonth as number) : (stored?.month ?? current.month)
@@ -62,7 +69,8 @@ function resolvePeriod(searchParams: URLSearchParams) {
  */
 export function usePeriodValue(): UsePeriodValueResult {
   const [searchParams] = useSearchParams()
-  const { year, month } = resolvePeriod(searchParams)
+  const { mode } = usePeriodMode()
+  const { year, month } = resolvePeriod(searchParams, mode)
   return { year, month }
 }
 
@@ -93,12 +101,18 @@ export function usePeriodValue(): UsePeriodValueResult {
  */
 export function usePeriod(): UsePeriodResult {
   const [searchParams, setSearchParams] = useSearchParams()
-  const { year, month, urlYearValid, urlMonthValid } = resolvePeriod(searchParams)
+  const { mode, isLoadingPreference } = usePeriodMode()
+  const { year, month, urlYearValid, urlMonthValid } = resolvePeriod(searchParams, mode)
 
   // Backfill the URL when a param is missing or out of range, so the
   // resolved period is immediately deep-linkable and a bad param (e.g.
   // `?month=13`) settles onto a valid one instead of rendering NaN.
+  //
+  // Held until /auth/me settles: until then `mode` is only the localStorage
+  // guess, and writing period units derived from the wrong mode would land
+  // the app three months off and immediately need rewriting.
   useEffect(() => {
+    if (isLoadingPreference) return
     if (urlYearValid && urlMonthValid) return
     setSearchParams(
       (p) => {
@@ -109,13 +123,54 @@ export function usePeriod(): UsePeriodResult {
       { replace: true }
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [urlYearValid, urlMonthValid, year, month])
+  }, [isLoadingPreference, urlYearValid, urlMonthValid, year, month])
 
-  // Mirror the resolved period to localStorage so it survives a reload or a
-  // brand-new tab.
+  // A user-initiated mode change (the Settings toggle) leaves the URL holding
+  // period units of the OLD mode. Re-express them in the new mode so the page
+  // stays on the same real month instead of jumping three months (period
+  // month 9 is September in calendar mode, December in FY mode).
+  //
+  // Only genuine toggles count. The bootstrap transition — localStorage guess
+  // → the mode /auth/me reports — must not remap: a `?year=&month=` a link
+  // carried is already in the settled mode's units, so remapping it would
+  // move the reader off the month the link named.
+  const prevModeRef = useRef<PeriodMode | null>(null)
+  const remapPendingRef = useRef(false)
   useEffect(() => {
-    saveStoredPeriod(year, month)
-  }, [year, month])
+    if (isLoadingPreference) return
+    const prevMode = prevModeRef.current
+    prevModeRef.current = mode
+    if (prevMode === null || prevMode === mode) return
+    if (!urlYearValid || !urlMonthValid) return
+    const cal = resolvePeriodMonth(year, month, prevMode)
+    const next = calendarToPeriod(cal.year, cal.month, mode)
+    if (next.year === year && next.month === month) return
+    // The mirror effect below runs in this same commit, before the remapped
+    // params land. Without this flag it would persist the pre-remap month
+    // read through the new mode — the very off-by-three this guards against.
+    remapPendingRef.current = true
+    setSearchParams(
+      (p) => {
+        p.set('year', String(next.year))
+        p.set('month', String(next.month))
+        return p
+      },
+      { replace: true }
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, isLoadingPreference])
+
+  // Mirror the resolved period to localStorage — in calendar units, so it
+  // survives a mode change as well as a reload or a brand-new tab.
+  useEffect(() => {
+    if (isLoadingPreference) return
+    if (remapPendingRef.current) {
+      remapPendingRef.current = false
+      return
+    }
+    const cal = resolvePeriodMonth(year, month, mode)
+    saveStoredPeriod(cal.year, cal.month)
+  }, [isLoadingPreference, year, month, mode])
 
   const setPeriod = useCallback(
     (y: number, m: number) => {
