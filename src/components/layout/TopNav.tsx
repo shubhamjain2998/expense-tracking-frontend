@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 
-import { AddTransactionDialog } from '@/components/ui/AddTransactionDialog'
 import { Avatar } from '@/components/ui/Avatar'
 import { Icon } from '@/components/ui/Icon'
 import { useAuth } from '@/contexts/AuthContext'
@@ -36,7 +35,6 @@ export function TopNav() {
   const displayName = localStorage.getItem('pf_display_name') || email.split('@')[0] || ''
 
   const [profileOpen, setProfileOpen] = useState(false)
-  const [addOpen, setAddOpen] = useState(false)
 
   const popoverRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -81,12 +79,6 @@ export function TopNav() {
           title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
         >
           <Icon name={isDark ? 'light_mode' : 'dark_mode'} size={15} />
-        </button>
-
-        {/* Primary add action */}
-        <button onClick={() => setAddOpen(true)} className="btn primary gap-[5px]">
-          <Icon name="add" size={15} />
-          <span>Add</span>
         </button>
 
         {/* Avatar / profile */}
@@ -167,8 +159,6 @@ export function TopNav() {
           )}
         </div>
       </span>
-
-      {addOpen && <AddTransactionDialog onClose={() => setAddOpen(false)} />}
     </header>
   )
 }
