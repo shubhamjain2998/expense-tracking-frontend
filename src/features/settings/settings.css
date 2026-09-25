@@ -1,0 +1,19 @@
+/* ─── Settings under the floating dock ───────────────────────────────────────
+   The dock sits above `main`, so main's scrollport already starts below it:
+   `.setnav` sticks 24px into that scrollport, and each section lands at the
+   same 24px when the nav scrolls to it, so its heading lines up with the nav
+   instead of hanging under it. (The old 76px margin counted a top bar that
+   is no longer inside the scroller.) */
+.settings-page section.sec[id] {
+  scroll-margin-top: 24px;
+}
+
+/* Pages now get the full container width. Settings is forms, and a 1000px
+   text field reads as a mistake: hold the column to a reading width and
+   centre nav + column together in the container. */
+@media (min-width: 900px) {
+  .settings-page.setsplit {
+    grid-template-columns: 196px minmax(0, 800px);
+    justify-content: center;
+  }
+}
