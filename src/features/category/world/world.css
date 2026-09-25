@@ -1,0 +1,39 @@
+/* ─── Category drill-down as a 3D world (features/category/world) ─────────────
+   Only what the shared .world-* rules in components.css don't cover. Scoped
+   to .cat-world so the flat page is untouched. */
+
+/* Breakdown rows and table rows light up with the tower or block under the
+   pointer, like Where it went's rows on Home. */
+.cat-world .bar-row.is-hot,
+.cat-world .tbl tbody tr.is-hot td {
+  background: var(--surface-2);
+}
+.cat-world .tbl tbody tr.is-hot td:first-child {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* The verdict's period picker sits under the figure in the narrow column
+   rather than squeezing it. */
+.cat-world .verdict {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+.cat-world .verdict > div:last-child {
+  align-items: flex-start;
+}
+
+/* The transactions panel scrolls its rows inside the card, so the panel stays
+   about a screen tall and the camera settles on the day field while it's
+   read. The header row stays put. */
+.cat-world .cat-txn-scroll {
+  max-height: calc(100vh - var(--topbar-h) - 220px);
+  overflow-y: auto;
+}
+.cat-world .cat-txn-scroll .tbl th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.cat-world .tbl td:first-child {
+  white-space: nowrap;
+}

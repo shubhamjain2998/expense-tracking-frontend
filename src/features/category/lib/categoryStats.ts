@@ -7,6 +7,7 @@
  * Phase 7 deleting both. Local to this feature — does not import from or
  * edit `src/features/dashboard/lib/`.
  */
+import type { BudgetEntry, MonthlyBudgetOverride } from '@/types/budget'
 import type { ProcessedTransactionItem } from '@/types/transaction'
 
 function median(values: number[]): number {
@@ -193,4 +194,19 @@ export function dominantTransaction(
   const total = withAmounts.reduce((s, x) => s + x.amount, 0)
   const top = withAmounts.reduce((max, x) => (x.amount > max.amount ? x : max))
   return { txn: top.txn, amount: top.amount, share: total > 0 ? top.amount / total : 0 }
+}
+
+/** One category's budget for one calendar month of the budget year: that
+ *  month's override when there is one, else a twelfth of the annual plan,
+ *  else 0. */
+export function categoryMonthBudget(
+  entries: BudgetEntry[] | undefined,
+  overrides: MonthlyBudgetOverride[] | undefined,
+  category: string,
+  calMonth: number
+): number {
+  const override = overrides?.find((o) => o.category === category && o.month === calMonth)
+  if (override) return Number(override.allocated_amount)
+  const entry = entries?.find((e) => e.category === category)
+  return entry ? Number(entry.allocated_amount) / 12 : 0
 }

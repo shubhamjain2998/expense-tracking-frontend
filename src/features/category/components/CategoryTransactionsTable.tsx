@@ -14,6 +14,12 @@ interface CategoryTransactionsTableProps {
    *  lands on the right month rather than a category-filtered view. */
   openInTransactionsHref: string
   isLoading: boolean
+  /** Transaction lit in both the table and the 3D day field. */
+  highlight?: string | null
+  onHighlight?: (id: string | null) => void
+  /** Scroll the rows inside the card instead of growing the page — the 3D
+   *  world's panels need to stay about a screen tall. */
+  scrollBody?: boolean
 }
 
 /**
@@ -26,6 +32,9 @@ export function CategoryTransactionsTable({
   monthLabel,
   openInTransactionsHref,
   isLoading,
+  highlight = null,
+  onHighlight,
+  scrollBody = false,
 }: CategoryTransactionsTableProps) {
   const sorted = [...txns].sort((a, b) => b.txn_date.localeCompare(a.txn_date))
 
@@ -43,7 +52,7 @@ export function CategoryTransactionsTable({
         </span>
       </div>
 
-      <div className="card card-flush">
+      <div className={scrollBody ? 'card card-flush cat-txn-scroll' : 'card card-flush'}>
         {isLoading ? (
           <div className="p-4">
             <Skeleton className="h-48 w-full" />
@@ -63,7 +72,13 @@ export function CategoryTransactionsTable({
             </thead>
             <tbody>
               {sorted.map((t) => (
-                <tr key={t.id}>
+                <tr
+                  key={t.id}
+                  data-txn-id={t.id}
+                  className={highlight === t.id ? 'is-hot' : undefined}
+                  onMouseEnter={onHighlight ? () => onHighlight(t.id) : undefined}
+                  onMouseLeave={onHighlight ? () => onHighlight(null) : undefined}
+                >
                   <td className="num text-[var(--ink-3)]">{formatShortDate(t.txn_date)}</td>
                   <td className="font-medium text-[var(--ink)]">{t.description}</td>
                   <td>
