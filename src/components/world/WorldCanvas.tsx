@@ -1,19 +1,14 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import * as THREE from 'three'
 
-import { TOOLTIP_STYLE } from '../lib/chartTheme'
-import type { TerrainCell, YearTerrain } from '../lib/yearTerrain'
-
 import { cameraAt, stationX, type StationFrame, type Vec3 } from './cameraPath'
-import { STATION, type WorldLabel, type WorldTip } from './layout'
 import type { SceneColors } from './sceneColors'
-import type { Tower, TrendModel, VesselModel } from './stationData'
-import { TerrainStation, TowersStation, TrendStation, VesselStation } from './stations'
+import type { WorldLabel, WorldTip } from './types'
 
 /** Shared between the scroll handler, the camera rig and the label overlay. */
 export interface WorldMotion {
-  /** Where scrolling wants the camera, 0…3. */
+  /** Where scrolling wants the camera, 0…stations-1. */
   target: number
   /** Where the camera is, eased towards `target`. */
   current: number
@@ -21,7 +16,7 @@ export interface WorldMotion {
   invalidate: () => void
 }
 
-/** Lower is lazier; the camera closes ~1 - e^(-EASE·dt) of the gap each frame. */
+/** Higher is snappier; the camera closes ~1 - e^(-EASE·dt) of the gap each frame. */
 const EASE = 7
 
 function CameraRig({
@@ -65,7 +60,8 @@ const scratch = new THREE.Vector3()
 /**
  * Pins the overlay's DOM labels to 3D anchors, and fades each station's
  * labels by how close the camera is to it. Writes styles straight to the
- * elements on frames the scene already renders — no React render per frame.
+ * elements on frames the scene already renders — no React render per frame,
+ * and one overlay instead of a portal root per label.
  */
 function Projector({
   labels,
@@ -110,9 +106,9 @@ function Projector({
 }
 
 /** A faint rule along the ground joining the stations, so the flight has a path. */
-function Path({ colors }: { colors: SceneColors }) {
-  const from = stationX(STATION.verdict) - 8
-  const to = stationX(STATION.trend) + 14
+function Path({ colors, count }: { colors: SceneColors; count: number }) {
+  const from = stationX(0) - 8
+  const to = stationX(Math.max(0, count - 1)) + 14
   return (
     <mesh rotation-x={-Math.PI / 2} position={[(from + to) / 2, -0.01, 2.2]}>
       <planeGeometry args={[to - from, 0.05]} />
@@ -121,39 +117,35 @@ function Path({ colors }: { colors: SceneColors }) {
   )
 }
 
-export interface WorldSceneProps {
+export interface WorldCanvasProps {
   frames: StationFrame[]
   labels: WorldLabel[]
   tip: WorldTip | null
-  /** Shared camera state, read and written at frame time (a getter, not a value, so the
+  /** Shared camera state, read and written at frame time (a getter so the
    *  rig can ease it without a render). */
   motion: () => WorldMotion
-  /** Stations reached so far; each rises in the first time it's reached. */
-  reached: ReadonlySet<number>
   instant: boolean
   colors: SceneColors
-  vessel: VesselModel
-  towers: Tower[]
-  terrain: YearTerrain
-  trend: TrendModel
-  highlight: string | null
-  onTowerHover: (index: number | null) => void
-  onTowerPick: (tower: Tower) => void
-  onTerrainHover: (cell: TerrainCell | null) => void
-  onTerrainPick: (cell: TerrainCell) => void
-  onTrendHover: (index: number | null) => void
+  /** The page's station meshes. */
+  children: ReactNode
 }
 
 /**
- * The Home world: one orthographic scene holding all four stations, flown
- * through by scrolling the panels beside it. Decorative for assistive tech —
- * every number it draws is in the panels, as text.
+ * One orthographic scene for a whole page, flown through by scrolling the
+ * panels beside it. Decorative for assistive tech — every number it draws is
+ * in a panel as text.
  */
-export default function WorldScene(props: WorldSceneProps) {
-  const { frames, labels, tip, motion, reached, instant, colors } = props
+export default function WorldCanvas({
+  frames,
+  labels,
+  tip,
+  motion,
+  instant,
+  colors,
+  children,
+}: WorldCanvasProps) {
   const labelEls = useRef<(HTMLElement | null)[]>([])
   const tipEl = useRef<HTMLDivElement>(null)
-  const isOn = (i: number) => reached.has(i)
 
   useEffect(
     () => () => {
@@ -161,7 +153,6 @@ export default function WorldScene(props: WorldSceneProps) {
     },
     []
   )
-  const tipStyle = useMemo(() => ({ ...TOOLTIP_STYLE }), [])
 
   return (
     <div className="world-stage" aria-hidden="true">
@@ -175,32 +166,8 @@ export default function WorldScene(props: WorldSceneProps) {
         <ambientLight intensity={1.6} />
         <directionalLight position={[6, 12, 8]} intensity={1.4} />
         <CameraRig frames={frames} motion={motion} instant={instant} />
-        <Path colors={colors} />
-        <VesselStation model={props.vessel} colors={colors} active={isOn(0)} instant={instant} />
-        <TowersStation
-          towers={props.towers}
-          colors={colors}
-          active={isOn(1)}
-          instant={instant}
-          highlight={props.highlight}
-          onHover={props.onTowerHover}
-          onPick={props.onTowerPick}
-        />
-        <TerrainStation
-          terrain={props.terrain}
-          colors={colors}
-          active={isOn(2)}
-          instant={instant}
-          onHover={props.onTerrainHover}
-          onPick={props.onTerrainPick}
-        />
-        <TrendStation
-          trend={props.trend}
-          colors={colors}
-          active={isOn(3)}
-          instant={instant}
-          onHover={props.onTrendHover}
-        />
+        <Path colors={colors} count={frames.length} />
+        {children}
         <Projector
           labels={labels}
           tip={tip}
@@ -228,7 +195,7 @@ export default function WorldScene(props: WorldSceneProps) {
           </span>
         ))}
         {tip && (
-          <div ref={tipEl} className="world-tip" style={tipStyle}>
+          <div ref={tipEl} className="world-tip">
             <div className="mb-1 font-semibold">{tip.title}</div>
             {tip.lines.map((line) => (
               <div key={line}>{line}</div>

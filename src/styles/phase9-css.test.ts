@@ -49,16 +49,7 @@ describe('sticky offsets are relative to their real scroll container (defect 3)'
 })
 
 describe('app shell scroll ownership (defect 1)', () => {
-  it('.sidenav is position: fixed with its own internal scroll', () => {
-    const match = componentsCode.match(/\.sidenav\s*{([^}]*)}/)
-    expect(match).not.toBeNull()
-    const body = match![1]
-    expect(body).toMatch(/position:\s*fixed\s*;/)
-    expect(body).toMatch(/overflow-y:\s*auto\s*;/)
-    expect(body).toMatch(/height:\s*100vh\s*;/)
-  })
-
-  it('.app no longer lays the sidenav out via grid (it is fixed/out of flow)', () => {
+  it('.app is not a grid (the nav is a top dock, not a laid-out rail)', () => {
     const match = componentsCode.match(/\.app\s*{([^}]*)}/)
     expect(match).not.toBeNull()
     expect(match![1]).not.toMatch(/display:\s*grid/)

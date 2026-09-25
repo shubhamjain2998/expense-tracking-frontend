@@ -1,11 +1,15 @@
 import { Edges } from '@react-three/drei'
-import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
-import { useLayoutEffect, useMemo, useRef } from 'react'
+import { type ThreeEvent } from '@react-three/fiber'
+import { useLayoutEffect, useMemo } from 'react'
 import * as THREE from 'three'
+
+import { stationX } from '@/components/world/cameraPath'
+import { GrowGroup, InstancedBoxes, type BoxItem } from '@/components/world/primitives'
+import type { SceneColors } from '@/components/world/sceneColors'
+import { useGrow } from '@/components/world/useGrow'
 
 import type { TerrainCell, YearTerrain } from '../lib/yearTerrain'
 
-import { stationX } from './cameraPath'
 import {
   RIBBON,
   ribbonHeight,
@@ -22,144 +26,7 @@ import {
   VESSEL,
   vesselHeight,
 } from './layout'
-import type { SceneColors } from './sceneColors'
 import type { Tower, TrendModel, VesselModel } from './stationData'
-
-const GROW_SECONDS = 0.8
-
-/**
- * A 0→1 ref that rises once `run` turns true, and again whenever `key`
- * changes while it is true. Asks for frames only while rising.
- */
-function useGrow(run: boolean, key: unknown, instant: boolean) {
-  const grow = useRef(instant ? 1 : 0)
-  const invalidate = useThree((s) => s.invalidate)
-  const lastKey = useRef<unknown>(undefined)
-  useLayoutEffect(() => {
-    if (instant) {
-      grow.current = 1
-    } else if (run && lastKey.current !== key) {
-      lastKey.current = key
-      grow.current = 0
-      invalidate()
-    }
-  }, [run, key, instant, invalidate])
-  useFrame((state, dt) => {
-    if (grow.current >= 1 || (!run && !instant)) return
-    grow.current = Math.min(1, grow.current + Math.min(dt, 1 / 30) / GROW_SECONDS)
-    state.invalidate()
-  })
-  return grow
-}
-
-/** Scales a group's height by a grow ref, so everything in it rises together. */
-function GrowGroup({
-  grow,
-  children,
-  ...props
-}: { grow: React.RefObject<number>; children: React.ReactNode } & React.ComponentProps<'group'>) {
-  const ref = useRef<THREE.Group>(null)
-  useFrame(() => {
-    if (ref.current) ref.current.scale.y = Math.max(0.001, grow.current ?? 1)
-  })
-  return (
-    <group ref={ref} {...props}>
-      {children}
-    </group>
-  )
-}
-
-export interface BoxItem {
-  x: number
-  z: number
-  /** Base height and box height, before the rise-in scales them. */
-  y: number
-  h: number
-  w: number
-  d: number
-  color: string
-}
-
-const unitBox = new THREE.BoxGeometry(1, 1, 1)
-const matrix = new THREE.Matrix4()
-const tint = new THREE.Color()
-
-/** One InstancedMesh for a set of boxes: one draw call however many there are. */
-function InstancedBoxes({
-  items,
-  grow,
-  opacity = 1,
-  onHover,
-  onPick,
-}: {
-  items: BoxItem[]
-  grow: React.RefObject<number>
-  opacity?: number
-  onHover?: (index: number | null) => void
-  onPick?: (index: number) => void
-}) {
-  const ref = useRef<THREE.InstancedMesh>(null)
-  const lastGrow = useRef(-1)
-  const invalidate = useThree((s) => s.invalidate)
-
-  useLayoutEffect(() => {
-    const mesh = ref.current
-    if (!mesh) return
-    items.forEach((b, i) => mesh.setColorAt(i, tint.set(b.color)))
-    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
-    lastGrow.current = -1
-    invalidate()
-  }, [items, invalidate])
-
-  useFrame(() => {
-    const mesh = ref.current
-    const g = grow.current ?? 1
-    if (!mesh || g === lastGrow.current) return
-    lastGrow.current = g
-    items.forEach((b, i) => {
-      const h = Math.max(0.001, b.h * g)
-      matrix.makeScale(b.w, h, b.d).setPosition(b.x, b.y * g + h / 2, b.z)
-      mesh.setMatrixAt(i, matrix)
-    })
-    mesh.instanceMatrix.needsUpdate = true
-    mesh.computeBoundingSphere()
-  })
-
-  if (items.length === 0) return null
-  return (
-    <instancedMesh
-      key={items.length}
-      ref={ref}
-      args={[unitBox, undefined, items.length]}
-      onPointerMove={
-        onHover
-          ? (e: ThreeEvent<PointerEvent>) => {
-              e.stopPropagation()
-              onHover(e.instanceId ?? null)
-            }
-          : undefined
-      }
-      onPointerOut={onHover ? () => onHover(null) : undefined}
-      onClick={
-        onPick
-          ? (e: ThreeEvent<MouseEvent>) => {
-              e.stopPropagation()
-              if (e.instanceId !== undefined) onPick(e.instanceId)
-            }
-          : undefined
-      }
-    >
-      <meshStandardMaterial
-        flatShading
-        roughness={0.9}
-        metalness={0}
-        transparent={opacity < 1}
-        opacity={opacity}
-        depthWrite={opacity === 1}
-      />
-    </instancedMesh>
-  )
-}
 
 // ── Station 1 · the month as a vessel ───────────────────────────────────────
 

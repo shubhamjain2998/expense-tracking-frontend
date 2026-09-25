@@ -3,31 +3,15 @@
  * reads positions from here and the camera reads each station's frame, so
  * the two can't drift apart.
  */
+import { stationX, type StationFrame } from '@/components/world/cameraPath'
+import type { WorldLabel, WorldTip } from '@/components/world/types'
 import { formatCurrency } from '@/lib/format'
 
 import type { TerrainCell, YearTerrain } from '../lib/yearTerrain'
 
-import { stationX, type StationFrame, type Vec3 } from './cameraPath'
 import type { Tower, TrendModel, VesselModel } from './stationData'
 
 export const STATION = { verdict: 0, where: 1, year: 2, trend: 3 } as const
-
-export interface WorldLabel {
-  key: string
-  text: string
-  anchor: Vec3
-  station: number
-  /** 'center' sits on the anchor, 'end' ends at it, 'start' begins at it. */
-  align: 'center' | 'end' | 'start'
-  tone?: 'current' | 'strong'
-}
-
-export interface WorldTip {
-  anchor: Vec3
-  station: number
-  title: string
-  lines: string[]
-}
 
 // ── Station 1 · vessel ──────────────────────────────────────────────────────
 

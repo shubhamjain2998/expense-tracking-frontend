@@ -3,6 +3,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 
 import { GettingStartedChecklist } from '@/components/onboarding/GettingStartedChecklist'
 import { WelcomeModal } from '@/components/onboarding/WelcomeModal'
+import { useWorldSupported } from '@/components/world/support'
 import { usePeriod } from '@/hooks/usePeriod'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { useThemeContext } from '@/hooks/useThemeContext'
@@ -25,7 +26,6 @@ import { computeYearOutlook } from './lib/yearOutlook'
 import { buildYearTerrain } from './lib/yearTerrain'
 import { HomeWorld } from './world/HomeWorld'
 import { buildTowers, buildTrend, buildVessel } from './world/stationData'
-import { useWorldSupported } from './world/support'
 
 const BLOCK_KEYS = ['verdict', 'where', 'year', 'trend'] as const
 

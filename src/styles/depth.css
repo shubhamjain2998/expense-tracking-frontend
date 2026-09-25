@@ -321,35 +321,8 @@ html.dark .sheen::after {
   mix-blend-mode: plus-lighter;
 }
 
-/* ─── Chrome: nav rails and bars ───────────────────────────────────────────
-   These already had glass (.topnav, .bottom-tab-bar); the rail did not, and
-   an opaque 208px column against a moving field looked like a cut-out. */
-.sidenav {
-  background-color: color-mix(in oklch, var(--surface) 78%, transparent);
-  background-image: linear-gradient(180deg, var(--sheen), transparent 22%);
-  backdrop-filter: blur(16px) saturate(1.4);
-  -webkit-backdrop-filter: blur(16px) saturate(1.4);
-  border-right-color: color-mix(in oklch, var(--line) 80%, transparent);
-  box-shadow: 1px 0 0 var(--edge-hi) inset;
-}
-
-.topnav {
-  background: color-mix(in oklch, var(--surface) 76%, transparent);
-  backdrop-filter: blur(18px) saturate(1.5);
-  -webkit-backdrop-filter: blur(18px) saturate(1.5);
-  box-shadow:
-    inset 0 1px 0 var(--edge-hi),
-    0 1px 0 color-mix(in oklch, var(--line) 80%, transparent),
-    0 6px 20px rgb(28 32 44 / 0.05);
-}
-html.dark .topnav {
-  background: color-mix(in oklch, var(--surface) 72%, transparent);
-  box-shadow:
-    inset 0 1px 0 var(--edge-hi),
-    0 1px 0 rgb(255 255 255 / 0.06),
-    0 8px 24px rgb(0 0 0 / 0.45);
-}
-
+/* ─── Chrome: bars ─────────────────────────────────────────────────────────
+   The top dock's glass lives with it in components.css (.dock). */
 .bottom-tab-bar {
   background: color-mix(in oklch, var(--surface) 78%, transparent);
   box-shadow:

@@ -74,8 +74,8 @@
   --radius-lg: 6px;
   --radius-xl: 8px;
 
-  /* Sticky offset for .panel / .setnav; .topnav is 52px today. */
-  --topbar-h: 52px;
+  /* Sticky offset for .panel / .setnav: the dock is 52px plus 12px of margin. */
+  --topbar-h: 64px;
 
   /* Ledger uses 1px borders, not shadows. Only floating layers (menus,
      sheets, toasts) keep a shadow — see --shadow-pop. */

@@ -1,22 +1,12 @@
-import { useReducedMotion } from 'motion/react'
-import {
-  lazy,
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { Skeleton } from '@/components/ui/Skeleton'
+import type { WorldStation, WorldTip } from '@/components/world/types'
+import { WorldPage } from '@/components/world/WorldPage'
 import { formatCurrency } from '@/lib/format'
 
 import type { TerrainCell, YearTerrain } from '../lib/yearTerrain'
 
-import { progressFromCenters } from './cameraPath'
 import {
   terrainFrame,
   terrainLabels,
@@ -28,51 +18,9 @@ import {
   trendTip,
   vesselFrame,
   vesselLabels,
-  type WorldTip,
 } from './layout'
-import { readSceneColors } from './sceneColors'
 import type { Tower, TrendModel, VesselModel } from './stationData'
-import type { WorldMotion } from './WorldScene'
-
-// three.js, fiber and drei are ~250 KB gzipped: fetched only when the world mounts.
-const WorldScene = lazy(() => import('./WorldScene'))
-
-const STATION_NAMES = ['The month', 'Where it went', 'The year', 'Trend'] as const
-
-/** What each station's shapes mean, shown under the stage while it's in view. */
-const LEGENDS: { swatch: string; label: string }[][] = [
-  [
-    { swatch: 'bg-[var(--ink)]', label: 'Out' },
-    { swatch: 'bg-[var(--pos)] opacity-40', label: 'Saved' },
-    { swatch: 'bg-[var(--neg)]', label: 'Past income' },
-    { swatch: 'is-line bg-[var(--ink-4)]', label: 'Budget' },
-    { swatch: 'is-line bg-[var(--accent)]', label: 'Expected by today' },
-  ],
-  [
-    { swatch: 'bg-[var(--ink)]', label: 'Spent' },
-    { swatch: 'bg-[var(--neg)]', label: 'Over budget' },
-    { swatch: 'is-line bg-[var(--line-strong)]', label: 'Budget' },
-    { swatch: 'is-line bg-[var(--accent)]', label: 'Expected by today' },
-  ],
-  [
-    { swatch: 'bg-[var(--ink)]', label: 'Spent' },
-    { swatch: 'bg-[var(--neg)]', label: 'Over plan' },
-    { swatch: 'bg-[var(--ink-4)] opacity-40', label: 'Projected' },
-    { swatch: 'is-line bg-[var(--line-strong)]', label: 'Plan' },
-  ],
-  [
-    { swatch: 'bg-[var(--ink)]', label: 'Out' },
-    { swatch: 'bg-[var(--accent)]', label: 'In' },
-    { swatch: 'is-line bg-[var(--ink-4)]', label: 'Average out' },
-  ],
-]
-
-const HINTS = [
-  'Scroll to move through the month, the year and the trend',
-  'Hover a tower or a row · click to open the category',
-  'Hover a box · click to open that category and month',
-  'Hover a month for its figures',
-]
+import { TerrainStation, TowersStation, TrendStation, VesselStation } from './stations'
 
 /** Screen-reader copy of the year terrain: the panel beside it is cumulative only. */
 function TerrainTable({ terrain }: { terrain: YearTerrain }) {
@@ -111,17 +59,6 @@ function TerrainTable({ terrain }: { terrain: YearTerrain }) {
   )
 }
 
-/** The nearest ancestor that scrolls — `main.app-scroll` in the app shell. */
-function scrollParent(el: HTMLElement | null): HTMLElement | null {
-  let node = el?.parentElement ?? null
-  while (node) {
-    const { overflowY } = getComputedStyle(node)
-    if (overflowY === 'auto' || overflowY === 'scroll') return node
-    node = node.parentElement
-  }
-  return null
-}
-
 export interface HomeWorldProps {
   /** The four Home blocks, in station order. */
   panels: [ReactNode, ReactNode, ReactNode, ReactNode]
@@ -139,10 +76,9 @@ export interface HomeWorldProps {
 }
 
 /**
- * Home as a 3D world. The four blocks stay as real DOM panels in a column;
- * beside them a sticky stage holds one scene, and scrolling the panels flies
- * the camera from station to station. Every figure the scene draws is in a
- * panel as text, so the page reads the same without the canvas.
+ * Home as a 3D world: the month as a vessel, where it went as towers, the year
+ * as a terrain and the trend as ribbons. See components/world/WorldPage for
+ * how panels and stage fit together.
  */
 export function HomeWorld({
   panels,
@@ -157,27 +93,62 @@ export function HomeWorld({
   isDark,
 }: HomeWorldProps) {
   const navigate = useNavigate()
-  const instant = useReducedMotion() ?? false
-  const rootRef = useRef<HTMLDivElement>(null)
-  const panelRefs = useRef<(HTMLElement | null)[]>([])
-  const motion = useRef<WorldMotion>({ target: 0, current: 0, invalidate: () => {} })
-  const getMotion = useCallback(() => motion.current, [])
-  const [active, setActive] = useState(0)
-  const [reached, setReached] = useState<ReadonlySet<number>>(() => new Set([0]))
   const [pointerTip, setPointerTip] = useState<WorldTip | null>(null)
 
-  // Re-read the tokens when the theme flips; html.dark swaps the CSS vars.
-  const colors = useMemo(() => readSceneColors(), [isDark]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const frames = useMemo(
+  const stations = useMemo<WorldStation[]>(
     () => [
-      vesselFrame(),
-      towersFrame(towers.length),
-      terrainFrame(terrain),
-      trendFrame(trend.points.length),
+      {
+        name: 'The month',
+        panel: panels[0],
+        frame: vesselFrame(),
+        legend: [
+          { swatch: 'bg-[var(--ink)]', label: 'Out' },
+          { swatch: 'bg-[var(--pos)] opacity-40', label: 'Saved' },
+          { swatch: 'bg-[var(--neg)]', label: 'Past income' },
+          { swatch: 'is-line bg-[var(--ink-4)]', label: 'Budget' },
+          { swatch: 'is-line bg-[var(--accent)]', label: 'Expected by today' },
+        ],
+        hint: 'Scroll to move through the month, the year and the trend',
+      },
+      {
+        name: 'Where it went',
+        panel: panels[1],
+        frame: towersFrame(towers.length),
+        legend: [
+          { swatch: 'bg-[var(--ink)]', label: 'Spent' },
+          { swatch: 'bg-[var(--neg)]', label: 'Over budget' },
+          { swatch: 'is-line bg-[var(--line-strong)]', label: 'Budget' },
+          { swatch: 'is-line bg-[var(--accent)]', label: 'Expected by today' },
+        ],
+        hint: 'Hover a tower or a row · click to open the category',
+      },
+      {
+        name: 'The year',
+        panel: panels[2],
+        frame: terrainFrame(terrain),
+        legend: [
+          { swatch: 'bg-[var(--ink)]', label: 'Spent' },
+          { swatch: 'bg-[var(--neg)]', label: 'Over plan' },
+          { swatch: 'bg-[var(--ink-4)] opacity-40', label: 'Projected' },
+          { swatch: 'is-line bg-[var(--line-strong)]', label: 'Plan' },
+        ],
+        hint: 'Hover a box · click to open that category and month',
+      },
+      {
+        name: 'Trend',
+        panel: panels[3],
+        frame: trendFrame(trend.points.length),
+        legend: [
+          { swatch: 'bg-[var(--ink)]', label: 'Out' },
+          { swatch: 'bg-[var(--accent)]', label: 'In' },
+          { swatch: 'is-line bg-[var(--ink-4)]', label: 'Average out' },
+        ],
+        hint: 'Hover a month for its figures',
+      },
     ],
-    [towers.length, terrain, trend.points.length]
+    [panels, towers.length, terrain, trend.points.length]
   )
+
   const labels = useMemo(
     () => [...vesselLabels(vessel), ...terrainLabels(terrain), ...trendLabels(trend)],
     [vessel, terrain, trend]
@@ -186,49 +157,6 @@ export function HomeWorld({
     const i = highlight === null ? -1 : towers.findIndex((t) => t.category === highlight)
     return i >= 0 ? towerTip(towers, i) : null
   }, [highlight, towers])
-  const tip = pointerTip ?? highlightTip
-
-  // Scroll → camera. Progress comes from where the panels sit relative to the
-  // scroller's centre; the rig eases towards it.
-  useEffect(() => {
-    const scroller = scrollParent(rootRef.current)
-    let frame = 0
-    const measure = () => {
-      frame = 0
-      const view = scroller?.getBoundingClientRect() ?? {
-        top: 0,
-        height: window.innerHeight,
-      }
-      const centers = panelRefs.current.map((el) => {
-        const r = el?.getBoundingClientRect()
-        return r ? r.top + r.height / 2 : 0
-      })
-      const t = progressFromCenters(centers, view.top + view.height / 2)
-      motion.current.target = t
-      motion.current.invalidate()
-      const now = Math.round(t)
-      setActive(now)
-      setReached((prev) => (prev.has(now) ? prev : new Set([...prev, now])))
-    }
-    const onScroll = () => {
-      if (!frame) frame = requestAnimationFrame(measure)
-    }
-    measure()
-    const target: HTMLElement | Window = scroller ?? window
-    target.addEventListener('scroll', onScroll, { passive: true })
-    window.addEventListener('resize', onScroll)
-    return () => {
-      target.removeEventListener('scroll', onScroll)
-      window.removeEventListener('resize', onScroll)
-      if (frame) cancelAnimationFrame(frame)
-    }
-  }, [])
-
-  const goTo = (i: number) =>
-    panelRefs.current[i]?.scrollIntoView({
-      behavior: instant ? 'auto' : 'smooth',
-      block: 'center',
-    })
 
   const onTowerHover = (i: number | null) => {
     onHighlight(i === null ? null : (towers[i]?.category ?? null))
@@ -239,85 +167,50 @@ export function HomeWorld({
     setPointerTip(cell ? terrainTip(terrain, cell) : null)
     document.body.style.cursor = cell?.linkable ? 'pointer' : ''
   }
-  const onTrendHover = (i: number | null) => setPointerTip(i === null ? null : trendTip(trend, i))
 
   return (
-    <div ref={rootRef} className="home-world">
-      <div className="world-panels">
-        {panels.map((panel, i) => (
-          <section
-            key={STATION_NAMES[i]}
-            ref={(el) => {
-              panelRefs.current[i] = el
-            }}
-            className={['world-station', active === i ? 'is-active' : null]
-              .filter(Boolean)
-              .join(' ')}
-            aria-label={STATION_NAMES[i]}
-          >
-            {panel}
-          </section>
-        ))}
-        <TerrainTable terrain={terrain} />
-      </div>
-
-      <div className="world-stage-wrap">
-        <Suspense fallback={<Skeleton className="h-full w-full" />}>
-          <WorldScene
-            frames={frames}
-            labels={labels}
-            tip={tip}
-            motion={getMotion}
-            reached={reached}
-            instant={instant}
-            colors={colors}
-            vessel={vessel}
+    <WorldPage
+      stations={stations}
+      labels={labels}
+      tip={pointerTip ?? highlightTip}
+      isDark={isDark}
+      railLabel="Home sections"
+      srOnly={<TerrainTable terrain={terrain} />}
+      renderScene={({ colors, reached, instant }) => (
+        <>
+          <VesselStation model={vessel} colors={colors} active={reached.has(0)} instant={instant} />
+          <TowersStation
             towers={towers}
-            terrain={terrain}
-            trend={trend}
+            colors={colors}
+            active={reached.has(1)}
+            instant={instant}
             highlight={highlight}
-            onTowerHover={onTowerHover}
-            onTowerPick={(t) =>
+            onHover={onTowerHover}
+            onPick={(t) =>
               navigate(`/c/${encodeURIComponent(t.category)}?year=${year}&month=${month}`)
             }
-            onTerrainHover={onTerrainHover}
-            onTerrainPick={(cell) =>
+          />
+          <TerrainStation
+            terrain={terrain}
+            colors={colors}
+            active={reached.has(2)}
+            instant={instant}
+            onHover={onTerrainHover}
+            onPick={(cell) =>
               navigate(
                 `/c/${encodeURIComponent(cell.category)}?year=${year}&month=${cell.periodMonth}`
               )
             }
-            onTrendHover={onTrendHover}
           />
-        </Suspense>
-
-        <p className="world-hint" aria-hidden="true">
-          {HINTS[active]}
-        </p>
-
-        <nav className="world-rail" aria-label="Home sections">
-          {STATION_NAMES.map((name, i) => (
-            <button
-              key={name}
-              type="button"
-              className={active === i ? 'on' : ''}
-              aria-current={active === i ? 'true' : undefined}
-              onClick={() => goTo(i)}
-            >
-              <span className="num">{String(i + 1).padStart(2, '0')}</span>
-              {name}
-            </button>
-          ))}
-        </nav>
-
-        <div className="world-legend" aria-hidden="true">
-          {LEGENDS[active]?.map((item) => (
-            <span key={item.label}>
-              <i className={item.swatch} />
-              {item.label}
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
+          <TrendStation
+            trend={trend}
+            colors={colors}
+            active={reached.has(3)}
+            instant={instant}
+            onHover={(i) => setPointerTip(i === null ? null : trendTip(trend, i))}
+          />
+        </>
+      )}
+    />
   )
 }

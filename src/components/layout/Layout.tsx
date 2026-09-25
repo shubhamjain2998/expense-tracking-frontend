@@ -6,9 +6,9 @@ import { fadeOnly } from '@/lib/motion'
 
 import { QuickAddFAB } from '../ui/QuickAddFAB'
 
+import { AmbientBackdrop } from './AmbientBackdrop'
+import { AppDock } from './AppDock'
 import { BottomTabBar } from './BottomTabBar'
-import { SideNav } from './SideNav'
-import { TopNav } from './TopNav'
 
 function FrozenOutlet() {
   const outlet = useOutlet()
@@ -26,8 +26,8 @@ function FrozenOutlet() {
  * sizing mistake we could find in this tree. Whatever the cause, the
  * *symptom* is real and user-triggerable: `main` is the only element meant
  * to scroll, but the window itself was still technically scrollable, so a
- * wheel/trackpad gesture over the fixed sidenav (which has nothing of its
- * own to scroll) bubbled to the document and scrolled the *window* —
+ * wheel/trackpad gesture over the (then) fixed sidenav, which had nothing of
+ * its own to scroll, bubbled to the document and scrolled the *window* —
  * desyncing the fixed sidenav from `.app`'s content and reproducing the
  * exact "dead space below the content" bug this phase set out to fix.
  * Scoped to while the app shell is mounted (not login/register/404, which
@@ -48,9 +48,12 @@ export function Layout() {
 
   return (
     <div className="app has-bottom-tabs">
-      <SideNav />
-      <div className="flex h-screen min-w-0 flex-col overflow-hidden bg-transparent">
-        <TopNav />
+      <AmbientBackdrop />
+      {/* overflow-clip, not overflow-hidden: a hidden box can still be scrolled
+          by script, and scrollIntoView on anything inside main (the world
+          pages' section rail) would shift the dock off the top. */}
+      <div className="relative flex h-screen min-w-0 flex-col overflow-clip bg-transparent">
+        <AppDock />
         <main className="app-scroll flex-1 overflow-x-hidden overflow-y-auto">
           {/* MASTER.md §4: 1280px max-width, 24px gutter (16px mobile) — see
               .container in components.css. */}

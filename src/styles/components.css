@@ -929,60 +929,14 @@ select:disabled,
   }
 }
 
-/* ─── App shell — desktop side nav ──────────────────────────────────────
-   Transcribed from design-mock/ledger/ledger.css (.app/.sidenav/.brand/
-   .navlist/.navlink/.nav-foot) and shell.js. Desktop-only: a fixed-width
-   left rail sticks alongside the fluid main column; below 900px it hides
-   entirely and `.bottom-tab-bar` takes over primary navigation.
-
-   Phase 9 fix: this used to be a CSS grid (`208px 1fr`) with `.sidenav`
-   `position: sticky`. As a grid item, `.sidenav`'s automatic minimum size
-   (per spec, `min-height: auto` resolves to its content's min-content
-   height for any item with `overflow: visible`, which sticky positioning
-   doesn't change) could exceed its own `height: 100vh` whenever the rail's
-   content (nav links + Explore group + footer) was taller than the
-   viewport. That stretched the grid row — and therefore `.app` — past
-   100vh, so the *window* scrolled too, on top of `main`'s own
-   `overflow-y-auto` (Layout.tsx). Two scroll owners for one page: the
-   sticky rail would ride along with the window scroll until its
-   (now-taller-than-100vh) box ran out, at which point it detached and
-   scrolled away, leaving `.nav-foot` stranded mid-page with a blank band
-   below the content.
-
-   Fix: `.sidenav` is `position: fixed` — genuinely out of flow, sized to
-   exactly one viewport, with its own `overflow-y: auto` so *its* content
-   scrolls internally if it's ever taller than the viewport instead of
-   growing anything else. `.app` no longer needs to lay it out at all; a
-   `padding-left` reserves the rail's width so the content column sits
-   next to it. `main` (Layout.tsx) is now the only page-content scroll
-   owner — the window itself never scrolls. */
+/* ─── App shell ──────────────────────────────────────────────────────────
+   Sep 2026: the fixed side rail is gone. Navigation is one floating glass
+   bar across the top (`.dock`, AppDock.tsx) so pages, and the 3D worlds,
+   get the full width; below 768px `.bottom-tab-bar` carries the
+   destinations. `main` (Layout.tsx) stays the only scroll owner — the window
+   itself never scrolls (see html.app-shell-active in base.css). */
 .app {
   min-height: 100vh;
-}
-@media (min-width: 900px) {
-  .app {
-    padding-left: 208px;
-  }
-}
-
-.sidenav {
-  border-right: 1px solid var(--line);
-  background: var(--surface);
-  padding: 16px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 208px;
-  height: 100vh;
-  overflow-y: auto;
-}
-@media (max-width: 899px) {
-  .sidenav {
-    display: none;
-  }
 }
 
 /* ─── page container — MASTER.md §4: 1280px max-width, 24px gutter desktop
@@ -1011,12 +965,6 @@ select:disabled,
   }
 }
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 8px;
-}
 .brand-mark {
   width: 26px;
   height: 26px;
@@ -1037,49 +985,6 @@ select:disabled,
   font-size: 16px;
   letter-spacing: -0.02em;
   color: var(--ink);
-}
-
-.navlist {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.navlink {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 9px 8px;
-  border-radius: var(--radius);
-  color: var(--ink-2);
-  font-size: 13.5px;
-  font-weight: 500;
-  min-height: 38px;
-  text-decoration: none;
-  transition:
-    background var(--dur-1) var(--ease-out-soft),
-    color var(--dur-1) var(--ease-out-soft);
-}
-.navlink:hover {
-  background: var(--surface-2);
-  color: var(--ink);
-  text-decoration: none;
-}
-.navlink[aria-current='page'] {
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-weight: 600;
-}
-.navlink .badge {
-  margin-left: auto;
-}
-
-.nav-foot {
-  margin-top: auto;
-  border-top: 1px solid var(--line);
-  padding-top: 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 /* Small numeric pill — used for the pending-transactions count on the
@@ -1277,108 +1182,12 @@ html.dark .badge {
 }
 
 /* ─── Top navigation bar ─────────────────────────────────────────── */
-.topnav {
-  display: flex;
-  height: 52px;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 0;
-  padding: 0 20px;
-  /* Frosted glass — light mode */
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--line);
-  box-shadow:
-    0 1px 0 var(--line),
-    0 4px 16px rgba(0, 0, 0, 0.04);
-}
-
-html.dark .topnav {
-  /* Frosted glass — dark mode. Matches --bg (#14161a) at alpha so the glass
-     tints toward the new cool-slate background instead of the old near-black. */
-  background: rgba(20, 22, 26, 0.88);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.07),
-    0 4px 16px rgba(0, 0, 0, 0.4);
-}
-
-@media (max-width: 767px) {
-  .topnav {
-    padding: 0 14px;
-  }
-}
 
 /* Brand area */
-.topnav-brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.topnav-logo {
-  width: 26px;
-  height: 26px;
-  background: var(--accent);
-  color: white;
-  border-radius: 7px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: -0.05em;
-  flex-shrink: 0;
-}
-
-.topnav-brand-name {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--ink);
-  letter-spacing: -0.02em;
-  white-space: nowrap;
-}
-
-.topnav-brand-sep {
-  width: 1px;
-  height: 18px;
-  background: var(--line);
-  margin: 0 10px 0 12px;
-  flex-shrink: 0;
-}
-
-.topnav-link.active {
-  color: var(--ink);
-  border-bottom-color: var(--accent);
-}
 
 /* Right side controls */
-.topnav-right {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: auto;
-}
 
 /* Month stat chip */
-.topnav-stat {
-  align-items: center;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  padding: 3px 10px;
-  margin-right: 4px;
-}
-
-.topnav-stat-text {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--ink-2);
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
 
 /* Avatar button */
 .topnav-avatar {
@@ -3141,7 +2950,7 @@ html.dark .people .avatar {
    Panels scroll in the left column; the stage sticks beside them and the
    camera follows the panel nearest the scroller's centre. Only mounted at
    1200px and wider with WebGL — narrower, Home is the flat stack above. */
-.home-world {
+.world-page {
   display: grid;
   grid-template-columns: minmax(0, 500px) minmax(0, 1fr);
   gap: 28px;
@@ -3193,6 +3002,16 @@ html.dark .people .avatar {
   visibility: hidden;
   white-space: nowrap;
   user-select: none;
+}
+/* Same look as the charts' TOOLTIP_STYLE (features/dashboard/lib/chartTheme). */
+.world-tip {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: var(--shadow-pop);
+  font-size: 11.5px;
+  color: var(--ink);
+  padding: 6px 10px;
 }
 .world-label {
   font-size: 11px;
@@ -3279,4 +3098,186 @@ html.dark .people .avatar {
   font-size: 12px;
   color: var(--ink-3);
   pointer-events: none;
+}
+
+/* ─── Dock — the top navigation bar (AppDock.tsx) ─────────────────────────
+   A glass pill floating over the backdrop rather than a bar welded to the
+   edge, so the field and the worlds read as running under it. */
+.dock {
+  position: relative;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+  height: 52px;
+  margin: 8px 16px 4px;
+  padding: 0 8px 0 12px;
+  border: 1px solid color-mix(in oklch, var(--line) 80%, transparent);
+  border-radius: 14px;
+  background: color-mix(in oklch, var(--surface) 72%, transparent);
+  backdrop-filter: blur(18px) saturate(1.5);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    0 8px 28px rgb(28 32 44 / 0.06);
+}
+html.dark .dock {
+  background: color-mix(in oklch, var(--surface) 66%, transparent);
+  box-shadow:
+    inset 0 1px 0 var(--edge-hi),
+    0 10px 30px rgb(0 0 0 / 0.45);
+}
+.dock-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+  text-decoration: none;
+}
+.dock-brand:hover {
+  text-decoration: none;
+}
+.dock-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0 auto;
+}
+.dock-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink-3);
+  text-decoration: none;
+  transition: color var(--dur-1) var(--ease-out-soft);
+}
+.dock-link > :not(.dock-pill) {
+  position: relative;
+}
+.dock-link:hover {
+  color: var(--ink);
+  text-decoration: none;
+}
+.dock-link.on {
+  color: var(--ink);
+  font-weight: 600;
+}
+.dock-link.on svg {
+  color: var(--accent);
+}
+.dock-pill {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--line) 70%, transparent);
+}
+.dock-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.dock-right .btn.on {
+  color: var(--accent);
+}
+.dock-period {
+  margin-right: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 11.5px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.topnav-avatar {
+  width: auto;
+  height: auto;
+  padding: 0;
+  background: none;
+  border-radius: 999px;
+}
+.dock-menu {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 6px 6px;
+}
+.dock-menu > a,
+.dock-menu > button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 8px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--ink-2);
+  text-decoration: none;
+  background: transparent;
+  text-align: left;
+}
+.dock-menu > a:hover,
+.dock-menu > button:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+  text-decoration: none;
+}
+@media (max-width: 767px) {
+  .dock {
+    margin: 6px 10px 2px;
+  }
+  .dock-nav,
+  .dock-period {
+    display: none;
+  }
+  .dock-right {
+    margin-left: auto;
+  }
+}
+
+/* ─── Ambient backdrop (AmbientBackdrop.tsx) ───────────────────────────────
+   Contour lines in the ink colour at a few percent: texture, not picture.
+   Sits above the aurora field (body::before) and under everything else. */
+.ambient-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  color: var(--ink);
+  opacity: 0.06;
+}
+html.dark .ambient-backdrop {
+  opacity: 0.07;
+}
+.ambient-backdrop svg {
+  position: absolute;
+  inset: -4% 0;
+  width: 100%;
+  height: 108%;
+  will-change: transform;
+}
+.ambient-backdrop path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.ambient-backdrop path.is-index {
+  stroke-width: 1.6;
+}
+.ambient-backdrop + * {
+  z-index: 1;
+}
+
+/* World pages take a wider column than the 1280px reading width. */
+.container:has(.world-page) {
+  max-width: 1640px;
 }
