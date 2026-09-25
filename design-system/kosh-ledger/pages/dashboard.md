@@ -24,6 +24,14 @@ Home in 2026-09 in favour of the year block. Per-category detail lives at `/c/:i
   mark on each bar, and the deep dive is the row's link target.
 - Block 3 is cumulative (running total through the year, then a dashed projection at the pace
   of the completed months); its totals are the chart's own end points.
+- Block 3 has a second view, **3D** (Line | 3D toggle, offered only with WebGL and a viewport of
+  640px or wider). It is the same year split by category: months across, categories deep, spend up,
+  top 7 categories plus "Everything else". Plan is a thin cap at the category's monthly budget, the
+  accent cap on today's month is Where it went's pace tick, over-plan boxes use `--neg`, and
+  projected months are ghosted at the pace of the completed months. The camera is orthographic so
+  heights stay comparable. Clicking a box opens `/c/:id` for that month. The canvas is
+  `aria-hidden`, and an sr-only table carries the same numbers. three.js loads lazily, only when the
+  view is opened. Shaping: `lib/yearTerrain.ts`; scene: `components/YearScene/`.
 - Block 4 is the only month-by-month series. The window toggle replaces `SixMonthTrend` +
   `IncomeFlowAndTrend`; the 15-month seasonality arc is dropped because 15m is one of the windows.
 - The daily-spend calendar is removed from this page; weekday behaviour is answered once, in

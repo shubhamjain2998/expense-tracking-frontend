@@ -1,3 +1,5 @@
+import { lazy, Suspense, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   CartesianGrid,
   Line,
@@ -18,6 +20,14 @@ import { formatYearLabel, monthShortLabel } from '@/lib/period'
 import { axisUnit, formatAxisTick, niceAxisTicks } from '../lib/chartAxis'
 import { TOOLTIP_STYLE } from '../lib/chartTheme'
 import type { YearOutlook, YearOutlookPoint, YearTotals } from '../lib/yearOutlook'
+import type { TerrainCell, YearTerrain } from '../lib/yearTerrain'
+
+import { useCanShow3D } from './YearScene/support'
+
+// three.js is ~150 KB gzipped: only fetched when someone opens the 3D view.
+const YearScene = lazy(() => import('./YearScene/YearScene'))
+
+type YearView = 'line' | '3d'
 
 interface YearBlockProps {
   outlook: YearOutlook
@@ -28,6 +38,8 @@ interface YearBlockProps {
   monthsElapsed: number
   isLoading: boolean
   isDark: boolean
+  /** Month × category grid for the 3D view. */
+  terrain: YearTerrain
 }
 
 function TotalsRow({ totals, label }: { totals: YearTotals; label: string }) {
@@ -89,6 +101,104 @@ function OutlookTooltip({
   )
 }
 
+function Swatch({ className }: { className: string }) {
+  return <span aria-hidden="true" className={`inline-block h-2.5 w-2.5 ${className}`} />
+}
+
+/**
+ * The 3D view of the year: the same spend as the line, split by category.
+ * The canvas is decorative for assistive tech; the table below carries the
+ * numbers it draws.
+ */
+function YearTerrainView({
+  terrain,
+  isDark,
+  onSelect,
+}: {
+  terrain: YearTerrain
+  isDark: boolean
+  onSelect: (cell: TerrainCell) => void
+}) {
+  if (terrain.cells.length === 0) {
+    return (
+      <p className="py-10 text-center text-[12.5px] text-[var(--ink-3)]">
+        No spend by category in this year yet.
+      </p>
+    )
+  }
+  const hasProjection = terrain.cells.some((c) => c.kind === 'projected')
+  const hasPlan = terrain.cells.some((c) => c.plan > 0)
+
+  return (
+    <>
+      <div className="mb-3 flex flex-wrap items-center gap-4 text-[12.5px] text-[var(--ink-3)]">
+        <span className="flex items-center gap-1.5 font-semibold text-[var(--ink)]">
+          <Swatch className="bg-[var(--ink)]" />
+          Spent
+        </span>
+        <span className="flex items-center gap-1.5">
+          <Swatch className="bg-[var(--neg)]" />
+          Over plan
+        </span>
+        {hasProjection && (
+          <span className="flex items-center gap-1.5">
+            <Swatch className="bg-[var(--ink-4)] opacity-40" />
+            Projected
+          </span>
+        )}
+        {hasPlan && (
+          <span className="flex items-center gap-1.5">
+            <span aria-hidden="true" className="inline-block h-0.5 w-3 bg-[var(--line-strong)]" />
+            Plan
+          </span>
+        )}
+        {terrain.currentCol !== null && hasPlan && (
+          <span className="flex items-center gap-1.5">
+            <span aria-hidden="true" className="inline-block h-0.5 w-3 bg-[var(--accent)]" />
+            Expected by today
+          </span>
+        )}
+        <span className="ml-auto">Drag to turn · click a box to open it</span>
+      </div>
+
+      <Suspense fallback={<Skeleton className="h-[340px] w-full" />}>
+        <YearScene terrain={terrain} isDark={isDark} onSelect={onSelect} />
+      </Suspense>
+
+      <div className="sr-only">
+        <table>
+          <caption>Spend by category and month</caption>
+          <thead>
+            <tr>
+              <th>Category</th>
+              {terrain.months.map((m) => (
+                <th key={m.periodMonth}>{m.label}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {terrain.rows.map((r, row) => (
+              <tr key={r.category}>
+                <th>{r.category}</th>
+                {terrain.months.map((m, col) => {
+                  const cell = terrain.cells.find((c) => c.row === row && c.col === col)
+                  return (
+                    <td key={m.periodMonth}>
+                      {cell && cell.amount > 0
+                        ? `${formatCurrency(Math.round(cell.amount))}${cell.kind === 'projected' ? ' (projected)' : ''}`
+                        : '—'}
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  )
+}
+
 /**
  * Block 3 — The year. "Where does this year land?"
  * Cumulative in and out from the first month of the year to today, then a
@@ -104,7 +214,13 @@ export function YearBlock({
   monthsElapsed,
   isLoading,
   isDark,
+  terrain,
 }: YearBlockProps) {
+  const navigate = useNavigate()
+  const canShow3D = useCanShow3D()
+  const [view, setView] = useState<YearView>('line')
+  const show3D = canShow3D && view === '3d'
+
   // Same hand-synced hex literals as TrendBlock — recharts writes SVG
   // presentation attributes, where var(--ink-3) can't be trusted to resolve.
   const tickColor = isDark ? '#8E96A4' : '#5F6672'
@@ -140,6 +256,28 @@ export function YearBlock({
         <span className="sub">
           {yearLabel} · {status}
         </span>
+        {canShow3D && (
+          <span className="act">
+            <span className="seg">
+              <button
+                type="button"
+                className={view === 'line' ? 'on' : ''}
+                aria-pressed={view === 'line'}
+                onClick={() => setView('line')}
+              >
+                Line
+              </button>
+              <button
+                type="button"
+                className={view === '3d' ? 'on' : ''}
+                aria-pressed={view === '3d'}
+                onClick={() => setView('3d')}
+              >
+                3D
+              </button>
+            </span>
+          </span>
+        )}
       </div>
 
       <div className="card">
@@ -194,147 +332,161 @@ export function YearBlock({
               </p>
             )}
 
-            <div className="mb-3 flex flex-wrap items-center gap-4">
-              <span className="flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--ink)]">
-                <svg width="16" height="8" aria-hidden="true">
-                  <line x1="0" y1="4" x2="16" y2="4" stroke="currentColor" strokeWidth={2} />
-                </svg>
-                Out
-              </span>
-              <span className="flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--accent)]">
-                <svg width="16" height="8" aria-hidden="true">
-                  <line x1="0" y1="4" x2="16" y2="4" stroke="currentColor" strokeWidth={2} />
-                </svg>
-                In
-              </span>
-              {yearEnd && (
-                <span className="flex items-center gap-1.5 text-[12.5px] text-[var(--ink-3)]">
-                  <svg width="16" height="8" aria-hidden="true">
-                    <line
-                      x1="0"
-                      y1="4"
-                      x2="16"
-                      y2="4"
-                      stroke="currentColor"
+            {show3D ? (
+              <YearTerrainView
+                terrain={terrain}
+                isDark={isDark}
+                onSelect={(cell) =>
+                  navigate(
+                    `/c/${encodeURIComponent(cell.category)}?year=${year}&month=${cell.periodMonth}`
+                  )
+                }
+              />
+            ) : (
+              <>
+                <div className="mb-3 flex flex-wrap items-center gap-4">
+                  <span className="flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--ink)]">
+                    <svg width="16" height="8" aria-hidden="true">
+                      <line x1="0" y1="4" x2="16" y2="4" stroke="currentColor" strokeWidth={2} />
+                    </svg>
+                    Out
+                  </span>
+                  <span className="flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--accent)]">
+                    <svg width="16" height="8" aria-hidden="true">
+                      <line x1="0" y1="4" x2="16" y2="4" stroke="currentColor" strokeWidth={2} />
+                    </svg>
+                    In
+                  </span>
+                  {yearEnd && (
+                    <span className="flex items-center gap-1.5 text-[12.5px] text-[var(--ink-3)]">
+                      <svg width="16" height="8" aria-hidden="true">
+                        <line
+                          x1="0"
+                          y1="4"
+                          x2="16"
+                          y2="4"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                          strokeDasharray="3 3"
+                        />
+                      </svg>
+                      Projected
+                    </span>
+                  )}
+                </div>
+
+                <ResponsiveContainer width="100%" height={240}>
+                  <LineChart data={points} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                    <CartesianGrid vertical={false} stroke={gridStroke} strokeDasharray="4 4" />
+                    <XAxis
+                      dataKey="label"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 11, fill: tickColor }}
+                      padding={{ left: 8, right: 8 }}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 10, fill: tickColor }}
+                      domain={[0, yDomainMax]}
+                      ticks={yTicks}
+                      tickFormatter={(v) => formatAxisTick(Number(v), yUnit)}
+                      width={54}
+                    />
+                    <Tooltip
+                      cursor={{ stroke: tickColor, strokeDasharray: '3 4', strokeOpacity: 0.5 }}
+                      content={<OutlookTooltip />}
+                    />
+                    {annualPlan > 0 && (
+                      <ReferenceLine
+                        y={annualPlan}
+                        stroke={tickColor}
+                        strokeDasharray="2 4"
+                        label={{
+                          value: 'Plan',
+                          position: 'insideTopLeft',
+                          fontSize: 10,
+                          fill: tickColor,
+                        }}
+                      />
+                    )}
+                    <Line
+                      type="monotone"
+                      dataKey="outActual"
+                      stroke="var(--ink)"
+                      strokeWidth={2.25}
+                      dot={{ r: 3, strokeWidth: 2, fill: 'var(--surface)', stroke: 'var(--ink)' }}
+                      activeDot={{ r: 5 }}
+                      connectNulls={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="inActual"
+                      stroke="var(--accent)"
+                      strokeWidth={2}
+                      dot={{ r: 3 }}
+                      activeDot={{ r: 5 }}
+                      connectNulls={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="outProjected"
+                      stroke="var(--ink)"
+                      strokeOpacity={0.5}
                       strokeWidth={2}
                       strokeDasharray="3 3"
+                      dot={false}
+                      activeDot={{ r: 4 }}
+                      connectNulls={false}
                     />
-                  </svg>
-                  Projected
-                </span>
-              )}
-            </div>
+                    <Line
+                      type="monotone"
+                      dataKey="inProjected"
+                      stroke="var(--accent)"
+                      strokeOpacity={0.5}
+                      strokeWidth={2}
+                      strokeDasharray="3 3"
+                      dot={false}
+                      activeDot={{ r: 4 }}
+                      connectNulls={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
 
-            <ResponsiveContainer width="100%" height={240}>
-              <LineChart data={points} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-                <CartesianGrid vertical={false} stroke={gridStroke} strokeDasharray="4 4" />
-                <XAxis
-                  dataKey="label"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 11, fill: tickColor }}
-                  padding={{ left: 8, right: 8 }}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 10, fill: tickColor }}
-                  domain={[0, yDomainMax]}
-                  ticks={yTicks}
-                  tickFormatter={(v) => formatAxisTick(Number(v), yUnit)}
-                  width={54}
-                />
-                <Tooltip
-                  cursor={{ stroke: tickColor, strokeDasharray: '3 4', strokeOpacity: 0.5 }}
-                  content={<OutlookTooltip />}
-                />
-                {annualPlan > 0 && (
-                  <ReferenceLine
-                    y={annualPlan}
-                    stroke={tickColor}
-                    strokeDasharray="2 4"
-                    label={{
-                      value: 'Plan',
-                      position: 'insideTopLeft',
-                      fontSize: 10,
-                      fill: tickColor,
-                    }}
-                  />
-                )}
-                <Line
-                  type="monotone"
-                  dataKey="outActual"
-                  stroke="var(--ink)"
-                  strokeWidth={2.25}
-                  dot={{ r: 3, strokeWidth: 2, fill: 'var(--surface)', stroke: 'var(--ink)' }}
-                  activeDot={{ r: 5 }}
-                  connectNulls={false}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="inActual"
-                  stroke="var(--accent)"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  activeDot={{ r: 5 }}
-                  connectNulls={false}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="outProjected"
-                  stroke="var(--ink)"
-                  strokeOpacity={0.5}
-                  strokeWidth={2}
-                  strokeDasharray="3 3"
-                  dot={false}
-                  activeDot={{ r: 4 }}
-                  connectNulls={false}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="inProjected"
-                  stroke="var(--accent)"
-                  strokeOpacity={0.5}
-                  strokeWidth={2}
-                  strokeDasharray="3 3"
-                  dot={false}
-                  activeDot={{ r: 4 }}
-                  connectNulls={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-
-            {/* sr-only on a wrapping div, not the table — see TrendBlock. */}
-            <div className="sr-only">
-              <table>
-                <caption>Money in and out over the year, cumulative</caption>
-                <thead>
-                  <tr>
-                    <th>Month</th>
-                    <th>In so far</th>
-                    <th>Out so far</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {points.map((p) => {
-                    const projected = p.outActual === null
-                    const inn = p.inActual ?? p.inProjected
-                    const out = p.outActual ?? p.outProjected
-                    if (inn === null || out === null) return null
-                    return (
-                      <tr key={p.periodMonth}>
-                        <td>
-                          {p.label}
-                          {projected ? ' (projected)' : ''}
-                        </td>
-                        <td>{formatCurrency(inn)}</td>
-                        <td>{formatCurrency(out)}</td>
+                {/* sr-only on a wrapping div, not the table — see TrendBlock. */}
+                <div className="sr-only">
+                  <table>
+                    <caption>Money in and out over the year, cumulative</caption>
+                    <thead>
+                      <tr>
+                        <th>Month</th>
+                        <th>In so far</th>
+                        <th>Out so far</th>
                       </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+                    </thead>
+                    <tbody>
+                      {points.map((p) => {
+                        const projected = p.outActual === null
+                        const inn = p.inActual ?? p.inProjected
+                        const out = p.outActual ?? p.outProjected
+                        if (inn === null || out === null) return null
+                        return (
+                          <tr key={p.periodMonth}>
+                            <td>
+                              {p.label}
+                              {projected ? ' (projected)' : ''}
+                            </td>
+                            <td>{formatCurrency(inn)}</td>
+                            <td>{formatCurrency(out)}</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
           </>
         )}
       </div>

@@ -2214,6 +2214,48 @@ a.bar-row:hover {
   font-family: var(--font-mono);
 }
 
+/* Year block, 3D view. The canvas owns the drag gesture, so vertical page
+   scroll on touch still has to reach the page: pan-y hands it back. */
+.year-scene {
+  position: relative;
+  height: 340px;
+  touch-action: pan-y;
+  cursor: grab;
+}
+.year-scene:active {
+  cursor: grabbing;
+}
+/* Labels and the tooltip are DOM, pinned to 3D anchors by the scene's
+   Projector; hidden until their first placement so nothing flashes at 0,0. */
+.year-scene-overlay {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.year-scene-label,
+.year-scene-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  visibility: hidden;
+  white-space: nowrap;
+  user-select: none;
+}
+.year-scene-label {
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+.year-scene-label.is-current {
+  color: var(--accent);
+  font-weight: 600;
+}
+.year-scene-label.is-row {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ─── meter (single-line progress) ───────────────────────────────────── */
 .meter {
   height: 8px;

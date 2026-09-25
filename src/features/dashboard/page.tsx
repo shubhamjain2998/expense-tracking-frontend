@@ -22,6 +22,7 @@ import { computeInsights } from './lib/insights'
 import { detectRecurring } from './lib/recurring'
 import { computeSeasonality } from './lib/seasonality'
 import { computeYearOutlook } from './lib/yearOutlook'
+import { buildYearTerrain } from './lib/yearTerrain'
 
 /**
  * Home (/) — four blocks, in this order: verdict, where it went, the year,
@@ -132,12 +133,28 @@ export function DashboardPage() {
 
   // The year block reads today's position in the selected year, not the
   // picker's month — a past month selected mid-year still projects from today.
-  const yearOutlook = useMemo(() => {
+  const yearFraction = useMemo(() => {
     const current = getCurrentPeriod(mode, now)
     const daysInToday = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
-    const fraction = year === current.year ? now.getDate() / daysInToday : 1
-    return computeYearOutlook(data.yearlyTrendData, mode, data.monthsElapsedYtd, fraction)
-  }, [data.yearlyTrendData, data.monthsElapsedYtd, mode, year, now])
+    return year === current.year ? now.getDate() / daysInToday : 1
+  }, [mode, year, now])
+  const yearOutlook = useMemo(
+    () => computeYearOutlook(data.yearlyTrendData, mode, data.monthsElapsedYtd, yearFraction),
+    [data.yearlyTrendData, data.monthsElapsedYtd, mode, yearFraction]
+  )
+  // Same year, split by category, for the year block's 3D view.
+  const yearTerrain = useMemo(
+    () =>
+      buildYearTerrain({
+        txns: allHistory,
+        summaryRows: data.summaryRows,
+        year,
+        mode,
+        now,
+        monthFraction: yearFraction,
+      }),
+    [allHistory, data.summaryRows, year, mode, now, yearFraction]
+  )
 
   // ── Render ──────────────────────────────────────────────────────────────────────────────────
   return (
@@ -195,6 +212,7 @@ export function DashboardPage() {
           monthsElapsed={data.monthsElapsedYtd}
           isLoading={data.yearlyTrendLoading || data.ytdLoading}
           isDark={isDark}
+          terrain={yearTerrain}
         />
       </motion.div>
 
