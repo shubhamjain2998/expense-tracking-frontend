@@ -11,6 +11,7 @@ import {
 import { Skeleton } from '@/components/ui/Skeleton'
 import { formatCurrency } from '@/lib/format'
 
+import { axisUnit, formatAxisTick, niceAxisTicks } from '../lib/chartAxis'
 import { TOOLTIP_STYLE } from '../lib/chartTheme'
 import type { IncomeExpenseTrendPoint } from '../types'
 
@@ -39,8 +40,6 @@ interface TrendBlockProps {
 
 const WINDOW_OPTIONS = [6, 12, 15] as const
 
-/** 5 evenly-spaced "nice" ticks (0, step, 2·step, 3·step, 4·step) so the
- *  axis never lands on odd values like ₹65.0k between round lakh steps. */
 /** "2026-05" → "May". The axis stays short; the tooltip carries the year. */
 function monthLabel(key: string): string {
   const [, month] = key.split('-')
@@ -55,33 +54,10 @@ function monthAndYearLabel(key: string): string {
   return name ? `${name} ${year}` : key
 }
 
-function niceAxisTicks(maxValue: number): number[] {
-  if (maxValue <= 0) return [0]
-  const rawStep = maxValue / 4
-  const magnitude = 10 ** Math.floor(Math.log10(rawStep))
-  const normalized = rawStep / magnitude
-  const niceNormalized = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10
-  const step = niceNormalized * magnitude
-  return [0, step, step * 2, step * 3, step * 4]
-}
-
-/** One consistent unit for every tick on the axis, chosen from the top
- *  tick — never a mix of "65.0k" next to "2.6L". */
-function axisUnit(maxTick: number): { divisor: number; suffix: string; decimals: number } {
-  if (maxTick >= 1e7) return { divisor: 1e7, suffix: 'Cr', decimals: 1 }
-  if (maxTick >= 1e5) return { divisor: 1e5, suffix: 'L', decimals: 1 }
-  if (maxTick >= 1e3) return { divisor: 1e3, suffix: 'k', decimals: 0 }
-  return { divisor: 1, suffix: '', decimals: 0 }
-}
-
-function formatAxisTick(value: number, unit: ReturnType<typeof axisUnit>): string {
-  if (value === 0) return '₹0'
-  return `₹${(value / unit.divisor).toFixed(unit.decimals)}${unit.suffix}`
-}
-
 /**
  * Block 4 — Trend. "Is this month normal?"
- * The ONLY time-series on Home. One line chart, in vs out, with a
+ * The only month-by-month series on Home (the year block is cumulative).
+ * One line chart, in vs out, with a
  * 6/12/15-month window toggle — replaces SixMonthTrend, IncomeFlowAndTrend
  * and the seasonality arc (15m is one of the windows now).
  */

@@ -74,7 +74,7 @@ describe('hit-area classes clear 44px for every control they were written for', 
     expect(84).toBeGreaterThanOrEqual(MIN_HIT) // width needs no growth
   })
 
-  it('in-paragraph "Insights" links (46x15, IncomeSection + NeedsYou) — .inline-insights-link reaches height 44', () => {
+  it('in-paragraph "Insights" links (46x15, IncomeSection) — .inline-insights-link reaches height 44', () => {
     const body = ruleBody('.inline-insights-link::after')
     // asymmetric: "-14.5px 0" -> vertical inset -14.5, horizontal 0
     const insetDecl = body.match(/inset:\s*(-?[\d.]+)px\s+(-?[\d.]+)(?:px)?/)
@@ -172,9 +172,8 @@ describe('each control is wired to its hit-area class', () => {
       'hit44-pad-v deleted-toggle'
     )
   })
-  it('IncomeSection / NeedsYou in-paragraph Insights links', () => {
+  it('IncomeSection in-paragraph Insights link', () => {
     fileContains('features/budget/components/IncomeSection.tsx', 'inline-insights-link')
-    fileContains('features/dashboard/components/NeedsYou.tsx', 'inline-insights-link')
   })
   it('BudgetCategoryRow inline edit trigger', () => {
     fileContains(

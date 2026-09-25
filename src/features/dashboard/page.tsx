@@ -9,28 +9,28 @@ import { useThemeContext } from '@/hooks/useThemeContext'
 import { fadeUp, staggerContainer } from '@/lib/motion'
 import { onboardingStorage } from '@/lib/onboardingStorage'
 import { pendingTransactionsUrl } from '@/lib/pendingNav'
-import { resolvePeriodMonth } from '@/lib/period'
+import { getCurrentPeriod, resolvePeriodMonth } from '@/lib/period'
 
-import { CommittedVsChosen } from './components/CommittedVsChosen'
-import { NeedsYou } from './components/NeedsYou'
 import { TrendBlock } from './components/TrendBlock'
 import { VerdictBlock } from './components/VerdictBlock'
 import { WhereItWent } from './components/WhereItWent'
+import { YearBlock } from './components/YearBlock'
 import { useAllProcessedTransactions } from './hooks/useAllProcessedTransactions'
 import { useDashboardData } from './hooks/useDashboardData'
 import { MONTH_LABELS_FULL } from './lib/chartTheme'
 import { computeInsights } from './lib/insights'
 import { detectRecurring } from './lib/recurring'
 import { computeSeasonality } from './lib/seasonality'
+import { computeYearOutlook } from './lib/yearOutlook'
 
 /**
- * Home (/) — five blocks, in this order: verdict, where it went, committed
- * vs chosen, trend, needs you. Nothing else renders here.
+ * Home (/) — four blocks, in this order: verdict, where it went, the year,
+ * trend. Nothing else renders here.
  *
  * design-system/kosh-ledger/pages/dashboard.md is the spec. Habits,
- * seasonality detail, weekday patterns, the forecast, the full commitment
- * list and the people ledger live at /insights; per-category detail lives
- * at /c/:categoryId.
+ * seasonality detail, weekday patterns, the full commitment list and the
+ * people ledger live at /insights; per-category detail lives at
+ * /c/:categoryId.
  */
 export function DashboardPage() {
   // Stable per-mount "now" so the cross-period engine memos can be preserved
@@ -79,7 +79,7 @@ export function DashboardPage() {
   })
 
   // Full processed-transaction history powers the cross-period engines below.
-  const { transactions: allHistory, isLoading: historyLoading } = useAllProcessedTransactions()
+  const { transactions: allHistory } = useAllProcessedTransactions()
 
   // ── Engines (pure functions over the data the page already has) ──────────────
   // computeHabits/computeTagSpend and the YTD helpers move to /insights — their
@@ -130,7 +130,14 @@ export function DashboardPage() {
     ]
   )
 
-  const engineLoading = data.allTxnLoading || historyLoading
+  // The year block reads today's position in the selected year, not the
+  // picker's month — a past month selected mid-year still projects from today.
+  const yearOutlook = useMemo(() => {
+    const current = getCurrentPeriod(mode, now)
+    const daysInToday = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+    const fraction = year === current.year ? now.getDate() / daysInToday : 1
+    return computeYearOutlook(data.yearlyTrendData, mode, data.monthsElapsedYtd, fraction)
+  }, [data.yearlyTrendData, data.monthsElapsedYtd, mode, year, now])
 
   // ── Render ──────────────────────────────────────────────────────────────────────────────────
   return (
@@ -178,17 +185,20 @@ export function DashboardPage() {
         />
       </motion.div>
 
-      {/* 3 · Committed vs chosen */}
+      {/* 3 · The year — so far, and where it lands */}
       <motion.div variants={fadeUp}>
-        <CommittedVsChosen
-          recurring={recurring}
-          totalDebit={data.totalDebit}
-          now={now}
-          isLoading={engineLoading}
+        <YearBlock
+          outlook={yearOutlook}
+          annualPlan={data.annualBudget}
+          year={year}
+          mode={mode}
+          monthsElapsed={data.monthsElapsedYtd}
+          isLoading={data.yearlyTrendLoading || data.ytdLoading}
+          isDark={isDark}
         />
       </motion.div>
 
-      {/* 4 · Trend — the ONE time-series on this page */}
+      {/* 4 · Trend — month by month */}
       <motion.div variants={fadeUp}>
         <TrendBlock
           incomeTrendData={data.incomeTrendData}
@@ -196,18 +206,6 @@ export function DashboardPage() {
           onTrendWindowChange={setTrendWindow}
           isLoading={data.allTxnLoading || data.incomeQueriesLoading}
           isDark={isDark}
-        />
-      </motion.div>
-
-      {/* 5 · Needs you — every open loop, nothing else. Ends the page. */}
-      <motion.div variants={fadeUp}>
-        <NeedsYou
-          insights={insightsResult.insights}
-          pendingItems={data.pendingItems}
-          ledger={data.ledger}
-          monthLabel={currentMonthLabel ?? ''}
-          isCurrentMonth={isCurrentMonth}
-          isLoading={engineLoading || data.ledgerLoading || data.pendingLoading}
         />
       </motion.div>
     </motion.div>

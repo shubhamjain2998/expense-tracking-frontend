@@ -67,7 +67,7 @@
   position: relative;
 }
 .inline-insights-link::after {
-  /* In-paragraph "Insights" links (IncomeSection, NeedsYou) are ~46x15 —
+  /* In-paragraph "Insights" links (IncomeSection) are ~46x15 —
      width already clears 44px; grow height only so the overlay doesn't
      reach further into the surrounding sentence than it has to. */
   content: '';
