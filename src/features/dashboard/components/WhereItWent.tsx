@@ -20,6 +20,10 @@ interface WhereItWentProps {
   year: number
   month: number
   isLoading: boolean
+  /** Category lit up elsewhere (the 3D towers on Home); its row shows as hovered. */
+  highlight?: string | null
+  /** Reports the row under the pointer or keyboard focus, null when it leaves. */
+  onHighlight?: (category: string | null) => void
 }
 
 interface Row {
@@ -49,6 +53,8 @@ export function WhereItWent({
   year,
   month,
   isLoading,
+  highlight = null,
+  onHighlight,
 }: WhereItWentProps) {
   const [sort, setSort] = useState<SortMode>('amount')
 
@@ -117,7 +123,13 @@ export function WhereItWent({
             {rows.map((row) => (
               <Link
                 key={row.category}
-                className="bar-row"
+                className={['bar-row', highlight === row.category ? 'is-hot' : null]
+                  .filter(Boolean)
+                  .join(' ')}
+                onMouseEnter={() => onHighlight?.(row.category)}
+                onMouseLeave={() => onHighlight?.(null)}
+                onFocus={() => onHighlight?.(row.category)}
+                onBlur={() => onHighlight?.(null)}
                 to={`/c/${encodeURIComponent(row.category)}?year=${year}&month=${month}`}
               >
                 <span className="name">{row.category}</span>

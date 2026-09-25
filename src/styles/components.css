@@ -2135,7 +2135,8 @@ html.dark .auth-seal {
 .bar-row:last-child {
   border-bottom: 0;
 }
-a.bar-row:hover {
+a.bar-row:hover,
+a.bar-row.is-hot {
   background: var(--surface-2);
   color: inherit;
   text-decoration: none;
@@ -2200,7 +2201,8 @@ a.bar-row:hover {
   opacity: 0;
   transition: opacity var(--dur-1) var(--ease-out-soft);
 }
-.bar-row:hover .tick::after {
+.bar-row:hover .tick::after,
+.bar-row.is-hot .tick::after {
   opacity: 1;
 }
 .bar-row .amt {
@@ -3133,4 +3135,148 @@ html.dark .people .avatar {
   .tbl.sticky th {
     position: static;
   }
+}
+
+/* ─── Home as a 3D world (features/dashboard/world) ─────────────────────────
+   Panels scroll in the left column; the stage sticks beside them and the
+   camera follows the panel nearest the scroller's centre. Only mounted at
+   1200px and wider with WebGL — narrower, Home is the flat stack above. */
+.home-world {
+  display: grid;
+  grid-template-columns: minmax(0, 500px) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+.world-station {
+  min-height: calc(100vh - var(--topbar-h) - 48px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 32px 0;
+  opacity: 0.55;
+  transition: opacity var(--dur-3) var(--ease-out-soft);
+}
+.world-station.is-active,
+.world-station:focus-within {
+  opacity: 1;
+}
+/* The panel column is narrower than the flat page: the year block's two
+   money rows would overflow at full size. */
+.world-station .money .v {
+  font-size: 22px;
+}
+/* The panel column is narrower than the flat page: give the bar a share. */
+.world-station .bar-row {
+  grid-template-columns: 120px minmax(0, 1fr) 92px 100px;
+}
+.world-stage-wrap {
+  position: sticky;
+  top: 24px;
+  height: calc(100vh - var(--topbar-h) - 48px);
+}
+.world-stage {
+  position: absolute;
+  inset: 0;
+  cursor: grab;
+}
+.world-overlay {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.world-label,
+.world-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  visibility: hidden;
+  white-space: nowrap;
+  user-select: none;
+}
+.world-label {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.world-label.is-strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.world-label.is-current {
+  color: var(--accent);
+  font-weight: 600;
+}
+.world-rail {
+  position: absolute;
+  top: 8px;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.world-rail button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 4px 8px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  color: var(--ink-3);
+  transition:
+    color var(--dur-1) var(--ease-out-soft),
+    background var(--dur-1) var(--ease-out-soft);
+}
+.world-rail button:hover {
+  color: var(--ink);
+  background: var(--surface-2);
+}
+.world-rail button.on {
+  color: var(--ink);
+  font-weight: 600;
+}
+.world-rail button .num {
+  font-size: 10.5px;
+  color: var(--ink-4);
+}
+.world-rail button.on .num {
+  color: var(--accent);
+}
+.world-legend {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  /* Clear of the quick-add button fixed in the bottom-right corner. */
+  padding-right: 88px;
+  font-size: 12px;
+  color: var(--ink-3);
+  pointer-events: none;
+}
+.world-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.world-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+}
+.world-legend i.is-line {
+  width: 12px;
+  height: 2px;
+}
+.world-hint {
+  position: absolute;
+  top: 12px;
+  left: 0;
+  font-size: 12px;
+  color: var(--ink-3);
+  pointer-events: none;
 }

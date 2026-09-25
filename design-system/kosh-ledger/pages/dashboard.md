@@ -24,14 +24,6 @@ Home in 2026-09 in favour of the year block. Per-category detail lives at `/c/:i
   mark on each bar, and the deep dive is the row's link target.
 - Block 3 is cumulative (running total through the year, then a dashed projection at the pace
   of the completed months); its totals are the chart's own end points.
-- Block 3 has a second view, **3D** (Line | 3D toggle, offered only with WebGL and a viewport of
-  640px or wider). It is the same year split by category: months across, categories deep, spend up,
-  top 7 categories plus "Everything else". Plan is a thin cap at the category's monthly budget, the
-  accent cap on today's month is Where it went's pace tick, over-plan boxes use `--neg`, and
-  projected months are ghosted at the pace of the completed months. The camera is orthographic so
-  heights stay comparable. Clicking a box opens `/c/:id` for that month. The canvas is
-  `aria-hidden`, and an sr-only table carries the same numbers. three.js loads lazily, only when the
-  view is opened. Shaping: `lib/yearTerrain.ts`; scene: `components/YearScene/`.
 - Block 4 is the only month-by-month series. The window toggle replaces `SixMonthTrend` +
   `IncomeFlowAndTrend`; the 15-month seasonality arc is dropped because 15m is one of the windows.
 - The daily-spend calendar is removed from this page; weekday behaviour is answered once, in
@@ -51,6 +43,31 @@ Home in 2026-09 in favour of the year block. Per-category detail lives at `/c/:i
 
 `computeHabits`, `computeTagSpend` and `computeSeasonality` move to the Insights
 route — the engines are unchanged, only their mount point moves.
+
+## The 3D world (wide screens)
+
+At 1200px and wider, with WebGL, Home renders as a 3D world (`features/dashboard/world/`).
+The four blocks stay as real DOM panels in a 500px left column. A sticky stage beside them holds
+one orthographic scene with four stations. Scrolling the panels flies the camera to the station
+of the panel nearest the scroller's centre. Under reduced motion, the camera cuts between
+stations instead.
+
+| Station         | Draws                                                                                                                       | Replaces in the panel           |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| 1 The month     | Vessel: rim is income, fill is spend, green band is saved, red is spend past income, rings are budget and expected-by-today | nothing (the verdict stays)     |
+| 2 Where it went | One tower per category, in the bar list's order. Budget cap, pace tick on the front face, red over budget                   | nothing (the list is the index) |
+| 3 The year      | Month × category terrain, top 7 plus "Everything else", projected months ghosted                                            | the cumulative line chart       |
+| 4 Trend         | In and out as extruded ribbons over the 6/12/15-month window, with the average-out rule                                     | the line chart                  |
+
+Rules:
+
+- Every figure the stage draws is in a panel as text. The canvas is `aria-hidden`, and the
+  terrain has an sr-only table.
+- Hovering a Where it went row lights its tower, and hovering a tower lights its row.
+- Clicking a tower or a terrain box opens `/c/:id`, the same link as the row.
+- Only `--ink`, `--accent`, `--pos` and `--neg` colour the scene, read from the tokens and
+  re-read when the theme flips.
+- Narrower than 1200px, or without WebGL, Home is the flat four-block stack described above.
 
 ## Loading and empty states
 

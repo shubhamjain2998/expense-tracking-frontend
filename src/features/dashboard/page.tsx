@@ -1,5 +1,5 @@
 import { motion } from 'motion/react'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 
 import { GettingStartedChecklist } from '@/components/onboarding/GettingStartedChecklist'
 import { WelcomeModal } from '@/components/onboarding/WelcomeModal'
@@ -23,10 +23,17 @@ import { detectRecurring } from './lib/recurring'
 import { computeSeasonality } from './lib/seasonality'
 import { computeYearOutlook } from './lib/yearOutlook'
 import { buildYearTerrain } from './lib/yearTerrain'
+import { HomeWorld } from './world/HomeWorld'
+import { buildTowers, buildTrend, buildVessel } from './world/stationData'
+import { useWorldSupported } from './world/support'
+
+const BLOCK_KEYS = ['verdict', 'where', 'year', 'trend'] as const
 
 /**
  * Home (/) — four blocks, in this order: verdict, where it went, the year,
- * trend. Nothing else renders here.
+ * trend. Nothing else renders here. On wide screens with WebGL the blocks
+ * become the panels of a 3D world (world/HomeWorld.tsx) whose stage draws
+ * what their charts would; elsewhere they stack as a flat page.
  *
  * design-system/kosh-ledger/pages/dashboard.md is the spec. Habits,
  * seasonality detail, weekday patterns, the full commitment list and the
@@ -142,7 +149,7 @@ export function DashboardPage() {
     () => computeYearOutlook(data.yearlyTrendData, mode, data.monthsElapsedYtd, yearFraction),
     [data.yearlyTrendData, data.monthsElapsedYtd, mode, yearFraction]
   )
-  // Same year, split by category, for the year block's 3D view.
+  // Same year, split by category, for the world's year station.
   const yearTerrain = useMemo(
     () =>
       buildYearTerrain({
@@ -156,7 +163,77 @@ export function DashboardPage() {
     [allHistory, data.summaryRows, year, mode, now, yearFraction]
   )
 
+  // ── 3D world (wide screens with WebGL) ─────────────────────────────────────
+  const worldSupported = useWorldSupported()
+  const [highlight, setHighlight] = useState<string | null>(null)
+  const vessel = useMemo(
+    () =>
+      buildVessel({
+        income: data.totalIncome,
+        spent: data.totalDebit,
+        budget: data.totalBudget,
+        paceAt,
+      }),
+    [data.totalIncome, data.totalDebit, data.totalBudget, paceAt]
+  )
+  const towers = useMemo(() => buildTowers(data.summaryRows, paceAt), [data.summaryRows, paceAt])
+  const trend = useMemo(() => buildTrend(data.incomeTrendData), [data.incomeTrendData])
+
   // ── Render ──────────────────────────────────────────────────────────────────────────────────
+  // The four blocks, in order. In the world they're the panels beside the
+  // stage and the stage draws what their charts would; flat, they stack.
+  const blocks: [ReactNode, ReactNode, ReactNode, ReactNode] = [
+    <VerdictBlock
+      key="verdict"
+      verdict={insightsResult.verdict}
+      totalIncome={data.totalIncome}
+      totalDebit={data.totalDebit}
+      totalBudget={data.totalBudget}
+      daysLeftInMonth={daysLeftInMonth}
+      dayOfMonth={dayOfMonth}
+      daysInMonth={daysInMonth}
+      currentMonthLabel={currentMonthLabel ?? ''}
+      displayYear={calYear}
+      selectorYear={year}
+      selectorMonth={month}
+      onPeriodChange={setPeriod}
+      onPeriodJump={setPeriod}
+      isLoading={data.summaryLoading}
+      lastActiveMonthHint={data.lastActiveMonthHint}
+    />,
+    <WhereItWent
+      key="where"
+      summaryRows={data.summaryRows}
+      budgetRows={data.budgetRows}
+      paceAt={paceAt}
+      year={year}
+      month={month}
+      isLoading={data.summaryLoading}
+      highlight={worldSupported ? highlight : null}
+      onHighlight={worldSupported ? setHighlight : undefined}
+    />,
+    <YearBlock
+      key="year"
+      outlook={yearOutlook}
+      annualPlan={data.annualBudget}
+      year={year}
+      mode={mode}
+      monthsElapsed={data.monthsElapsedYtd}
+      isLoading={data.yearlyTrendLoading || data.ytdLoading}
+      isDark={isDark}
+      showChart={!worldSupported}
+    />,
+    <TrendBlock
+      key="trend"
+      incomeTrendData={data.incomeTrendData}
+      trendWindow={trendWindow}
+      onTrendWindowChange={setTrendWindow}
+      isLoading={data.allTxnLoading || data.incomeQueriesLoading}
+      isDark={isDark}
+      showChart={!worldSupported}
+    />,
+  ]
+
   return (
     <motion.div
       className="space-y-8"
@@ -169,63 +246,28 @@ export function DashboardPage() {
       )}
       {showChecklist && <GettingStartedChecklist onDismiss={() => setShowChecklist(false)} />}
 
-      {/* 1 · Verdict — the only place this month's money figures appear */}
-      <motion.div variants={fadeUp}>
-        <VerdictBlock
-          verdict={insightsResult.verdict}
-          totalIncome={data.totalIncome}
-          totalDebit={data.totalDebit}
-          totalBudget={data.totalBudget}
-          daysLeftInMonth={daysLeftInMonth}
-          dayOfMonth={dayOfMonth}
-          daysInMonth={daysInMonth}
-          currentMonthLabel={currentMonthLabel ?? ''}
-          displayYear={calYear}
-          selectorYear={year}
-          selectorMonth={month}
-          onPeriodChange={setPeriod}
-          onPeriodJump={setPeriod}
-          isLoading={data.summaryLoading}
-          lastActiveMonthHint={data.lastActiveMonthHint}
-        />
-      </motion.div>
-
-      {/* 2 · Where it went — bar list doubles as the budget-pace view */}
-      <motion.div variants={fadeUp}>
-        <WhereItWent
-          summaryRows={data.summaryRows}
-          budgetRows={data.budgetRows}
-          paceAt={paceAt}
-          year={year}
-          month={month}
-          isLoading={data.summaryLoading}
-        />
-      </motion.div>
-
-      {/* 3 · The year — so far, and where it lands */}
-      <motion.div variants={fadeUp}>
-        <YearBlock
-          outlook={yearOutlook}
-          annualPlan={data.annualBudget}
-          year={year}
-          mode={mode}
-          monthsElapsed={data.monthsElapsedYtd}
-          isLoading={data.yearlyTrendLoading || data.ytdLoading}
-          isDark={isDark}
-          terrain={yearTerrain}
-        />
-      </motion.div>
-
-      {/* 4 · Trend — month by month */}
-      <motion.div variants={fadeUp}>
-        <TrendBlock
-          incomeTrendData={data.incomeTrendData}
-          trendWindow={trendWindow}
-          onTrendWindowChange={setTrendWindow}
-          isLoading={data.allTxnLoading || data.incomeQueriesLoading}
-          isDark={isDark}
-        />
-      </motion.div>
+      {worldSupported ? (
+        <motion.div variants={fadeUp}>
+          <HomeWorld
+            panels={blocks}
+            vessel={vessel}
+            towers={towers}
+            terrain={yearTerrain}
+            trend={trend}
+            highlight={highlight}
+            onHighlight={setHighlight}
+            year={year}
+            month={month}
+            isDark={isDark}
+          />
+        </motion.div>
+      ) : (
+        blocks.map((block, i) => (
+          <motion.div key={BLOCK_KEYS[i]} variants={fadeUp}>
+            {block}
+          </motion.div>
+        ))
+      )}
     </motion.div>
   )
 }

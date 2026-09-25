@@ -36,6 +36,8 @@ interface TrendBlockProps {
   onTrendWindowChange: (w: number) => void
   isLoading: boolean
   isDark: boolean
+  /** False when the 3D world on Home draws the series instead of the line chart. */
+  showChart?: boolean
 }
 
 const WINDOW_OPTIONS = [6, 12, 15] as const
@@ -67,6 +69,7 @@ export function TrendBlock({
   onTrendWindowChange,
   isLoading,
   isDark,
+  showChart = true,
 }: TrendBlockProps) {
   // Matches tokens.css --ink-3 for each theme (recharts sets these as SVG
   // presentation attributes, not CSS properties, so var(--ink-3) can't be
@@ -143,62 +146,67 @@ export function TrendBlock({
               )}
             </div>
 
-            <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={incomeTrendData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-                <CartesianGrid vertical={false} stroke={gridStroke} strokeDasharray="4 4" />
-                {/* Keyed on `key` (YYYY-MM), not on the month name: past 12
+            {showChart && (
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart
+                  data={incomeTrendData}
+                  margin={{ top: 8, right: 16, left: 0, bottom: 0 }}
+                >
+                  <CartesianGrid vertical={false} stroke={gridStroke} strokeDasharray="4 4" />
+                  {/* Keyed on `key` (YYYY-MM), not on the month name: past 12
                     months the name repeats, and Recharts resolves a repeated
                     category to its first occurrence, so the tooltip showed the
                     older month's figures. Ticks stay short via the formatter. */}
-                <XAxis
-                  dataKey="key"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 11, fill: tickColor }}
-                  padding={{ left: 8, right: 8 }}
-                  tickFormatter={(v) => monthLabel(String(v))}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 10, fill: tickColor }}
-                  domain={[0, yDomainMax]}
-                  ticks={yTicks}
-                  tickFormatter={(v) => formatAxisTick(Number(v), yUnit)}
-                  width={54}
-                />
-                <Tooltip
-                  cursor={{ stroke: tickColor, strokeDasharray: '3 4', strokeOpacity: 0.5 }}
-                  contentStyle={TOOLTIP_STYLE}
-                  labelFormatter={(v) => monthAndYearLabel(String(v))}
-                  formatter={(v, name) => [
-                    formatCurrency(Number(v)),
-                    name === 'income' ? 'In' : 'Out',
-                  ]}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="expense"
-                  name="expense"
-                  stroke="var(--ink)"
-                  strokeWidth={2.25}
-                  dot={{ r: 3.5, strokeWidth: 2, fill: 'var(--surface)', stroke: 'var(--ink)' }}
-                  activeDot={{ r: 5.5 }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="income"
-                  name="income"
-                  stroke="var(--accent)"
-                  strokeWidth={2}
-                  strokeDasharray="5 4"
-                  // Plain dot — a stroke+fill override on a dashed line
-                  // produced stray glyph-like artefacts at each point.
-                  dot={{ r: 3 }}
-                  activeDot={{ r: 5.5 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+                  <XAxis
+                    dataKey="key"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fill: tickColor }}
+                    padding={{ left: 8, right: 8 }}
+                    tickFormatter={(v) => monthLabel(String(v))}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 10, fill: tickColor }}
+                    domain={[0, yDomainMax]}
+                    ticks={yTicks}
+                    tickFormatter={(v) => formatAxisTick(Number(v), yUnit)}
+                    width={54}
+                  />
+                  <Tooltip
+                    cursor={{ stroke: tickColor, strokeDasharray: '3 4', strokeOpacity: 0.5 }}
+                    contentStyle={TOOLTIP_STYLE}
+                    labelFormatter={(v) => monthAndYearLabel(String(v))}
+                    formatter={(v, name) => [
+                      formatCurrency(Number(v)),
+                      name === 'income' ? 'In' : 'Out',
+                    ]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="expense"
+                    name="expense"
+                    stroke="var(--ink)"
+                    strokeWidth={2.25}
+                    dot={{ r: 3.5, strokeWidth: 2, fill: 'var(--surface)', stroke: 'var(--ink)' }}
+                    activeDot={{ r: 5.5 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="income"
+                    name="income"
+                    stroke="var(--accent)"
+                    strokeWidth={2}
+                    strokeDasharray="5 4"
+                    // Plain dot — a stroke+fill override on a dashed line
+                    // produced stray glyph-like artefacts at each point.
+                    dot={{ r: 3 }}
+                    activeDot={{ r: 5.5 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
 
             {/* Phase 9: `.sr-only` on the `<table>` itself didn't visually
                 hide it — CSS 2.1's auto table-layout algorithm treats a

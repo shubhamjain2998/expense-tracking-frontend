@@ -11,6 +11,7 @@ export interface SceneColors {
   surface2: string
   accent: string
   neg: string
+  pos: string
 }
 
 const FALLBACK: SceneColors = {
@@ -20,6 +21,7 @@ const FALLBACK: SceneColors = {
   surface2: '#eef1f4',
   accent: '#2563eb',
   neg: '#b91c1c',
+  pos: '#136429',
 }
 
 const TOKENS: Record<keyof SceneColors, string> = {
@@ -29,6 +31,7 @@ const TOKENS: Record<keyof SceneColors, string> = {
   surface2: '--surface-2',
   accent: '--accent',
   neg: '--neg',
+  pos: '--pos',
 }
 
 export function readSceneColors(root: Element = document.documentElement): SceneColors {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
-/** Narrower than this, the grid's labels crowd out the boxes; stay on the line chart. */
-const MIN_WIDTH_QUERY = '(min-width: 640px)'
+/** Narrower than this, the panels and the stage can't sit side by side; Home stays flat. */
+const MIN_WIDTH_QUERY = '(min-width: 1200px)'
 
 let webglSupport: boolean | null = null
 
@@ -18,11 +18,11 @@ export function hasWebGL(): boolean {
 }
 
 /**
- * True when the 3D year view can be offered: WebGL exists and the viewport
- * is wide enough. Tracks the viewport live, so rotating a tablet or resizing
- * the window adds or removes the option.
+ * True when Home can render as the 3D world: WebGL exists and the viewport
+ * is wide enough. Tracks the viewport live, so resizing the window switches
+ * between the world and the flat page.
  */
-export function useCanShow3D(): boolean {
+export function useWorldSupported(): boolean {
   const [wide, setWide] = useState(
     () => typeof window !== 'undefined' && !!window.matchMedia?.(MIN_WIDTH_QUERY).matches
   )
