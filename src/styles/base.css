@@ -119,13 +119,18 @@ html.app-shell-active body {
 
 /* Theme-toggle circular reveal (View Transitions API).
    The default crossfade is replaced by a clip-path circle animated from
-   the toggle button in useTheme.ts. `theme-switching` suspends the body's
-   color transition so the snapshot doesn't smear mid-fade. */
+   the toggle button in useTheme.ts. `theme-switching` suspends every
+   transition for the swap, not just the body's: the new-theme snapshot is
+   taken the moment the class flips, so any card, bar or button still
+   easing its colours was captured half-way, then kept fading after the
+   reveal ended — the screen visibly flickered for a second or two. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
   mix-blend-mode: normal;
 }
-html.theme-switching body {
-  transition: none;
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition: none !important;
 }
