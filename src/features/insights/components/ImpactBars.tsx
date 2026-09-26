@@ -6,6 +6,9 @@ import type { StakeRow } from '../lib/insightsDerive'
 interface ImpactBarsProps {
   rows: StakeRow[]
   onSelect: (id: string) => void
+  /** Finding lit in both these bars and the 3D world's slabs. */
+  highlight?: string | null
+  onHighlight?: (id: string | null) => void
 }
 
 /**
@@ -17,7 +20,7 @@ interface ImpactBarsProps {
  * MASTER.md §6) rather than inventing a second bar list; only the column
  * template differs.
  */
-export function ImpactBars({ rows, onSelect }: ImpactBarsProps) {
+export function ImpactBars({ rows, onSelect, highlight = null, onHighlight }: ImpactBarsProps) {
   if (rows.length < 2) return null
 
   return (
@@ -33,8 +36,12 @@ export function ImpactBars({ rows, onSelect }: ImpactBarsProps) {
           <button
             key={r.id}
             type="button"
-            className="bar-row"
+            className={['bar-row', highlight === r.id ? 'is-hot' : null].filter(Boolean).join(' ')}
             onClick={() => onSelect(r.id)}
+            onMouseEnter={() => onHighlight?.(r.id)}
+            onMouseLeave={() => onHighlight?.(null)}
+            onFocus={() => onHighlight?.(r.id)}
+            onBlur={() => onHighlight?.(null)}
             aria-label={`${r.title}: ${formatCurrency(r.amount)} a year`}
           >
             <span className="name">{r.title}</span>

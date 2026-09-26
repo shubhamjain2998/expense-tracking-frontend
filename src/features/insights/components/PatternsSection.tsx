@@ -6,6 +6,12 @@ import type { InsightsPattern } from '../lib/insightsResponseSchema'
 
 interface PatternsSectionProps {
   patterns: InsightsPattern[]
+  /** Controlled open row; left out, the section keeps its own. */
+  openId?: string | null
+  onOpenChange?: (id: string | null) => void
+  /** Pattern lit in both this list and the 3D world's plates. */
+  highlight?: string | null
+  onHighlight?: (id: string | null) => void
 }
 
 /**
@@ -16,8 +22,16 @@ interface PatternsSectionProps {
  * Collapsed to titles: a pattern is a statement, and the numbers behind it
  * only matter once you've decided the statement is interesting.
  */
-export function PatternsSection({ patterns }: PatternsSectionProps) {
-  const [openId, setOpenId] = useState<string | null>(null)
+export function PatternsSection({
+  patterns,
+  openId: controlledOpenId,
+  onOpenChange,
+  highlight = null,
+  onHighlight,
+}: PatternsSectionProps) {
+  const [ownOpenId, setOwnOpenId] = useState<string | null>(null)
+  const openId = controlledOpenId === undefined ? ownOpenId : controlledOpenId
+  const setOpenId = onOpenChange ?? setOwnOpenId
 
   if (patterns.length === 0) return null
 
@@ -33,13 +47,20 @@ export function PatternsSection({ patterns }: PatternsSectionProps) {
         const isOpen = openId === p.id
         const bodyId = `pattern-body-${p.id}`
         return (
-          <div key={p.id} className={`disc ${isOpen ? 'is-open' : ''}`}>
+          <div
+            key={p.id}
+            className={`disc ${isOpen ? 'is-open' : ''} ${highlight === p.id ? 'is-hot' : ''}`}
+          >
             <button
               type="button"
               className="disc-head"
               onClick={() => setOpenId(isOpen ? null : p.id)}
               aria-expanded={isOpen}
               aria-controls={bodyId}
+              onMouseEnter={onHighlight && (() => onHighlight(p.id))}
+              onMouseLeave={onHighlight && (() => onHighlight(null))}
+              onFocus={onHighlight && (() => onHighlight(p.id))}
+              onBlur={onHighlight && (() => onHighlight(null))}
             >
               <span className="ico" aria-hidden="true" />
               <span className="t">{p.title}</span>

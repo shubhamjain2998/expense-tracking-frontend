@@ -1,0 +1,20 @@
+/* ─── Insights as a 3D world (features/insights/world) ──────────────────────
+   Panel-side pieces of the world only; the layout itself is the shared
+   .world-page from components.css. Rows lit from the stage read the same as
+   hovering them, like Where it went's bars on Home. */
+.world-station button.bar-row.is-hot,
+.world-station .disc.is-hot .disc-head,
+.world-station .tbl tr.is-hot td {
+  background: var(--surface-2);
+}
+
+/* The panel column is narrower than the flat page: one chart per row. */
+.world-station .insights-charts {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* The People table is wider than the panel column; it scrolls inside its
+   card rather than running under the stage. */
+.world-station .card:has(> .tbl) {
+  overflow-x: auto;
+}

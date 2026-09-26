@@ -14,6 +14,10 @@ interface FindingRowProps {
   finding: InsightsFinding
   isOpen: boolean
   onToggle: () => void
+  /** Lit from the 3D world's slab for this finding. */
+  isHot?: boolean
+  /** Pointer or focus entering (true) and leaving (false) the row's head. */
+  onHover?: (on: boolean) => void
 }
 
 const SEVERITY_META: Record<InsightsSeverity, { cls: string; icon: IconName }> = {
@@ -45,19 +49,29 @@ function deltaTone(severity: InsightsSeverity): string {
  * Nothing the LLM sent is dropped; it is ordered by how much of it a person
  * needs at a glance.
  */
-export function FindingRow({ finding: f, isOpen, onToggle }: FindingRowProps) {
+export function FindingRow({
+  finding: f,
+  isOpen,
+  onToggle,
+  isHot = false,
+  onHover,
+}: FindingRowProps) {
   const meta = SEVERITY_META[f.severity]
   const change = f.comparison ? formatChange(f.comparison.from, f.comparison.to) : null
   const bodyId = `finding-body-${f.id}`
 
   return (
-    <div className={`disc ${meta.cls} ${isOpen ? 'is-open' : ''}`}>
+    <div className={`disc ${meta.cls} ${isOpen ? 'is-open' : ''} ${isHot ? 'is-hot' : ''}`}>
       <button
         type="button"
         className="disc-head"
         onClick={onToggle}
         aria-expanded={isOpen}
         aria-controls={bodyId}
+        onMouseEnter={onHover && (() => onHover(true))}
+        onMouseLeave={onHover && (() => onHover(false))}
+        onFocus={onHover && (() => onHover(true))}
+        onBlur={onHover && (() => onHover(false))}
       >
         <span className="ico">
           <Icon name={meta.icon} size={16} aria-hidden="true" />

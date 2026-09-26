@@ -13,6 +13,9 @@ interface PeopleSectionProps {
   includeSettled: boolean
   onToggleSettled: () => void
   isLoading: boolean
+  /** Person lit in both this table and the 3D world's beams. */
+  highlight?: string | null
+  onHighlight?: (person: string | null) => void
 }
 
 /**
@@ -31,6 +34,8 @@ export function PeopleSection({
   includeSettled,
   onToggleSettled,
   isLoading,
+  highlight = null,
+  onHighlight,
 }: PeopleSectionProps) {
   const rows = ledger.filter((r) => Number(r.total_split_amount) > 0)
   const netTotal = rows.reduce((s, r) => s + Number(r.total_split_amount), 0)
@@ -77,7 +82,12 @@ export function PeopleSection({
                 const initial = row.person_name.trim().charAt(0).toUpperCase() || '?'
                 const items = openItemsByPerson.get(row.person_name) ?? []
                 return (
-                  <tr key={row.person_name}>
+                  <tr
+                    key={row.person_name}
+                    className={highlight === row.person_name ? 'is-hot' : undefined}
+                    onMouseEnter={onHighlight ? () => onHighlight(row.person_name) : undefined}
+                    onMouseLeave={onHighlight ? () => onHighlight(null) : undefined}
+                  >
                     <td className="font-medium text-[var(--ink)]">
                       <span className="people">
                         <span className="avatar">{initial}</span>
