@@ -1895,6 +1895,27 @@ html.dark .auth-seal {
     column-gap: 24px;
   }
 }
+/* On a phone three KPI columns don't fit: the verdict's "Saved" and the
+   year block's totals ran off the card into a scrolling strip with clipped
+   figures. Let them wrap, as the world panel does, and drop the shared
+   label/value rows (a wrapped row can't share a subgrid). */
+@media (max-width: 599px) {
+  .money-row {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(auto-fill, minmax(128px, max-content));
+    grid-template-rows: none;
+    row-gap: 16px;
+    overflow: visible;
+  }
+  .money {
+    grid-template-rows: auto;
+    grid-row: auto;
+    align-content: start;
+  }
+  .money .v {
+    font-size: 22px;
+  }
+}
 
 /* ─── section head ───────────────────────────────────────────────────── */
 .sec {

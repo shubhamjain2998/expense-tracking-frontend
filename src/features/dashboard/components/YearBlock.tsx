@@ -34,7 +34,9 @@ interface YearBlockProps {
 
 function TotalsRow({ totals, label }: { totals: YearTotals; label: string }) {
   return (
-    <div className="flex flex-col gap-2">
+    // grow: on a phone each group wraps onto its own line and should span it,
+    // so its figures can sit two to a row instead of one.
+    <div className="flex min-w-0 grow flex-col gap-2">
       <span className="eyebrow">{label}</span>
       <div className="money-row">
         <span className="money">
