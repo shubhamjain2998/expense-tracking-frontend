@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { YearMonthSelector } from '@/components/ui/YearMonthSelector'
+import { useWorldSupported } from '@/components/world/support'
 import { useAllProcessedTransactions } from '@/features/dashboard/hooks/useAllProcessedTransactions'
 import { MONTH_LABELS_FULL } from '@/features/dashboard/lib/chartTheme'
 import { usePeriod } from '@/hooks/usePeriod'
@@ -19,12 +20,16 @@ import { CategoryBreakdown } from './components/CategoryBreakdown'
 import { CategoryTransactionsTable } from './components/CategoryTransactionsTable'
 import { CategoryTrendChart } from './components/CategoryTrendChart'
 import {
+  categoryMonthBudget,
   categoryMonthlySeries,
   computeCategoryStats,
   dominantTransaction,
   merchantBreakdown,
   tagBreakdown,
 } from './lib/categoryStats'
+import { CategoryWorld } from './world/CategoryWorld'
+import { buildBreakdown, buildDays, buildMonths } from './world/stationData'
+import './world/world.css'
 
 const TREND_MONTHS = 15
 
@@ -79,13 +84,12 @@ export function CategoryPage() {
     retry: false,
     throwOnError: false,
   })
-  const budgetEntry = budgetQuery.data?.find((e) => e.category === category)
-  const override = overridesQuery.data?.find((o) => o.category === category && o.month === calMonth)
-  const monthlyBudget = override
-    ? Number(override.allocated_amount)
-    : budgetEntry
-      ? Number(budgetEntry.allocated_amount) / 12
-      : 0
+  const monthlyBudget = categoryMonthBudget(
+    budgetQuery.data,
+    overridesQuery.data,
+    category,
+    calMonth
+  )
 
   // ── Derived transaction sets ─────────────────────────────────────────────
   const categoryExists = useMemo(
@@ -135,6 +139,24 @@ export function CategoryPage() {
 
   const isLoading = historyLoading || budgetQuery.isLoading || overridesQuery.isLoading
 
+  // ── 3D world (wide screens with WebGL) ─────────────────────────────────────
+  const worldSupported = useWorldSupported()
+  const [breakdownHighlight, setBreakdownHighlight] = useState<string | null>(null)
+  const [txnHighlight, setTxnHighlight] = useState<string | null>(null)
+  // Columns carry a budget cap only for the budget year the page has loaded.
+  const worldMonths = useMemo(
+    () =>
+      buildMonths(series, (y, m) =>
+        y === calYear ? categoryMonthBudget(budgetQuery.data, overridesQuery.data, category, m) : 0
+      ),
+    [series, calYear, budgetQuery.data, overridesQuery.data, category]
+  )
+  const worldBreakdown = useMemo(() => buildBreakdown(merchants, tags), [merchants, tags])
+  const worldDays = useMemo(
+    () => buildDays(monthTxns, calYear, calMonth),
+    [monthTxns, calYear, calMonth]
+  )
+
   // "Open in Transactions" — pre-filters to this category via the
   // `?category=<id>` param Transactions now reads on mount. `category_id`
   // comes off any matching transaction since this page only has the
@@ -164,121 +186,177 @@ export function CategoryPage() {
 
   const pctOfBudget = monthlyBudget > 0 ? Math.round((stats.thisMonth / monthlyBudget) * 100) : null
 
+  const header = (
+    <section>
+      <p className="mb-3 text-[12.5px] text-[var(--ink-3)]">
+        <Link to="/dashboard">Home</Link> · <span className="text-[var(--ink-3)]">{category}</span>
+      </p>
+      <div className="verdict">
+        <div className="flex min-w-0 flex-col gap-4">
+          <p className="eyebrow">Category · {monthLabel}</p>
+          {isLoading ? (
+            <Skeleton className="h-16 w-64" />
+          ) : (
+            <>
+              <span className="hero-num neg num">{formatCurrency(stats.thisMonth)}</span>
+              <p className="verdict-line">
+                {pctOfBudget !== null ? (
+                  <>
+                    <b>{pctOfBudget}%</b> of a {formatCurrency(monthlyBudget)} budget
+                    {isCurrentMonth && daysLeftInMonth > 0
+                      ? `, with ${daysLeftInMonth} day${daysLeftInMonth === 1 ? '' : 's'} left`
+                      : ''}
+                    .
+                  </>
+                ) : (
+                  <>
+                    <b>{Math.round(stats.shareOfSpend * 100)}%</b> of all spend this month · no
+                    budget set for {category}.
+                  </>
+                )}{' '}
+                {dominant && dominant.share >= 0.3 && (
+                  <>
+                    One transaction on{' '}
+                    {new Date(dominant.txn.txn_date).toLocaleDateString('en-IN', {
+                      day: 'numeric',
+                      month: 'short',
+                    })}{' '}
+                    is <b>{Math.round(dominant.share * 100)}%</b> of the total — without it{' '}
+                    {pctOfBudget !== null && pctOfBudget > 100
+                      ? 'you would be inside the plan.'
+                      : 'the month would look very different.'}
+                  </>
+                )}
+              </p>
+            </>
+          )}
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <span className="eyebrow">Period</span>
+          <YearMonthSelector year={year} month={month} onPeriodChange={setPeriod} />
+        </div>
+      </div>
+    </section>
+  )
+
+  const statsStrip = (
+    <section className="sec">
+      <div className="card card-flush">
+        <div className="stats">
+          <div>
+            <span className="eyebrow">Median month</span>
+            <span className="v num">{formatCurrency(stats.medianMonth)}</span>
+            <span className="text-[12.5px] text-[var(--ink-3)]">{series.length} months</span>
+          </div>
+          <div>
+            <span className="eyebrow">Biggest month</span>
+            <span className="v num">{formatCurrency(stats.biggestMonth?.amount ?? 0)}</span>
+            <span className="text-[12.5px] text-[var(--ink-3)]">
+              {stats.biggestMonth ? `${stats.biggestMonth.label} ${stats.biggestMonth.year}` : '—'}
+            </span>
+          </div>
+          <div>
+            <span className="eyebrow">This month</span>
+            <span className="v num">{formatCurrency(stats.thisMonth)}</span>
+            <span className="text-[12.5px] text-[var(--ink-3)]">
+              {stats.thisMonthRank === 1
+                ? 'highest on record'
+                : `${stats.thisMonthRank}${stats.thisMonthRank === 2 ? 'nd' : stats.thisMonthRank === 3 ? 'rd' : 'th'} highest on record`}
+            </span>
+          </div>
+          <div>
+            <span className="eyebrow">Transactions</span>
+            <span className="v num">{stats.txnCount}</span>
+            <span className="text-[12.5px] text-[var(--ink-3)]">
+              median {formatCurrency(stats.medianTicket)}
+            </span>
+          </div>
+          <div>
+            <span className="eyebrow">Share of spend</span>
+            <span className="v num">{Math.round(stats.shareOfSpend * 100)}%</span>
+            <span className="text-[12.5px] text-[var(--ink-3)]">
+              {stats.prevShareOfSpend !== null
+                ? `was ${Math.round(stats.prevShareOfSpend * 100)}% last month`
+                : '—'}
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+
+  const trendChart = (showChart: boolean) => (
+    <CategoryTrendChart
+      category={category}
+      series={series}
+      isDark={isDark}
+      isLoading={isLoading}
+      showChart={showChart}
+    />
+  )
+
+  const table = (
+    <CategoryTransactionsTable
+      txns={monthTxns}
+      monthLabel={monthLabel}
+      openInTransactionsHref={openInTransactionsHref}
+      isLoading={isLoading}
+      highlight={worldSupported ? txnHighlight : null}
+      onHighlight={worldSupported ? setTxnHighlight : undefined}
+      scrollBody={worldSupported}
+    />
+  )
+
+  if (worldSupported) {
+    return (
+      <div className="cat-world">
+        <CategoryWorld
+          category={category}
+          panels={[
+            <div key="trend" className="space-y-8">
+              {header}
+              {trendChart(false)}
+              {statsStrip}
+            </div>,
+            <CategoryBreakdown
+              key="breakdown"
+              merchants={merchants}
+              tags={tags}
+              isLoading={isLoading}
+              stacked
+              highlight={breakdownHighlight}
+              onHighlight={setBreakdownHighlight}
+            />,
+            table,
+          ]}
+          months={worldMonths}
+          breakdown={worldBreakdown}
+          days={worldDays}
+          breakdownHighlight={breakdownHighlight}
+          onBreakdownHighlight={setBreakdownHighlight}
+          txnHighlight={txnHighlight}
+          onTxnHighlight={setTxnHighlight}
+          onPickMonth={(c) => {
+            const p = calendarToPeriod(c.year, c.month, mode)
+            setPeriod(p.year, p.month)
+          }}
+          isDark={isDark}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-8">
-      <section>
-        <p className="mb-3 text-[12.5px] text-[var(--ink-3)]">
-          <Link to="/dashboard">Home</Link> ·{' '}
-          <span className="text-[var(--ink-3)]">{category}</span>
-        </p>
-        <div className="verdict">
-          <div className="flex min-w-0 flex-col gap-4">
-            <p className="eyebrow">Category · {monthLabel}</p>
-            {isLoading ? (
-              <Skeleton className="h-16 w-64" />
-            ) : (
-              <>
-                <span className="hero-num neg num">{formatCurrency(stats.thisMonth)}</span>
-                <p className="verdict-line">
-                  {pctOfBudget !== null ? (
-                    <>
-                      <b>{pctOfBudget}%</b> of a {formatCurrency(monthlyBudget)} budget
-                      {isCurrentMonth && daysLeftInMonth > 0
-                        ? `, with ${daysLeftInMonth} day${daysLeftInMonth === 1 ? '' : 's'} left`
-                        : ''}
-                      .
-                    </>
-                  ) : (
-                    <>
-                      <b>{Math.round(stats.shareOfSpend * 100)}%</b> of all spend this month · no
-                      budget set for {category}.
-                    </>
-                  )}{' '}
-                  {dominant && dominant.share >= 0.3 && (
-                    <>
-                      One transaction on{' '}
-                      {new Date(dominant.txn.txn_date).toLocaleDateString('en-IN', {
-                        day: 'numeric',
-                        month: 'short',
-                      })}{' '}
-                      is <b>{Math.round(dominant.share * 100)}%</b> of the total — without it{' '}
-                      {pctOfBudget !== null && pctOfBudget > 100
-                        ? 'you would be inside the plan.'
-                        : 'the month would look very different.'}
-                    </>
-                  )}
-                </p>
-              </>
-            )}
-          </div>
-          <div className="flex shrink-0 flex-col items-end gap-2">
-            <span className="eyebrow">Period</span>
-            <YearMonthSelector year={year} month={month} onPeriodChange={setPeriod} />
-          </div>
-        </div>
-      </section>
+      {header}
 
-      <CategoryTrendChart
-        category={category}
-        series={series}
-        isDark={isDark}
-        isLoading={isLoading}
-      />
+      {trendChart(true)}
 
-      <section className="sec">
-        <div className="card card-flush">
-          <div className="stats">
-            <div>
-              <span className="eyebrow">Median month</span>
-              <span className="v num">{formatCurrency(stats.medianMonth)}</span>
-              <span className="text-[12.5px] text-[var(--ink-3)]">{series.length} months</span>
-            </div>
-            <div>
-              <span className="eyebrow">Biggest month</span>
-              <span className="v num">{formatCurrency(stats.biggestMonth?.amount ?? 0)}</span>
-              <span className="text-[12.5px] text-[var(--ink-3)]">
-                {stats.biggestMonth
-                  ? `${stats.biggestMonth.label} ${stats.biggestMonth.year}`
-                  : '—'}
-              </span>
-            </div>
-            <div>
-              <span className="eyebrow">This month</span>
-              <span className="v num">{formatCurrency(stats.thisMonth)}</span>
-              <span className="text-[12.5px] text-[var(--ink-3)]">
-                {stats.thisMonthRank === 1
-                  ? 'highest on record'
-                  : `${stats.thisMonthRank}${stats.thisMonthRank === 2 ? 'nd' : stats.thisMonthRank === 3 ? 'rd' : 'th'} highest on record`}
-              </span>
-            </div>
-            <div>
-              <span className="eyebrow">Transactions</span>
-              <span className="v num">{stats.txnCount}</span>
-              <span className="text-[12.5px] text-[var(--ink-3)]">
-                median {formatCurrency(stats.medianTicket)}
-              </span>
-            </div>
-            <div>
-              <span className="eyebrow">Share of spend</span>
-              <span className="v num">{Math.round(stats.shareOfSpend * 100)}%</span>
-              <span className="text-[12.5px] text-[var(--ink-3)]">
-                {stats.prevShareOfSpend !== null
-                  ? `was ${Math.round(stats.prevShareOfSpend * 100)}% last month`
-                  : '—'}
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
+      {statsStrip}
 
       <CategoryBreakdown merchants={merchants} tags={tags} isLoading={isLoading} />
 
-      <CategoryTransactionsTable
-        txns={monthTxns}
-        monthLabel={monthLabel}
-        openInTransactionsHref={openInTransactionsHref}
-        isLoading={isLoading}
-      />
+      {table}
     </div>
   )
 }

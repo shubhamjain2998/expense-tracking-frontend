@@ -26,6 +26,9 @@ interface CategoryTrendChartProps {
   series: CategoryMonthPoint[]
   isDark: boolean
   isLoading: boolean
+  /** False in the 3D world, whose stage draws the columns instead; the
+   *  heading and the screen-reader table stay. */
+  showChart?: boolean
 }
 
 /** Same 5-tick / unit-normalised axis approach as Home's TrendBlock —
@@ -64,6 +67,7 @@ export function CategoryTrendChart({
   series,
   isDark,
   isLoading,
+  showChart = true,
 }: CategoryTrendChartProps) {
   // Matches tokens.css --ink-3 for each theme (recharts sets these as SVG
   // presentation attributes, not CSS properties, so var(--ink-3) can't be
@@ -91,53 +95,55 @@ export function CategoryTrendChart({
         </span>
       </div>
 
-      <div className="card">
+      <div className={showChart ? 'card' : undefined}>
         {isLoading ? (
-          <Skeleton className="h-56 w-full" />
+          showChart && <Skeleton className="h-56 w-full" />
         ) : (
           <>
-            <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={rows} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-                <CartesianGrid vertical={false} stroke={gridStroke} strokeDasharray="4 4" />
-                <XAxis
-                  dataKey="key"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 11, fill: tickColor }}
-                  padding={{ left: 8, right: 8 }}
-                  interval="preserveStartEnd"
-                  tickFormatter={(v) => labelByKey.get(String(v)) ?? String(v)}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 10, fill: tickColor }}
-                  domain={[0, yDomainMax]}
-                  ticks={yTicks}
-                  tickFormatter={(v) => formatAxisTick(Number(v), yUnit)}
-                  width={54}
-                />
-                <Tooltip
-                  cursor={{ stroke: tickColor, strokeDasharray: '3 4', strokeOpacity: 0.5 }}
-                  contentStyle={TOOLTIP_STYLE}
-                  formatter={(v) => [formatCurrency(Number(v)), category]}
-                  labelFormatter={(v) => {
-                    const key = String(v)
-                    const label = labelByKey.get(key)
-                    return label ? `${label} ${yearByKey.get(key)}` : key
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="amount"
-                  name={category}
-                  stroke="var(--ink)"
-                  strokeWidth={2.25}
-                  dot={{ r: 3.5, strokeWidth: 2, fill: 'var(--surface)', stroke: 'var(--ink)' }}
-                  activeDot={{ r: 5.5 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            {showChart && (
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={rows} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                  <CartesianGrid vertical={false} stroke={gridStroke} strokeDasharray="4 4" />
+                  <XAxis
+                    dataKey="key"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fill: tickColor }}
+                    padding={{ left: 8, right: 8 }}
+                    interval="preserveStartEnd"
+                    tickFormatter={(v) => labelByKey.get(String(v)) ?? String(v)}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 10, fill: tickColor }}
+                    domain={[0, yDomainMax]}
+                    ticks={yTicks}
+                    tickFormatter={(v) => formatAxisTick(Number(v), yUnit)}
+                    width={54}
+                  />
+                  <Tooltip
+                    cursor={{ stroke: tickColor, strokeDasharray: '3 4', strokeOpacity: 0.5 }}
+                    contentStyle={TOOLTIP_STYLE}
+                    formatter={(v) => [formatCurrency(Number(v)), category]}
+                    labelFormatter={(v) => {
+                      const key = String(v)
+                      const label = labelByKey.get(key)
+                      return label ? `${label} ${yearByKey.get(key)}` : key
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="amount"
+                    name={category}
+                    stroke="var(--ink)"
+                    strokeWidth={2.25}
+                    dot={{ r: 3.5, strokeWidth: 2, fill: 'var(--surface)', stroke: 'var(--ink)' }}
+                    activeDot={{ r: 5.5 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
 
             {/* Phase 9: sr-only moved to a wrapper div — see the matching
                 comment in TrendBlock.tsx for why `.sr-only` on the
