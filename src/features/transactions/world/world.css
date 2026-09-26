@@ -18,23 +18,3 @@
 .txn-hero .world-legend {
   padding-right: 0;
 }
-
-/* Two long-standing layout faults the hero makes worse (it pushes the table
-   further down the scroller), fixed only alongside it so the flat page is
-   untouched:
-   1. The table's wrapper is `overflow-x-auto`, which makes it the sticky
-      header's scroll container — so `.tbl.sticky th` never sticks. At this
-      width the fixed columns always fit, so clipping instead of scrolling
-      lets the header stick to the top of the page scroller.
-   2. The docked editor is `position: static` at >=1200px, so opening a row
-      far down the list leaves the panel at the top of the table, off screen.
-      Keep it in view beside the rows, scrolling on its own when taller. */
-.txn-hero ~ .card .worksplit > .min-w-0 {
-  overflow-x: clip;
-}
-.txn-hero ~ .card .worksplit > .txn-side-panel {
-  position: sticky;
-  top: 8px;
-  max-height: calc(100vh - var(--topbar-h) - 16px);
-  overflow-y: auto;
-}

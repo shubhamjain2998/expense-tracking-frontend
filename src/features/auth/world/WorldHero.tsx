@@ -2,11 +2,14 @@ import { useReducedMotion } from 'motion/react'
 import { lazy, Suspense, useMemo } from 'react'
 
 import { readSceneColors } from '@/components/world/sceneColors'
+import { useWorldSupported } from '@/components/world/support'
 import { useThemeContext } from '@/hooks/useThemeContext'
 
 import type { HeroSceneName } from './HeroCanvas'
-import { useHeroSupported } from './useHeroSupported'
 import './world.css'
+
+/** Narrower than this the form stands alone; the hero would only push it down. */
+const HERO_MIN_WIDTH = 900
 
 // three.js, fiber and drei are ~250 KB gzipped: fetched only when a hero mounts.
 const HeroCanvas = lazy(() => import('./HeroCanvas'))
@@ -17,7 +20,7 @@ const HeroCanvas = lazy(() => import('./HeroCanvas'))
  * it; the canvas itself is aria-hidden.
  */
 export function WorldHero({ scene, className }: { scene: HeroSceneName; className?: string }) {
-  const supported = useHeroSupported()
+  const supported = useWorldSupported(HERO_MIN_WIDTH)
   const still = useReducedMotion() ?? false
   const { isDark } = useThemeContext()
   // Re-read the tokens when the theme flips; html.dark swaps the CSS vars.

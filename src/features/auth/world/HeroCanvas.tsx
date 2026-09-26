@@ -136,7 +136,15 @@ export default function HeroCanvas({
   const getMotion = useCallback(() => motion.current, [])
 
   return (
-    <WorldCanvas frames={frames} labels={[]} tip={null} motion={getMotion} instant colors={colors}>
+    <WorldCanvas
+      frames={frames}
+      labels={[]}
+      tip={null}
+      motion={getMotion}
+      instant
+      colors={colors}
+      showPath={false}
+    >
       <Turntable still={still}>
         {scene === 'auth' ? (
           <AuthScene colors={colors} still={still} />

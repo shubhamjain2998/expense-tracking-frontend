@@ -126,6 +126,9 @@ export interface WorldCanvasProps {
   motion: () => WorldMotion
   instant: boolean
   colors: SceneColors
+  /** Draw the ground rule joining the stations. Off for single-scene heroes,
+   *  where a fixed rule under a turning scene reads as a glitch. */
+  showPath?: boolean
   /** The page's station meshes. */
   children: ReactNode
 }
@@ -142,6 +145,7 @@ export default function WorldCanvas({
   motion,
   instant,
   colors,
+  showPath = true,
   children,
 }: WorldCanvasProps) {
   const labelEls = useRef<(HTMLElement | null)[]>([])
@@ -166,7 +170,7 @@ export default function WorldCanvas({
         <ambientLight intensity={1.6} />
         <directionalLight position={[6, 12, 8]} intensity={1.4} />
         <CameraRig frames={frames} motion={motion} instant={instant} />
-        <Path colors={colors} count={frames.length} />
+        {showPath && <Path colors={colors} count={frames.length} />}
         {children}
         <Projector
           labels={labels}

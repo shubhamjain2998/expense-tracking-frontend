@@ -32,9 +32,9 @@ const DESTINATIONS: Destination[] = [
 ]
 
 function isActive(pathname: string, d: Destination): boolean {
+  // The category page (/c/:id) is reached from Home, Budget and Insights
+  // alike, so no destination claims it.
   if (d.key === 'home') return pathname === '/dashboard'
-  // The category page is Insights' drill-down; keep that tab lit there.
-  if (d.key === 'insights') return pathname.startsWith('/insights') || pathname.startsWith('/c/')
   return pathname.startsWith(d.path)
 }
 

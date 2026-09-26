@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
-/** Narrower than this, the panels and the stage can't sit side by side; Home stays flat. */
-const MIN_WIDTH_QUERY = '(min-width: 1200px)'
+/** Narrower than this, the panels and the stage can't sit side by side; pages stay flat. */
+export const WORLD_MIN_WIDTH = 1200
 
 let webglSupport: boolean | null = null
 
@@ -22,16 +22,17 @@ export function hasWebGL(): boolean {
  * is wide enough. Tracks the viewport live, so resizing the window switches
  * between the world and the flat page.
  */
-export function useWorldSupported(): boolean {
+export function useWorldSupported(minWidth: number = WORLD_MIN_WIDTH): boolean {
+  const query = `(min-width: ${minWidth}px)`
   const [wide, setWide] = useState(
-    () => typeof window !== 'undefined' && !!window.matchMedia?.(MIN_WIDTH_QUERY).matches
+    () => typeof window !== 'undefined' && !!window.matchMedia?.(query).matches
   )
   useEffect(() => {
-    const mq = window.matchMedia?.(MIN_WIDTH_QUERY)
+    const mq = window.matchMedia?.(query)
     if (!mq) return
     const onChange = (e: MediaQueryListEvent) => setWide(e.matches)
     mq.addEventListener('change', onChange)
     return () => mq.removeEventListener('change', onChange)
-  }, [])
+  }, [query])
   return wide && hasWebGL()
 }

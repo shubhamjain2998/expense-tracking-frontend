@@ -10,13 +10,8 @@
 
 import type { StationFrame, Vec3 } from '@/components/world/cameraPath'
 
-/**
- * Where the turntable sits. WorldCanvas always draws its station path along
- * the ground at y≈0 (the kit has no switch for it), and under a turning scene
- * that fixed rule reads as a glitch — so the whole scene is lifted far above
- * it, out of frame.
- */
-export const HERO_ORIGIN: Vec3 = [0, 40, 0]
+/** Where the turntable sits. WorldCanvas's ground rule is off for the hero. */
+export const HERO_ORIGIN: Vec3 = [0, 0, 0]
 
 /** Radians per second: one full turn every 90s. */
 export const TURN_SPEED = (Math.PI * 2) / 90

@@ -2840,14 +2840,25 @@ html.dark .people .avatar {
   .worksplit:has(> .txn-side-panel) {
     grid-template-columns: minmax(0, 1fr) 328px;
   }
+  /* Sticky beside the rows, scrolling on its own when taller — static, a row
+     opened far down the list left the editor off screen at the table's top. */
   .worksplit > .txn-side-panel {
-    position: static;
+    position: sticky;
+    top: 8px;
     width: auto;
-    max-height: none;
+    max-height: calc(100vh - var(--topbar-h) - 16px);
+    overflow-y: auto;
     border-left: 0;
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: var(--surface);
+  }
+  /* The list's wrapper was overflow-x: auto, which made it the scroll
+     container for `.tbl.sticky th` — so the header never stuck. At this width
+     the fixed columns fit, so clip instead and let the header stick to the
+     page scroller. */
+  .worksplit > .min-w-0 {
+    overflow-x: clip;
   }
 }
 
