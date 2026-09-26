@@ -33,6 +33,9 @@ export default defineConfig({
     },
   },
   server: {
+    // Agent worktrees under .claude/ carry their own src; watching them makes
+    // this server reload on another checkout's edits.
+    watch: { ignored: ['**/.claude/**'] },
     proxy: {
       '/api': {
         target: process.env.VITE_API_URL ?? 'http://localhost:8000',
