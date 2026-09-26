@@ -280,7 +280,9 @@ export function YearBlock({
                       dataKey="inActual"
                       stroke="var(--accent)"
                       strokeWidth={2}
-                      dot={{ r: 3 }}
+                      // Surface fill like Out's; recharts' default white
+                      // glared in dark mode.
+                      dot={{ r: 3, fill: 'var(--surface)' }}
                       activeDot={{ r: 5 }}
                       connectNulls={false}
                     />

@@ -214,10 +214,13 @@ export function TrendBlock({
                     stroke="var(--accent)"
                     strokeWidth={2}
                     strokeDasharray="5 4"
-                    // Plain dot — a stroke+fill override on a dashed line
-                    // produced stray glyph-like artefacts at each point.
-                    dot={{ r: 3 }}
-                    activeDot={{ r: 5.5 }}
+                    // Recharts hands the line's dash pattern to its dots, and a
+                    // 3px circle drawn with a "5 4" dash reads as a broken
+                    // glyph at each point. Dots are drawn solid, filled with
+                    // the surface like Out's (recharts' default is white,
+                    // which glared in dark mode).
+                    dot={{ r: 3, strokeDasharray: 'none', fill: 'var(--surface)' }}
+                    activeDot={{ r: 5.5, strokeDasharray: 'none' }}
                   />
                 </LineChart>
               </ResponsiveContainer>
