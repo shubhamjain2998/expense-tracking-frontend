@@ -16,10 +16,15 @@ export function IncomeSection({
   rows,
   month,
   mode,
+  highlight = null,
+  onHighlight,
 }: {
   rows: IncomeTableRow[]
   month: number
   mode: PeriodMode
+  /** Category id lit here and in the 3D world. */
+  highlight?: string | null
+  onHighlight?: (categoryId: string | null) => void
 }) {
   return (
     <div className="sec">
@@ -44,7 +49,12 @@ export function IncomeSection({
             </thead>
             <tbody>
               {rows.map((row) => (
-                <IncomeCategoryRow key={row.categoryId} row={row} />
+                <IncomeCategoryRow
+                  key={row.categoryId}
+                  row={row}
+                  hot={highlight === row.categoryId}
+                  onHighlight={onHighlight}
+                />
               ))}
             </tbody>
           </table>

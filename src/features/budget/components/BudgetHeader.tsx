@@ -23,6 +23,7 @@ export function BudgetHeader({
   yearVerdict,
   onNavigateYear,
   onAddClick,
+  showMeter = true,
 }: {
   year: number
   mode: PeriodMode
@@ -35,6 +36,8 @@ export function BudgetHeader({
   yearVerdict: YearVerdict
   onNavigateYear: (dir: -1 | 1) => void
   onAddClick: () => void
+  /** False in the 3D world, where the year vessel draws the meter. */
+  showMeter?: boolean
 }) {
   const yearLabel = formatYearLabel(year, mode)
   const { pctUsed, pctYearLeft, diff } = yearVerdict
@@ -73,12 +76,14 @@ export function BudgetHeader({
                 )}
               </p>
               <div style={{ maxWidth: 620 }}>
-                <div className="meter" style={{ height: 10 }}>
-                  <i
-                    className={paceStatus === 'over' ? 'over' : undefined}
-                    style={{ width: `${Math.min(pctUsed, 100)}%` }}
-                  />
-                </div>
+                {showMeter && (
+                  <div className="meter" style={{ height: 10 }}>
+                    <i
+                      className={paceStatus === 'over' ? 'over' : undefined}
+                      style={{ width: `${Math.min(pctUsed, 100)}%` }}
+                    />
+                  </div>
+                )}
                 <div className="mt-1.5 flex justify-between">
                   <span className="small num">{formatCurrency(totalYTDSpent)} spent</span>
                   <span className="small num">{formatCurrency(totalAnnual)} planned</span>

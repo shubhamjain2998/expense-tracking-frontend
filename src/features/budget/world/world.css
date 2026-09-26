@@ -1,0 +1,23 @@
+/* ─── Budget as a 3D world (features/budget/world) ──────────────────────────
+   Local to this page: the kit's layout lives in styles/components.css. */
+
+/* The plan table has five money/meter columns: 500px squeezes it into a
+   horizontal scroll, so this page's panel column is wider. */
+.budget-world .world-page {
+  grid-template-columns: minmax(0, 640px) minmax(0, 1fr);
+}
+
+/* The row meters give way to the vessels beside them. */
+.budget-world .tbl .meter {
+  width: 64px !important;
+}
+
+/* A row lit from its vessel, block or column — the same wash a hovered
+   Where it went row gets on Home. */
+.budget-world .tbl tr.is-hot td,
+.budget-world .alert.is-hot {
+  background: var(--surface-2);
+}
+.budget-world .tbl tr.is-hot td {
+  transition: background var(--dur-1) var(--ease-out-soft);
+}

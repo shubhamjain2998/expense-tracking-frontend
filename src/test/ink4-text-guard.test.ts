@@ -72,8 +72,8 @@ const ALLOWED_INK4_TEXT_CONTEXT_SITES = [
   'components/ui/SearchableSelect.tsx:251', // create-checkbox <Icon>
   'components/ui/Toast.tsx:48', // dismiss <Icon name="close">
   'components/onboarding/GettingStartedChecklist.tsx:112', // step <Icon>
-  'features/budget/components/BudgetCategoryRow.tsx:108', // edit <Icon>
-  'features/budget/components/BudgetCategoryRow.tsx:125', // reset <Icon name="restart_alt">
+  'features/budget/components/BudgetCategoryRow.tsx:119', // edit <Icon>
+  'features/budget/components/BudgetCategoryRow.tsx:136', // reset <Icon name="restart_alt">
   'features/budget/components/PeriodModePromptCard.tsx:77', // radio <Icon>
   'features/settings/components/IgnoreRulesSection.tsx:58', // chip remove <Icon name="close">
   'features/settings/components/ProfileSection.tsx:256', // edit <Icon>

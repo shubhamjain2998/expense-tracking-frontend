@@ -12,10 +12,15 @@ export function OutsideThePlanSection({
   rows,
   onSetBudget,
   isSaving,
+  highlight = null,
+  onHighlight,
 }: {
   rows: UnbudgetedCategoryRowData[]
   onSetBudget: (categoryId: string, monthlyAmount: number) => void
   isSaving: boolean
+  /** Category id lit here and in the 3D world. */
+  highlight?: string | null
+  onHighlight?: (categoryId: string | null) => void
 }) {
   if (rows.length === 0) return null
 
@@ -26,13 +31,15 @@ export function OutsideThePlanSection({
         <span className="sub">No budget set for these categories</span>
       </div>
       <div className="card card-flush">
-        <div className="alerts">
+        <div className="alerts" role="list">
           {rows.map((row) => (
             <UnbudgetedCategoryRow
               key={row.categoryId}
               row={row}
               onSetBudget={onSetBudget}
               isSaving={isSaving}
+              hot={highlight === row.categoryId}
+              onHighlight={onHighlight}
             />
           ))}
         </div>

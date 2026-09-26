@@ -17,10 +17,15 @@ export function UnbudgetedCategoryRow({
   row,
   onSetBudget,
   isSaving,
+  hot = false,
+  onHighlight,
 }: {
   row: UnbudgetedCategoryRowData
   onSetBudget: (categoryId: string, monthlyAmount: number) => void
   isSaving: boolean
+  /** Lit from its block in the 3D world. */
+  hot?: boolean
+  onHighlight?: (categoryId: string | null) => void
 }) {
   const [editing, setEditing] = useState(false)
   const [editValue, setEditValue] = useState('')
@@ -46,7 +51,14 @@ export function UnbudgetedCategoryRow({
   }
 
   return (
-    <div className="alert">
+    <div
+      className={hot ? 'alert is-hot' : 'alert'}
+      role="listitem"
+      onMouseEnter={onHighlight ? () => onHighlight(row.categoryId) : undefined}
+      onMouseLeave={onHighlight ? () => onHighlight(null) : undefined}
+      onFocus={onHighlight ? () => onHighlight(row.categoryId) : undefined}
+      onBlur={onHighlight ? () => onHighlight(null) : undefined}
+    >
       <Icon className="ico" name="tag" size={18} />
       <span className="body flex flex-col">
         <span className="strong">
