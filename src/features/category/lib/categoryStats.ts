@@ -17,10 +17,36 @@ function median(values: number[]): number {
   return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid]
 }
 
-function expenseAmount(t: ProcessedTransactionItem): number {
-  if (t.txn_type !== 'expense') return 0
+/** Which way a category's money moves: most categories are spending, but
+ *  salary, dividends and the like are income, and the page reads those
+ *  transactions instead of showing an empty month. */
+export type CategoryFlow = 'expense' | 'income'
+
+function flowAmount(t: ProcessedTransactionItem, flow: CategoryFlow): number {
+  if (t.txn_type !== flow) return 0
   const n = Math.abs(Number(t.effective_amount))
   return Number.isFinite(n) ? n : 0
+}
+
+/** Income when more of the category's transactions are income than
+ *  expense; a stray refund-like credit in a spending category doesn't flip
+ *  it. */
+export function categoryFlow(txns: ProcessedTransactionItem[], category: string): CategoryFlow {
+  let income = 0
+  let expense = 0
+  for (const t of txns) {
+    if (t.category !== category) continue
+    if (t.txn_type === 'income') income += 1
+    else if (t.txn_type === 'expense') expense += 1
+  }
+  return income > expense ? 'income' : 'expense'
+}
+
+/** Calendar year and month of a transaction, read off the `YYYY-MM-DD`
+ *  string: `new Date()` parses a bare date as UTC midnight, which lands on
+ *  the previous day (and month) west of UTC. */
+export function txnCalMonth(t: ProcessedTransactionItem): { year: number; month: number } {
+  return { year: Number(t.txn_date.slice(0, 4)), month: Number(t.txn_date.slice(5, 7)) }
 }
 
 function prevMonth(year: number, month: number): { year: number; month: number } {
@@ -56,16 +82,17 @@ export function categoryMonthlySeries(
   category: string,
   calYear: number,
   calMonth: number,
-  months = 15
+  months = 15,
+  flow: CategoryFlow = 'expense'
 ): CategoryMonthPoint[] {
   const byKey = new Map<string, number>()
   for (const t of txns) {
     if (t.category !== category) continue
-    const amount = expenseAmount(t)
+    const amount = flowAmount(t, flow)
     if (amount <= 0) continue
-    const d = new Date(t.txn_date)
-    if (Number.isNaN(d.getTime())) continue
-    const key = `${d.getFullYear()}-${d.getMonth() + 1}`
+    const { year, month } = txnCalMonth(t)
+    if (!Number.isInteger(year) || !Number.isInteger(month)) continue
+    const key = `${year}-${month}`
     byKey.set(key, (byKey.get(key) ?? 0) + amount)
   }
 
@@ -89,7 +116,8 @@ export interface CategoryStats {
   thisMonthRank: number
   txnCount: number
   medianTicket: number
-  /** This category's share of ALL-category spend this calendar month, 0-1. */
+  /** This category's share of ALL-category spend (or income, for an income
+   *  category) this calendar month, 0-1. */
   shareOfSpend: number
   /** Same share, previous calendar month — for the "was X% in <month>" line. */
   prevShareOfSpend: number | null
@@ -99,14 +127,15 @@ export interface CategoryStats {
  * `series` must be `categoryMonthlySeries`'s output (dense, chronological,
  * ending at the target month). `monthTxns` is this category's transactions
  * in the target month; `allTxnsThisMonth`/`allTxnsPrevMonth` are ALL
- * categories' expense transactions in the target/previous month (for the
- * share-of-spend denominator).
+ * categories' transactions in the target/previous month (for the
+ * share-of-spend denominator). Only `flow` transactions count.
  */
 export function computeCategoryStats(
   series: CategoryMonthPoint[],
   monthTxns: ProcessedTransactionItem[],
   allTxnsThisMonth: ProcessedTransactionItem[],
-  allTxnsPrevMonth: ProcessedTransactionItem[]
+  allTxnsPrevMonth: ProcessedTransactionItem[],
+  flow: CategoryFlow = 'expense'
 ): CategoryStats {
   const medianMonth = median(series.map((p) => p.amount))
   const biggestMonth = series.reduce<CategoryMonthPoint | null>(
@@ -114,24 +143,27 @@ export function computeCategoryStats(
     null
   )
   const thisMonth = series.at(-1)?.amount ?? 0
-  const ranked = [...series].sort((a, b) => b.amount - a.amount)
-  const thisMonthRank = ranked.findIndex((p) => p === series.at(-1)) + 1
+  // Ties share a rank: months above it, plus one. Sorting and finding the
+  // point put an empty month 15th of 15 behind fourteen other empty ones.
+  const thisMonthRank =
+    series.length > 0 ? series.filter((p) => p.amount > thisMonth).length + 1 : 0
 
-  const amounts = monthTxns.map(expenseAmount).filter((a) => a > 0)
+  const amounts = monthTxns.map((t) => flowAmount(t, flow)).filter((a) => a > 0)
   const txnCount = amounts.length
   const medianTicket = median(amounts)
 
-  const allThisMonthTotal = allTxnsThisMonth.reduce((s, t) => s + expenseAmount(t), 0)
-  const allPrevMonthTotal = allTxnsPrevMonth.reduce((s, t) => s + expenseAmount(t), 0)
-  const categoryPrevMonthTotal = allTxnsPrevMonth
-    .filter((t) => monthTxns.length > 0 && t.category === monthTxns[0].category)
-    .reduce((s, t) => s + expenseAmount(t), 0)
+  const allThisMonthTotal = allTxnsThisMonth.reduce((s, t) => s + flowAmount(t, flow), 0)
+  const allPrevMonthTotal = allTxnsPrevMonth.reduce((s, t) => s + flowAmount(t, flow), 0)
+  // The series already holds the category's previous month. Reading the
+  // category off this month's transactions made a quiet month report "was
+  // 0% last month" whatever last month held.
+  const categoryPrevMonthTotal = series.length > 1 ? (series.at(-2)?.amount ?? 0) : 0
 
   return {
     medianMonth,
     biggestMonth,
     thisMonth,
-    thisMonthRank: thisMonthRank > 0 ? thisMonthRank : series.length,
+    thisMonthRank,
     txnCount,
     medianTicket,
     shareOfSpend: allThisMonthTotal > 0 ? thisMonth / allThisMonthTotal : 0,
@@ -146,10 +178,13 @@ export interface BreakdownRow {
 }
 
 /** Merchants (by description) within a set of transactions, sorted desc. */
-export function merchantBreakdown(txns: ProcessedTransactionItem[]): BreakdownRow[] {
+export function merchantBreakdown(
+  txns: ProcessedTransactionItem[],
+  flow: CategoryFlow = 'expense'
+): BreakdownRow[] {
   const map = new Map<string, BreakdownRow>()
   for (const t of txns) {
-    const amount = expenseAmount(t)
+    const amount = flowAmount(t, flow)
     if (amount <= 0) continue
     const entry = map.get(t.description) ?? { name: t.description, total: 0, count: 0 }
     entry.total += amount
@@ -162,12 +197,13 @@ export function merchantBreakdown(txns: ProcessedTransactionItem[]): BreakdownRo
 /** Tags within a set of transactions, sorted desc, with each tag's share of
  *  the set's total. */
 export function tagBreakdown(
-  txns: ProcessedTransactionItem[]
+  txns: ProcessedTransactionItem[],
+  flow: CategoryFlow = 'expense'
 ): (BreakdownRow & { pctOfMonth: number })[] {
   const map = new Map<string, BreakdownRow>()
   let total = 0
   for (const t of txns) {
-    const amount = expenseAmount(t)
+    const amount = flowAmount(t, flow)
     if (amount <= 0) continue
     total += amount
     for (const tag of t.tags ?? []) {
@@ -185,10 +221,11 @@ export function tagBreakdown(
 /** The single largest transaction in a set, and its share of the set's total —
  *  for "one transaction dominates" framing. */
 export function dominantTransaction(
-  txns: ProcessedTransactionItem[]
+  txns: ProcessedTransactionItem[],
+  flow: CategoryFlow = 'expense'
 ): { txn: ProcessedTransactionItem; amount: number; share: number } | null {
   const withAmounts = txns
-    .map((t) => ({ txn: t, amount: expenseAmount(t) }))
+    .map((t) => ({ txn: t, amount: flowAmount(t, flow) }))
     .filter((x) => x.amount > 0)
   if (withAmounts.length === 0) return null
   const total = withAmounts.reduce((s, x) => s + x.amount, 0)
