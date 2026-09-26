@@ -31,7 +31,6 @@ function row(id: string, monthly: number, spent: number, ytd = spent * 3): Categ
     ytdSpent: ytd,
     annualBudget: monthly * 12,
     pctUsed: monthly > 0 ? (spent / monthly) * 100 : null,
-    hasOverride: false,
   }
 }
 

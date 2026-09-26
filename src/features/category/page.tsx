@@ -11,7 +11,7 @@ import { MONTH_LABELS_FULL } from '@/features/dashboard/lib/chartTheme'
 import { usePeriod } from '@/hooks/usePeriod'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { useThemeContext } from '@/hooks/useThemeContext'
-import { getBudget, getMonthlyBudgetOverrides } from '@/lib/api/budget'
+import { getBudget } from '@/lib/api/budget'
 import { formatCurrency } from '@/lib/format'
 import { calendarToPeriod, resolvePeriodMonth } from '@/lib/period'
 import { qk } from '@/lib/queryKeys'
@@ -66,30 +66,19 @@ export function CategoryPage() {
     calMonth === 1 ? { year: calYear - 1, month: 12 } : { year: calYear, month: calMonth - 1 }
 
   // ── Category-scoped budget (this category, this calendar month only) ───
+  // Plans are stored per *period* year — the Budget page reads
+  // getBudget(year) with the picker's year — so this must too. Reading the
+  // calendar year picked the wrong plan for Jan–Mar in FY mode.
   const budgetQuery = useQuery({
-    queryKey: qk.budget.byYear(calYear),
-    queryFn: () => getBudget(calYear),
+    queryKey: qk.budget.byYear(year),
+    queryFn: () => getBudget(year),
     // GET /budget/{year} legitimately 404s when this category's year has no
     // budget plan yet — a valid "no budget" response, not a transient
-    // failure. See the sibling overridesQuery fix just below.
+    // failure.
     retry: false,
     throwOnError: false,
   })
-  const overridesQuery = useQuery({
-    queryKey: qk.budget.overrides(calYear),
-    queryFn: () => getMonthlyBudgetOverrides(calYear),
-    // GET /budget/{year}/monthly-overrides 404s (no backend route yet) —
-    // fail fast instead of react-query's default 3x retry storm on every
-    // category drill-down visit. See useBudgetData.ts for the same fix.
-    retry: false,
-    throwOnError: false,
-  })
-  const monthlyBudget = categoryMonthBudget(
-    budgetQuery.data,
-    overridesQuery.data,
-    category,
-    calMonth
-  )
+  const monthlyBudget = categoryMonthBudget(budgetQuery.data, category)
 
   // ── Derived transaction sets ─────────────────────────────────────────────
   const categoryExists = useMemo(
@@ -137,19 +126,22 @@ export function CategoryPage() {
   const tags = useMemo(() => tagBreakdown(monthTxns), [monthTxns])
   const dominant = useMemo(() => dominantTransaction(monthTxns), [monthTxns])
 
-  const isLoading = historyLoading || budgetQuery.isLoading || overridesQuery.isLoading
+  const isLoading = historyLoading || budgetQuery.isLoading
 
   // ── 3D world (wide screens with WebGL) ─────────────────────────────────────
   const worldSupported = useWorldSupported()
   const [breakdownHighlight, setBreakdownHighlight] = useState<string | null>(null)
   const [txnHighlight, setTxnHighlight] = useState<string | null>(null)
-  // Columns carry a budget cap only for the budget year the page has loaded.
+  // Columns carry a budget cap only for months in the budget (period) year
+  // the page has loaded.
   const worldMonths = useMemo(
     () =>
       buildMonths(series, (y, m) =>
-        y === calYear ? categoryMonthBudget(budgetQuery.data, overridesQuery.data, category, m) : 0
+        calendarToPeriod(y, m, mode).year === year
+          ? categoryMonthBudget(budgetQuery.data, category)
+          : 0
       ),
-    [series, calYear, budgetQuery.data, overridesQuery.data, category]
+    [series, year, mode, budgetQuery.data, category]
   )
   const worldBreakdown = useMemo(() => buildBreakdown(merchants, tags), [merchants, tags])
   const worldDays = useMemo(

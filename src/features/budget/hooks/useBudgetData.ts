@@ -1,13 +1,14 @@
 import { useQueries, useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 
-import { getBudget, getMonthlyBudgetOverrides } from '@/lib/api/budget'
+import { getBudget } from '@/lib/api/budget'
 import { getCategories } from '@/lib/api/categories'
 import { getDashboardSummary, getYTD } from '@/lib/api/dashboard'
 import { getProcessedTransactions } from '@/lib/api/transactions'
 import { getCurrentPeriod } from '@/lib/period'
 import type { PeriodMode } from '@/lib/period'
 import { qk } from '@/lib/queryKeys'
+import type { SummaryRow, YTDRow } from '@/types/dashboard'
 
 import {
   buildHeatmapRows,
@@ -23,6 +24,11 @@ import type {
   UnbudgetedCategoryRow,
   YearVerdict,
 } from '../types'
+
+const NO_ENTRIES: BudgetDataResult['entries'] = []
+const NO_SUMMARY: SummaryRow[] = []
+const NO_YTD: YTDRow[] = []
+const NO_CATEGORIES: BudgetDataResult['allCategories'] = []
 
 export interface BudgetDataResult {
   isLoading: boolean
@@ -78,13 +84,6 @@ export function useBudgetData({
     queryFn: getCategories,
   })
 
-  const overridesQuery = useQuery({
-    queryKey: qk.budget.overrides(year),
-    queryFn: () => getMonthlyBudgetOverrides(year),
-    retry: false,
-    throwOnError: false,
-  })
-
   // GET /dashboard/summary excludes income server-side (it filters to
   // expense/refund), so the "Expected income" table's "Received this
   // month" column can't be sourced from `summaryQuery` — it would always
@@ -110,24 +109,16 @@ export function useBudgetData({
     })),
   })
 
-  const entries = budgetQuery.data ?? []
-  const summary = summaryQuery.data ?? []
-  const ytd = ytdQuery.data ?? []
-  const allCategories = categoriesQuery.data ?? []
-  const overrides = overridesQuery.data ?? []
+  // Module-level fallbacks, never `?? []` inline: a fresh empty array each
+  // render breaks every memo below while a query has no data (a year with no
+  // budget 404s and stays that way), and the Budget world keys its rise-in on
+  // those memos — so each hover re-render replayed the animation.
+  const entries = budgetQuery.data ?? NO_ENTRIES
+  const summary = summaryQuery.data ?? NO_SUMMARY
+  const ytd = ytdQuery.data ?? NO_YTD
+  const allCategories = categoriesQuery.data ?? NO_CATEGORIES
 
-  const overrideMap = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const o of overrides) {
-      map.set(`${o.month}:${o.category_id}`, o.allocated_amount)
-    }
-    return map
-  }, [overrides])
-
-  const tableData = useMemo(
-    () => buildTableRows(entries, summary, ytd, overrideMap, month),
-    [entries, summary, ytd, overrideMap, month]
-  )
+  const tableData = useMemo(() => buildTableRows(entries, summary, ytd), [entries, summary, ytd])
 
   const heatmapData = useMemo(() => {
     // With no budget entries yet, fall back to listing all expense categories
@@ -143,8 +134,8 @@ export function useBudgetData({
         : allCategories
             .filter((c) => !c.is_income)
             .map((c) => ({ categoryId: c.id, categoryName: c.name, annualBudget: 0 }))
-    return buildHeatmapRows(rows, monthQueries, overrideMap, currentYearMonth)
-  }, [entries, allCategories, monthQueries, overrideMap, currentYearMonth])
+    return buildHeatmapRows(rows, monthQueries, currentYearMonth)
+  }, [entries, allCategories, monthQueries, currentYearMonth])
 
   const unbudgetedData = useMemo(
     () => buildUnbudgetedRows(allCategories, entries, summary, ytd),

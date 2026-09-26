@@ -17,21 +17,14 @@ export const annualToMonthly = (a: number): number => a / 12
 export function buildTableRows(
   entries: BudgetEntry[],
   summary: SummaryRow[],
-  ytd: YTDRow[],
-  overrideMap: Map<string, number>,
-  month: number
+  ytd: YTDRow[]
 ): CategoryTableRow[] {
   const summaryByName = new Map(summary.map((s) => [s.category, s]))
   const ytdByName = new Map(ytd.map((y) => [y.category, y]))
 
   return entries.map((entry, i) => {
     const annualBudget = Number(entry.allocated_amount)
-    const defaultMonthly = annualToMonthly(annualBudget)
-    const overrideKey = `${month}:${entry.category_id}`
-    const hasOverride = overrideMap.has(overrideKey)
-    const monthlyBudget = hasOverride
-      ? (overrideMap.get(overrideKey) ?? defaultMonthly)
-      : defaultMonthly
+    const monthlyBudget = annualToMonthly(annualBudget)
     const s = summaryByName.get(entry.category)
     const y = ytdByName.get(entry.category)
     const thisMonthSpent = Number(s?.actual ?? 0)
@@ -48,7 +41,6 @@ export function buildTableRows(
       ytdSpent,
       annualBudget,
       pctUsed,
-      hasOverride,
     }
   })
 }
@@ -64,21 +56,16 @@ export interface HeatmapInputRow {
 export function buildHeatmapRows(
   rows: HeatmapInputRow[],
   monthResults: Array<{ data?: SummaryRow[] | undefined }>,
-  overrideMap: Map<string, number>,
   currentYearMonth: number
 ): HeatmapRowData[] {
   return rows.map((row, i) => {
-    const defaultMonthly = annualToMonthly(row.annualBudget)
+    const budget = annualToMonthly(row.annualBudget)
 
     const cells = Array.from({ length: 12 }, (_, mi) => {
       const m = mi + 1
       if (m > currentYearMonth) {
-        return { month: m, spend: null, budget: defaultMonthly, percent: null }
+        return { month: m, spend: null, budget, percent: null }
       }
-      const overrideKey = `${m}:${row.categoryId}`
-      const budget = overrideMap.has(overrideKey)
-        ? (overrideMap.get(overrideKey) ?? defaultMonthly)
-        : defaultMonthly
       const monthRow = monthResults[mi].data?.find((s) => s.category === row.categoryName)
       const spend = Number(monthRow?.actual ?? 0)
       const percent = budget > 0 ? Math.round((spend / budget) * 100) : null

@@ -1,4 +1,4 @@
-import type { BudgetEntry, MonthlyBudgetOverride } from '@/types/budget'
+import type { BudgetEntry } from '@/types/budget'
 import type { ProcessedTransactionItem } from '@/types/transaction'
 
 import { categoryMonthBudget, type CategoryMonthPoint } from '../lib/categoryStats'
@@ -86,13 +86,10 @@ describe('category world layout', () => {
 
 describe('categoryMonthBudget', () => {
   const entries = [{ category: 'food', allocated_amount: '1200' }] as BudgetEntry[]
-  const overrides = [
-    { category: 'food', month: 3, allocated_amount: '500' },
-  ] as unknown as MonthlyBudgetOverride[]
 
-  it('prefers the month override, then a twelfth of the plan, else 0', () => {
-    expect(categoryMonthBudget(entries, overrides, 'food', 3)).toBe(500)
-    expect(categoryMonthBudget(entries, overrides, 'food', 4)).toBe(100)
-    expect(categoryMonthBudget(entries, undefined, 'rent', 4)).toBe(0)
+  it('is a twelfth of the annual plan, else 0', () => {
+    expect(categoryMonthBudget(entries, 'food')).toBe(100)
+    expect(categoryMonthBudget(entries, 'rent')).toBe(0)
+    expect(categoryMonthBudget(undefined, 'food')).toBe(0)
   })
 })

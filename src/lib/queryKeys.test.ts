@@ -37,10 +37,6 @@ describe('queryKeys (qk)', () => {
     it('byYear includes the year', () => {
       expect(qk.budget.byYear(2025)).toEqual(['budget', 2025])
     })
-
-    it('overrides uses budgetOverrides prefix', () => {
-      expect(qk.budget.overrides(2025)).toEqual(['budgetOverrides', 2025])
-    })
   })
 
   describe('dashboard factory', () => {
@@ -124,18 +120,16 @@ describe('invalidateDomains', () => {
   function makeClient() {
     const qc = new QueryClient()
     qc.setQueryData(qk.budget.byYear(2025), [{ id: 'b1' }])
-    qc.setQueryData(qk.budget.overrides(2025), [{ id: 'o1' }])
     qc.setQueryData(qk.dashboard.summary(2025, 4), [{ id: 's1' }])
     qc.setQueryData(qk.transactions.processed(2025, 4), [{ id: 't1' }])
     qc.setQueryData(qk.categories.all, [{ id: 'c1' }])
     return qc
   }
 
-  it('invalidates budgetOverrides when domain "budget" is passed', () => {
+  it('invalidates budget when domain "budget" is passed', () => {
     const qc = makeClient()
     invalidateDomains(qc, ['budget'])
     expect(qc.getQueryState(qk.budget.byYear(2025))?.isInvalidated).toBe(true)
-    expect(qc.getQueryState(qk.budget.overrides(2025))?.isInvalidated).toBe(true)
     expect(qc.getQueryState(qk.dashboard.summary(2025, 4))?.isInvalidated).toBe(false)
   })
 
@@ -143,7 +137,6 @@ describe('invalidateDomains', () => {
     const qc = makeClient()
     invalidateDomains(qc, ['budget', 'dashboard'])
     expect(qc.getQueryState(qk.budget.byYear(2025))?.isInvalidated).toBe(true)
-    expect(qc.getQueryState(qk.budget.overrides(2025))?.isInvalidated).toBe(true)
     expect(qc.getQueryState(qk.dashboard.summary(2025, 4))?.isInvalidated).toBe(true)
     expect(qc.getQueryState(qk.categories.all)?.isInvalidated).toBe(false)
   })

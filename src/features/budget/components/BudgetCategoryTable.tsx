@@ -24,7 +24,6 @@ export function BudgetCategoryTable({
   mode,
   onNavigateMonth,
   onSaveBudget,
-  onResetBudget,
   onDelete,
   editHint,
   periodView,
@@ -37,7 +36,6 @@ export function BudgetCategoryTable({
   mode: PeriodMode
   onNavigateMonth: (dir: -1 | 1) => void
   onSaveBudget: (row: CategoryTableRow, amount: number) => void
-  onResetBudget: (row: CategoryTableRow) => void
   onDelete: (id: string) => void
   editHint?: string
   /** Owned by the page so the 3D world reads the same period as the table. */
@@ -158,7 +156,6 @@ export function BudgetCategoryTable({
                     hot={highlight === row.categoryId}
                     onHighlight={onHighlight}
                     onSaveBudget={(amount) => onSaveBudget(row, amount)}
-                    onResetBudget={() => onResetBudget(row)}
                     onDelete={() => onDelete(row.id)}
                   />
                 ))

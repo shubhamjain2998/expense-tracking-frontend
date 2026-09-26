@@ -11,15 +11,7 @@ export { setUnauthorizedHandler } from './client'
 export type { TokenResponse, GoogleSignInResult, MeResponse } from './auth'
 export { login, register, googleSignIn, getMe, updatePeriodModePref } from './auth'
 
-export {
-  createBudget,
-  deleteBudgetEntry,
-  deleteMonthlyBudgetOverride,
-  getBudget,
-  getMonthlyBudgetOverrides,
-  setMonthlyBudget,
-  updateBudgetEntry,
-} from './budget'
+export { createBudget, deleteBudgetEntry, getBudget, updateBudgetEntry } from './budget'
 
 export { importStatement, previewStatement } from './uploads'
 

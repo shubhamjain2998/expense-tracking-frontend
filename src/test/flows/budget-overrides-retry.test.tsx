@@ -1,6 +1,7 @@
 /**
- * Regression test for the 404 retry storm on the budget-year and
- * per-month-override lookups.
+ * Regression test for the 404 retry storm on the budget-year lookup, and for
+ * the per-month-override lookup, which the page no longer makes (Sep 2026:
+ * plans are annual; the backend never had that route).
  *
  * Bug: `GET /budget/{year}` legitimately 404s for a year with no budget
  * plan yet, and `GET /budget/{year}/monthly-overrides` 404s because that
@@ -35,7 +36,7 @@ describe('Budget 404 endpoints do not retry-storm', () => {
     localStorage.removeItem('access_token')
   })
 
-  it('fetches GET /budget/:year and GET /budget/:year/monthly-overrides exactly once each on a 404', async () => {
+  it('fetches GET /budget/:year exactly once on a 404, and never asks for per-month overrides', async () => {
     let budgetCallCount = 0
     let overridesCallCount = 0
 
@@ -64,6 +65,8 @@ describe('Budget 404 endpoints do not retry-storm', () => {
     })
 
     expect(budgetCallCount).toBe(1)
-    expect(overridesCallCount).toBe(1)
+    // The override route never existed on the backend; the page no longer
+    // asks for it at all.
+    expect(overridesCallCount).toBe(0)
   })
 })

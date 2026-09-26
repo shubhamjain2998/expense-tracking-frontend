@@ -16,7 +16,6 @@ export function BudgetCategoryRow({
   row,
   periodView,
   onSaveBudget,
-  onResetBudget,
   onDelete,
   hot = false,
   onHighlight,
@@ -24,7 +23,6 @@ export function BudgetCategoryRow({
   row: CategoryTableRow
   periodView: 'monthly' | 'annual'
   onSaveBudget: (amount: number) => void
-  onResetBudget: () => void
   onDelete: () => void
   /** Lit from its vessel in the 3D world. */
   hot?: boolean
@@ -87,22 +85,10 @@ export function BudgetCategoryRow({
           />
         ) : (
           <span className="inline-flex items-center justify-end gap-1">
-            {row.hasOverride && (
-              <span
-                title="Custom budget for this month"
-                style={{
-                  display: 'inline-block',
-                  width: 5,
-                  height: 5,
-                  borderRadius: '50%',
-                  background: 'var(--accent)',
-                }}
-              />
-            )}
             {periodView === 'monthly' ? (
               <button
                 onClick={startEdit}
-                title="Click to edit monthly budget"
+                title="Edit the monthly plan (applies to every month)"
                 className="num hit44-pad-v budget-edit-trigger inline-flex items-center gap-1"
                 style={{
                   background: 'transparent',
@@ -122,23 +108,6 @@ export function BudgetCategoryRow({
               </button>
             ) : (
               formatCurrency(plan)
-            )}
-            {row.hasOverride && periodView === 'monthly' && (
-              <button
-                onClick={onResetBudget}
-                title="Reset to default (annual / 12)"
-                className="opacity-0 transition-opacity group-hover:opacity-100 [@media(hover:none)]:opacity-100"
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: 0,
-                  color: 'var(--ink-4)',
-                  display: 'inline-flex',
-                }}
-              >
-                <Icon name="restart_alt" size={12} />
-              </button>
             )}
           </span>
         )}

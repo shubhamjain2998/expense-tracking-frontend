@@ -8,7 +8,6 @@ export interface CategoryTableRow {
   ytdSpent: number
   annualBudget: number
   pctUsed: number | null
-  hasOverride: boolean
 }
 
 export interface HeatmapRowData {

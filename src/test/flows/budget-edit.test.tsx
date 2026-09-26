@@ -48,7 +48,7 @@ describe('Budget inline edit flow', () => {
     renderWithProviders(<BudgetPage />, { initialEntries: ['/budget'] })
 
     // Wait for table
-    await screen.findByTitle('Click to edit monthly budget')
+    await screen.findByTitle('Edit the monthly plan (applies to every month)')
 
     // Navigate to previous month (covers navigateMonth)
     await user.click(await screen.findByRole('button', { name: /previous month/i }))
@@ -95,7 +95,7 @@ describe('Budget inline edit flow', () => {
     renderWithProviders(<BudgetPage />, { initialEntries: ['/budget'] })
 
     // Wait for the edit button — it only appears once the budget table data is loaded
-    const editBtn = await screen.findByTitle('Click to edit monthly budget')
+    const editBtn = await screen.findByTitle('Edit the monthly plan (applies to every month)')
     await user.click(editBtn)
 
     // The number input appears — clear and type a new monthly amount
@@ -113,7 +113,7 @@ describe('Budget inline edit flow', () => {
   it('does not call the non-existent per-month-override endpoint on inline edit', async () => {
     // Regression test — PUT /budget/{year}/{month}/categories/{id} has never
     // been routed on the backend (only POST /budget, GET /budget/{year},
-    // PUT/DELETE /budget/{id} exist), so `monthlyOverrideMutation` used to
+    // PUT/DELETE /budget/{id} exist), so the monthly-edit mutation used to
     // 404 against it on every single inline edit before falling back to the
     // annual PUT. It should now go straight to PUT /budget/:id.
     const entry = makeBudgetEntry({
@@ -144,7 +144,7 @@ describe('Budget inline edit flow', () => {
     const user = userEvent.setup()
     renderWithProviders(<BudgetPage />, { initialEntries: ['/budget'] })
 
-    const editBtn = await screen.findByTitle('Click to edit monthly budget')
+    const editBtn = await screen.findByTitle('Edit the monthly plan (applies to every month)')
     await user.click(editBtn)
     const input = await screen.findByLabelText(/monthly budget for groceries/i)
     await user.clear(input)

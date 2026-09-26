@@ -2,55 +2,28 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import { useToastContext } from '@/hooks/useToastContext'
-import {
-  createBudget,
-  deleteBudgetEntry,
-  deleteMonthlyBudgetOverride,
-  updateBudgetEntry,
-} from '@/lib/api/budget'
-import { monthLongLabel } from '@/lib/period'
-import type { PeriodMode } from '@/lib/period'
-import { invalidateDomains, qk } from '@/lib/queryKeys'
+import { createBudget, deleteBudgetEntry, updateBudgetEntry } from '@/lib/api/budget'
+import { formatCurrency } from '@/lib/format'
+import { invalidateDomains } from '@/lib/queryKeys'
 
 import { monthlyToAnnual } from '../lib/budgetMath'
 
-export function useBudgetMutations({
-  year,
-  month,
-  mode,
-}: {
-  year: number
-  month: number
-  mode: PeriodMode
-}) {
+export function useBudgetMutations({ year }: { year: number }) {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const toast = useToastContext()
   const qc = useQueryClient()
 
-  // The inline "monthly budget" edit used to PUT
-  // /budget/{year}/{month}/categories/{id} first and fall back to the
-  // annual PUT /budget/{id} on 404/405/422. That per-month-override endpoint
-  // has never existed on the backend (only POST /budget, GET /budget/{year},
-  // PUT/DELETE /budget/{id} are routed — see backend/app/routers/budget.py),
-  // so the first call 404'd on literally every edit and the fallback ran
-  // every single time. Calling the annual PUT directly is identical in
-  // behaviour and drops a guaranteed-failing request per edit.
-  // Tracked for real per-month support: https://github.com/shubhamjain2998/expense-tracking-frontend/issues/37
-  const monthlyOverrideMutation = useMutation({
-    mutationFn: ({ entryId, amount }: { categoryId: string; amount: number; entryId: string }) =>
+  // A budget is one annual amount per category (the backend has no
+  // per-month plans — see backend/app/routers/budget.py), so the inline
+  // monthly edit sets that category's plan for every month: annual = monthly
+  // × 12. The copy says so; it used to promise a custom budget for one month
+  // and quietly change the whole year.
+  const updateMonthlyPlanMutation = useMutation({
+    mutationFn: ({ entryId, amount }: { entryId: string; amount: number; categoryName: string }) =>
       updateBudgetEntry(entryId, { allocated_amount: monthlyToAnnual(amount) }),
-    onSuccess: () => {
+    onSuccess: (_data, { amount, categoryName }) => {
       invalidateDomains(qc, ['budget', 'dashboard'])
-      toast.success(`Budget for ${monthLongLabel(month, mode)} updated`)
-    },
-    onError: (err: { detail: string }) => toast.error(err.detail),
-  })
-
-  const resetOverrideMutation = useMutation({
-    mutationFn: (categoryId: string) => deleteMonthlyBudgetOverride(year, month, categoryId),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: qk.budget.overrides(year) })
-      toast.success('Reset to default monthly budget')
+      toast.success(`${categoryName} is now ${formatCurrency(amount)} a month`)
     },
     onError: (err: { detail: string }) => toast.error(err.detail),
   })
@@ -86,8 +59,7 @@ export function useBudgetMutations({
   return {
     deleteId,
     setDeleteId,
-    monthlyOverrideMutation,
-    resetOverrideMutation,
+    updateMonthlyPlanMutation,
     deleteMutation,
     createInlineMutation,
   }

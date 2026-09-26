@@ -34,7 +34,6 @@ export const qk = {
   budget: {
     all: ['budget'] as const,
     byYear: (year: number) => ['budget', year] as const,
-    overrides: (year: number) => ['budgetOverrides', year] as const,
   },
   dashboard: {
     all: ['dashboard'] as const,
@@ -70,9 +69,8 @@ export const qk = {
 
 /**
  * Maps a logical data domain to every top-level query key that holds data
- * from that domain. Use with `invalidateDomains` so callers don't have to
- * remember that, e.g., `budget` lives under two unrelated prefixes
- * (`['budget', ...]` AND `['budgetOverrides', ...]`).
+ * from that domain. Use with `invalidateDomains` so callers name a domain
+ * rather than remembering which prefixes hold it.
  *
  * Add new domains here when introducing a new top-level cache.
  */
@@ -82,7 +80,7 @@ const domainKeys = {
   categories: [qk.categories.all],
   tags: [qk.tags.all],
   categoryMappings: [qk.categoryMappings.all],
-  budget: [qk.budget.all, ['budgetOverrides']],
+  budget: [qk.budget.all],
   dashboard: [qk.dashboard.all],
   transactions: [qk.transactions.all],
   insights: [qk.insights.all],

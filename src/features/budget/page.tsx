@@ -6,7 +6,7 @@ import { useWorldSupported } from '@/components/world/support'
 import { usePeriod } from '@/hooks/usePeriod'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { useThemeContext } from '@/hooks/useThemeContext'
-import { monthLongLabel, resolvePeriodMonth } from '@/lib/period'
+import { resolvePeriodMonth } from '@/lib/period'
 
 import { AddBudgetModal } from './components/AddBudgetModal'
 import { BudgetCategoryTable } from './components/BudgetCategoryTable'
@@ -47,7 +47,7 @@ export function BudgetPage() {
   const { isDark } = useThemeContext()
 
   const data = useBudgetData({ year, month, mode })
-  const mutations = useBudgetMutations({ year, month, mode })
+  const mutations = useBudgetMutations({ year })
 
   // ── 3D world (wide screens with WebGL) ─────────────────────────────────────
   // Derived from the same query data as the rows, so an edit, add or delete
@@ -146,17 +146,16 @@ export function BudgetPage() {
       mode={mode}
       onNavigateMonth={navigateMonth}
       onSaveBudget={(row, amount) =>
-        mutations.monthlyOverrideMutation.mutate({
-          categoryId: row.categoryId,
-          amount,
+        mutations.updateMonthlyPlanMutation.mutate({
           entryId: row.id,
+          amount,
+          categoryName: row.categoryName,
         })
       }
-      onResetBudget={(row) => mutations.resetOverrideMutation.mutate(row.categoryId)}
       onDelete={(id) => mutations.setDeleteId(id)}
       editHint={
         data.entries.length > 0
-          ? `Click any budget amount to set a custom budget for ${monthLongLabel(month, mode)}.`
+          ? 'Click any monthly amount to change the plan. It applies to every month of the year.'
           : undefined
       }
       periodView={periodView}

@@ -105,7 +105,6 @@ export const handlers = [
   http.get(`${BASE}/dashboard/monthly-trend`, () => HttpResponse.json([])),
 
   // Budget
-  http.get(`${BASE}/budget/:year/monthly-overrides`, () => HttpResponse.json([])),
   http.get(`${BASE}/budget/:year`, () =>
     HttpResponse.json([
       makeBudgetEntry({ id: 'budget-entry-1', category_id: 'cat-1', category: 'Groceries' }),
