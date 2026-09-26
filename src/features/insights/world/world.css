@@ -13,8 +13,12 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
-/* The People table is wider than the panel column; it scrolls inside its
-   card rather than running under the stage. */
-.world-station .card:has(> .tbl) {
-  overflow-x: auto;
+/* The People table is wider than the panel column. It takes its narrow
+   shape here too (the same columns .hide-sm drops below 900px, open items
+   under the name) so it fits whole instead of scrolling sideways. */
+.world-station .people-tbl .hide-sm {
+  display: none;
+}
+.world-station .people-tbl .people-items-inline {
+  display: -webkit-box;
 }

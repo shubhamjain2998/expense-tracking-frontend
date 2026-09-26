@@ -194,7 +194,10 @@ export function InsightsWorld({
       panel: people.panel,
       frame: beamsFrame(out.length, people.beams.beams.length),
       legend: PEOPLE_LEGEND,
-      hint: 'Each beam tips towards who owes whom · hover a beam or a row',
+      hint:
+        people.beams.beams.length > 0
+          ? 'Each beam tips towards who owes whom · hover a beam or a row'
+          : 'No shared bills this month, so no beams to weigh',
     })
     return out
   }, [panels, prompt, intro, people, tokens.length, slabs.slabs.length, plates.length])
