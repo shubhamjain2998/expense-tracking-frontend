@@ -49,7 +49,12 @@ export function useProcessedMutations(year: number, month: number, mode: PeriodM
       processTransaction({
         raw_txn_id: rawId,
         category_id: categoryId,
-        save_mapping: true,
+        // Quick paths (drag onto a category, bulk categorise, the 1–9 keys)
+        // never save a rule. They used to always send true, so every drag —
+        // twenty rows at once in a bulk drop — quietly created or rewrote a
+        // mapping. Rules are made only where the user can see and set the
+        // "Save as rule" toggle, in the process and edit panels.
+        save_mapping: false,
         shares,
         notes,
         tag_ids,
@@ -60,9 +65,8 @@ export function useProcessedMutations(year: number, month: number, mode: PeriodM
         queryKey: qk.transactions.processed(year, month, undefined, undefined, mode),
       })
       void qc.invalidateQueries({ queryKey: qk.transactions.pendingManual() })
-      // A new processed txn changes category totals on the dashboard, and
-      // save_mapping=true also creates a new mapping rule.
-      invalidateDomains(qc, ['dashboard', 'categoryMappings'])
+      // A new processed txn changes category totals on the dashboard.
+      invalidateDomains(qc, ['dashboard'])
       if (!variables.silent) toast.success('Categorized')
     },
     onError: (err: { detail: string }, variables) => {

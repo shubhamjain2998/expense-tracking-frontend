@@ -45,7 +45,9 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
   const [amount, setAmount] = useState(txn.amount)
   const [txnDate, setTxnDate] = useState(txn.txn_date?.slice(0, 10) ?? '')
   const [categoryId, setCategoryId] = useState('')
-  const [saveMapping, setSaveMapping] = useState(true)
+  // Off by default, as in EditPanel: a rule changes how every future
+  // matching transaction is filed, so the user opts in per transaction.
+  const [saveMapping, setSaveMapping] = useState(false)
   const [shares, setShares] = useState<PersonShareIn[]>([])
   const [notes, setNotes] = useState('')
   const [categoryError, setCategoryError] = useState('')
