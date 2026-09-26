@@ -82,8 +82,10 @@ export function VerdictBlock({
       >
         <div className="flex min-w-0 flex-col gap-4">
           <p className="eyebrow">
-            {currentMonthLabel} {displayYear} · day {Math.min(dayOfMonth, daysInMonth)} of{' '}
-            {daysInMonth}
+            {currentMonthLabel} {displayYear} ·{' '}
+            {dayOfMonth <= 0
+              ? 'not started'
+              : `day ${Math.min(dayOfMonth, daysInMonth)} of ${daysInMonth}`}
           </p>
 
           {isLoading ? (

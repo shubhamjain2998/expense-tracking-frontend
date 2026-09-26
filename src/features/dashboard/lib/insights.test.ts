@@ -145,6 +145,14 @@ describe('verdict — pace', () => {
     expect(flat(verdict.headline)).not.toContain('/day')
   })
 
+  it('says a month that has not started yet has not, with its daily allowance', () => {
+    const { verdict } = computeInsights(
+      makeInput({ pace: 0, daysLeftInMonth: 30, totalBudget: 30000, totalDebit: 0 })
+    )
+    expect(flat(verdict.headline)).toBe("The month hasn't started. Its budget allows ₹1k/day.")
+    expect(verdict.status).toBe('on-track')
+  })
+
   it('falls back to neutral on-track when no budget', () => {
     const input = makeInput({ totalBudget: 0, totalDebit: 5000 })
     const { verdict } = computeInsights(input)

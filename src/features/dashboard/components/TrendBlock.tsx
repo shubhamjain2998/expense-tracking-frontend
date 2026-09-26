@@ -81,8 +81,13 @@ export function TrendBlock({
     incomeTrendData.length > 0
       ? incomeTrendData.reduce((s, p) => s + p.expense, 0) / incomeTrendData.length
       : 0
-  const lastExpense = incomeTrendData.at(-1)?.expense ?? 0
-  const vsAvgPct = avgExpense > 0 ? ((lastExpense - avgExpense) / avgExpense) * 100 : null
+  const last = incomeTrendData.at(-1)
+  const lastExpense = last?.expense ?? 0
+  // A month with nothing recorded (a future or unimported one) isn't "down
+  // 100%": there's nothing to compare yet.
+  const lastIsEmpty = !last || (last.expense === 0 && last.income === 0)
+  const vsAvgPct =
+    avgExpense > 0 && !lastIsEmpty ? ((lastExpense - avgExpense) / avgExpense) * 100 : null
 
   const maxSeriesValue = incomeTrendData.reduce((m, p) => Math.max(m, p.income, p.expense), 0)
   const yTicks = niceAxisTicks(maxSeriesValue)
@@ -157,6 +162,15 @@ export function TrendBlock({
                   Out is {vsAvgPct >= 0 ? 'up' : 'down'}{' '}
                   <b className={vsAvgPct >= 0 ? 'neg' : 'pos'}>{Math.abs(Math.round(vsAvgPct))}%</b>{' '}
                   against your {trendWindow}-month average
+                </span>
+              )}
+              {vsAvgPct === null && lastIsEmpty && avgExpense > 0 && (
+                <span
+                  className={['text-[12.5px] text-[var(--ink-3)]', showChart ? 'sm:ml-auto' : null]
+                    .filter(Boolean)
+                    .join(' ')}
+                >
+                  Nothing recorded this month yet, so no comparison
                 </span>
               )}
             </div>

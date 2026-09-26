@@ -68,7 +68,15 @@ export function DashboardPage() {
   // ── Date helpers ──────────────────────────────────────────────────────────────────────────
   const { year: calYear, month: calMonth } = resolvePeriodMonth(year, month, mode)
   const isCurrentMonth = calYear === now.getFullYear() && calMonth === now.getMonth() + 1
-  const dayOfMonth = isCurrentMonth ? now.getDate() : new Date(calYear, calMonth, 0).getDate()
+  // A month after this one hasn't started: day 0, nothing expected yet. It
+  // used to count as finished, so November read "day 30 of 30 · the month
+  // closes ₹1.9L under budget" in September.
+  const isFutureMonth = calYear * 12 + calMonth > now.getFullYear() * 12 + now.getMonth() + 1
+  const dayOfMonth = isCurrentMonth
+    ? now.getDate()
+    : isFutureMonth
+      ? 0
+      : new Date(calYear, calMonth, 0).getDate()
   const daysInMonth = new Date(calYear, calMonth, 0).getDate()
   const paceAt = dayOfMonth / daysInMonth
   const daysLeftInMonth = Math.max(0, daysInMonth - dayOfMonth)

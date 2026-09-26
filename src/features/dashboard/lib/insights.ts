@@ -122,7 +122,14 @@ function buildVerdict(input: InsightsInput): Verdict {
   const drivenBy: TextPart[] = driver
     ? [{ t: ', driven by ' }, { t: driver.category, em: true }]
     : []
-  if (daysLeftInMonth <= 0) {
+  if (pace <= 0 && totalDebit <= 0) {
+    // A month that hasn't started: no pace to be under, just the allowance.
+    headline = [
+      { t: "The month hasn't started. Its budget allows " },
+      { t: `${formatRupeeCompact(allowancePerDay)}/day`, em: true },
+      { t: '.' },
+    ]
+  } else if (daysLeftInMonth <= 0) {
     headline = [
       { t: 'The month closes ' },
       {
