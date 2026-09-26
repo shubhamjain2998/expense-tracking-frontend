@@ -67,10 +67,10 @@ export function useProcessedMutations(year: number, month: number, mode: PeriodM
       void qc.invalidateQueries({ queryKey: qk.transactions.pendingManual() })
       // A new processed txn changes category totals on the dashboard.
       invalidateDomains(qc, ['dashboard'])
-      if (!variables.silent) toast.success('Categorized')
+      if (!variables.silent) toast.success('Categorised')
     },
     onError: (err: { detail: string }, variables) => {
-      if (!variables.silent) toast.error(err.detail ?? 'Failed to categorize')
+      if (!variables.silent) toast.error(err.detail ?? 'Failed to categorise')
     },
   })
 

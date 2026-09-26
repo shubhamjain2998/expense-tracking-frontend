@@ -103,7 +103,7 @@ export function DragDropOverlay({
             ? 'Confirm category'
             : isDragging
               ? 'Drop on a category'
-              : 'Drag a transaction onto a category to categorize'}
+              : 'Drag a transaction onto a category to categorise'}
         </span>
       </div>
 

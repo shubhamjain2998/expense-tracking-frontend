@@ -455,8 +455,8 @@ export function TransactionsPage() {
     const succeeded = results.filter((r) => r.status === 'fulfilled').length
     const failed = results.length - succeeded
     if (succeeded > 0)
-      toast.success(`Categorized ${succeeded} transaction${succeeded === 1 ? '' : 's'}`)
-    if (failed > 0) toast.error(bulkFailureMessage('categorize', failed, results))
+      toast.success(`Categorised ${succeeded} transaction${succeeded === 1 ? '' : 's'}`)
+    if (failed > 0) toast.error(bulkFailureMessage('categorise', failed, results))
     if (succeeded > 0) setCheckedUids(new Set())
   }
 
