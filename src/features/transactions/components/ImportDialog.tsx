@@ -49,7 +49,7 @@ export function ImportDialog({ initialTab, onClose }: ImportDialogProps) {
       className="fixed inset-0 z-50 grid place-items-center"
       style={{
         padding: 24,
-        background: 'color-mix(in oklch, var(--bg) 60%, transparent)',
+        background: 'color-mix(in srgb, var(--bg) 60%, transparent)',
         backdropFilter: 'blur(8px)',
         animation: 'fade-up .15s ease',
       }}

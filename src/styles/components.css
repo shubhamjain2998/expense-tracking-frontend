@@ -554,16 +554,18 @@ button.chip:active {
   background: var(--ink-3);
   transform: translateY(-50%);
 }
+/* Lifted-selection: a faint bottom edge on the selected row reads as
+   "raised" against the zebra striping below it. It runs under every cell —
+   drawn on the last cell alone it read as a stray underline beneath the
+   row's menu button. */
 .tbl tr.row.sel td {
   background: var(--accent-soft) !important;
+  box-shadow: inset 0 -1px 0 var(--accent);
 }
 .tbl tr.row.sel td:first-child {
-  box-shadow: inset 2px 0 0 var(--accent);
-}
-/* Lifted-selection: a faint bottom edge on the selected row reads as
-   "raised" against the zebra striping below it. */
-.tbl tr.row.sel td:last-child {
-  box-shadow: inset 0 -1px 0 var(--accent);
+  box-shadow:
+    inset 2px 0 0 var(--accent),
+    inset 0 -1px 0 var(--accent);
 }
 .tbl td.num,
 .tbl th.num {

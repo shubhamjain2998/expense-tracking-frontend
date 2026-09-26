@@ -35,7 +35,6 @@ const thBase: React.CSSProperties = {
   textTransform: 'uppercase',
   userSelect: 'none',
   whiteSpace: 'nowrap',
-  cursor: 'pointer',
 }
 
 export function TransactionsTableHead({
@@ -81,7 +80,6 @@ export function TransactionsTableHead({
             <th
               key={col}
               className={className}
-              onClick={() => onToggleSort(col)}
               aria-sort={active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
               style={{
                 ...thBase,
@@ -93,14 +91,18 @@ export function TransactionsTableHead({
                 fontVariantNumeric: col === 'amount' ? 'tabular-nums' : 'normal',
               }}
             >
-              {label}
-              {active && (
-                <Icon
-                  name={sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'}
-                  size={12}
-                  className="ml-[3px] inline-block align-middle"
-                />
-              )}
+              {/* A real button, so the sort is reachable from the keyboard —
+                  the click used to live on the <th>, which Tab skips. */}
+              <button type="button" className="txn-sort-btn" onClick={() => onToggleSort(col)}>
+                {label}
+                {active && (
+                  <Icon
+                    name={sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward'}
+                    size={12}
+                    className="ml-[3px] inline-block align-middle"
+                  />
+                )}
+              </button>
             </th>
           )
         })}

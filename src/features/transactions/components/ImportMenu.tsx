@@ -54,8 +54,15 @@ export function ImportMenu() {
     function handleClick(e: MouseEvent) {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false)
     }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
     document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('mousedown', handleClick)
+      document.removeEventListener('keydown', handleKey)
+    }
   }, [open])
 
   function closeDialog() {
@@ -98,7 +105,10 @@ export function ImportMenu() {
                   setDialogTab(item.id)
                 }}
               >
-                <Icon name={item.icon} size={18} />
+                {/* flex-shrink 0: the PDF item's longer description squeezed
+                    its icon narrower than the others, knocking its text out
+                    of line with the two items below it. */}
+                <Icon name={item.icon} size={18} style={{ flexShrink: 0 }} />
                 <span>
                   <span className="strong" style={{ display: 'block' }}>
                     {item.label}

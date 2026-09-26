@@ -98,7 +98,7 @@ export function ManualEntryPanel() {
                   border: '1px solid ' + (txnType === opt.value ? opt.color : 'var(--line)'),
                   background:
                     txnType === opt.value
-                      ? `color-mix(in oklch, ${opt.color} 12%, var(--surface))`
+                      ? `color-mix(in srgb, ${opt.color} 12%, var(--surface))`
                       : 'var(--surface-2)',
                   color: txnType === opt.value ? opt.color : 'var(--ink-3)',
                   cursor: 'pointer',

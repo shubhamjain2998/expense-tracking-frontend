@@ -1,0 +1,61 @@
+/* ─── Transactions page (features/transactions) ─────────────────────────── */
+
+/* 768–899px: the shared `.tbl .hide-sm` rule takes the category, tags and
+   split cells out with display: none, but the table is table-layout: fixed
+   and its footer spans all nine columns, so the grid kept nine slots. The
+   hidden cells' columns stayed at their <col> widths with nothing in them,
+   leaving a blank band to the right of Amount while the merchant column was
+   squeezed to ~110px. Keep the cells in the grid (hidden, no padding) and
+   zero their columns instead, so the merchant column takes the room. */
+@media (max-width: 899px) {
+  .tbl.txn-table :is(th, td).hide-sm {
+    display: table-cell;
+    padding: 0 !important;
+    overflow: hidden;
+    visibility: hidden;
+  }
+  .tbl.txn-table col.hide-sm {
+    display: table-column;
+    width: 0 !important;
+  }
+}
+
+/* Arrow-key navigation scrolls the selected row into view; keep it clear of
+   the floating dock and the sticky table header. */
+.txn-table tr.row {
+  scroll-margin-top: calc(var(--topbar-h) + 48px);
+  scroll-margin-bottom: 16px;
+}
+
+/* Drag-to-categorise needs a pointer and the table rows; below 768px the
+   list is the card view, whose rows are not draggable, so the drop bar was
+   half a phone screen of targets nothing could reach. */
+@media (max-width: 767px) {
+  .txn-drop-bar {
+    display: none;
+  }
+}
+
+/* The process / edit sheet on touch screens: its chips (type, tags, the
+   rule toggle) are 22px tall on the shared .chip, too small to tap. */
+@media (pointer: coarse) {
+  .txn-side-panel .chip,
+  .txn-side-panel .txn-type-btn {
+    min-height: 32px;
+  }
+}
+
+/* Sortable column headers: a bare button filling its <th>, so the header
+   looks unchanged but takes focus and Enter/Space. */
+.txn-sort-btn {
+  all: unset;
+  display: block;
+  width: 100%;
+  text-align: inherit;
+  cursor: pointer;
+}
+.txn-sort-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}

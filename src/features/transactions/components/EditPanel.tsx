@@ -229,7 +229,7 @@ export function EditPanel({ txn, categories, onClose, onSaved, onCopy }: EditPan
             </span>
           )}
         </span>
-        <button onClick={onClose} className="btn ghost icon sm">
+        <button onClick={onClose} className="btn ghost icon sm" aria-label="Close">
           <Icon name="close" size={14} />
         </button>
       </div>
@@ -248,6 +248,8 @@ export function EditPanel({ txn, categories, onClose, onSaved, onCopy }: EditPan
               <button
                 key={opt.value}
                 type="button"
+                className="txn-type-btn"
+                aria-pressed={txnType === opt.value}
                 onClick={() => {
                   if (opt.value !== txnType) {
                     const newIsIncome = opt.value === 'income'
@@ -267,7 +269,7 @@ export function EditPanel({ txn, categories, onClose, onSaved, onCopy }: EditPan
                   border: '1px solid ' + (txnType === opt.value ? opt.color : 'var(--line)'),
                   background:
                     txnType === opt.value
-                      ? `color-mix(in oklch, ${opt.color} 12%, var(--surface))`
+                      ? `color-mix(in srgb, ${opt.color} 12%, var(--surface))`
                       : 'var(--surface-2)',
                   color: txnType === opt.value ? opt.color : 'var(--ink-3)',
                   cursor: 'pointer',
@@ -343,6 +345,7 @@ export function EditPanel({ txn, categories, onClose, onSaved, onCopy }: EditPan
         <button
           type="button"
           onClick={() => setSaveMapping((v) => !v)}
+          aria-pressed={saveMapping}
           className={`flex w-full items-center justify-between ${saveMapping ? 'chip accent' : 'chip'}`}
           style={{ cursor: 'pointer', padding: '8px 12px', fontSize: 12.5 }}
           title="Teach the rule for this merchant: category, tags and split"

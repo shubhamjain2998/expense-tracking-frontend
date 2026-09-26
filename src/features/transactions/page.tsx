@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
 import { AddTransactionDialog } from '@/components/ui/AddTransactionDialog'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Icon } from '@/components/ui/Icon'
 import { useWorldSupported } from '@/components/world/support'
 import { IgnoreRulesSection } from '@/features/settings/components/IgnoreRulesSection'
@@ -40,6 +41,7 @@ import { formatAmount, txnTotals } from './lib/txnFormat'
 import type { SortCol, SortDir, StatusFilter, UnifiedTxn } from './types'
 import { buildSkyline } from './world/skyline'
 import { SkylineHero } from './world/SkylineHero'
+import './transactions.css'
 
 /**
  * Per-row failures in a bulk action are reported with the server's own
@@ -101,6 +103,7 @@ export function TransactionsPage() {
   const [showManualEntry, setShowManualEntry] = useState(false)
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [showMerge, setShowMerge] = useState(false)
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
   const [copyingTxn, setCopyingTxn] = useState<UnifiedTxn | null>(null)
   const [dragOverCatId, setDragOverCatId] = useState<string | null>(null)
   const [draggingUids, setDraggingUids] = useState<Set<string>>(new Set())
@@ -459,7 +462,7 @@ export function TransactionsPage() {
 
   useTransactionKeyboard({
     selectedUid,
-    filtered,
+    rows: sorted,
     shortcutCats,
     editingTxn,
     setSelectedUid,
@@ -532,7 +535,8 @@ export function TransactionsPage() {
         }
         onCategorise={handleBulkCategorise}
         onMerge={() => setShowMerge(true)}
-        onDelete={() => void handleBulkDelete(filtered, checkedUids, setCheckedUids)}
+        // Asks first: this deletes every checked row at once, with no undo.
+        onDelete={() => setConfirmBulkDelete(true)}
         onClear={() => setCheckedUids(new Set())}
       />
     )
@@ -642,7 +646,8 @@ export function TransactionsPage() {
                 </div>
               )
             })()}
-          {categories.length > 0 && (
+          {/* Nothing to drag in an empty month, so no drop targets either. */}
+          {categories.length > 0 && allCount > 0 && (
             <DragDropOverlay
               categories={categories}
               tags={tagsQuery.data ?? []}
@@ -719,6 +724,18 @@ export function TransactionsPage() {
               }
             />
           )}
+          <ConfirmDialog
+            isOpen={confirmBulkDelete && checkedUids.size > 0}
+            title={`Delete ${checkedUids.size} transaction${checkedUids.size === 1 ? '' : 's'}?`}
+            message="They move to this month’s deleted list. Restoring one sends it back to Needs review, uncategorised."
+            confirmLabel="Delete"
+            danger
+            onCancel={() => setConfirmBulkDelete(false)}
+            onConfirm={() => {
+              setConfirmBulkDelete(false)
+              void handleBulkDelete(filtered, checkedUids, setCheckedUids)
+            }}
+          />
           {showManualEntry && <AddTransactionDialog onClose={() => setShowManualEntry(false)} />}
           {showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}
         </>

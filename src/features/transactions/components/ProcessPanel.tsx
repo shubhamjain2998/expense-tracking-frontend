@@ -148,22 +148,37 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
         >
           Process transaction
         </span>
-        <button onClick={onClose} className="btn ghost icon sm">
+        <button onClick={onClose} className="btn ghost icon sm" aria-label="Close">
           <Icon name="close" size={14} />
         </button>
       </div>
 
       <div className="flex flex-col gap-4 overflow-y-auto" style={{ padding: 16 }}>
         <div>
-          <p className="eyebrow mb-1.5">Type</p>
-          <div style={{ display: 'flex', gap: 6 }}>
+          <p className="eyebrow mb-1.5" id="process-txn-type-label">
+            Type
+          </p>
+          <div
+            role="group"
+            aria-labelledby="process-txn-type-label"
+            style={{ display: 'flex', gap: 6 }}
+          >
             {TXN_TYPE_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
                 type="button"
+                className="txn-type-btn"
+                aria-pressed={txnType === opt.value}
                 onClick={() => {
+                  if (opt.value === txnType) return
+                  // Same rule as EditPanel: only drop the picked category
+                  // when it cannot stay (income vs spend categories). It used
+                  // to be cleared on every click, so Expense → Refund threw
+                  // away a category that was still valid.
+                  const selectedCat = categories.find((c) => c.id === categoryId)
+                  if (selectedCat && !!selectedCat.is_income !== (opt.value === 'income'))
+                    setCategoryId('')
                   setTxnType(opt.value)
-                  setCategoryId('')
                 }}
                 style={{
                   flex: 1,
@@ -174,7 +189,7 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
                   border: '1px solid ' + (txnType === opt.value ? opt.color : 'var(--line)'),
                   background:
                     txnType === opt.value
-                      ? `color-mix(in oklch, ${opt.color} 12%, var(--surface))`
+                      ? `color-mix(in srgb, ${opt.color} 12%, var(--surface))`
                       : 'var(--surface-2)',
                   color: txnType === opt.value ? opt.color : 'var(--ink-3)',
                   cursor: 'pointer',
@@ -202,6 +217,7 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
           </p>
           <input
             type="number"
+            aria-label="Amount"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             className="input num mt-1 w-full"
@@ -218,6 +234,7 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
           />
           <input
             type="date"
+            aria-label="Date"
             value={txnDate}
             onChange={(e) => setTxnDate(e.target.value)}
             className="input num mt-1"
@@ -242,6 +259,7 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
         <button
           type="button"
           onClick={() => setSaveMapping((v) => !v)}
+          aria-pressed={saveMapping}
           className={`flex w-full items-center justify-between ${saveMapping ? 'chip accent' : 'chip'}`}
           style={{ cursor: 'pointer', padding: '8px 12px', fontSize: 12.5 }}
           title="Teach the rule for this merchant: category, tags and split"
@@ -300,7 +318,9 @@ export function ProcessPanel({ txn, categories, onClose, onProcessed }: ProcessP
                 </button>
               )
             })}
-            <NewTagChip onCreated={() => {}} />
+            {/* A tag made here is for this row, so it starts selected — as in
+                EditPanel and the add dialog. It used to appear unselected. */}
+            <NewTagChip onCreated={(id) => setSelectedTagIds((ids) => [...ids, id])} />
           </div>
         </div>
 

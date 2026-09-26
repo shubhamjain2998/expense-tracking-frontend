@@ -66,7 +66,7 @@ export function CopyToMonthDialog({
     <div
       className="fixed inset-0 z-50 grid place-items-center p-4 backdrop-blur-[8px] md:p-10"
       style={{
-        background: 'color-mix(in oklch, var(--bg) 60%, transparent)',
+        background: 'color-mix(in srgb, var(--bg) 60%, transparent)',
         animation: 'fade-up .15s ease',
       }}
       role="dialog"

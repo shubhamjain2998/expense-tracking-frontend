@@ -197,9 +197,11 @@ export function TransactionsList({
                 <col className="txn-col-drag" style={{ width: 32 }} />
                 <col style={{ width: 78 }} />
                 <col />
-                <col style={{ width: 160 }} />
-                <col className="txn-col-tags" style={{ width: 100 }} />
-                <col className="txn-col-split" style={{ width: 54 }} />
+                {/* hide-sm matches the cells these columns hold — see
+                    transactions.css for why the columns must go with them. */}
+                <col className="hide-sm" style={{ width: 160 }} />
+                <col className="txn-col-tags hide-sm" style={{ width: 100 }} />
+                <col className="txn-col-split hide-sm" style={{ width: 54 }} />
                 <col style={{ width: 114 }} />
                 <col style={{ width: 38 }} />
               </colgroup>
@@ -245,6 +247,7 @@ export function TransactionsList({
                         }}
                         onEdit={() => {
                           setEditingTxn(txn.processedOriginal!)
+                          setSelectedUid(txn.uid)
                           setOpenMenuUid(null)
                         }}
                         onUnprocess={() => {
@@ -359,9 +362,13 @@ export function TransactionsList({
                 </tfoot>
               )}
             </table>
+            {/* 14px below, not 8: the "Show N deleted" toggle's 44px hit area
+                (hit44-pad-v) reached 6px past this row, and below 1200px the
+                list wrapper is overflow-x: auto — so overflow-y too — which
+                gave the card a tiny vertical scrollbar. */}
             <div
               style={{
-                padding: '8px 14px',
+                padding: '8px 14px 14px',
                 borderTop: '1px solid var(--line)',
                 display: 'flex',
                 alignItems: 'center',
