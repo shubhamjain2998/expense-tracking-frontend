@@ -44,7 +44,9 @@ export function ImpactBars({ rows, onSelect, highlight = null, onHighlight }: Im
             onBlur={() => onHighlight?.(null)}
             aria-label={`${r.title}: ${formatCurrency(r.amount)} a year`}
           >
-            <span className="name">{r.title}</span>
+            <span className="name" title={r.title}>
+              {r.title}
+            </span>
             <span className="track">
               <span className="fill" style={{ width: `${Math.max(2, r.ratio * 100)}%` }} />
             </span>
