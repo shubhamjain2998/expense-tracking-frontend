@@ -216,6 +216,8 @@ export function ProfileSection() {
                 }}
                 className="input"
                 style={{ fontSize: 13, height: 32, flex: 1 }}
+                maxLength={64}
+                aria-label="Display name"
               />
               <button
                 onClick={saveName}
@@ -343,12 +345,18 @@ export function ProfileSection() {
                   }}
                   className="input"
                   style={{ fontSize: 13, height: 34 }}
-                  placeholder={
-                    field === 'current' ? '••••••••' : field === 'next' ? 'Min 8 characters' : ''
-                  }
+                  // Dots as a placeholder read as a saved password already filled in.
+                  placeholder={field === 'next' ? 'Min 8 characters' : ''}
+                  autoComplete={field === 'current' ? 'current-password' : 'new-password'}
                 />
                 {field === 'current' && pwError && (
                   <p style={{ fontSize: 12, color: 'var(--neg)', marginTop: 2 }}>{pwError}</p>
+                )}
+                {/* The button just stays disabled on a mismatch; say why. */}
+                {field === 'confirm' && pwForm.confirm && pwForm.confirm !== pwForm.next && (
+                  <p style={{ fontSize: 12, color: 'var(--neg)', marginTop: 2 }}>
+                    Passwords do not match
+                  </p>
                 )}
               </div>
             ))}

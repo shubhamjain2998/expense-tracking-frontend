@@ -16,6 +16,7 @@ export function TagsSection() {
     createMutation,
     deleteMutation,
   } = useTags()
+  const deleteTagName = query.data?.find((t) => t.id === deleteTagId)?.name ?? 'this tag'
 
   return (
     <>
@@ -79,7 +80,7 @@ export function TagsSection() {
       <ConfirmDialog
         isOpen={deleteTagId !== null}
         title="Delete tag"
-        message="Are you sure you want to delete this tag?"
+        message={`Delete “${deleteTagName}”? It comes off every transaction that carries it.`}
         confirmLabel="Delete"
         danger
         loading={deleteMutation.isPending}

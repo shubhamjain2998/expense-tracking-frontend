@@ -6,6 +6,8 @@ import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { useSidebarStats } from '@/hooks/useSidebarStats'
 import { pendingTransactionsUrl } from '@/lib/pendingNav'
 
+// The same four destinations as the dock (AppDock), which hides its own
+// links below 768px; Settings stays reachable from the dock's gear there.
 // `periodAware` tabs carry the app-wide sticky period (`usePeriod`) in
 // their link so switching tabs never drops the selected month.
 const TABS: { to: string; icon: IconName; label: string; key: string; periodAware: boolean }[] = [
@@ -18,7 +20,7 @@ const TABS: { to: string; icon: IconName; label: string; key: string; periodAwar
     key: 'budget',
     periodAware: true,
   },
-  { to: '/settings', icon: 'settings', label: 'Settings', key: 'settings', periodAware: false },
+  { to: '/insights', icon: 'sparkles', label: 'Insights', key: 'insights', periodAware: true },
 ]
 
 export function BottomTabBar() {

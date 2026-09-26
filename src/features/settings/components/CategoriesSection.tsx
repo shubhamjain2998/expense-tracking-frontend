@@ -85,109 +85,114 @@ export function CategoriesSection() {
       </div>
 
       <div className="card card-flush">
-        <table className="tbl">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Kind</th>
-              <th className="num">Transactions</th>
-              <th className="num">Budget / month</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {cats.map((cat) => {
-              const isRenaming = renamingCategoryId === cat.id
-              const monthly = monthlyByCategory.get(cat.id)
-              return (
-                <tr key={cat.id} className="group">
-                  <td className="strong">
-                    {isRenaming ? (
-                      <input
-                        value={renamingCategoryName}
-                        onChange={(e) => setRenamingCategoryName(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter')
-                            renameMutation.mutate({ id: cat.id, name: renamingCategoryName })
-                          if (e.key === 'Escape') setRenamingCategoryId(null)
-                        }}
-                        className="input"
-                        style={{ fontSize: 13, height: 28 }}
-                        maxLength={64}
-                        autoFocus
-                        aria-label="Rename category"
-                      />
-                    ) : (
-                      cat.name
-                    )}
-                  </td>
-                  <td>
-                    <span className={cat.is_income ? 'tag accent' : 'tag'}>
-                      {cat.is_income ? 'Income' : 'Spending'}
-                    </span>
-                  </td>
-                  <td className="num">{cat.txn_count ?? 0}</td>
-                  <td className="num">{monthly ? formatCurrency(monthly) : '—'}</td>
-                  <td>
-                    {isRenaming ? (
-                      <span className="flex items-center justify-end gap-0.5">
-                        <button
-                          onClick={() =>
-                            renameMutation.mutate({ id: cat.id, name: renamingCategoryName })
-                          }
-                          disabled={renameMutation.isPending}
-                          className="btn ghost icon sm"
-                          aria-label="Confirm rename"
-                        >
-                          <Icon name="check" size={13} />
-                        </button>
-                        <button
-                          onClick={() => setRenamingCategoryId(null)}
-                          className="btn ghost icon sm"
-                          aria-label="Cancel rename"
-                        >
-                          <Icon name="close" size={13} />
-                        </button>
-                      </span>
-                    ) : (
-                      <span className="flex items-center justify-end gap-0.5">
-                        <button
-                          onClick={() =>
-                            incomeFlagMutation.mutate({ id: cat.id, is_income: !cat.is_income })
-                          }
-                          disabled={incomeFlagMutation.isPending}
-                          className="btn ghost icon sm"
-                          title={cat.is_income ? 'Move to spending' : 'Move to income'}
-                          aria-label={`Move ${cat.name} to ${cat.is_income ? 'spending' : 'income'}`}
-                        >
-                          <Icon name={cat.is_income ? 'trending_down' : 'trending_up'} size={13} />
-                        </button>
-                        <button
-                          onClick={() => setDeleteCategoryId(cat.id)}
-                          className="btn ghost icon sm"
-                          title="Delete category"
-                          aria-label={`Delete ${cat.name}`}
-                        >
-                          <Icon name="delete" size={13} />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setRenamingCategoryId(cat.id)
-                            setRenamingCategoryName(cat.name)
+        <div className="cat-table-scroll">
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Kind</th>
+                <th className="num">Transactions</th>
+                <th className="num">Budget / month</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {cats.map((cat) => {
+                const isRenaming = renamingCategoryId === cat.id
+                const monthly = monthlyByCategory.get(cat.id)
+                return (
+                  <tr key={cat.id} className="group">
+                    <td className="strong">
+                      {isRenaming ? (
+                        <input
+                          value={renamingCategoryName}
+                          onChange={(e) => setRenamingCategoryName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter')
+                              renameMutation.mutate({ id: cat.id, name: renamingCategoryName })
+                            if (e.key === 'Escape') setRenamingCategoryId(null)
                           }}
-                          className="btn ghost sm"
-                          aria-label={`Edit ${cat.name}`}
-                        >
-                          Edit
-                        </button>
+                          className="input"
+                          style={{ fontSize: 13, height: 28 }}
+                          maxLength={64}
+                          autoFocus
+                          aria-label="Rename category"
+                        />
+                      ) : (
+                        cat.name
+                      )}
+                    </td>
+                    <td>
+                      <span className={cat.is_income ? 'tag accent' : 'tag'}>
+                        {cat.is_income ? 'Income' : 'Spending'}
                       </span>
-                    )}
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+                    </td>
+                    <td className="num">{cat.txn_count ?? 0}</td>
+                    <td className="num">{monthly ? formatCurrency(monthly) : '—'}</td>
+                    <td>
+                      {isRenaming ? (
+                        <span className="flex items-center justify-end gap-0.5">
+                          <button
+                            onClick={() =>
+                              renameMutation.mutate({ id: cat.id, name: renamingCategoryName })
+                            }
+                            disabled={renameMutation.isPending}
+                            className="btn ghost icon sm"
+                            aria-label="Confirm rename"
+                          >
+                            <Icon name="check" size={13} />
+                          </button>
+                          <button
+                            onClick={() => setRenamingCategoryId(null)}
+                            className="btn ghost icon sm"
+                            aria-label="Cancel rename"
+                          >
+                            <Icon name="close" size={13} />
+                          </button>
+                        </span>
+                      ) : (
+                        <span className="flex items-center justify-end gap-0.5">
+                          <button
+                            onClick={() =>
+                              incomeFlagMutation.mutate({ id: cat.id, is_income: !cat.is_income })
+                            }
+                            disabled={incomeFlagMutation.isPending}
+                            className="btn ghost icon sm"
+                            title={cat.is_income ? 'Move to spending' : 'Move to income'}
+                            aria-label={`Move ${cat.name} to ${cat.is_income ? 'spending' : 'income'}`}
+                          >
+                            <Icon
+                              name={cat.is_income ? 'trending_down' : 'trending_up'}
+                              size={13}
+                            />
+                          </button>
+                          <button
+                            onClick={() => setDeleteCategoryId(cat.id)}
+                            className="btn ghost icon sm"
+                            title="Delete category"
+                            aria-label={`Delete ${cat.name}`}
+                          >
+                            <Icon name="delete" size={13} />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setRenamingCategoryId(cat.id)
+                              setRenamingCategoryName(cat.name)
+                            }}
+                            className="btn ghost sm"
+                            aria-label={`Edit ${cat.name}`}
+                          >
+                            Edit
+                          </button>
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
 
         <div
           style={{

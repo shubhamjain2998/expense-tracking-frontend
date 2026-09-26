@@ -15,6 +15,18 @@
     align-items: center;
     justify-content: center;
   }
+  /* The कोश seal keeps its right-hand spot, but centred on the hero it sat
+     in the bars. A smaller seal lifted into the hero's empty top-right
+     corner still reads as the brand mark without crossing the scene. */
+  .auth-page:has(.world-hero) .auth-seal {
+    top: 40px;
+    right: -100px;
+    transform: none;
+  }
+  .auth-page:has(.world-hero) .auth-seal svg {
+    width: 440px;
+    height: 440px;
+  }
 }
 
 .world-hero {
