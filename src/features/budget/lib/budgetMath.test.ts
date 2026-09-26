@@ -4,7 +4,7 @@ import type { BudgetEntry } from '@/types/budget'
 import type { YTDRow } from '@/types/dashboard'
 import type { Category } from '@/types/settings'
 
-import { buildIncomeRows } from './budgetMath'
+import { buildIncomeRows, buildUnbudgetedRows } from './budgetMath'
 
 // Phase 9: "Expected income" always showed ₹0 in "Received in <month>"
 // because it used to derive that figure from GET /dashboard/summary, which
@@ -67,5 +67,34 @@ describe('buildIncomeRows', () => {
     const rows = buildIncomeRows(categories, entries, [], ytd)
     const dividend = rows.find((r) => r.categoryName === 'Dividend')!
     expect(dividend.perMonth).toBeNull()
+  })
+})
+
+describe('buildUnbudgetedRows', () => {
+  const ytdRow = (category: string, actual: number): YTDRow => ({
+    category,
+    allocated_ytd: 0,
+    actual_ytd: actual,
+    variance: 0,
+    pct_used: null,
+  })
+
+  it('lists every unbudgeted expense category except those that net to money in', () => {
+    const categories: Category[] = [
+      { id: 'c-food', name: 'Food', is_income: false },
+      { id: 'c-rent', name: 'Rent', is_income: false },
+      { id: 'c-new', name: 'New', is_income: false },
+      // Income in practice but never flagged: nets negative for the year.
+      { id: 'c-salary', name: 'Salary', is_income: false },
+      { id: 'c-bonus', name: 'Bonus', is_income: true },
+    ]
+    const entries: BudgetEntry[] = [
+      { id: 'e1', year: 2026, category_id: 'c-rent', allocated_amount: '1200', category: 'Rent' },
+    ]
+    const ytd = [ytdRow('Food', 500), ytdRow('Salary', -90000)]
+
+    const rows = buildUnbudgetedRows(categories, entries, [], ytd)
+
+    expect(rows.map((r) => r.categoryName)).toEqual(['Food', 'New'])
   })
 })

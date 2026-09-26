@@ -10,14 +10,6 @@ export interface CategoryTableRow {
   pctUsed: number | null
 }
 
-export interface HeatmapRowData {
-  categoryId: string
-  categoryName: string
-  colorIndex: number
-  cells: { month: number; spend: number | null; budget: number; percent: number | null }[]
-  avgPercent: number | null
-}
-
 export interface UnbudgetedCategoryRow {
   categoryId: string
   categoryName: string

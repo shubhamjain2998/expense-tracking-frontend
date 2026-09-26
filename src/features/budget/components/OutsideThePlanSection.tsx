@@ -10,12 +10,18 @@ import { UnbudgetedCategoryRow } from './UnbudgetedCategoryRow'
  */
 export function OutsideThePlanSection({
   rows,
+  periodView,
+  monthLabel,
   onSetBudget,
   isSaving,
   highlight = null,
   onHighlight,
 }: {
   rows: UnbudgetedCategoryRowData[]
+  /** The plan table's Monthly/Annual toggle; the world's blocks follow it too. */
+  periodView: 'monthly' | 'annual'
+  /** The selected month's name, e.g. "June". */
+  monthLabel: string
   onSetBudget: (categoryId: string, monthlyAmount: number) => void
   isSaving: boolean
   /** Category id lit here and in the 3D world. */
@@ -36,6 +42,8 @@ export function OutsideThePlanSection({
             <UnbudgetedCategoryRow
               key={row.categoryId}
               row={row}
+              amount={periodView === 'monthly' ? row.thisMonthSpent : row.ytdSpent}
+              amountLabel={periodView === 'monthly' ? `in ${monthLabel}` : 'this year so far'}
               onSetBudget={onSetBudget}
               isSaving={isSaving}
               hot={highlight === row.categoryId}

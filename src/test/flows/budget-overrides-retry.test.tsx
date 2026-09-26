@@ -54,8 +54,10 @@ describe('Budget 404 endpoints do not retry-storm', () => {
     renderWithProviders(<BudgetPage />, { initialEntries: ['/budget?year=2025&month=3'] })
 
     // The page settles into its "no budget" empty state instead of hanging
-    // on the loading skeleton for the length of a retry backoff.
-    expect(await screen.findByText(/set up your budget|no budget set/i)).toBeInTheDocument()
+    // on the loading skeleton for the length of a retry backoff. 2025 is not
+    // the current year, so that is the header's "No plan set" line, not the
+    // first-time setup card.
+    expect(await screen.findByText(/no plan set/i)).toBeInTheDocument()
 
     // Give any (incorrect) retry a moment to have fired if `retry: false`
     // regressed — react-query's first retry backs off ~1s, well inside a

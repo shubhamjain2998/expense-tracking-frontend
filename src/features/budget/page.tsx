@@ -6,7 +6,7 @@ import { useWorldSupported } from '@/components/world/support'
 import { usePeriod } from '@/hooks/usePeriod'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { useThemeContext } from '@/hooks/useThemeContext'
-import { resolvePeriodMonth } from '@/lib/period'
+import { formatYearLabel, getCurrentPeriod, monthLongLabel, resolvePeriodMonth } from '@/lib/period'
 
 import { AddBudgetModal } from './components/AddBudgetModal'
 import { BudgetCategoryTable } from './components/BudgetCategoryTable'
@@ -87,8 +87,18 @@ export function BudgetPage() {
 
   // Brand-new users land here with no budget AND no period choice yet. Block
   // the budgeting UI until they pick — the choice changes what "year" the
-  // budget rows are bucketed against, so it has to come first.
-  if (!data.isLoading && !isLoadingPreference && !isExplicitlySet && data.entries.length === 0) {
+  // budget rows are bucketed against, so it has to come first. Only for the
+  // current year: stepping to a year with no plan yet (next year, say) is the
+  // plain empty state, not first-time setup — and the setup card has no year
+  // navigation to step back with.
+  const isCurrentYear = year === getCurrentPeriod(mode, now).year
+  if (
+    !data.isLoading &&
+    !isLoadingPreference &&
+    !isExplicitlySet &&
+    isCurrentYear &&
+    data.entries.length === 0
+  ) {
     return (
       <div className="space-y-5">
         <header>
@@ -171,6 +181,8 @@ export function BudgetPage() {
     data.isLoading || data.unbudgetedData.length === 0 ? null : (
       <OutsideThePlanSection
         rows={data.unbudgetedData}
+        periodView={periodView}
+        monthLabel={monthLongLabel(month, mode)}
         onSetBudget={(categoryId, monthlyAmount) =>
           mutations.createInlineMutation.mutate({ categoryId, monthlyAmount })
         }
@@ -221,6 +233,7 @@ export function BudgetPage() {
           categories={data.allCategories}
           existingCategoryIds={new Set(data.entries.map((e) => e.category_id))}
           year={year}
+          mode={mode}
           onClose={() => setShowAddModal(false)}
           onSaved={() => setShowAddModal(false)}
         />
@@ -228,8 +241,10 @@ export function BudgetPage() {
 
       <ConfirmDialog
         isOpen={mutations.deleteId !== null}
-        title="Delete budget entry"
-        message="Are you sure? This will remove the annual budget for this category."
+        title="Remove from the plan"
+        message={`This removes the ${
+          data.entries.find((e) => e.id === mutations.deleteId)?.category ?? 'category'
+        } budget for ${formatYearLabel(year, mode)}. Its transactions stay as they are.`}
         confirmLabel="Delete"
         danger
         loading={mutations.deleteMutation.isPending}

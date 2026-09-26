@@ -116,6 +116,7 @@ describe('AddBudgetModal a11y parity', () => {
         categories={categories}
         existingCategoryIds={new Set()}
         year={2026}
+        mode="fy"
         onClose={() => {}}
         onSaved={() => {}}
       />
@@ -132,6 +133,7 @@ describe('AddBudgetModal a11y parity', () => {
         categories={categories}
         existingCategoryIds={new Set()}
         year={2026}
+        mode="fy"
         onClose={onClose}
         onSaved={() => {}}
       />

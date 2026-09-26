@@ -15,12 +15,17 @@ import type { UnbudgetedCategoryRow as UnbudgetedCategoryRowData } from '../type
  */
 export function UnbudgetedCategoryRow({
   row,
+  amount,
+  amountLabel,
   onSetBudget,
   isSaving,
   hot = false,
   onHighlight,
 }: {
   row: UnbudgetedCategoryRowData
+  /** Spend for the period the plan table shows, with its label ("in June"). */
+  amount: number
+  amountLabel: string
   onSetBudget: (categoryId: string, monthlyAmount: number) => void
   isSaving: boolean
   /** Lit from its block in the 3D world. */
@@ -62,7 +67,7 @@ export function UnbudgetedCategoryRow({
       <Icon className="ico" name="tag" size={18} />
       <span className="body flex flex-col">
         <span className="strong">
-          <span>{row.categoryName}</span> — {formatCurrency(row.thisMonthSpent)} this month
+          <span>{row.categoryName}</span> — {formatCurrency(amount)} {amountLabel}
         </span>
         <span className="small">
           {row.txnCount} transaction{row.txnCount === 1 ? '' : 's'} total · no budget line yet

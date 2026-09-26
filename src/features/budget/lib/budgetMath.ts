@@ -2,13 +2,7 @@ import type { BudgetEntry } from '@/types/budget'
 import type { SummaryRow, YTDRow } from '@/types/dashboard'
 import type { Category } from '@/types/settings'
 
-import type {
-  CategoryTableRow,
-  HeatmapRowData,
-  IncomeTableRow,
-  UnbudgetedCategoryRow,
-  YearVerdict,
-} from '../types'
+import type { CategoryTableRow, IncomeTableRow, UnbudgetedCategoryRow, YearVerdict } from '../types'
 
 // Backend stores allocated_amount as ANNUAL; UI shows/edits MONTHLY values.
 export const monthlyToAnnual = (m: number): number => m * 12
@@ -45,49 +39,6 @@ export function buildTableRows(
   })
 }
 
-export interface HeatmapInputRow {
-  categoryId: string
-  categoryName: string
-  // 0 when no budget is set — yields empty cells (percent: null) so users with
-  // no budget yet still see all categories laid out in the grid.
-  annualBudget: number
-}
-
-export function buildHeatmapRows(
-  rows: HeatmapInputRow[],
-  monthResults: Array<{ data?: SummaryRow[] | undefined }>,
-  currentYearMonth: number
-): HeatmapRowData[] {
-  return rows.map((row, i) => {
-    const budget = annualToMonthly(row.annualBudget)
-
-    const cells = Array.from({ length: 12 }, (_, mi) => {
-      const m = mi + 1
-      if (m > currentYearMonth) {
-        return { month: m, spend: null, budget, percent: null }
-      }
-      const monthRow = monthResults[mi].data?.find((s) => s.category === row.categoryName)
-      const spend = Number(monthRow?.actual ?? 0)
-      const percent = budget > 0 ? Math.round((spend / budget) * 100) : null
-      return { month: m, spend, budget, percent }
-    })
-
-    const doneMonths = cells.filter((c) => c.percent !== null)
-    const avgPercent =
-      doneMonths.length > 0
-        ? Math.round(doneMonths.reduce((sum, c) => sum + (c.percent ?? 0), 0) / doneMonths.length)
-        : null
-
-    return {
-      categoryId: row.categoryId,
-      categoryName: row.categoryName,
-      colorIndex: i % 8,
-      cells,
-      avgPercent,
-    }
-  })
-}
-
 export function buildUnbudgetedRows(
   allCategories: Category[],
   entries: BudgetEntry[],
@@ -98,6 +49,10 @@ export function buildUnbudgetedRows(
   const summaryByName = new Map(summary.map((s) => [s.category, s]))
   const ytdByName = new Map(ytd.map((y) => [y.category, y]))
 
+  // Every expense category is listed, spend or not, so a new user can set
+  // budgets inline. The exception is a category whose year nets to money in
+  // (a salary or dividend category never flagged as income): that is not
+  // spend outside the plan, and it read "₹0 this month" beside a Set budget.
   return allCategories
     .filter((c) => !budgetedIds.has(c.id) && !c.is_income)
     .map((c, i) => ({
@@ -108,6 +63,7 @@ export function buildUnbudgetedRows(
       ytdSpent: Number(ytdByName.get(c.name)?.actual_ytd ?? 0),
       txnCount: c.txn_count ?? 0,
     }))
+    .filter((r) => r.ytdSpent >= 0)
 }
 
 /**

@@ -34,7 +34,13 @@ export function IncomeSection({
       </div>
       {rows.length === 0 ? (
         <div className="card">
-          <p className="small">No income categories yet.</p>
+          <p className="small">
+            No income categories yet. Mark one as income in{' '}
+            <Link to="/settings#categories" className="inline-insights-link">
+              Settings
+            </Link>{' '}
+            to plan what comes in.
+          </p>
         </div>
       ) : (
         <div className="card card-flush">

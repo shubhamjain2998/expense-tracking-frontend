@@ -9,6 +9,7 @@ import { useFocusReturn } from '@/hooks/useFocusReturn'
 import { useToastContext } from '@/hooks/useToastContext'
 import { createBudget } from '@/lib/api/budget'
 import { createCategory } from '@/lib/api/categories'
+import { formatYearLabel, type PeriodMode } from '@/lib/period'
 import { invalidateDomains } from '@/lib/queryKeys'
 import type { Category } from '@/types/settings'
 
@@ -18,12 +19,15 @@ export function AddBudgetModal({
   categories,
   existingCategoryIds,
   year,
+  mode,
   onClose,
   onSaved,
 }: {
   categories: Category[]
   existingCategoryIds: Set<string>
   year: number
+  /** Labels the year the way the rest of the page does ("FY 26-27" or "2026"). */
+  mode: PeriodMode
   onClose: () => void
   onSaved: () => void
 }) {
@@ -93,7 +97,11 @@ export function AddBudgetModal({
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(0,0,0,0.45)',
+        // Same scrim as ConfirmDialog: a bare 45% black let the Budget
+        // world's panel copy and scene labels read through the dialog.
+        background: 'color-mix(in oklch, var(--bg) 60%, transparent)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
         zIndex: 50,
         display: 'flex',
         alignItems: 'center',
@@ -113,7 +121,14 @@ export function AddBudgetModal({
     >
       <div
         className="card animate-scale-in"
-        style={{ width: '100%', maxWidth: 460, maxHeight: '85vh', overflow: 'auto' }}
+        // Opaque: .card is a translucent glass surface meant to sit on the page.
+        style={{
+          width: '100%',
+          maxWidth: 460,
+          maxHeight: '85vh',
+          overflow: 'auto',
+          background: 'var(--surface)',
+        }}
         onKeyDown={(e) => e.key === 'Escape' && onClose()}
       >
         <div className="flex items-start justify-between" style={{ marginBottom: 20 }}>
@@ -122,7 +137,7 @@ export function AddBudgetModal({
               Add budget entries
             </p>
             <p className="card-sub" style={{ marginTop: 2 }}>
-              Set {period} budgets for new categories in {year}.
+              Set {period} budgets for new categories in {formatYearLabel(year, mode)}.
             </p>
           </div>
           <button
