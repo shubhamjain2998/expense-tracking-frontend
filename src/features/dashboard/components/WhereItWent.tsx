@@ -150,6 +150,9 @@ export function WhereItWent({
                         left: `${Math.min(100, ((row.allocated * paceAt) / maxActual) * 100)}%`,
                       }}
                       data-label="expected today"
+                      // The label is a visual hover hint; read aloud it put
+                      // "expected today" before the row's actual spend.
+                      aria-hidden="true"
                     />
                   )}
                 </span>

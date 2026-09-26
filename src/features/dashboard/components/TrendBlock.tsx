@@ -116,29 +116,44 @@ export function TrendBlock({
           <Skeleton className="h-56 w-full" />
         ) : (
           <>
-            <div className="mb-3 flex flex-wrap items-center gap-4">
-              <span className="flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--ink)]">
-                <svg width="16" height="8" aria-hidden="true">
-                  <line x1="0" y1="4" x2="16" y2="4" stroke="currentColor" strokeWidth={2} />
-                </svg>
-                Out
-              </span>
-              <span className="flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--accent)]">
-                <svg width="16" height="8" aria-hidden="true">
-                  <line
-                    x1="0"
-                    y1="4"
-                    x2="16"
-                    y2="4"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    strokeDasharray="4 3"
-                  />
-                </svg>
-                In
-              </span>
+            {/* The Out/In key describes the line chart. Without it (the 3D
+                world draws ribbons with their own legend) a solid/dashed key
+                was wrong, and its margin left a gap under the average line. */}
+            <div
+              className={['flex flex-wrap items-center gap-4', showChart ? 'mb-3' : null]
+                .filter(Boolean)
+                .join(' ')}
+            >
+              {showChart && (
+                <>
+                  <span className="flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--ink)]">
+                    <svg width="16" height="8" aria-hidden="true">
+                      <line x1="0" y1="4" x2="16" y2="4" stroke="currentColor" strokeWidth={2} />
+                    </svg>
+                    Out
+                  </span>
+                  <span className="flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--accent)]">
+                    <svg width="16" height="8" aria-hidden="true">
+                      <line
+                        x1="0"
+                        y1="4"
+                        x2="16"
+                        y2="4"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        strokeDasharray="4 3"
+                      />
+                    </svg>
+                    In
+                  </span>
+                </>
+              )}
               {vsAvgPct !== null && (
-                <span className="text-[12.5px] text-[var(--ink-3)] sm:ml-auto">
+                <span
+                  className={['text-[12.5px] text-[var(--ink-3)]', showChart ? 'sm:ml-auto' : null]
+                    .filter(Boolean)
+                    .join(' ')}
+                >
                   Out is {vsAvgPct >= 0 ? 'up' : 'down'}{' '}
                   <b className={vsAvgPct >= 0 ? 'neg' : 'pos'}>{Math.abs(Math.round(vsAvgPct))}%</b>{' '}
                   against your {trendWindow}-month average
