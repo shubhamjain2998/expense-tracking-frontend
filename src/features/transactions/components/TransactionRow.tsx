@@ -92,6 +92,7 @@ export function TransactionRow({
             type="checkbox"
             checked={isChecked}
             onChange={() => {}}
+            aria-label={`Select ${txn.description}`}
             style={{ cursor: 'pointer', accentColor: 'var(--accent)' }}
           />
         )}
@@ -230,7 +231,7 @@ export function TransactionRow({
                   ? 'var(--pos-soft)'
                   : txn.txnType === 'transfer'
                     ? 'var(--surface-2)'
-                    : `color-mix(in oklch, ${catColor} 13%, var(--surface))`,
+                    : `color-mix(in srgb, ${catColor} 13%, var(--surface))`,
               fontSize: 12,
               fontWeight: 500,
               color:
@@ -292,8 +293,11 @@ export function TransactionRow({
         >
           <button
             onClick={() => {
+              // Select the row too, so the highlight follows the panel this
+              // opens instead of staying on whichever row was picked before.
+              setSelectedUid(txn.uid)
               if (txn.processedOriginal) setEditingTxn(txn.processedOriginal)
-              else if (txn.rawOriginal) setSelectedUid(txn.uid)
+              else setEditingTxn(null)
             }}
             className="btn ghost icon sm"
             aria-label={

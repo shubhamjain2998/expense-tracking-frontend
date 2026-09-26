@@ -77,8 +77,8 @@ const ALLOWED_INK4_TEXT_CONTEXT_SITES = [
   'features/settings/components/IgnoreRulesSection.tsx:58', // chip remove <Icon name="close">
   'features/settings/components/ProfileSection.tsx:256', // edit <Icon>
   'features/settings/components/TagsSection.tsx:37', // chip remove <Icon name="close">
-  'features/transactions/components/DragDropOverlay.tsx:90', // drag_indicator <Icon>
-  'features/transactions/components/TransactionRow.tsx:111', // drag_indicator <Icon> (pointerEvents:none)
+  'features/transactions/components/DragDropOverlay.tsx:91', // drag_indicator <Icon>
+  'features/transactions/components/TransactionRow.tsx:112', // drag_indicator <Icon> (pointerEvents:none)
   'features/upload/components/FileCard.tsx:175', // search <Icon>
   'features/upload/components/FileCard.tsx:242', // expand/collapse <Icon>
   'features/upload/components/FileCard.tsx:306', // expand/collapse <Icon>

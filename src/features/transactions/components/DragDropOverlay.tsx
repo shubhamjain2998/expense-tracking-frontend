@@ -66,6 +66,7 @@ export function DragDropOverlay({
 
   return (
     <div
+      className="txn-drop-bar"
       style={{
         marginBottom: 8,
         background: active ? 'var(--surface)' : 'var(--surface-2)',
@@ -136,9 +137,9 @@ export function DragDropOverlay({
                 borderRadius: 'var(--radius)',
                 border: '1.5px solid ' + (isSelected || isOver ? color : 'var(--line)'),
                 background: isSelected
-                  ? `color-mix(in oklch, ${color} 18%, var(--surface))`
+                  ? `color-mix(in srgb, ${color} 18%, var(--surface))`
                   : isOver
-                    ? `color-mix(in oklch, ${color} 12%, var(--surface))`
+                    ? `color-mix(in srgb, ${color} 12%, var(--surface))`
                     : 'var(--surface)',
                 cursor: 'default',
                 transition: 'border-color 0.1s, background 0.1s',
@@ -226,14 +227,19 @@ export function DragDropOverlay({
                   return (
                     <button
                       key={tag.id}
+                      type="button"
+                      aria-pressed={isSelected}
                       onClick={() => onToggleTag(tag.id)}
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
                         padding: '2px 10px',
                         borderRadius: 100,
-                        border: '1.5px solid ' + (isSelected ? 'var(--ink-1)' : 'var(--line)'),
-                        background: isSelected ? 'var(--ink-1)' : 'var(--surface)',
+                        // --ink, not --ink-1: there is no --ink-1 token, so a
+                        // picked tag lost its fill and its --surface text
+                        // vanished into the bar.
+                        border: '1.5px solid ' + (isSelected ? 'var(--ink)' : 'var(--line)'),
+                        background: isSelected ? 'var(--ink)' : 'var(--surface)',
                         color: isSelected ? 'var(--surface)' : 'var(--ink-2)',
                         fontSize: 11.5,
                         fontWeight: 600,
