@@ -8,9 +8,11 @@
 
 import { useQuery } from '@tanstack/react-query'
 
+import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { getBudget } from '@/lib/api/budget'
 import { getCategories } from '@/lib/api/categories'
 import { getAllProcessedTransactions, getPendingManual } from '@/lib/api/transactions'
+import { getCurrentPeriod } from '@/lib/period'
 import { qk } from '@/lib/queryKeys'
 
 export interface OnboardingProgress {
@@ -29,7 +31,10 @@ export interface OnboardingProgress {
 const STALE = 60_000
 
 export function useOnboardingProgress(): OnboardingProgress {
-  const currentYear = new Date().getFullYear()
+  // Budgets are stored per period year (FY 26-27 is 2026 until next April),
+  // so the calendar year missed an FY user's budget from January to March.
+  const { mode } = usePeriodMode()
+  const currentYear = getCurrentPeriod(mode).year
 
   const categoriesQ = useQuery({
     queryKey: qk.categories.all,

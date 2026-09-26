@@ -28,12 +28,16 @@ interface Step {
 export function GettingStartedChecklist({ onDismiss }: GettingStartedChecklistProps) {
   const progress = useOnboardingProgress()
 
-  // Hide immediately once the user is done — mark them onboarded so we don't
-  // re-prompt on a future cache miss.
+  // Nothing until the four queries have answered: during the first load every
+  // step reads as not done, so the card flashed up on Home and vanished a
+  // moment later for users who had finished long ago.
+  if (progress.isLoading) return null
+
+  // Hide once the user is done, and remember it, so a later cold cache
+  // doesn't re-prompt or re-mount the card at all.
   if (progress.isComplete) {
-    if (!onboardingStorage.isOnboarded()) {
-      onboardingStorage.setOnboarded(true)
-    }
+    if (!onboardingStorage.isOnboarded()) onboardingStorage.setOnboarded(true)
+    if (!onboardingStorage.isChecklistDismissed()) onboardingStorage.setChecklistDismissed(true)
     return null
   }
 
