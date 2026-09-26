@@ -34,8 +34,8 @@ const STEPS: PlaybookStep[] = [
   {
     icon: 'upload',
     title: 'Upload',
-    why: 'Drop your bank PDF. Kosh reads it locally — the file is never stored on any server. Only the parsed transaction rows are saved to your account.',
-    todo: 'Drop a statement PDF on the Upload page. Parsed transactions land in a review queue, not your live data.',
+    why: 'Drop your bank PDF. Kosh parses it in memory and never stores the file. Only the parsed transaction rows are saved to your account.',
+    todo: 'On the Transactions page, choose Import → Bank statement PDF. Parsed transactions land in a review queue, not your live data.',
   },
   {
     icon: 'fact_check',
