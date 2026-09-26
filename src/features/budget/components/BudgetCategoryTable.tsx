@@ -11,8 +11,6 @@ import type { CategoryTableRow } from '../types'
 
 import { BudgetCategoryRow } from './BudgetCategoryRow'
 
-type PeriodView = 'monthly' | 'annual'
-
 /**
  * Budget §2 "The plan". Category name / plan / spent / left / against-pace
  * only — no YTD or annual-budget columns here, those figures live exactly
@@ -29,6 +27,10 @@ export function BudgetCategoryTable({
   onResetBudget,
   onDelete,
   editHint,
+  periodView,
+  onPeriodViewChange,
+  highlight = null,
+  onHighlight,
 }: {
   tableData: CategoryTableRow[]
   month: number
@@ -38,11 +40,16 @@ export function BudgetCategoryTable({
   onResetBudget: (row: CategoryTableRow) => void
   onDelete: (id: string) => void
   editHint?: string
+  /** Owned by the page so the 3D world reads the same period as the table. */
+  periodView: 'monthly' | 'annual'
+  onPeriodViewChange: (view: 'monthly' | 'annual') => void
+  /** Category id lit here and in the 3D world; rows report hover through onHighlight. */
+  highlight?: string | null
+  onHighlight?: (categoryId: string | null) => void
 }) {
   const { query, newCategoryName, setNewCategoryName, createMutation } = useCategories()
 
   const [newIsIncome, setNewIsIncome] = useState(false)
-  const [periodView, setPeriodView] = useState<PeriodView>('monthly')
 
   const incomeCatIds = new Set((query.data ?? []).filter((c) => c.is_income).map((c) => c.id))
   const rows = tableData.filter((row) => !incomeCatIds.has(row.categoryId))
@@ -96,14 +103,14 @@ export function BudgetCategoryTable({
             <button
               aria-pressed={periodView === 'monthly'}
               className={periodView === 'monthly' ? 'on' : ''}
-              onClick={() => setPeriodView('monthly')}
+              onClick={() => onPeriodViewChange('monthly')}
             >
               Monthly
             </button>
             <button
               aria-pressed={periodView === 'annual'}
               className={periodView === 'annual' ? 'on' : ''}
-              onClick={() => setPeriodView('annual')}
+              onClick={() => onPeriodViewChange('annual')}
             >
               Annual
             </button>
@@ -148,6 +155,8 @@ export function BudgetCategoryTable({
                     key={row.id}
                     row={row}
                     periodView={periodView}
+                    hot={highlight === row.categoryId}
+                    onHighlight={onHighlight}
                     onSaveBudget={(amount) => onSaveBudget(row, amount)}
                     onResetBudget={() => onResetBudget(row)}
                     onDelete={() => onDelete(row.id)}

@@ -18,12 +18,17 @@ export function BudgetCategoryRow({
   onSaveBudget,
   onResetBudget,
   onDelete,
+  hot = false,
+  onHighlight,
 }: {
   row: CategoryTableRow
   periodView: 'monthly' | 'annual'
   onSaveBudget: (amount: number) => void
   onResetBudget: () => void
   onDelete: () => void
+  /** Lit from its vessel in the 3D world. */
+  hot?: boolean
+  onHighlight?: (categoryId: string | null) => void
 }) {
   const [editing, setEditing] = useState(false)
   const [editValue, setEditValue] = useState('')
@@ -54,7 +59,13 @@ export function BudgetCategoryRow({
   const overBudget = pct !== null && pct >= 100
 
   return (
-    <tr className="group">
+    <tr
+      className={hot ? 'group is-hot' : 'group'}
+      onMouseEnter={onHighlight ? () => onHighlight(row.categoryId) : undefined}
+      onMouseLeave={onHighlight ? () => onHighlight(null) : undefined}
+      onFocus={onHighlight ? () => onHighlight(row.categoryId) : undefined}
+      onBlur={onHighlight ? () => onHighlight(null) : undefined}
+    >
       <td className="strong">{row.categoryName}</td>
 
       {/* Plan — inline editable (always edits the MONTHLY value; the annual
