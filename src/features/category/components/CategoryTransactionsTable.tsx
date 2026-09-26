@@ -8,10 +8,8 @@ import type { ProcessedTransactionItem } from '@/types/transaction'
 interface CategoryTransactionsTableProps {
   txns: ProcessedTransactionItem[]
   monthLabel: string
-  /** `/transactions?year=&month=` for the same period, in Transactions'
-   *  own period-year numbering — Transactions doesn't yet read a category
-   *  filter from the URL (that page is out of scope this phase), so this
-   *  lands on the right month rather than a category-filtered view. */
+  /** `/transactions?year=&month=&category=` for the same period, in
+   *  Transactions' own period-year numbering. */
   openInTransactionsHref: string
   isLoading: boolean
   /** Transaction lit in both the table and the 3D day field. */
@@ -65,8 +63,10 @@ export function CategoryTransactionsTable({
               <tr>
                 <th>Date</th>
                 <th>Description</th>
-                <th>Tags</th>
-                <th>With</th>
+                {/* On a phone the amount would sit past the card's edge behind a
+                    sideways scroll; tags and people give way to it. */}
+                <th className="max-sm:hidden">Tags</th>
+                <th className="max-sm:hidden">With</th>
                 <th className="num">Amount</th>
               </tr>
             </thead>
@@ -79,9 +79,17 @@ export function CategoryTransactionsTable({
                   onMouseEnter={onHighlight ? () => onHighlight(t.id) : undefined}
                   onMouseLeave={onHighlight ? () => onHighlight(null) : undefined}
                 >
-                  <td className="num text-[var(--ink-3)]">{formatShortDate(t.txn_date)}</td>
-                  <td className="font-medium text-[var(--ink)]">{t.description}</td>
-                  <td>
+                  <td className="num whitespace-nowrap text-[var(--ink-3)]">
+                    {formatShortDate(t.txn_date)}
+                  </td>
+                  <td className="font-medium text-[var(--ink)]">
+                    {/* Raw UPI strings run to a hundred characters; two lines
+                        and the full text on hover, as Transactions does. */}
+                    <span className="line-clamp-2 break-words" title={t.description}>
+                      {t.description}
+                    </span>
+                  </td>
+                  <td className="max-sm:hidden">
                     {t.tags.length > 0 && (
                       <span className="tagset">
                         {t.tags.map((tag) => (
@@ -92,7 +100,7 @@ export function CategoryTransactionsTable({
                       </span>
                     )}
                   </td>
-                  <td>
+                  <td className="max-sm:hidden">
                     {t.shares.length > 0 && (
                       <span className="people">
                         {t.shares.map((s) => (
@@ -103,7 +111,10 @@ export function CategoryTransactionsTable({
                       </span>
                     )}
                   </td>
-                  <td className="num">{formatCurrency(Number(t.effective_amount))}</td>
+                  <td className="num">
+                    {/* Income is stored negative; the column reads as a size. */}
+                    {formatCurrency(Math.abs(Number(t.effective_amount)))}
+                  </td>
                 </tr>
               ))}
             </tbody>

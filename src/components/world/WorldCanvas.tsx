@@ -80,9 +80,21 @@ function Projector({
   useFrame(({ camera, size }) => {
     const els = elements()
     const t = motion().current
-    const place = (el: HTMLElement, anchor: Vec3, shift: string, station: number) => {
+    const place = (
+      el: HTMLElement,
+      anchor: Vec3,
+      shift: string,
+      station: number,
+      keepInside = false
+    ) => {
       scratch.set(...anchor).project(camera)
-      const x = ((scratch.x + 1) / 2) * size.width
+      let x = ((scratch.x + 1) / 2) * size.width
+      // A centred tip over an object near the stage's edge would be cut off
+      // by the overlay; slide it along until it fits.
+      if (keepInside) {
+        const half = el.offsetWidth / 2 + 8
+        x = Math.min(Math.max(x, half), Math.max(half, size.width - half))
+      }
       const y = ((1 - scratch.y) / 2) * size.height
       const opacity = Math.max(0, 1 - Math.abs(t - station) * 2.5)
       el.style.transform = `translate3d(${x}px, ${y}px, 0) ${shift}`
@@ -100,7 +112,7 @@ function Projector({
             : 'translate(-50%, -50%)'
       place(el, l.anchor, shift, l.station)
     })
-    if (tip && els.tip) place(els.tip, tip.anchor, 'translate(-50%, -100%)', tip.station)
+    if (tip && els.tip) place(els.tip, tip.anchor, 'translate(-50%, -100%)', tip.station, true)
   })
   return null
 }

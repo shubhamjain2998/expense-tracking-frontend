@@ -34,6 +34,27 @@
   top: 0;
   z-index: 1;
 }
-.cat-world .tbl td:first-child {
-  white-space: nowrap;
+
+/* Five figures in the ~500px column: three over two, each row filling the
+   card. auto-fit left an empty sixth cell and a stray divider at the card's
+   right edge, with nothing between the rows. */
+.cat-world .stats {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+.cat-world .stats > div {
+  grid-column: span 2;
+}
+.cat-world .stats > div:nth-child(n + 4) {
+  grid-column: span 3;
+  border-top: 1px solid var(--line);
+}
+.cat-world .stats > div:nth-child(3) {
+  border-right: 0;
+}
+
+/* The shared bar row gives the name 152px and the "N charges" note 108px;
+   in the narrow column that cut merchant names to a dozen letters beside an
+   empty note column. */
+.cat-world .bar-row {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 88px 72px;
 }
