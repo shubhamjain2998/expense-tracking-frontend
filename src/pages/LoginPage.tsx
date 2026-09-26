@@ -9,6 +9,7 @@ import { Icon, type IconName } from '../components/ui/Icon'
 import { useAuth } from '../contexts/AuthContext'
 import { WorldHero } from '../features/auth/world/WorldHero'
 import { googleSignIn, login as loginApi } from '../lib/api'
+import { GOOGLE_CLIENT_ID } from '../lib/config'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -69,31 +70,12 @@ export function LoginPage() {
       <AuthSealBackdrop />
       <div className="auth-layout">
         <div className="w-full max-w-sm">
+          {/* Same mark as the dock's brand: the क glyph, then the name. */}
           <div className="mb-6 flex items-center gap-2.5">
-            <span
-              aria-hidden
-              style={{
-                width: 22,
-                height: 22,
-                background: 'var(--ink)',
-                color: 'var(--surface)',
-                borderRadius: 'var(--radius-sm)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 800,
-                fontSize: 12,
-                letterSpacing: '-0.5px',
-              }}
-            >
-              K
+            <span className="brand-mark" aria-hidden="true">
+              क
             </span>
-            <span
-              className="text-[14px] font-semibold"
-              style={{ color: 'var(--ink)', letterSpacing: '-0.01em' }}
-            >
-              Kosh
-            </span>
+            <span className="brand-name">Kosh</span>
           </div>
 
           <div className="card animate-scale-in">
@@ -103,25 +85,31 @@ export function LoginPage() {
               Track what you spend. Own what you know.
             </p>
 
-            <div className="mt-5">
-              <GoogleSignInButton
-                text="signin_with"
-                onCredential={handleGoogleCredential}
-                onError={setError}
-                disabled={loading}
-              />
-            </div>
+            {/* Without a client id the Google button renders nothing, so the
+                "or" divider would sit above nothing. */}
+            {GOOGLE_CLIENT_ID && (
+              <>
+                <div className="mt-5">
+                  <GoogleSignInButton
+                    text="signin_with"
+                    onCredential={handleGoogleCredential}
+                    onError={setError}
+                    disabled={loading}
+                  />
+                </div>
 
-            <div
-              className="my-4 flex items-center gap-3 text-[11px] tracking-wider uppercase"
-              style={{ color: 'var(--ink-3)' }}
-            >
-              <span className="h-px flex-1" style={{ background: 'var(--border)' }} />
-              or
-              <span className="h-px flex-1" style={{ background: 'var(--border)' }} />
-            </div>
+                <div
+                  className="my-4 flex items-center gap-3 text-[11px] tracking-wider uppercase"
+                  style={{ color: 'var(--ink-3)' }}
+                >
+                  <span className="h-px flex-1" style={{ background: 'var(--line)' }} />
+                  or
+                  <span className="h-px flex-1" style={{ background: 'var(--line)' }} />
+                </div>
+              </>
+            )}
 
-            <form onSubmit={handleSubmit} className="space-y-3.5">
+            <form onSubmit={handleSubmit} className="mt-4 space-y-3.5">
               <div>
                 <label className="eyebrow mb-1 block" htmlFor="login-email">
                   Email
@@ -160,6 +148,7 @@ export function LoginPage() {
 
               {error && (
                 <p
+                  role="alert"
                   className="text-[12px]"
                   style={{
                     background: 'var(--neg-soft)',

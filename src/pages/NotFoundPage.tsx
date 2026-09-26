@@ -22,7 +22,7 @@ export function NotFoundPage() {
         The page you&apos;re looking for doesn&apos;t exist.
       </p>
       <Link to="/dashboard" className="btn primary mt-5" style={{ textDecoration: 'none' }}>
-        Back to dashboard
+        Back to Home
       </Link>
     </div>
   )
