@@ -74,9 +74,12 @@ export function RingStation({
             x,
             z,
             y: ringHeight(model, m.income),
-            h: RING.cap,
-            w: RING.col + 0.08,
-            d: RING.col + 0.08,
+            // A rod, not a lid: a full-width accent cap read as a blue block
+            // from above and outweighed the spend it sits over (as Home's
+            // pace markers did before they became ticks).
+            h: RING.cap * 1.4,
+            w: RING.col + 0.16,
+            d: 0.12,
             color: colors.accent,
           }
         }),
