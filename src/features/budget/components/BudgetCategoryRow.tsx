@@ -124,7 +124,7 @@ export function BudgetCategoryRow({
       </td>
 
       {/* Against pace */}
-      <td>
+      <td className="plan-pace">
         {pct !== null ? (
           <span className="flex items-center gap-2">
             <span className="meter" style={{ width: 120, display: 'inline-block' }}>

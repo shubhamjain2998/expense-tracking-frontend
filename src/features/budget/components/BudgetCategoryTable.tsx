@@ -121,14 +121,14 @@ export function BudgetCategoryTable({
 
       <div className="card card-flush">
         <div style={{ overflowX: 'auto' }}>
-          <table className="tbl">
+          <table className="tbl plan-table">
             <thead>
               <tr>
                 <th>Category</th>
                 <th className="num">Plan / {periodView === 'monthly' ? 'month' : 'year'}</th>
                 <th className="num">{spentLabel}</th>
                 <th className="num">Left</th>
-                <th>Against pace</th>
+                <th className="plan-pace">Against pace</th>
                 <th style={{ width: 40 }} />
               </tr>
               {editHint && periodView === 'monthly' && rows.length > 0 && (
@@ -176,7 +176,7 @@ export function BudgetCategoryTable({
                   >
                     {formatCurrency(totals.left)}
                   </td>
-                  <td />
+                  <td className="plan-pace" />
                   <td />
                 </tr>
               </tfoot>

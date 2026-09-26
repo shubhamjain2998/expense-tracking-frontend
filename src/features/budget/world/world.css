@@ -21,3 +21,28 @@
 .budget-world .tbl tr.is-hot td {
   transition: background var(--dur-1) var(--ease-out-soft);
 }
+
+/* Phones: the pace meter repeats what Left already says, and with it the
+   plan table ran wider than the screen behind a sideways scroll. */
+@media (max-width: 639px) {
+  .plan-table .plan-pace {
+    display: none;
+  }
+  .plan-table th,
+  .plan-table td {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+  .plan-table th {
+    white-space: normal;
+  }
+  /* Long category names hyphenate rather than widen the table. */
+  .plan-table tr.group td:first-child {
+    hyphens: auto;
+  }
+  .plan-table th:last-child,
+  .plan-table td:last-child {
+    padding-left: 0;
+    padding-right: 2px;
+  }
+}
