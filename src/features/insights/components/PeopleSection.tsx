@@ -13,6 +13,10 @@ interface PeopleSectionProps {
   includeSettled: boolean
   onToggleSettled: () => void
   isLoading: boolean
+  /** The month the ledger covers, e.g. "June 2026". The ledger follows the
+   *  selected period, so the section says which one rather than leaving an
+   *  empty month to read as "you never split anything". */
+  periodLabel: string
   /** Person lit in both this table and the 3D world's beams. */
   highlight?: string | null
   onHighlight?: (person: string | null) => void
@@ -34,6 +38,7 @@ export function PeopleSection({
   includeSettled,
   onToggleSettled,
   isLoading,
+  periodLabel,
   highlight = null,
   onHighlight,
 }: PeopleSectionProps) {
@@ -44,7 +49,7 @@ export function PeopleSection({
     <section className="sec">
       <div className="sec-head">
         <h2 className="sec-title">People</h2>
-        <span className="sub">Shared bills and who still owes what</span>
+        <span className="sub">Shared bills in {periodLabel} and who still owes what</span>
         <span className="act">
           <label className="hit44-pad-v flex cursor-pointer items-center gap-1.5 text-[12.5px] text-[var(--ink-3)]">
             <input type="checkbox" checked={includeSettled} onChange={onToggleSettled} />
@@ -61,18 +66,18 @@ export function PeopleSection({
         ) : rows.length === 0 ? (
           <EmptyState
             icon="group"
-            title="No shared expenses"
+            title={`No shared expenses in ${periodLabel}`}
             description="Split a transaction with someone to see it here."
           />
         ) : (
-          <table className="tbl">
+          <table className="tbl people-tbl">
             <thead>
               <tr>
                 <th>Person</th>
-                <th>Open items</th>
+                <th className="hide-sm">Open items</th>
                 <th className="num">They owe you</th>
-                <th className="num">You owe them</th>
-                <th className="num">Net</th>
+                <th className="num hide-sm">You owe them</th>
+                <th className="num hide-sm">Net</th>
                 <th />
               </tr>
             </thead>
@@ -81,6 +86,10 @@ export function PeopleSection({
                 const owed = Number(row.total_split_amount)
                 const initial = row.person_name.trim().charAt(0).toUpperCase() || '?'
                 const items = openItemsByPerson.get(row.person_name) ?? []
+                const itemsText =
+                  items.length > 2
+                    ? `${items.slice(0, 2).join(' · ')} · ${items.length - 2} more`
+                    : items.join(' · ') || '—'
                 return (
                   <tr
                     key={row.person_name}
@@ -93,15 +102,26 @@ export function PeopleSection({
                         <span className="avatar">{initial}</span>
                       </span>{' '}
                       {row.person_name}
+                      {/* Narrow tables drop the Open items column; the list
+                          moves under the name instead of being lost. */}
+                      <span
+                        className="people-items-inline mt-1 line-clamp-2 text-[12px] font-normal wrap-anywhere text-[var(--ink-3)] min-[900px]:hidden"
+                        title={items.join('\n') || undefined}
+                      >
+                        {itemsText}
+                      </span>
                     </td>
-                    <td className="text-[12.5px] text-[var(--ink-3)]">
-                      {items.length > 2
-                        ? `${items.slice(0, 2).join(' · ')} · ${items.length - 2} more`
-                        : items.join(' · ') || '—'}
+                    <td
+                      className="hide-sm text-[12.5px] wrap-anywhere text-[var(--ink-3)]"
+                      title={items.join('\n') || undefined}
+                    >
+                      <span className="line-clamp-2">{itemsText}</span>
                     </td>
-                    <td className="num">{formatCurrency(owed)}</td>
-                    <td className="num text-[var(--ink-3)]">{formatCurrency(0)}</td>
-                    <td className="num pos">+{formatCurrency(owed)}</td>
+                    <td className="num whitespace-nowrap">{formatCurrency(owed)}</td>
+                    <td className="num hide-sm whitespace-nowrap text-[var(--ink-3)]">
+                      {formatCurrency(0)}
+                    </td>
+                    <td className="num pos hide-sm whitespace-nowrap">+{formatCurrency(owed)}</td>
                     <td className="text-right">
                       <button
                         type="button"
@@ -110,7 +130,7 @@ export function PeopleSection({
                         title="Settling isn't available from this summary yet — settle individual shares from Transactions."
                       >
                         <Icon name="check" size={13} />
-                        Settle
+                        <span className="max-[639px]:sr-only">Settle</span>
                       </button>
                     </td>
                   </tr>
@@ -119,11 +139,13 @@ export function PeopleSection({
             </tbody>
             <tfoot>
               <tr>
-                <td className="font-medium text-[var(--ink)]">Net position</td>
-                <td />
-                <td className="num">{formatCurrency(netTotal)}</td>
-                <td className="num">{formatCurrency(0)}</td>
-                <td className="num pos font-semibold">+{formatCurrency(netTotal)}</td>
+                <td className="font-medium whitespace-nowrap text-[var(--ink)]">Net position</td>
+                <td className="hide-sm" />
+                <td className="num whitespace-nowrap">{formatCurrency(netTotal)}</td>
+                <td className="num hide-sm whitespace-nowrap">{formatCurrency(0)}</td>
+                <td className="num pos hide-sm font-semibold whitespace-nowrap">
+                  +{formatCurrency(netTotal)}
+                </td>
                 <td />
               </tr>
             </tfoot>

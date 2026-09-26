@@ -8,7 +8,7 @@ import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { useThemeContext } from '@/hooks/useThemeContext'
 import { useToastContext } from '@/hooks/useToastContext'
 import { getSplitLedger } from '@/lib/api/dashboard'
-import { resolvePeriodMonth } from '@/lib/period'
+import { monthLongLabel, resolvePeriodMonth } from '@/lib/period'
 import { qk } from '@/lib/queryKeys'
 
 import { useAllProcessedTransactions } from '../dashboard/hooks/useAllProcessedTransactions'
@@ -182,6 +182,7 @@ export function InsightsPage() {
       includeSettled={includeSettled}
       onToggleSettled={() => setIncludeSettled((v) => !v)}
       isLoading={historyLoading || ledgerQuery.isLoading}
+      periodLabel={`${monthLongLabel(periodMonth, mode)} ${calYear}`}
       highlight={worldSupported ? hotPerson : null}
       onHighlight={worldSupported ? setHotPerson : undefined}
     />

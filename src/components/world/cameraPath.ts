@@ -113,6 +113,25 @@ export function cameraAt(
 }
 
 /**
+ * The point of a panel that stands for it in `progressFromCenters`. A panel
+ * that fits the viewport is its centre. A taller one holds its station for as
+ * long as it fills the viewport: the anchor follows the viewport's centre
+ * until the panel's top or bottom comes into view. Tracking a tall panel's
+ * centre instead left the camera between two stations, over empty ground,
+ * while its top was being read.
+ */
+export function panelAnchor(
+  top: number,
+  height: number,
+  viewportCenter: number,
+  viewportHeight: number
+): number {
+  if (height <= viewportHeight) return top + height / 2
+  const half = viewportHeight / 2
+  return Math.min(Math.max(viewportCenter, top + half), top + height - half)
+}
+
+/**
  * Scroll position from where each station's panel sits: 0 when the first
  * panel's centre is at the viewport's centre, 1 at the second, and so on,
  * interpolated between and clamped at both ends.

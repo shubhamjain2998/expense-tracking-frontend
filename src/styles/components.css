@@ -2539,6 +2539,23 @@ button.bar-row:hover {
 .bars.stake .fill {
   border-radius: 999px;
 }
+/* A stake row's name is the finding's headline: it wraps to a second line
+   rather than cutting off after a few words. */
+.bars.stake .bar-row .name {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+  line-height: 1.35;
+}
+/* Below 900px .bar-row stacks name + amount over the track, but the stake
+   template above outranks it and kept a third, empty 104px column: the bar
+   and figure stopped two-thirds of the way across. */
+@media (max-width: 899px) {
+  .bars.stake .bar-row {
+    grid-template-columns: minmax(0, 1fr) 104px;
+  }
+}
 
 /* ─── alert list (needs attention) ───────────────────────────────────── */
 .alerts {

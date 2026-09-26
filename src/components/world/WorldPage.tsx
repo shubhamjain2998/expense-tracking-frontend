@@ -12,7 +12,7 @@ import {
 
 import { Skeleton } from '@/components/ui/Skeleton'
 
-import { progressFromCenters } from './cameraPath'
+import { panelAnchor, progressFromCenters } from './cameraPath'
 import { readSceneColors } from './sceneColors'
 import type { SceneContext, WorldLabel, WorldStation, WorldTip } from './types'
 import type { WorldMotion } from './WorldCanvas'
@@ -82,11 +82,12 @@ export function WorldPage({
     const measure = () => {
       frame = 0
       const view = scroller?.getBoundingClientRect() ?? { top: 0, height: window.innerHeight }
+      const viewCenter = view.top + view.height / 2
       const centers = panelRefs.current.map((el) => {
         const r = el?.getBoundingClientRect()
-        return r ? r.top + r.height / 2 : 0
+        return r ? panelAnchor(r.top, r.height, viewCenter, view.height) : 0
       })
-      const t = progressFromCenters(centers, view.top + view.height / 2)
+      const t = progressFromCenters(centers, viewCenter)
       motion.current.target = t
       motion.current.invalidate()
       const now = Math.round(t)
@@ -107,8 +108,17 @@ export function WorldPage({
     }
   }, [stations.length])
 
-  const goTo = (i: number) =>
-    panelRefs.current[i]?.scrollIntoView({ behavior: instant ? 'auto' : 'smooth', block: 'center' })
+  // A panel taller than the scroller opens at its top (where the camera
+  // already holds its station, see panelAnchor), not halfway down it.
+  const goTo = (i: number) => {
+    const el = panelRefs.current[i]
+    if (!el) return
+    const viewHeight = scrollParent(rootRef.current)?.clientHeight ?? window.innerHeight
+    el.scrollIntoView({
+      behavior: instant ? 'auto' : 'smooth',
+      block: el.offsetHeight > viewHeight ? 'start' : 'center',
+    })
+  }
 
   const current = stations[active]
 

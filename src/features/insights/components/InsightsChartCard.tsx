@@ -11,6 +11,7 @@ import {
   Pie,
   PieChart,
   ResponsiveContainer,
+  type PieLabelRenderProps,
   Tooltip,
   XAxis,
   YAxis,
@@ -149,7 +150,22 @@ export function InsightsChartCard({ chart, isDark }: InsightsChartCardProps) {
                 dataKey="value"
                 nameKey="name"
                 outerRadius={80}
-                label={(entry: { name?: string }) => entry.name ?? ''}
+                // Recharts colours a label and its leader line like the
+                // slice, so the pale end of the grey ramp (Other, Shopping…)
+                // fell below reading contrast; labels take the axis ink.
+                labelLine={{ stroke: tickColor }}
+                label={({ x, y, textAnchor, name }: PieLabelRenderProps) => (
+                  <text
+                    x={x}
+                    y={y}
+                    textAnchor={textAnchor}
+                    dominantBaseline="central"
+                    fill={tickColor}
+                    fontSize={11}
+                  >
+                    {name ?? ''}
+                  </text>
+                )}
               >
                 {(chart.series[0]?.data ?? []).map((_, i) => (
                   <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
