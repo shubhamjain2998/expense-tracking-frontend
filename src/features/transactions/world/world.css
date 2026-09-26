@@ -1,0 +1,40 @@
+/* ─── Transactions skyline hero (features/transactions/world) ───────────────
+   A fixed-height band above the toolbar holding one kit canvas. The kit's
+   .world-stage / .world-hint / .world-legend position themselves absolutely,
+   so this only has to be a sized, positioned box. Mounted at 1200px and
+   wider with WebGL only. */
+.txn-hero {
+  position: relative;
+  height: 280px;
+  margin: 8px 0 16px;
+}
+/* The camera is fixed here — nothing to drag, and no day is clickable. */
+.txn-hero .world-stage {
+  cursor: default;
+}
+.txn-hero .world-hint {
+  top: 4px;
+}
+.txn-hero .world-legend {
+  padding-right: 0;
+}
+
+/* Two long-standing layout faults the hero makes worse (it pushes the table
+   further down the scroller), fixed only alongside it so the flat page is
+   untouched:
+   1. The table's wrapper is `overflow-x-auto`, which makes it the sticky
+      header's scroll container — so `.tbl.sticky th` never sticks. At this
+      width the fixed columns always fit, so clipping instead of scrolling
+      lets the header stick to the top of the page scroller.
+   2. The docked editor is `position: static` at >=1200px, so opening a row
+      far down the list leaves the panel at the top of the table, off screen.
+      Keep it in view beside the rows, scrolling on its own when taller. */
+.txn-hero ~ .card .worksplit > .min-w-0 {
+  overflow-x: clip;
+}
+.txn-hero ~ .card .worksplit > .txn-side-panel {
+  position: sticky;
+  top: 8px;
+  max-height: calc(100vh - var(--topbar-h) - 16px);
+  overflow-y: auto;
+}
