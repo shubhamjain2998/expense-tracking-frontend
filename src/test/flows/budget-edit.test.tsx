@@ -67,7 +67,7 @@ describe('Budget inline edit flow', () => {
     await user.click(await screen.findByRole('button', { name: /delete budget for groceries/i }))
 
     // ConfirmDialog appears (covers lines 149-160)
-    expect(await screen.findByText(/are you sure/i)).toBeInTheDocument()
+    expect(await screen.findByText(/removes the groceries budget/i)).toBeInTheDocument()
 
     // Cancel the dialog (covers onCancel arrow fn)
     await user.click(screen.getByRole('button', { name: /cancel/i }))

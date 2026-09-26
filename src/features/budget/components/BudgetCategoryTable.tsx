@@ -77,7 +77,10 @@ export function BudgetCategoryTable({
       <div className="sec-head">
         <h2 className="sec-title">The plan</h2>
         <span className="sub">
-          {periodView === 'monthly' ? 'Monthly' : 'Annual'} amounts · edit any figure in place
+          {/* Only the monthly plan is editable; the annual column is derived. */}
+          {periodView === 'monthly'
+            ? 'Monthly amounts · edit any figure in place'
+            : 'Annual amounts · switch to Monthly to edit'}
         </span>
         <span className="act">
           <span className="ym-nav" aria-label="Month">
@@ -128,7 +131,7 @@ export function BudgetCategoryTable({
                 <th>Against pace</th>
                 <th style={{ width: 40 }} />
               </tr>
-              {editHint && rows.length > 0 && (
+              {editHint && periodView === 'monthly' && rows.length > 0 && (
                 <tr>
                   <td colSpan={6} style={{ paddingBottom: 10, paddingTop: 8, border: 0 }}>
                     <p className="small flex items-center gap-1.5">

@@ -1,4 +1,4 @@
-import { useQueries, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 
 import { getBudget } from '@/lib/api/budget'
@@ -11,19 +11,12 @@ import { qk } from '@/lib/queryKeys'
 import type { SummaryRow, YTDRow } from '@/types/dashboard'
 
 import {
-  buildHeatmapRows,
   buildIncomeRows,
   buildTableRows,
   buildUnbudgetedRows,
   buildYearVerdict,
 } from '../lib/budgetMath'
-import type {
-  CategoryTableRow,
-  HeatmapRowData,
-  IncomeTableRow,
-  UnbudgetedCategoryRow,
-  YearVerdict,
-} from '../types'
+import type { CategoryTableRow, IncomeTableRow, UnbudgetedCategoryRow, YearVerdict } from '../types'
 
 const NO_ENTRIES: BudgetDataResult['entries'] = []
 const NO_SUMMARY: SummaryRow[] = []
@@ -35,7 +28,6 @@ export interface BudgetDataResult {
   entries: ReturnType<typeof getBudget> extends Promise<infer T> ? T : never
   allCategories: Awaited<ReturnType<typeof getCategories>>
   tableData: CategoryTableRow[]
-  heatmapData: HeatmapRowData[]
   unbudgetedData: UnbudgetedCategoryRow[]
   incomeTableData: IncomeTableRow[]
   totalAnnual: number
@@ -100,15 +92,6 @@ export function useBudgetData({
   const currentYearMonth =
     year === todayPeriod.year ? todayPeriod.month : year < todayPeriod.year ? 12 : 0
 
-  const monthQueries = useQueries({
-    queries: Array.from({ length: 12 }, (_, i) => ({
-      queryKey: qk.dashboard.summary(year, i + 1, mode),
-      queryFn: () => getDashboardSummary(year, i + 1, undefined, mode),
-      enabled: i + 1 <= currentYearMonth,
-      staleTime: 5 * 60 * 1000,
-    })),
-  })
-
   // Module-level fallbacks, never `?? []` inline: a fresh empty array each
   // render breaks every memo below while a query has no data (a year with no
   // budget 404s and stays that way), and the Budget world keys its rise-in on
@@ -119,23 +102,6 @@ export function useBudgetData({
   const allCategories = categoriesQuery.data ?? NO_CATEGORIES
 
   const tableData = useMemo(() => buildTableRows(entries, summary, ytd), [entries, summary, ytd])
-
-  const heatmapData = useMemo(() => {
-    // With no budget entries yet, fall back to listing all expense categories
-    // with annualBudget=0 — buildHeatmapRows returns empty (null-percent) cells
-    // for them so the grid is still visible instead of a bare empty state.
-    const rows =
-      entries.length > 0
-        ? entries.map((e) => ({
-            categoryId: e.category_id,
-            categoryName: e.category,
-            annualBudget: Number(e.allocated_amount),
-          }))
-        : allCategories
-            .filter((c) => !c.is_income)
-            .map((c) => ({ categoryId: c.id, categoryName: c.name, annualBudget: 0 }))
-    return buildHeatmapRows(rows, monthQueries, currentYearMonth)
-  }, [entries, allCategories, monthQueries, currentYearMonth])
 
   const unbudgetedData = useMemo(
     () => buildUnbudgetedRows(allCategories, entries, summary, ytd),
@@ -183,7 +149,6 @@ export function useBudgetData({
     entries,
     allCategories,
     tableData,
-    heatmapData,
     unbudgetedData,
     incomeTableData,
     totalAnnual,

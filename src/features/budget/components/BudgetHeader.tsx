@@ -94,7 +94,7 @@ export function BudgetHeader({
         </div>
 
         <div className="flex shrink-0 flex-col items-end gap-2">
-          <span className="eyebrow">Financial year</span>
+          <span className="eyebrow">{mode === 'fy' ? 'Financial year' : 'Calendar year'}</span>
           <div className="ym-nav">
             <button
               onClick={() => onNavigateYear(-1)}
