@@ -188,8 +188,6 @@ export function DashboardPage() {
       verdict={insightsResult.verdict}
       totalIncome={data.totalIncome}
       totalDebit={data.totalDebit}
-      totalBudget={data.totalBudget}
-      daysLeftInMonth={daysLeftInMonth}
       dayOfMonth={dayOfMonth}
       daysInMonth={daysInMonth}
       currentMonthLabel={currentMonthLabel ?? ''}

@@ -15,11 +15,6 @@ interface VerdictBlockProps {
   // else on the page repeats them (MASTER.md §1, "one number, one home").
   totalIncome: number
   totalDebit: number
-  /** Only used to tell whether the headline already states the daily
-   *  allowance (insights.ts only omits it when there's no budget) — see
-   *  `headlineHasAllowance` below. Not rendered anywhere in this block. */
-  totalBudget: number
-  daysLeftInMonth: number
   dayOfMonth: number
   daysInMonth: number
   currentMonthLabel: string
@@ -43,8 +38,6 @@ export function VerdictBlock({
   verdict,
   totalIncome,
   totalDebit,
-  totalBudget,
-  daysLeftInMonth,
   dayOfMonth,
   daysInMonth,
   currentMonthLabel,
@@ -59,20 +52,16 @@ export function VerdictBlock({
   const saved = totalIncome - totalDebit
   const savingsRate = totalIncome > 0 ? (saved / totalIncome) * 100 : null
 
-  // insights.ts's buildVerdict only omits the "spend X/day" figure from the
-  // headline when there's no budget to pace against (totalBudget <= 0) — in
-  // both the over-pace and under-pace branches it always names the daily
-  // allowance. Rendering the "Left to spend" tile in those cases would print
-  // the same number twice on the page, so the tile only appears when the
-  // headline genuinely doesn't carry it.
-  const headlineHasAllowance = totalBudget > 0
+  // The daily allowance lives in the headline (insights.ts names it whenever
+  // there's a budget and days left to spend it). There's no separate "Left to
+  // spend" tile: with no budget the allowance is always ₹0, so the tile only
+  // ever showed "₹0/day".
 
   // Hero count-up — kept from the previous header, it still reads well at
-  // this size (four KPI-sized figures rather than one giant hero number).
+  // this size (three KPI-sized figures rather than one giant hero number).
   const animIncome = useCountUp(totalIncome, { duration: 750 })
   const animDebit = useCountUp(totalDebit, { duration: 750 })
   const animSaved = useCountUp(saved, { duration: 750 })
-  const animAllowance = useCountUp(Math.round(verdict.allowancePerDay), { duration: 750 })
 
   // The one raised surface on Home. 3deg is deliberately small: the slab
   // is ~1200px wide, so anything larger throws the far edge far enough
@@ -131,20 +120,6 @@ export function VerdictBlock({
                     </span>
                   )}
                 </span>
-                {!headlineHasAllowance && (
-                  <span className="money">
-                    <span className="eyebrow">Left to spend</span>
-                    <span className="v">
-                      {formatCurrency(animAllowance)}
-                      <span className="text-[13px] font-normal text-[var(--ink-3)]">/day</span>
-                    </span>
-                    {daysLeftInMonth > 0 && (
-                      <span className="text-[12.5px] text-[var(--ink-3)]">
-                        for {daysLeftInMonth} day{daysLeftInMonth === 1 ? '' : 's'}
-                      </span>
-                    )}
-                  </span>
-                )}
               </div>
 
               {lastActiveMonthHint && (

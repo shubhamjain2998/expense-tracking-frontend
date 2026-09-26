@@ -115,7 +115,33 @@ function buildVerdict(input: InsightsInput): Verdict {
   const driver = findDriver(input)
   let headline: TextPart[]
 
-  if (overPaceAmount > 0) {
+  // No days left (a past month, or today is the last day): there's no pace to
+  // keep and no daily allowance, so "spend ₹0/day and still land on budget"
+  // read as nonsense. Say where the month closes against its budget instead.
+  const overBudget = totalDebit - totalBudget
+  const drivenBy: TextPart[] = driver
+    ? [{ t: ', driven by ' }, { t: driver.category, em: true }]
+    : []
+  if (daysLeftInMonth <= 0) {
+    headline = [
+      { t: 'The month closes ' },
+      {
+        t: `${formatRupeeCompact(Math.abs(overBudget))} ${overBudget > 0 ? 'over' : 'under'} budget`,
+        em: true,
+      },
+      ...(overBudget > 0 ? drivenBy : []),
+      { t: '.' },
+    ]
+  } else if (overBudget >= 0) {
+    // The budget is already spent with days to go: no daily figure lands it,
+    // and "spend ₹0/day to land on budget" promised something it couldn't.
+    headline = [
+      { t: "You're " },
+      { t: `${formatRupeeCompact(overBudget)} past this month's budget`, em: true },
+      ...drivenBy,
+      { t: `, with ${daysLeftInMonth} day${daysLeftInMonth === 1 ? '' : 's'} to go.` },
+    ]
+  } else if (overPaceAmount > 0) {
     if (driver) {
       headline = [
         { t: "You're " },
