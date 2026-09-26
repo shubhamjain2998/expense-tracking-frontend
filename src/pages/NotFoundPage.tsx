@@ -1,11 +1,16 @@
 import { Link } from 'react-router-dom'
 
+import { AmbientBackdrop } from '../components/layout/AmbientBackdrop'
+import { WorldHero } from '../features/auth/world/WorldHero'
+
 export function NotFoundPage() {
   return (
     <div
-      className="flex min-h-screen flex-col items-center justify-center text-center"
+      className="lost-page flex min-h-screen flex-col items-center justify-center text-center"
       style={{ background: 'var(--bg)', padding: 32 }}
     >
+      <AmbientBackdrop />
+      <WorldHero scene="lost" className="is-compact mb-2" />
       <p className="card-eyebrow mb-2">404 · Not found</p>
       <h1
         className="text-[28px] font-semibold"

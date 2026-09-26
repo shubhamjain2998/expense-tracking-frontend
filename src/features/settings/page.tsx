@@ -10,6 +10,7 @@ import { OnboardingResetSection } from './components/OnboardingResetSection'
 import { PersonsSection } from './components/PersonsSection'
 import { ProfileSection } from './components/ProfileSection'
 import { TagsSection } from './components/TagsSection'
+import './settings.css'
 
 const SECTIONS = [
   { id: 'profile', label: 'Profile' },
@@ -68,7 +69,7 @@ export function SettingsPage() {
   }
 
   return (
-    <div ref={rootRef} className="setsplit">
+    <div ref={rootRef} className="setsplit settings-page">
       <nav className="setnav" aria-label="Settings sections">
         {SECTIONS.map((s) => (
           <a
@@ -83,7 +84,7 @@ export function SettingsPage() {
       </nav>
 
       <div className="stack" style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-        <section id="profile" className="sec" style={{ scrollMarginTop: 76 }}>
+        <section id="profile" className="sec">
           <div className="sec-head">
             <h2 className="sec-title">Profile</h2>
             <span className="sub">Only you can see any of this</span>
@@ -91,7 +92,7 @@ export function SettingsPage() {
           <ProfileSection />
         </section>
 
-        <section id="preferences" className="sec" style={{ scrollMarginTop: 76 }}>
+        <section id="preferences" className="sec">
           <div className="sec-head">
             <h2 className="sec-title">Preferences</h2>
             <span className="sub">How Kosh behaves for you</span>
@@ -126,7 +127,7 @@ export function SettingsPage() {
 
         <CategoriesSection />
 
-        <section id="tags" className="sec" style={{ scrollMarginTop: 76 }}>
+        <section id="tags" className="sec">
           <div className="sec-head">
             <h2 className="sec-title">Tags</h2>
             <span className="sub">Label and filter transactions across categories</span>
@@ -134,7 +135,7 @@ export function SettingsPage() {
           <TagsSection />
         </section>
 
-        <section id="people" className="sec" style={{ scrollMarginTop: 76 }}>
+        <section id="people" className="sec">
           <div className="sec-head">
             <h2 className="sec-title">People</h2>
             <span className="sub">Track expenses across household members</span>
@@ -142,7 +143,7 @@ export function SettingsPage() {
           <PersonsSection />
         </section>
 
-        <section id="data" className="sec" style={{ scrollMarginTop: 76 }}>
+        <section id="data" className="sec">
           <div className="sec-head">
             <h2 className="sec-title">Your data</h2>
             <span className="sub">Plain JSON, no lock-in · export, import, last import</span>
@@ -150,7 +151,7 @@ export function SettingsPage() {
           <BackupImportSection />
         </section>
 
-        <section id="danger" className="sec" style={{ scrollMarginTop: 76 }}>
+        <section id="danger" className="sec">
           <div className="sec-head">
             <h2 className="sec-title" style={{ color: 'var(--neg)' }}>
               Danger zone
