@@ -2985,6 +2985,29 @@ html.dark .people .avatar {
 .world-station .money .v {
   font-size: 22px;
 }
+/* At 500px the verdict can't keep its period picker beside the figures, and
+   the money row — overflow-x: auto on the flat page — squeezed into a
+   scrolling strip with a scrollbar and a clipped figure. Stack the verdict
+   and let the figures wrap instead. */
+.world-station .verdict {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+.world-station .verdict > :last-child {
+  align-items: flex-start;
+}
+.world-station .money-row {
+  grid-auto-flow: row;
+  grid-template-columns: repeat(auto-fill, minmax(128px, max-content));
+  grid-template-rows: none;
+  row-gap: 16px;
+  overflow: visible;
+}
+.world-station .money {
+  grid-template-rows: auto;
+  grid-row: auto;
+  align-content: start;
+}
 /* The panel column is narrower than the flat page: give the bar a share. */
 .world-station .bar-row {
   grid-template-columns: 120px minmax(0, 1fr) 92px 100px;

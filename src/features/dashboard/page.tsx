@@ -10,7 +10,7 @@ import { useThemeContext } from '@/hooks/useThemeContext'
 import { fadeUp, staggerContainer } from '@/lib/motion'
 import { onboardingStorage } from '@/lib/onboardingStorage'
 import { pendingTransactionsUrl } from '@/lib/pendingNav'
-import { getCurrentPeriod, resolvePeriodMonth } from '@/lib/period'
+import { calendarToPeriod, getCurrentPeriod, resolvePeriodMonth } from '@/lib/period'
 
 import { TrendBlock } from './components/TrendBlock'
 import { VerdictBlock } from './components/VerdictBlock'
@@ -197,7 +197,13 @@ export function DashboardPage() {
       selectorYear={year}
       selectorMonth={month}
       onPeriodChange={setPeriod}
-      onPeriodJump={setPeriod}
+      // The hint names a calendar month; setPeriod takes a period month (in FY
+      // mode June is month 3). Passing it straight through sent "last
+      // activity June 2026" to September.
+      onPeriodJump={(calY, calM) => {
+        const p = calendarToPeriod(calY, calM, mode)
+        setPeriod(p.year, p.month)
+      }}
       isLoading={data.summaryLoading}
       lastActiveMonthHint={data.lastActiveMonthHint}
     />,

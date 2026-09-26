@@ -27,7 +27,8 @@ interface VerdictBlockProps {
   selectorYear: number
   selectorMonth: number
   onPeriodChange: (year: number, month: number) => void
-  onPeriodJump: (year: number, month: number) => void
+  /** Jump to a *calendar* year/month (the last-activity hint's). */
+  onPeriodJump: (calYear: number, calMonth: number) => void
   isLoading: boolean
   lastActiveMonthHint: LastActiveMonthHint | null
 }
