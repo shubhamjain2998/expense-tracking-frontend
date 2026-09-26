@@ -3265,6 +3265,17 @@ html.dark .dock {
 }
 @media (max-width: 767px) {
   .dock {
+    /* Tablet widths carry all four destinations but not much room: at 768px the
+   full dock was ~35px wider than the viewport and cut the avatar off. The
+   mark alone stands for the brand here, and the links pack tighter. */
+    @media (min-width: 768px) and (max-width: 1023px) {
+      .dock .brand-name {
+        display: none;
+      }
+      .dock-link {
+        padding: 0 10px;
+      }
+    }
     margin: 6px 10px 2px;
   }
   .dock-nav,
