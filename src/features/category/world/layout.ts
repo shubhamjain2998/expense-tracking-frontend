@@ -67,10 +67,15 @@ export function monthsLabels(model: MonthsModel): WorldLabel[] {
   return labels
 }
 
-export function monthTip(model: MonthsModel, index: number): WorldTip | null {
+/** `amountLabel` is "Spent", or "Received" for an income category. */
+export function monthTip(
+  model: MonthsModel,
+  index: number,
+  amountLabel = 'Spent'
+): WorldTip | null {
   const c = model.columns[index]
   if (!c) return null
-  const lines = [`Spent: ${formatCurrency(Math.round(c.amount))}`]
+  const lines = [`${amountLabel}: ${formatCurrency(Math.round(c.amount))}`]
   if (c.budget > 0) lines.push(`Budget: ${formatCurrency(Math.round(c.budget))}`)
   if (!c.selected) lines.push('Click to open this month')
   return {
@@ -150,13 +155,21 @@ export function breakdownLabels(model: BreakdownModel): WorldLabel[] {
   return labels
 }
 
+/** Tips don't wrap and sit centred on their block, so a raw UPI string ran
+ *  past the stage's left edge. The full text stays in the panel's row. */
+export const TIP_TITLE_MAX = 40
+
+export function tipTitle(text: string): string {
+  return text.length > TIP_TITLE_MAX ? `${text.slice(0, TIP_TITLE_MAX - 1).trimEnd()}…` : text
+}
+
 export function breakdownTip(model: BreakdownModel, key: string | null): WorldTip | null {
   const tower = [...model.merchants, ...model.tags].find((t) => t.key === key)
   if (!tower) return null
   return {
     anchor: [breakdownX(model, tower), breakdownHeight(model, tower.total) + 0.3, 0],
     station: STATION.breakdown,
-    title: tower.kind === 'tag' ? `Tag · ${tower.name}` : tower.name,
+    title: tipTitle(tower.kind === 'tag' ? `Tag · ${tower.name}` : tower.name),
     lines: [formatCurrency(tower.total), `${tower.count} charge${tower.count === 1 ? '' : 's'}`],
   }
 }
@@ -214,7 +227,7 @@ export function dayTip(model: DaysModel, id: string | null): WorldTip | null {
       daySlotZ(b.slot, model.depth),
     ],
     station: STATION.days,
-    title: b.description,
+    title: tipTitle(b.description),
     lines: [`${formatShortDate(b.date)} · ${formatCurrency(b.amount)}`],
   }
 }

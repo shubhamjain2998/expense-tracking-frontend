@@ -20,16 +20,24 @@ import { BreakdownStation, DaysStation, MonthsStation } from './stations'
 
 /** Screen-reader copy of the columns' budgets: the trend panel states only
  *  the selected month's. */
-function MonthsTable({ model, category }: { model: MonthsModel; category: string }) {
+function MonthsTable({
+  model,
+  category,
+  amountLabel,
+}: {
+  model: MonthsModel
+  category: string
+  amountLabel: string
+}) {
   if (model.columns.length === 0) return null
   return (
     <div className="sr-only">
       <table>
-        <caption>{category} spend and budget by month</caption>
+        <caption>{category} and its budget by month</caption>
         <thead>
           <tr>
             <th>Month</th>
-            <th>Spent</th>
+            <th>{amountLabel}</th>
             <th>Budget</th>
           </tr>
         </thead>
@@ -65,6 +73,8 @@ export interface CategoryWorldProps {
   /** Moves the page to a month, as the period picker does. */
   onPickMonth: (column: MonthColumn) => void
   isDark: boolean
+  /** An income category: columns read as received, and there is no budget. */
+  isIncome?: boolean
 }
 
 /**
@@ -84,8 +94,10 @@ export function CategoryWorld({
   onTxnHighlight,
   onPickMonth,
   isDark,
+  isIncome = false,
 }: CategoryWorldProps) {
   const [monthTipAt, setMonthTipAt] = useState<WorldTip | null>(null)
+  const amountLabel = isIncome ? 'Received' : 'Spent'
 
   const stations = useMemo<WorldStation[]>(
     () => [
@@ -94,10 +106,14 @@ export function CategoryWorld({
         panel: panels[0],
         frame: monthsFrame(months.columns.length),
         legend: [
-          { swatch: 'bg-[var(--ink)]', label: 'Spent' },
+          { swatch: 'bg-[var(--ink)]', label: amountLabel },
           { swatch: 'bg-[var(--accent)]', label: 'This month' },
-          { swatch: 'bg-[var(--neg)]', label: 'Over budget' },
-          { swatch: 'is-line bg-[var(--line-strong)]', label: 'Budget' },
+          ...(isIncome
+            ? []
+            : [
+                { swatch: 'bg-[var(--neg)]', label: 'Over budget' },
+                { swatch: 'is-line bg-[var(--line-strong)]', label: 'Budget' },
+              ]),
           { swatch: 'is-line bg-[var(--ink-4)]', label: 'Median month' },
         ],
         hint: 'Hover a month · click one to open it',
@@ -123,7 +139,7 @@ export function CategoryWorld({
         hint: 'Hover a block or a row · click a block to find its row',
       },
     ],
-    [panels, months.columns.length, breakdown, days]
+    [panels, months.columns.length, breakdown, days, amountLabel, isIncome]
   )
 
   const labels = useMemo(
@@ -137,7 +153,7 @@ export function CategoryWorld({
   )
 
   const onMonthHover = (i: number | null) => {
-    setMonthTipAt(i === null ? null : monthTip(months, i))
+    setMonthTipAt(i === null ? null : monthTip(months, i, amountLabel))
     document.body.style.cursor = i !== null && !months.columns[i]?.selected ? 'pointer' : ''
   }
 
@@ -148,7 +164,7 @@ export function CategoryWorld({
       tip={monthTipAt ?? linkedTip}
       isDark={isDark}
       railLabel={`${category} sections`}
-      srOnly={<MonthsTable model={months} category={category} />}
+      srOnly={<MonthsTable model={months} category={category} amountLabel={amountLabel} />}
       renderScene={({ colors, reached, instant }) => (
         <>
           <MonthsStation

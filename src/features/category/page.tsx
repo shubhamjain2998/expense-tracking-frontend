@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Skeleton } from '@/components/ui/Skeleton'
@@ -12,7 +12,7 @@ import { usePeriod } from '@/hooks/usePeriod'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
 import { useThemeContext } from '@/hooks/useThemeContext'
 import { getBudget } from '@/lib/api/budget'
-import { formatCurrency } from '@/lib/format'
+import { formatCurrency, formatShortDate } from '@/lib/format'
 import { calendarToPeriod, resolvePeriodMonth } from '@/lib/period'
 import { qk } from '@/lib/queryKeys'
 
@@ -20,12 +20,14 @@ import { CategoryBreakdown } from './components/CategoryBreakdown'
 import { CategoryTransactionsTable } from './components/CategoryTransactionsTable'
 import { CategoryTrendChart } from './components/CategoryTrendChart'
 import {
+  categoryFlow,
   categoryMonthBudget,
   categoryMonthlySeries,
   computeCategoryStats,
   dominantTransaction,
   merchantBreakdown,
   tagBreakdown,
+  txnCalMonth,
 } from './lib/categoryStats'
 import { CategoryWorld } from './world/CategoryWorld'
 import { buildBreakdown, buildDays, buildMonths } from './world/stationData'
@@ -49,6 +51,7 @@ export function CategoryPage() {
   const { categoryId } = useParams<{ categoryId: string }>()
   const category = categoryId ? decodeURIComponent(categoryId) : ''
 
+  const navigate = useNavigate()
   const now = useMemo(() => new Date(), [])
   const { isDark } = useThemeContext()
   const { mode } = usePeriodMode()
@@ -78,53 +81,58 @@ export function CategoryPage() {
     retry: false,
     throwOnError: false,
   })
-  const monthlyBudget = categoryMonthBudget(budgetQuery.data, category)
 
   // ── Derived transaction sets ─────────────────────────────────────────────
   const categoryExists = useMemo(
     () => allHistory.some((t) => t.category === category),
     [allHistory, category]
   )
+  // Salary, dividends and the like are income: the page reads their income
+  // transactions, which an expense-only filter showed as an empty ₹0 month.
+  const flow = useMemo(() => categoryFlow(allHistory, category), [allHistory, category])
+  const isIncome = flow === 'income'
+  // Budgets are spending plans; an income category never has one.
+  const monthlyBudget = isIncome ? 0 : categoryMonthBudget(budgetQuery.data, category)
 
   const monthTxns = useMemo(
     () =>
       allHistory.filter((t) => {
-        if (t.category !== category || t.txn_type !== 'expense') return false
-        const d = new Date(t.txn_date)
-        return d.getFullYear() === calYear && d.getMonth() + 1 === calMonth
+        if (t.category !== category || t.txn_type !== flow) return false
+        const d = txnCalMonth(t)
+        return d.year === calYear && d.month === calMonth
       }),
-    [allHistory, category, calYear, calMonth]
+    [allHistory, category, flow, calYear, calMonth]
   )
   const allTxnsThisMonth = useMemo(
     () =>
       allHistory.filter((t) => {
-        if (t.txn_type !== 'expense') return false
-        const d = new Date(t.txn_date)
-        return d.getFullYear() === calYear && d.getMonth() + 1 === calMonth
+        if (t.txn_type !== flow) return false
+        const d = txnCalMonth(t)
+        return d.year === calYear && d.month === calMonth
       }),
-    [allHistory, calYear, calMonth]
+    [allHistory, flow, calYear, calMonth]
   )
   const allTxnsPrevMonth = useMemo(
     () =>
       allHistory.filter((t) => {
-        if (t.txn_type !== 'expense') return false
-        const d = new Date(t.txn_date)
-        return d.getFullYear() === prevCal.year && d.getMonth() + 1 === prevCal.month
+        if (t.txn_type !== flow) return false
+        const d = txnCalMonth(t)
+        return d.year === prevCal.year && d.month === prevCal.month
       }),
-    [allHistory, prevCal.year, prevCal.month]
+    [allHistory, flow, prevCal.year, prevCal.month]
   )
 
   const series = useMemo(
-    () => categoryMonthlySeries(allHistory, category, calYear, calMonth, TREND_MONTHS),
-    [allHistory, category, calYear, calMonth]
+    () => categoryMonthlySeries(allHistory, category, calYear, calMonth, TREND_MONTHS, flow),
+    [allHistory, category, calYear, calMonth, flow]
   )
   const stats = useMemo(
-    () => computeCategoryStats(series, monthTxns, allTxnsThisMonth, allTxnsPrevMonth),
-    [series, monthTxns, allTxnsThisMonth, allTxnsPrevMonth]
+    () => computeCategoryStats(series, monthTxns, allTxnsThisMonth, allTxnsPrevMonth, flow),
+    [series, monthTxns, allTxnsThisMonth, allTxnsPrevMonth, flow]
   )
-  const merchants = useMemo(() => merchantBreakdown(monthTxns), [monthTxns])
-  const tags = useMemo(() => tagBreakdown(monthTxns), [monthTxns])
-  const dominant = useMemo(() => dominantTransaction(monthTxns), [monthTxns])
+  const merchants = useMemo(() => merchantBreakdown(monthTxns, flow), [monthTxns, flow])
+  const tags = useMemo(() => tagBreakdown(monthTxns, flow), [monthTxns, flow])
+  const dominant = useMemo(() => dominantTransaction(monthTxns, flow), [monthTxns, flow])
 
   const isLoading = historyLoading || budgetQuery.isLoading
 
@@ -137,11 +145,11 @@ export function CategoryPage() {
   const worldMonths = useMemo(
     () =>
       buildMonths(series, (y, m) =>
-        calendarToPeriod(y, m, mode).year === year
+        !isIncome && calendarToPeriod(y, m, mode).year === year
           ? categoryMonthBudget(budgetQuery.data, category)
           : 0
       ),
-    [series, year, mode, budgetQuery.data, category]
+    [series, year, mode, isIncome, budgetQuery.data, category]
   )
   const worldBreakdown = useMemo(() => buildBreakdown(merchants, tags), [merchants, tags])
   const worldDays = useMemo(
@@ -170,7 +178,7 @@ export function CategoryPage() {
           icon="search"
           title="No data for this category"
           description="It may have been renamed or deleted. Pick a category from Home to see its detail here."
-          action={{ label: 'Back to Home', onClick: () => window.history.back() }}
+          action={{ label: 'Back to Home', onClick: () => navigate('/dashboard') }}
         />
       </div>
     )
@@ -190,7 +198,9 @@ export function CategoryPage() {
             <Skeleton className="h-16 w-64" />
           ) : (
             <>
-              <span className="hero-num neg num">{formatCurrency(stats.thisMonth)}</span>
+              <span className={`hero-num num ${isIncome ? 'pos' : 'neg'}`}>
+                {formatCurrency(stats.thisMonth)}
+              </span>
               <p className="verdict-line">
                 {pctOfBudget !== null ? (
                   <>
@@ -200,20 +210,21 @@ export function CategoryPage() {
                       : ''}
                     .
                   </>
+                ) : isIncome ? (
+                  <>
+                    <b>{Math.round(stats.shareOfSpend * 100)}%</b> of all income this month.
+                  </>
                 ) : (
                   <>
                     <b>{Math.round(stats.shareOfSpend * 100)}%</b> of all spend this month · no
                     budget set for {category}.
                   </>
                 )}{' '}
-                {dominant && dominant.share >= 0.3 && (
+                {/* A lone transaction is the whole month by definition. */}
+                {dominant && stats.txnCount > 1 && dominant.share >= 0.3 && (
                   <>
-                    One transaction on{' '}
-                    {new Date(dominant.txn.txn_date).toLocaleDateString('en-IN', {
-                      day: 'numeric',
-                      month: 'short',
-                    })}{' '}
-                    is <b>{Math.round(dominant.share * 100)}%</b> of the total — without it{' '}
+                    One transaction on {formatShortDate(dominant.txn.txn_date)} is{' '}
+                    <b>{Math.round(dominant.share * 100)}%</b> of the total — without it{' '}
                     {pctOfBudget !== null && pctOfBudget > 100
                       ? 'you would be inside the plan.'
                       : 'the month would look very different.'}
@@ -234,45 +245,57 @@ export function CategoryPage() {
   const statsStrip = (
     <section className="sec">
       <div className="card card-flush">
-        <div className="stats">
-          <div>
-            <span className="eyebrow">Median month</span>
-            <span className="v num">{formatCurrency(stats.medianMonth)}</span>
-            <span className="text-[12.5px] text-[var(--ink-3)]">{series.length} months</span>
+        {/* Figures wait for the history, like the hero: a strip of ₹0s would
+            read as a real, empty month while it loads. */}
+        {isLoading ? (
+          <div className="p-4">
+            <Skeleton className="h-24 w-full" />
           </div>
-          <div>
-            <span className="eyebrow">Biggest month</span>
-            <span className="v num">{formatCurrency(stats.biggestMonth?.amount ?? 0)}</span>
-            <span className="text-[12.5px] text-[var(--ink-3)]">
-              {stats.biggestMonth ? `${stats.biggestMonth.label} ${stats.biggestMonth.year}` : '—'}
-            </span>
+        ) : (
+          <div className="stats">
+            <div>
+              <span className="eyebrow">Median month</span>
+              <span className="v num">{formatCurrency(stats.medianMonth)}</span>
+              <span className="text-[12.5px] text-[var(--ink-3)]">{series.length} months</span>
+            </div>
+            <div>
+              <span className="eyebrow">Biggest month</span>
+              <span className="v num">{formatCurrency(stats.biggestMonth?.amount ?? 0)}</span>
+              <span className="text-[12.5px] text-[var(--ink-3)]">
+                {stats.biggestMonth
+                  ? `${stats.biggestMonth.label} ${stats.biggestMonth.year}`
+                  : '—'}
+              </span>
+            </div>
+            <div>
+              <span className="eyebrow">This month</span>
+              <span className="v num">{formatCurrency(stats.thisMonth)}</span>
+              <span className="text-[12.5px] text-[var(--ink-3)]">
+                {stats.thisMonth === 0
+                  ? 'none this month'
+                  : stats.thisMonthRank === 1
+                    ? 'highest on record'
+                    : `${stats.thisMonthRank}${stats.thisMonthRank === 2 ? 'nd' : stats.thisMonthRank === 3 ? 'rd' : 'th'} highest on record`}
+              </span>
+            </div>
+            <div>
+              <span className="eyebrow">Transactions</span>
+              <span className="v num">{stats.txnCount}</span>
+              <span className="text-[12.5px] text-[var(--ink-3)]">
+                median {formatCurrency(stats.medianTicket)}
+              </span>
+            </div>
+            <div>
+              <span className="eyebrow">{isIncome ? 'Share of income' : 'Share of spend'}</span>
+              <span className="v num">{Math.round(stats.shareOfSpend * 100)}%</span>
+              <span className="text-[12.5px] text-[var(--ink-3)]">
+                {stats.prevShareOfSpend !== null
+                  ? `was ${Math.round(stats.prevShareOfSpend * 100)}% last month`
+                  : '—'}
+              </span>
+            </div>
           </div>
-          <div>
-            <span className="eyebrow">This month</span>
-            <span className="v num">{formatCurrency(stats.thisMonth)}</span>
-            <span className="text-[12.5px] text-[var(--ink-3)]">
-              {stats.thisMonthRank === 1
-                ? 'highest on record'
-                : `${stats.thisMonthRank}${stats.thisMonthRank === 2 ? 'nd' : stats.thisMonthRank === 3 ? 'rd' : 'th'} highest on record`}
-            </span>
-          </div>
-          <div>
-            <span className="eyebrow">Transactions</span>
-            <span className="v num">{stats.txnCount}</span>
-            <span className="text-[12.5px] text-[var(--ink-3)]">
-              median {formatCurrency(stats.medianTicket)}
-            </span>
-          </div>
-          <div>
-            <span className="eyebrow">Share of spend</span>
-            <span className="v num">{Math.round(stats.shareOfSpend * 100)}%</span>
-            <span className="text-[12.5px] text-[var(--ink-3)]">
-              {stats.prevShareOfSpend !== null
-                ? `was ${Math.round(stats.prevShareOfSpend * 100)}% last month`
-                : '—'}
-            </span>
-          </div>
-        </div>
+        )}
       </div>
     </section>
   )
@@ -333,6 +356,7 @@ export function CategoryPage() {
             setPeriod(p.year, p.month)
           }}
           isDark={isDark}
+          isIncome={isIncome}
         />
       </div>
     )

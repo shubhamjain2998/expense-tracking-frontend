@@ -3,7 +3,7 @@ import type { ProcessedTransactionItem } from '@/types/transaction'
 
 import { categoryMonthBudget, type CategoryMonthPoint } from '../lib/categoryStats'
 
-import { breakdownX, daySlotZ, daysLabels, monthsLabels } from './layout'
+import { breakdownX, daySlotZ, daysLabels, dayTip, monthsLabels, TIP_TITLE_MAX } from './layout'
 import { buildBreakdown, buildDays, buildMonths } from './stationData'
 
 function point(year: number, month: number, amount: number): CategoryMonthPoint {
@@ -81,6 +81,15 @@ describe('category world layout', () => {
   it('numbers the 1st, every 5th and the last day', () => {
     const d = buildDays([], 2026, 2)
     expect(daysLabels(d).map((l) => l.text)).toEqual(['1', '5', '10', '15', '20', '25', '28'])
+  })
+
+  it('shortens a long description in the day tip', () => {
+    const long = 'UPI-RAMESH B-RAMESHBMAC@OKSBI-SBIN0003028-406361855049-PAYMENT FROM PHONE'
+    const d = buildDays([txn('a', '2026-06-01', 100, long)], 2026, 6)
+    const title = dayTip(d, 'a')?.title ?? ''
+    expect(title).toHaveLength(TIP_TITLE_MAX)
+    expect(title.endsWith('…')).toBe(true)
+    expect(dayTip(buildDays([txn('b', '2026-06-01', 5, 'Rent')], 2026, 6), 'b')?.title).toBe('Rent')
   })
 })
 

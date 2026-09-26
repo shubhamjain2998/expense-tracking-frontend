@@ -150,7 +150,7 @@ export function CategoryTrendChart({
                 `<table>` itself didn't visually hide it. */}
             <div className="sr-only">
               <table>
-                <caption>{category} spend by month</caption>
+                <caption>{category} by month</caption>
                 <thead>
                   <tr>
                     <th>Month</th>

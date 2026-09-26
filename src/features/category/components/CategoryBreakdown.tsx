@@ -85,7 +85,7 @@ export function CategoryBreakdown({
         <span className="sub">Merchants and tags inside this category, this month</span>
       </div>
 
-      <div className={`grid grid-cols-1 gap-4${stacked ? '' : 'lg:grid-cols-2'}`}>
+      <div className={stacked ? 'grid grid-cols-1 gap-4' : 'grid grid-cols-1 gap-4 lg:grid-cols-2'}>
         <div className="card card-flush">
           <div className="card-head px-4 pt-4">
             <span className="font-medium text-[var(--ink)]">Merchants</span>
