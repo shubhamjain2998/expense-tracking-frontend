@@ -2660,7 +2660,9 @@ html.dark .people .avatar {
 }
 @media (max-width: 899px) {
   .setsplit {
-    grid-template-columns: 1fr;
+    /* minmax(0, …), not 1fr: a bare 1fr track never shrinks below its
+       widest min-content child, which pushed Settings to 610px on phones. */
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 .setnav {
@@ -3263,19 +3265,19 @@ html.dark .dock {
   color: var(--ink);
   text-decoration: none;
 }
-@media (max-width: 767px) {
-  .dock {
-    /* Tablet widths carry all four destinations but not much room: at 768px the
+/* Tablet widths carry all four destinations but not much room: at 768px the
    full dock was ~35px wider than the viewport and cut the avatar off. The
    mark alone stands for the brand here, and the links pack tighter. */
-    @media (min-width: 768px) and (max-width: 1023px) {
-      .dock .brand-name {
-        display: none;
-      }
-      .dock-link {
-        padding: 0 10px;
-      }
-    }
+@media (min-width: 768px) and (max-width: 1023px) {
+  .dock .brand-name {
+    display: none;
+  }
+  .dock-link {
+    padding: 0 10px;
+  }
+}
+@media (max-width: 767px) {
+  .dock {
     margin: 6px 10px 2px;
   }
   .dock-nav,
