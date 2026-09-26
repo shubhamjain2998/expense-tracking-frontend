@@ -186,7 +186,7 @@ export function LoginPage() {
                 {
                   icon: 'insert_drive_file',
                   title: 'PDFs not stored',
-                  sub: 'Processed locally, then discarded',
+                  sub: 'Parsed in memory, never saved',
                 },
                 { icon: 'person', title: 'You own your data', sub: 'Export or delete anytime' },
               ] satisfies { icon: IconName; title: string; sub: string }[]
