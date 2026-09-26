@@ -1,18 +1,20 @@
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
 import { AddTransactionDialog } from '@/components/ui/AddTransactionDialog'
 import { Icon } from '@/components/ui/Icon'
+import { useWorldSupported } from '@/components/world/support'
 import { IgnoreRulesSection } from '@/features/settings/components/IgnoreRulesSection'
 import { MappingsSection } from '@/features/settings/components/MappingsSection'
 import { usePeriod } from '@/hooks/usePeriod'
 import { usePeriodMode } from '@/hooks/usePeriodMode'
+import { useThemeContext } from '@/hooks/useThemeContext'
 import { useToastContext } from '@/hooks/useToastContext'
 import { getCategoryMappings } from '@/lib/api/categories'
 import { getPendingManual } from '@/lib/api/transactions'
 import { pendingTransactionsUrl } from '@/lib/pendingNav'
-import { calendarToPeriod, monthLongLabel } from '@/lib/period'
+import { calendarToPeriod, monthLongLabel, resolvePeriodMonth } from '@/lib/period'
 import { qk } from '@/lib/queryKeys'
 import { getMultiParam } from '@/lib/searchParams'
 import type { ProcessedTransactionItem } from '@/types/transaction'
@@ -36,6 +38,8 @@ import { useTransactionsData } from './hooks/useTransactionsData'
 import { buildUnified } from './lib/buildUnified'
 import { formatAmount, txnTotals } from './lib/txnFormat'
 import type { SortCol, SortDir, StatusFilter, UnifiedTxn } from './types'
+import { buildSkyline } from './world/skyline'
+import { SkylineHero } from './world/SkylineHero'
 
 /**
  * Per-row failures in a bulk action are reported with the server's own
@@ -171,6 +175,21 @@ export function TransactionsPage() {
     staleTime: 60_000,
   })
   const allPendingItems = pendingManualQuery.data ?? []
+
+  // ── 3D skyline hero (wide screens with WebGL) ──────────────────────────────
+  // The whole month by day, whatever the filters: its own buildUnified so it
+  // is memoised on the query data rather than rebuilt every render.
+  const worldSupported = useWorldSupported()
+  const { isDark } = useThemeContext()
+  const cal = resolvePeriodMonth(year, month, mode)
+  const skylineMonthLabel = `${monthLongLabel(cal.month, 'calendar')} ${cal.year}`
+  const skyline = useMemo(
+    () =>
+      rawQuery.data && processedQuery.data
+        ? buildSkyline(buildUnified(rawQuery.data, processedQuery.data), cal.year, cal.month)
+        : null,
+    [rawQuery.data, processedQuery.data, cal.year, cal.month]
+  )
 
   const categories = categoriesQuery.data ?? []
   const shortcutCats = categories.slice(0, 9)
@@ -528,6 +547,9 @@ export function TransactionsPage() {
 
       {activeTab === 'transactions' && (
         <>
+          {worldSupported && (
+            <SkylineHero model={skyline} monthLabel={skylineMonthLabel} isDark={isDark} />
+          )}
           <TransactionsHeader
             statusFilter={statusFilter}
             onStatusFilter={setStatusFilter}
