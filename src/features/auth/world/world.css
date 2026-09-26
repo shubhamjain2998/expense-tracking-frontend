@@ -15,9 +15,11 @@
     align-items: center;
     justify-content: center;
   }
-  /* The hero replaces the flat seal as the page's brand moment. */
+  /* The hero takes the right side, so the कोश seal moves behind the form
+     on the left instead: the brand mark stays on the page. */
   .auth-page:has(.world-hero) .auth-seal {
-    display: none;
+    right: auto;
+    left: -200px;
   }
 }
 
