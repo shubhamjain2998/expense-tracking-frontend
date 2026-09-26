@@ -19,8 +19,19 @@
 }
 
 /* Five columns with the row actions last: on a phone the table is wider than
-   the card, and the card used to clip Edit and Delete out of reach. The
-   table scrolls sideways inside the card instead. */
+   the card, and the card used to clip Edit and Delete out of reach. Phones
+   drop the transaction count and monthly budget (both shown on the category
+   page) so name, kind and actions fit; the scroll stays only as a fallback. */
 .settings-page .cat-table-scroll {
   overflow-x: auto;
+}
+@media (max-width: 639px) {
+  .settings-page .cat-col-extra {
+    display: none;
+  }
+  .settings-page .cat-table-scroll th,
+  .settings-page .cat-table-scroll td {
+    padding-left: 6px;
+    padding-right: 6px;
+  }
 }

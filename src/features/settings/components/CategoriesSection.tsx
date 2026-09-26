@@ -91,8 +91,8 @@ export function CategoriesSection() {
               <tr>
                 <th>Name</th>
                 <th>Kind</th>
-                <th className="num">Transactions</th>
-                <th className="num">Budget / month</th>
+                <th className="num cat-col-extra">Transactions</th>
+                <th className="num cat-col-extra">Budget / month</th>
                 <th />
               </tr>
             </thead>
@@ -127,8 +127,8 @@ export function CategoriesSection() {
                         {cat.is_income ? 'Income' : 'Spending'}
                       </span>
                     </td>
-                    <td className="num">{cat.txn_count ?? 0}</td>
-                    <td className="num">{monthly ? formatCurrency(monthly) : '—'}</td>
+                    <td className="num cat-col-extra">{cat.txn_count ?? 0}</td>
+                    <td className="num cat-col-extra">{monthly ? formatCurrency(monthly) : '—'}</td>
                     <td>
                       {isRenaming ? (
                         <span className="flex items-center justify-end gap-0.5">
