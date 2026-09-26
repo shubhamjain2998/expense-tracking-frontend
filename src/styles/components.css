@@ -3012,6 +3012,21 @@ html.dark .people .avatar {
 .world-station .bar-row {
   grid-template-columns: 120px minmax(0, 1fr) 92px 100px;
 }
+/* At 500px a title, its sub line and a segmented control don't fit on one
+   row: "Where it went" and "Over budget" each broke onto two lines. Give the
+   sub line its own row, as the mobile layout does, and keep labels whole. */
+.world-station .sec-head {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+.world-station .sec-head .sub {
+  order: 3;
+  flex: 1 0 100%;
+}
+.world-station .sec-head .sec-title,
+.world-station .seg button {
+  white-space: nowrap;
+}
 .world-stage-wrap {
   position: sticky;
   top: 24px;
