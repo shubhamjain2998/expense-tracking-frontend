@@ -1895,6 +1895,27 @@ html.dark .auth-seal {
     column-gap: 24px;
   }
 }
+/* On a phone three KPI columns don't fit: the verdict's "Saved" and the
+   year block's totals ran off the card into a scrolling strip with clipped
+   figures. Let them wrap, as the world panel does, and drop the shared
+   label/value rows (a wrapped row can't share a subgrid). */
+@media (max-width: 599px) {
+  .money-row {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(auto-fill, minmax(128px, max-content));
+    grid-template-rows: none;
+    row-gap: 16px;
+    overflow: visible;
+  }
+  .money {
+    grid-template-rows: auto;
+    grid-row: auto;
+    align-content: start;
+  }
+  .money .v {
+    font-size: 22px;
+  }
+}
 
 /* ─── section head ───────────────────────────────────────────────────── */
 .sec {
@@ -3011,6 +3032,21 @@ html.dark .people .avatar {
 /* The panel column is narrower than the flat page: give the bar a share. */
 .world-station .bar-row {
   grid-template-columns: 120px minmax(0, 1fr) 92px 100px;
+}
+/* At 500px a title, its sub line and a segmented control don't fit on one
+   row: "Where it went" and "Over budget" each broke onto two lines. Give the
+   sub line its own row, as the mobile layout does, and keep labels whole. */
+.world-station .sec-head {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+.world-station .sec-head .sub {
+  order: 3;
+  flex: 1 0 100%;
+}
+.world-station .sec-head .sec-title,
+.world-station .seg button {
+  white-space: nowrap;
 }
 .world-stage-wrap {
   position: sticky;

@@ -131,6 +131,10 @@ export function HomeWorld({
           { swatch: 'bg-[var(--neg)]', label: 'Over plan' },
           { swatch: 'bg-[var(--ink-4)] opacity-40', label: 'Projected' },
           { swatch: 'is-line bg-[var(--line-strong)]', label: 'Plan' },
+          // The current month's pace ticks (terrain cells' paceAt).
+          ...(terrain.currentCol !== null
+            ? [{ swatch: 'is-line bg-[var(--accent)]', label: 'Expected by today' }]
+            : []),
         ],
         hint: 'Hover a box · click to open that category and month',
       },

@@ -110,6 +110,49 @@ describe('verdict — pace', () => {
     expect(verdict.status).toBe('watch')
   })
 
+  it('says where a finished month closes instead of offering ₹0/day', () => {
+    const under = computeInsights(
+      makeInput({ pace: 1, daysLeftInMonth: 0, totalBudget: 20000, totalDebit: 12000 })
+    ).verdict
+    expect(flat(under.headline)).toBe('The month closes ₹8k under budget.')
+
+    const over = computeInsights(
+      makeInput({
+        summaryRows: [summaryRow('Travel', 10000, 16000)],
+        pace: 1,
+        daysLeftInMonth: 0,
+        totalBudget: 20000,
+        totalDebit: 26000,
+      })
+    ).verdict
+    expect(flat(over.headline)).toBe('The month closes ₹6k over budget, driven by Travel.')
+    expect(over.status).toBe('over')
+  })
+
+  it('says the budget is gone, not "spend ₹0/day", once spend passes it mid-month', () => {
+    const { verdict } = computeInsights(
+      makeInput({
+        summaryRows: [summaryRow('Travel', 10000, 16000)],
+        pace: 0.5,
+        daysLeftInMonth: 15,
+        totalBudget: 20000,
+        totalDebit: 23000,
+      })
+    )
+    expect(flat(verdict.headline)).toBe(
+      "You're ₹3k past this month's budget, driven by Travel, with 15 days to go."
+    )
+    expect(flat(verdict.headline)).not.toContain('/day')
+  })
+
+  it('says a month that has not started yet has not, with its daily allowance', () => {
+    const { verdict } = computeInsights(
+      makeInput({ pace: 0, daysLeftInMonth: 30, totalBudget: 30000, totalDebit: 0 })
+    )
+    expect(flat(verdict.headline)).toBe("The month hasn't started. Its budget allows ₹1k/day.")
+    expect(verdict.status).toBe('on-track')
+  })
+
   it('falls back to neutral on-track when no budget', () => {
     const input = makeInput({ totalBudget: 0, totalDebit: 5000 })
     const { verdict } = computeInsights(input)

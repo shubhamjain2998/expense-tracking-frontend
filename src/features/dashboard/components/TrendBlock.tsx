@@ -81,8 +81,13 @@ export function TrendBlock({
     incomeTrendData.length > 0
       ? incomeTrendData.reduce((s, p) => s + p.expense, 0) / incomeTrendData.length
       : 0
-  const lastExpense = incomeTrendData.at(-1)?.expense ?? 0
-  const vsAvgPct = avgExpense > 0 ? ((lastExpense - avgExpense) / avgExpense) * 100 : null
+  const last = incomeTrendData.at(-1)
+  const lastExpense = last?.expense ?? 0
+  // A month with nothing recorded (a future or unimported one) isn't "down
+  // 100%": there's nothing to compare yet.
+  const lastIsEmpty = !last || (last.expense === 0 && last.income === 0)
+  const vsAvgPct =
+    avgExpense > 0 && !lastIsEmpty ? ((lastExpense - avgExpense) / avgExpense) * 100 : null
 
   const maxSeriesValue = incomeTrendData.reduce((m, p) => Math.max(m, p.income, p.expense), 0)
   const yTicks = niceAxisTicks(maxSeriesValue)
@@ -116,32 +121,56 @@ export function TrendBlock({
           <Skeleton className="h-56 w-full" />
         ) : (
           <>
-            <div className="mb-3 flex flex-wrap items-center gap-4">
-              <span className="flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--ink)]">
-                <svg width="16" height="8" aria-hidden="true">
-                  <line x1="0" y1="4" x2="16" y2="4" stroke="currentColor" strokeWidth={2} />
-                </svg>
-                Out
-              </span>
-              <span className="flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--accent)]">
-                <svg width="16" height="8" aria-hidden="true">
-                  <line
-                    x1="0"
-                    y1="4"
-                    x2="16"
-                    y2="4"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    strokeDasharray="4 3"
-                  />
-                </svg>
-                In
-              </span>
+            {/* The Out/In key describes the line chart. Without it (the 3D
+                world draws ribbons with their own legend) a solid/dashed key
+                was wrong, and its margin left a gap under the average line. */}
+            <div
+              className={['flex flex-wrap items-center gap-4', showChart ? 'mb-3' : null]
+                .filter(Boolean)
+                .join(' ')}
+            >
+              {showChart && (
+                <>
+                  <span className="flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--ink)]">
+                    <svg width="16" height="8" aria-hidden="true">
+                      <line x1="0" y1="4" x2="16" y2="4" stroke="currentColor" strokeWidth={2} />
+                    </svg>
+                    Out
+                  </span>
+                  <span className="flex items-center gap-1.5 text-[12.5px] font-semibold text-[var(--accent)]">
+                    <svg width="16" height="8" aria-hidden="true">
+                      <line
+                        x1="0"
+                        y1="4"
+                        x2="16"
+                        y2="4"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        strokeDasharray="4 3"
+                      />
+                    </svg>
+                    In
+                  </span>
+                </>
+              )}
               {vsAvgPct !== null && (
-                <span className="text-[12.5px] text-[var(--ink-3)] sm:ml-auto">
+                <span
+                  className={['text-[12.5px] text-[var(--ink-3)]', showChart ? 'sm:ml-auto' : null]
+                    .filter(Boolean)
+                    .join(' ')}
+                >
                   Out is {vsAvgPct >= 0 ? 'up' : 'down'}{' '}
                   <b className={vsAvgPct >= 0 ? 'neg' : 'pos'}>{Math.abs(Math.round(vsAvgPct))}%</b>{' '}
                   against your {trendWindow}-month average
+                </span>
+              )}
+              {vsAvgPct === null && lastIsEmpty && avgExpense > 0 && (
+                <span
+                  className={['text-[12.5px] text-[var(--ink-3)]', showChart ? 'sm:ml-auto' : null]
+                    .filter(Boolean)
+                    .join(' ')}
+                >
+                  Nothing recorded this month yet, so no comparison
                 </span>
               )}
             </div>
@@ -199,10 +228,13 @@ export function TrendBlock({
                     stroke="var(--accent)"
                     strokeWidth={2}
                     strokeDasharray="5 4"
-                    // Plain dot — a stroke+fill override on a dashed line
-                    // produced stray glyph-like artefacts at each point.
-                    dot={{ r: 3 }}
-                    activeDot={{ r: 5.5 }}
+                    // Recharts hands the line's dash pattern to its dots, and a
+                    // 3px circle drawn with a "5 4" dash reads as a broken
+                    // glyph at each point. Dots are drawn solid, filled with
+                    // the surface like Out's (recharts' default is white,
+                    // which glared in dark mode).
+                    dot={{ r: 3, strokeDasharray: 'none', fill: 'var(--surface)' }}
+                    activeDot={{ r: 5.5, strokeDasharray: 'none' }}
                   />
                 </LineChart>
               </ResponsiveContainer>
