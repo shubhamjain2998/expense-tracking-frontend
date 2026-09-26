@@ -154,7 +154,7 @@ export function FilterBar({
         style={{ color: 'var(--ink-3)', userSelect: 'none' }}
       >
         <Icon name="keyboard" size={12} />
-        1–9 categorize · ↑↓ navigate ·{' '}
+        1–9 categorise · ↑↓ navigate ·{' '}
         <button
           onClick={onShowShortcuts}
           className="btn ghost hit44-after"
